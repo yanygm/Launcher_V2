@@ -1,0 +1,32 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore
+      run: dotnet restore Launcher.csproj
+
+    - name: Publish
+      run: |
+        mkdir Launcher
+        dotnet publish Launcher.csproj -o PublishedWinExe
+        cp PublishedWinExe/Launcher.exe Launcher/Launcher.exe
+        dotnet publish Launcher_cmd.csproj -o PublishedExe
+        cp PublishedExe/Launcher.exe Launcher/Launcher_cmd.exe
+
+    - name: Archive Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Launcher
+        path: Launcher/*
