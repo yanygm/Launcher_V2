@@ -100,26 +100,5 @@ namespace RiderData
 			Kart.v12_5 = 0f;
 			Kart.v12_6 = 0f;
 		}
-
-		public static void defaultExceedSpec()
-		{
-			if (Kart.defaultExceedType == 3)
-			{
-				Kart.chargeInstAccelGaugeByBoost = 0.02f;
-				Kart.chargeInstAccelGaugeByGrip = 0.06f;
-				Kart.chargeInstAccelGaugeByWall = 0.15f;
-				Kart.instAccelFactor = 1.18f;
-				Kart.instAccelGaugeCooldownTime = 3000;
-				Kart.instAccelGaugeLength = 2000f;
-				Kart.instAccelGaugeMinUsable = 400f;
-				Kart.instAccelGaugeMinVelBound = 0f;
-				Kart.instAccelGaugeMinVelLoss = 50f;
-				Kart.useExtendedAfterBoosterMore = 0;
-				Kart.wallCollGaugeCooldownTime = 3000;
-				Kart.wallCollGaugeMaxVelLoss = 200f;
-				Kart.wallCollGaugeMinVelBound = 200f;
-				Kart.wallCollGaugeMinVelLoss = 50f;
-			}
-		}
 	}
 }

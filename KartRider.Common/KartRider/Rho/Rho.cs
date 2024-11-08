@@ -495,6 +495,13 @@ namespace RHOParser
                                             KartExcData.tachometer.Add(itemId);
                                         }
                                     }
+                                    else if (itemCatId == 67)
+                                    {
+                                        if (!(KartExcData.partsPiece.Contains(itemId)))
+                                        {
+                                            KartExcData.partsPiece.Add(itemId);
+                                        }
+                                    }
                                     else if (itemCatId == 68)
                                     {
                                         if (!(KartExcData.partsCoating.Contains(itemId)))
@@ -521,6 +528,41 @@ namespace RHOParser
                                         if (!(KartExcData.slotBg.Contains(itemId)))
                                         {
                                             KartExcData.slotBg.Add(itemId);
+                                        }
+                                    }
+                                    else if (itemCatId == 72)
+                                    {
+                                        if (!(KartExcData.partsEngine12.Contains(itemId)))
+                                        {
+                                            KartExcData.partsEngine12.Add(itemId);
+                                        }
+                                    }
+                                    else if (itemCatId == 73)
+                                    {
+                                        if (!(KartExcData.partsHandle12.Contains(itemId)))
+                                        {
+                                            KartExcData.partsHandle12.Add(itemId);
+                                        }
+                                    }
+                                    else if (itemCatId == 74)
+                                    {
+                                        if (!(KartExcData.partsWheel12.Contains(itemId)))
+                                        {
+                                            KartExcData.partsWheel12.Add(itemId);
+                                        }
+                                    }
+                                    else if (itemCatId == 75)
+                                    {
+                                        if (!(KartExcData.partsBooster12.Contains(itemId)))
+                                        {
+                                            KartExcData.partsBooster12.Add(itemId);
+                                        }
+                                    }
+                                    else if (itemCatId == 79)
+                                    {
+                                        if (!(KartExcData.ethisItem.Contains(itemId)))
+                                        {
+                                            KartExcData.ethisItem.Add(itemId);
                                         }
                                     }
                                 }

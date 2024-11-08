@@ -255,6 +255,7 @@ namespace KartRider
 			Kart.driftGaugeFactor = float.Parse(AddList[88]);
 			Kart.v12_5 = float.Parse(AddList[89]);
 			Kart.v12_6 = float.Parse(AddList[90]);
+			V2Spec.ExceedSpec();
 			Console.WriteLine($"-------------------------------------------------------------");
 			Console.WriteLine($"draftMulAccelFactor:{Kart.draftMulAccelFactor}");
 			Console.WriteLine($"draftTick:{Kart.draftTick}");
@@ -340,7 +341,6 @@ namespace KartRider
 			Console.WriteLine($"chargeBoostBySpeedAdded:{Kart.chargeBoostBySpeedAdded}");
 			Console.WriteLine($"driftGaugeFactor:{Kart.driftGaugeFactor}");
 			Console.WriteLine($"-------------------------------------------------------------");
-			defaultSpec.defaultExceedSpec();
 			//StartGameData.Start_KartSpac();
 		}
 

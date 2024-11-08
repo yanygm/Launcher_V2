@@ -50,6 +50,12 @@ namespace RiderData
 			NewRider.partsTailLamp();
 			NewRider.dye();
 			NewRider.slotBg();
+			NewRider.partsPiece();
+			NewRider.partsEngine12();
+			NewRider.partsHandle12();
+			NewRider.partsWheel12();
+			NewRider.partsBooster12();
+			NewRider.ethisItem();
 			NewRider.XUniquePartsData();
 			NewRider.XLegendPartsData();
 			NewRider.XRarePartsData();
@@ -739,6 +745,150 @@ namespace RiderData
 			LoRpGetRiderItemPacket(39, item);
 		}
 
+		public static void upgradeKit()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.upgradeKit)
+			{
+				short sn = 0;
+				short num = 1;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(14, item);
+		}
+
+		public static void partsPiece()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsPiece)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(67, item);
+		}
+
+		public static void partsCoating()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsCoating)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(68, item);
+		}
+
+		public static void partsTailLamp()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsTailLamp)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(69, item);
+		}
+
+		public static void partsEngine12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsEngine12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(72, item);
+		}
+
+		public static void partsHandle12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsHandle12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(73, item);
+		}
+
+		public static void partsWheel12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsWheel12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(74, item);
+		}
+
+		public static void partsBooster12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsBooster12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(75, item);
+		}
+
+		public static void ethisItem()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.ethisItem)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short>();
+				add.Add(id);
+				add.Add(sn);
+				add.Add(num);
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(79, item);
+		}
+
 		public static void XUniquePartsData()
 		{
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
@@ -1290,54 +1440,6 @@ namespace RiderData
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
-		}
-
-		public static void partsCoating()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsCoating)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short>();
-				add.Add(id);
-				add.Add(sn);
-				add.Add(num);
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(68, item);
-		}
-
-		public static void partsTailLamp()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsTailLamp)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short>();
-				add.Add(id);
-				add.Add(sn);
-				add.Add(num);
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(69, item);
-		}
-
-		public static void upgradeKit()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.upgradeKit)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short>();
-				add.Add(id);
-				add.Add(sn);
-				add.Add(num);
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(14, item);
 		}
 
 		public static void LoRpGetRiderItemPacket(short itemCat, List<List<short>> item)

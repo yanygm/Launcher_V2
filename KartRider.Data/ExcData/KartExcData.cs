@@ -66,6 +66,12 @@ namespace ExcData
 		public static List<short> partsTailLamp = new List<short>();
 		public static List<short> dye = new List<short>();
 		public static List<short> slotBg = new List<short>();
+		public static List<short> partsPiece = new List<short>();
+		public static List<short> partsEngine12 = new List<short>();
+		public static List<short> partsHandle12 = new List<short>();
+		public static List<short> partsWheel12 = new List<short>();
+		public static List<short> partsBooster12 = new List<short>();
+		public static List<short> ethisItem = new List<short>();
 
 		public static void Tune_ExcData()
 		{
