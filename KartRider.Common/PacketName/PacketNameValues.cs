@@ -1562,5 +1562,17 @@ namespace KartRider_PacketName
 		PqBoomhillExchangeInfo = 1654655142,
 		PrBoomhillExchangeInfo = 1656031399,
 		PqBoomhillExchangeNeedNotice = 2655324920,
+		PqKart12TuningLevelUp = 1418725352,
+		PrKart12TuningLevelUp = 1420036073,
+		PqKart12RestictTuningSkill = 2197162504,
+		PrKart12RestictTuningSkill = 2198800905,
+		PqKart12ChangeTuningSkill = 1983056240,
+		PrKart12ChangeTuningSkill = 1984629105,
+		PqKart12TuningPointUpdate = 2026572184,
+		PrKart12TuningPointUpdate = 2028145049,
+		PqKart12PartsLevelUp = 1278936957,
+		PrKart12PartsLevelUp = 1280182142,
+		PqKart12PartsLevelReset = 1695418555,
+		PrKart12PartsLevelReset = 1696860348,
 	}
 }

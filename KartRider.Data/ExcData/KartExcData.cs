@@ -17,6 +17,8 @@ namespace ExcData
 		public static List<List<short>> PlantList = new List<List<short>>();
 		public static List<List<short>> LevelList = new List<List<short>>();
 		public static List<List<short>> PartsList = new List<List<short>>();
+		public static List<List<short>> Parts12List = new List<List<short>>();
+		public static List<List<short>> Level12List = new List<List<short>>();
 		public static List<List<short>> NewKart = new List<List<short>>();
 
 		public static Dictionary<int, string> KartName = new Dictionary<int, string>();
@@ -32,6 +34,8 @@ namespace ExcData
 		public static List<short> character = new List<short>();
 		public static List<short> color = new List<short>();
 		public static List<short> kart = new List<short>();
+		public static List<short> kartXV1 = new List<short>();
+		public static List<short> kartV2 = new List<short>();
 		public static List<short> plate = new List<short>();
 		public static List<short> slotChanger = new List<short>();
 		public static List<short> goggle = new List<short>();
@@ -171,13 +175,12 @@ namespace ExcData
 		public static void Parts_ExcData()
 		{
 			int range = 26;//分批次数
-			int times = kart.Count / range + (kart.Count % range > 0 ? 1 : 0);
+			int times = kartXV1.Count / range + (kartXV1.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
-				var tempList = kart.GetRange(i * range, (i + 1) * range > kart.Count ? (kart.Count - i * range) : range);
+				var tempList = kartXV1.GetRange(i * range, (i + 1) * range > kartXV1.Count ? (kartXV1.Count - i * range) : range);
 				int Parts = tempList.Count;
 				short sn = 1;
-				HashSet<short> seenIds = new HashSet<short>();
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
 					oPacket.WriteByte(0);
@@ -193,39 +196,32 @@ namespace ExcData
 					for (var f = 0; f < Parts; f++)
 					{
 						short id = tempList[f];
-						if (seenIds.Contains(id))
-						{
-							sn++;
-						}
-						else
-						{
-							seenIds.Add(id);
-						}
 						var partsKartAndSN = new { Kart = id, SN = sn };
 						var partsList = PartsList;
-						var existingPlant = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
-						if (existingPlant != null)
+						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						if (existingParts != null)
 						{
-							oPacket.WriteShort(existingPlant[0]);
-							oPacket.WriteShort(existingPlant[1]);
+							oPacket.WriteShort(existingParts[0]);
+							oPacket.WriteShort(existingParts[1]);
 							oPacket.WriteShort(0);
-							oPacket.WriteUInt(65535);
-							oPacket.WriteShort(existingPlant[2]);
-							oPacket.WriteByte((byte)existingPlant[3]);
-							oPacket.WriteShort(existingPlant[4]);
-							oPacket.WriteShort(existingPlant[5]);
-							oPacket.WriteByte((byte)existingPlant[6]);
-							oPacket.WriteShort(existingPlant[7]);
-							oPacket.WriteShort(existingPlant[8]);
-							oPacket.WriteByte((byte)existingPlant[9]);
-							oPacket.WriteShort(existingPlant[10]);
-							oPacket.WriteShort(existingPlant[11]);
-							oPacket.WriteByte((byte)existingPlant[12]);
-							oPacket.WriteShort(existingPlant[13]);
-							oPacket.WriteShort(existingPlant[14]);
+							oPacket.WriteHexString("FFFF");
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(existingParts[2]);
+							oPacket.WriteByte((byte)existingParts[3]);
+							oPacket.WriteShort(existingParts[4]);
+							oPacket.WriteShort(existingParts[5]);
+							oPacket.WriteByte((byte)existingParts[6]);
+							oPacket.WriteShort(existingParts[7]);
+							oPacket.WriteShort(existingParts[8]);
+							oPacket.WriteByte((byte)existingParts[9]);
+							oPacket.WriteShort(existingParts[10]);
+							oPacket.WriteShort(existingParts[11]);
+							oPacket.WriteByte((byte)existingParts[12]);
+							oPacket.WriteShort(existingParts[13]);
+							oPacket.WriteShort(existingParts[14]);
 							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteShort(existingPlant[15]);
+							oPacket.WriteShort(existingParts[15]);
 							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
 						}
@@ -234,31 +230,146 @@ namespace ExcData
 							oPacket.WriteShort(id);
 							oPacket.WriteShort(sn);
 							oPacket.WriteShort(0);
-							oPacket.WriteUInt(65535);
+							oPacket.WriteHexString("FFFF");
+							oPacket.WriteBytes(new byte[32]);
+						}
+					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					RouterListener.MySession.Client.Send(oPacket);
+				}
+			}
+		}
+
+		public static void Parts12_ExcData()
+		{
+			int range = 26;//分批次数
+			int times = kartV2.Count / range + (kartV2.Count % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
+			{
+				var tempList = kartV2.GetRange(i * range, (i + 1) * range > kartV2.Count ? (kartV2.Count - i * range) : range);
+				int Parts = tempList.Count;
+				short sn = 1;
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
+				{
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteInt(Parts);
+					for (var f = 0; f < Parts; f++)
+					{
+						short id = tempList[f];
+						var partsKartAndSN = new { Kart = id, SN = sn };
+						var partsList = Parts12List;
+						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						if (existingParts != null)
+						{
+							oPacket.WriteShort(existingParts[0]);
+							oPacket.WriteShort(existingParts[1]);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
+							oPacket.WriteHexString("FFFF");
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(existingParts[2]);
+							oPacket.WriteShort(existingParts[3]);
+							oPacket.WriteShort(existingParts[4]);
+							oPacket.WriteShort(existingParts[5]);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
+							oPacket.WriteShort(0);
+						}
+						else
+						{
+							oPacket.WriteShort(id);
+							oPacket.WriteShort(sn);
+							oPacket.WriteShort(0);
+							oPacket.WriteHexString("FFFF");
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(1);
+							oPacket.WriteShort(1);
+							oPacket.WriteShort(1);
+							oPacket.WriteShort(1);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
 						}
 					}
-					//oPacket.WriteHexString("00 00 FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-					//oPacket.WriteInt(0);
-					//oPacket.WriteInt(0);
-					oPacket.WriteBytes(new byte[13]);
+					oPacket.WriteInt(0);
+					RouterListener.MySession.Client.Send(oPacket);
+				}
+			}
+		}
+
+		public static void Level12_ExcData()
+		{
+			int range = 26;//分批次数
+			int times = Level12List.Count / range + (Level12List.Count % range > 0 ? 1 : 0);
+			Console.WriteLine("Level12List Count: " + Level12List.Count);
+			Console.WriteLine("times: " + times);
+			for (int i = 0; i < times; i++)
+			{
+				var tempList = Level12List.GetRange(i * range, (i + 1) * range > Level12List.Count ? (Level12List.Count - i * range) : range);
+				int Parts = tempList.Count;
+				Console.WriteLine("tempList Count: " + tempList.Count);
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
+				{
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(Parts);
+					for (var f = 0; f < Parts; f++)
+					{
+						oPacket.WriteShort(3);
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteShort(tempList[f][9]);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(4);
+						oPacket.WriteShort(4);
+						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(tempList[f][6]);
+						oPacket.WriteShort(tempList[f][8]);
+					}
+					oPacket.WriteBytes(new byte[17]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -400,18 +511,18 @@ namespace ExcData
 			}
 		}
 
-		public static void AddLevelList(short id, short sn, short level, short pointleft, short v1, short v2, short v3, short v4, short Effect)
+		public static void AddLevelList(short id, short sn, short level, short point, short v1, short v2, short v3, short v4, short Effect)
 		{
 			var existingList = LevelList.FirstOrDefault(list => list[0] == id && list[1] == sn);
 			if (existingList == null)
 			{
-				var newList = new List<short> { id, sn, level, pointleft, v1, v2, v3, v4, Effect };
+				var newList = new List<short> { id, sn, level, point, v1, v2, v3, v4, Effect };
 				LevelList.Add(newList);
 				SaveLevelList(LevelList);
 			}
 			else
 			{
-				existingList[3] = pointleft;
+				existingList[3] = point;
 				existingList[4] = v1;
 				existingList[5] = v2;
 				existingList[6] = v3;
@@ -439,7 +550,7 @@ namespace ExcData
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
 				xe1.SetAttribute("level", List[i][2].ToString());
-				xe1.SetAttribute("pointleft", List[i][3].ToString());
+				xe1.SetAttribute("point", List[i][3].ToString());
 				xe1.SetAttribute("v1", List[i][4].ToString());
 				xe1.SetAttribute("v2", List[i][5].ToString());
 				xe1.SetAttribute("v3", List[i][6].ToString());
@@ -452,6 +563,69 @@ namespace ExcData
 
 		public static void AddPartsList(short id, short sn, short Item_Cat_Id, short Item_Id, byte Grade, short PartsValue)
 		{
+			if (Item_Cat_Id == 72 || Item_Cat_Id == 73 || Item_Cat_Id == 74 || Item_Cat_Id == 75 || Item_Cat_Id == 76 || Item_Cat_Id == 77 || Item_Cat_Id == 78)
+			{
+				var existing12List = Parts12List.FirstOrDefault(list => list[0] == id && list[1] == sn);
+				if (existing12List == null)
+				{
+					var newList = new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+					switch (Item_Cat_Id)
+					{
+						case 72:
+							newList[2] = Item_Id;
+							break;
+						case 73:
+							newList[3] = Item_Id;
+							break;
+						case 74:
+							newList[4] = Item_Id;
+							break;
+						case 75:
+							newList[5] = Item_Id;
+							break;
+						case 76:
+							newList[6] = Item_Id;
+							break;
+						case 77:
+							newList[7] = Item_Id;
+							break;
+						case 78:
+							newList[8] = Item_Id;
+							break;
+					}
+					Parts12List.Add(newList);
+					SaveParts12List(Parts12List);
+				}
+				else
+				{
+					switch (Item_Cat_Id)
+					{
+						case 72:
+							existing12List[2] = Item_Id;
+							break;
+						case 73:
+							existing12List[3] = Item_Id;
+							break;
+						case 74:
+							existing12List[4] = Item_Id;
+							break;
+						case 75:
+							existing12List[5] = Item_Id;
+							break;
+						case 76:
+							existing12List[6] = Item_Id;
+							break;
+						case 77:
+							existing12List[7] = Item_Id;
+							break;
+						case 78:
+							existing12List[8] = Item_Id;
+							break;
+					}
+					SaveParts12List(Parts12List);
+				}
+				return;
+			}
 			var existingList = PartsList.FirstOrDefault(list => list[0] == id && list[1] == sn);
 			if (existingList == null)
 			{
@@ -556,6 +730,120 @@ namespace ExcData
 				xe1.SetAttribute("partsTailLamp", List[i][15].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\PartsData.xml");
+			}
+		}
+
+		public static void SaveParts12List(List<List<short>> List)
+		{
+			File.Delete(@"Profile\Parts12Data.xml");
+			XmlTextWriter writer = new XmlTextWriter(@"Profile\Parts12Data.xml", System.Text.Encoding.UTF8);
+			writer.Formatting = Formatting.Indented;
+			writer.WriteStartDocument();
+			writer.WriteStartElement("PartsData");
+			writer.WriteEndElement();
+			writer.Close();
+			for (var i = 0; i < List.Count; i++)
+			{
+				XmlDocument xmlDoc = new XmlDocument();
+				xmlDoc.Load(@"Profile\Parts12Data.xml");
+				XmlNode root = xmlDoc.SelectSingleNode("PartsData");
+				XmlElement xe1 = xmlDoc.CreateElement("Kart");
+				xe1.SetAttribute("id", List[i][0].ToString());
+				xe1.SetAttribute("sn", List[i][1].ToString());
+				xe1.SetAttribute("Engine", List[i][2].ToString());
+				xe1.SetAttribute("Handle", List[i][3].ToString());
+				xe1.SetAttribute("Wheel", List[i][4].ToString());
+				xe1.SetAttribute("Booster", List[i][5].ToString());
+				xe1.SetAttribute("Coating", List[i][6].ToString());
+				xe1.SetAttribute("TailLamp", List[i][7].ToString());
+				xe1.SetAttribute("BoosterWave", List[i][8].ToString());
+				root.AppendChild(xe1);
+				xmlDoc.Save(@"Profile\Parts12Data.xml");
+			}
+		}
+
+		public static void AddLevel12List(short id, short sn, short level, short field, short skill, short skilllevel, short point)
+		{
+			var existingList = Level12List.FirstOrDefault(list => list[0] == id && list[1] == sn);
+			if (existingList == null)
+			{
+				var newList = new List<short> { id, sn, level, 0, 0, 0, 0, 0, 0, point };
+				switch (field)
+				{
+					case 1:
+						newList[3] = skill;
+						newList[4] = skilllevel;
+						break;
+					case 2:
+						newList[5] = skill;
+						newList[6] = skilllevel;
+						break;
+					case 3:
+						newList[7] = skill;
+						newList[8] = skilllevel;
+						break;
+				}
+				Level12List.Add(newList);
+				SaveTuning12List(Level12List);
+			}
+			else
+			{
+				if (level != -1)
+					existingList[2] = level;
+				if (point != -1)
+					existingList[9] = point;
+				switch (field)
+				{
+					case 1:
+						if (skill != -1)
+							existingList[3] = skill;
+						if (skilllevel != -1)
+							existingList[4] = skilllevel;
+						break;
+					case 2:
+						if (skill != -1)
+							existingList[5] = skill;
+						if (skilllevel != -1)
+							existingList[6] = skilllevel;
+						break;
+					case 3:
+						if (skill != -1)
+							existingList[7] = skill;
+						if (skilllevel != -1)
+							existingList[8] = skilllevel;
+						break;
+				}
+				SaveTuning12List(Level12List);
+			}
+		}
+
+		public static void SaveTuning12List(List<List<short>> List)
+		{
+			File.Delete(@"Profile\Level12Data.xml");
+			XmlTextWriter writer = new XmlTextWriter(@"Profile\Level12Data.xml", System.Text.Encoding.UTF8);
+			writer.Formatting = Formatting.Indented;
+			writer.WriteStartDocument();
+			writer.WriteStartElement("LevelData");
+			writer.WriteEndElement();
+			writer.Close();
+			for (var i = 0; i < List.Count; i++)
+			{
+				XmlDocument xmlDoc = new XmlDocument();
+				xmlDoc.Load(@"Profile\Level12Data.xml");
+				XmlNode root = xmlDoc.SelectSingleNode("LevelData");
+				XmlElement xe1 = xmlDoc.CreateElement("Kart");
+				xe1.SetAttribute("id", List[i][0].ToString());
+				xe1.SetAttribute("sn", List[i][1].ToString());
+				xe1.SetAttribute("Level", List[i][2].ToString());
+				xe1.SetAttribute("Skill1", List[i][3].ToString());
+				xe1.SetAttribute("SkillLevel1", List[i][4].ToString());
+				xe1.SetAttribute("Skill2", List[i][5].ToString());
+				xe1.SetAttribute("SkillLevel2", List[i][6].ToString());
+				xe1.SetAttribute("Skill3", List[i][7].ToString());
+				xe1.SetAttribute("SkillLevel3", List[i][8].ToString());
+				xe1.SetAttribute("Point", List[i][9].ToString());
+				root.AppendChild(xe1);
+				xmlDoc.Save(@"Profile\Level12Data.xml");
 			}
 		}
 	}

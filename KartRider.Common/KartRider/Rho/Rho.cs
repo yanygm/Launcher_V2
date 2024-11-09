@@ -248,6 +248,53 @@ namespace RHOParser
                             }
                         }
                     }
+                    if (fullName == "zeta_/cn/content/itemDictionary.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            var v2 = doc.Descendants("kartBody")
+                                        .Where(kb => (string)kb.Attribute("kartBodyGrade") == "13")
+                                        .Select(kb => (string)kb.Attribute("id"));
+
+                            foreach (var id in v2)
+                            {
+                                if (!(KartExcData.kartV2.Contains(short.Parse(id))))
+                                {
+                                    KartExcData.kartV2.Add(short.Parse(id));
+                                }
+                            }
+
+                            var xv1 = doc.Descendants("kartBody")
+                                        .Where(kb =>
+                                        {
+                                            int grade = int.Parse((string)kb.Attribute("kartBodyGrade"));
+                                            return grade > 10 && grade < 13;
+                                        })
+                                        .Select(kb => (string)kb.Attribute("id"));
+                            foreach (var id in xv1)
+                            {
+                                if (!(KartExcData.kartXV1.Contains(short.Parse(id))))
+                                {
+                                    KartExcData.kartXV1.Add(short.Parse(id));
+                                }
+                            }
+
+                            var kart = doc.Descendants("kartBody")
+                                        .Where(kb => int.Parse((string)kb.Attribute("kartBodyGrade")) < 11)
+                                        .Select(kb => (string)kb.Attribute("id"));
+
+                            foreach (var id in kart)
+                            {
+                                if (!(KartExcData.kart.Contains(short.Parse(id))))
+                                {
+                                    KartExcData.kart.Add(short.Parse(id));
+                                }
+                            }
+                        }
+                    }
                     if (fullName == "zeta_/" + config.region + "/shop/data/item.kml")
                     {
                         Console.WriteLine(fullName);
@@ -278,13 +325,13 @@ namespace RHOParser
                                             KartExcData.color.Add(itemId);
                                         }
                                     }
-                                    else if (itemCatId == 3)
-                                    {
-                                        if (!(KartExcData.kart.Contains(itemId)))
-                                        {
-                                            KartExcData.kart.Add(itemId);
-                                        }
-                                    }
+                                    //else if (itemCatId == 3)
+                                    //{
+                                    //    if (!(KartExcData.kart.Contains(itemId)))
+                                    //    {
+                                    //        KartExcData.kart.Add(itemId);
+                                    //    }
+                                    //}
                                     else if (itemCatId == 4)
                                     {
                                         if (!(KartExcData.plate.Contains(itemId)))

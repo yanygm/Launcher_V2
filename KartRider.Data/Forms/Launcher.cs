@@ -103,7 +103,7 @@ namespace KartRider
 			comboBox1.Items.Add("S1");
 			comboBox1.Items.Add("S2");
 			comboBox1.Items.Add("S3");
-   			comboBox1.Text = "Integration";
+			comboBox1.Text = "Integration";
 			// 
 			// Launcher
 			// 
@@ -260,9 +260,7 @@ namespace KartRider
 						XmlElement xe = (XmlElement)xn;
 						short id = short.Parse(xe.GetAttribute("id"));
 						short sn = short.Parse(xe.GetAttribute("sn"));
-						List<short> AddList = new List<short>();
-						AddList.Add(id);
-						AddList.Add(sn);
+						List<short> AddList = new List<short>{ id, sn };
 						KartExcData.NewKart.Add(AddList);
 					}
 				}
@@ -283,12 +281,7 @@ namespace KartRider
 						short tune1 = short.Parse(xe.GetAttribute("tune1"));
 						short tune2 = short.Parse(xe.GetAttribute("tune2"));
 						short tune3 = short.Parse(xe.GetAttribute("tune3"));
-						List<short> AddList = new List<short>();
-						AddList.Add(i);
-						AddList.Add(sn);
-						AddList.Add(tune1);
-						AddList.Add(tune2);
-						AddList.Add(tune3);
+						List<short> AddList = new List<short>{ i, sn, tune1, tune2, tune3 };
 						KartExcData.TuneList.Add(AddList);
 					}
 				}
@@ -314,17 +307,7 @@ namespace KartRider
 						short item_id3 = short.Parse(xe.GetAttribute("item_id3"));
 						short item4 = short.Parse(xe.GetAttribute("item4"));
 						short item_id4 = short.Parse(xe.GetAttribute("item_id4"));
-						List<short> AddList = new List<short>();
-						AddList.Add(i);
-						AddList.Add(sn);
-						AddList.Add(item1);
-						AddList.Add(item_id1);
-						AddList.Add(item2);
-						AddList.Add(item_id2);
-						AddList.Add(item3);
-						AddList.Add(item_id3);
-						AddList.Add(item4);
-						AddList.Add(item_id4);
+						List<short> AddList = new List<short>{ i, sn, item1, item_id1, item2, item_id2, item3, item_id3, item4, item_id4 };
 						KartExcData.PlantList.Add(AddList);
 					}
 				}
@@ -343,22 +326,13 @@ namespace KartRider
 						short i = short.Parse(xe.GetAttribute("id"));
 						short sn = short.Parse(xe.GetAttribute("sn"));
 						short level = short.Parse(xe.GetAttribute("level"));
-						short pointleft = short.Parse(xe.GetAttribute("pointleft"));
+						short point = short.Parse(xe.GetAttribute("point"));
 						short v1 = short.Parse(xe.GetAttribute("v1"));
 						short v2 = short.Parse(xe.GetAttribute("v2"));
 						short v3 = short.Parse(xe.GetAttribute("v3"));
 						short v4 = short.Parse(xe.GetAttribute("v4"));
 						short Effect = short.Parse(xe.GetAttribute("Effect"));
-						List<short> AddList = new List<short>();
-						AddList.Add(i);
-						AddList.Add(sn);
-						AddList.Add(level);
-						AddList.Add(pointleft);
-						AddList.Add(v1);
-						AddList.Add(v2);
-						AddList.Add(v3);
-						AddList.Add(v4);
-						AddList.Add(Effect);
+						List<short> AddList = new List<short>{ i, sn, level, point, v1, v2, v3, v4, Effect };
 						KartExcData.LevelList.Add(AddList);
 					}
 				}
@@ -367,7 +341,7 @@ namespace KartRider
 			{
 				XmlDocument doc = new XmlDocument();
 				doc.Load(@"Profile\PartsData.xml");
-				if (!(doc.GetElementsByTagName("Parts") == null))
+				if (!(doc.GetElementsByTagName("Kart") == null))
 				{
 					XmlNodeList lis = doc.GetElementsByTagName("Kart");
 					KartExcData.PartsList = new List<List<short>>();
@@ -390,24 +364,59 @@ namespace KartRider
 						short PartsValue4 = short.Parse(xe.GetAttribute("PartsValue4"));
 						short partsCoating = byte.Parse(xe.GetAttribute("partsCoating"));
 						short partsTailLamp = short.Parse(xe.GetAttribute("partsTailLamp"));
-						List<short> AddList = new List<short>();
-						AddList.Add(i);
-						AddList.Add(sn);
-						AddList.Add(Item_Id1);
-						AddList.Add(Grade1);
-						AddList.Add(PartsValue1);
-						AddList.Add(Item_Id2);
-						AddList.Add(Grade2);
-						AddList.Add(PartsValue2);
-						AddList.Add(Item_Id3);
-						AddList.Add(Grade3);
-						AddList.Add(PartsValue3);
-						AddList.Add(Item_Id4);
-						AddList.Add(Grade4);
-						AddList.Add(PartsValue4);
-						AddList.Add(partsCoating);
-						AddList.Add(partsTailLamp);
+						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp };
 						KartExcData.PartsList.Add(AddList);
+					}
+				}
+			}
+			if (File.Exists(@"Profile\Parts12Data.xml"))
+			{
+				XmlDocument doc = new XmlDocument();
+				doc.Load(@"Profile\Parts12Data.xml");
+				if (!(doc.GetElementsByTagName("Kart") == null))
+				{
+					XmlNodeList lis = doc.GetElementsByTagName("Kart");
+					KartExcData.Parts12List = new List<List<short>>();
+					foreach (XmlNode xn in lis)
+					{
+						XmlElement xe = (XmlElement)xn;
+						short i = short.Parse(xe.GetAttribute("id"));
+						short sn = short.Parse(xe.GetAttribute("sn"));
+						short Engine = short.Parse(xe.GetAttribute("Engine"));
+						short Handle = short.Parse(xe.GetAttribute("Handle"));
+						short Wheel = short.Parse(xe.GetAttribute("Wheel"));
+						short Booster = short.Parse(xe.GetAttribute("Booster"));
+						short Coating = short.Parse(xe.GetAttribute("Coating"));
+						short TailLamp = short.Parse(xe.GetAttribute("TailLamp"));
+						short BoosterWave = short.Parse(xe.GetAttribute("BoosterWave"));
+						List<short> AddList = new List<short>{ i, sn, Engine, Handle, Wheel, Booster, Coating, TailLamp, BoosterWave };
+						KartExcData.Parts12List.Add(AddList);
+					}
+				}
+			}
+			if (File.Exists(@"Profile\Level12Data.xml"))
+			{
+				XmlDocument doc = new XmlDocument();
+				doc.Load(@"Profile\Level12Data.xml");
+				if (!(doc.GetElementsByTagName("Kart") == null))
+				{
+					XmlNodeList lis = doc.GetElementsByTagName("Kart");
+					KartExcData.Level12List = new List<List<short>>();
+					foreach (XmlNode xn in lis)
+					{
+						XmlElement xe = (XmlElement)xn;
+						short i = short.Parse(xe.GetAttribute("id"));
+						short sn = short.Parse(xe.GetAttribute("sn"));
+						short Level = short.Parse(xe.GetAttribute("Level"));
+						short Skill1 = short.Parse(xe.GetAttribute("Skill1"));
+						short SkillLevel1 = short.Parse(xe.GetAttribute("SkillLevel1"));
+						short Skill2 = short.Parse(xe.GetAttribute("Skill2"));
+						short SkillLevel2 = short.Parse(xe.GetAttribute("SkillLevel2"));
+						short Skill3 = short.Parse(xe.GetAttribute("Skill3"));
+						short SkillLevel3 = short.Parse(xe.GetAttribute("SkillLevel3"));
+						short Point = short.Parse(xe.GetAttribute("Point"));
+						List<short> AddList = new List<short> { i, sn, Level, Skill1, SkillLevel1, Skill2, SkillLevel2, Skill3, SkillLevel3, Point };
+						KartExcData.Level12List.Add(AddList);
 					}
 				}
 			}

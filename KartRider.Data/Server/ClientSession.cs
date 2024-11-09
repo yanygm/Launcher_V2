@@ -2171,6 +2171,207 @@ namespace KartRider
 						}
 						return;
 					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12TuningLevelUp", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						using (OutPacket outPacket = new OutPacket("PrKart12TuningLevelUp"))
+						{
+							outPacket.WriteInt(0);
+							outPacket.WriteInt(1);
+							outPacket.WriteShort(3);
+							outPacket.WriteShort(kart);
+							outPacket.WriteShort(sn);
+							outPacket.WriteShort(5);//1-1,2-3,3-6,4-10,5-15
+							outPacket.WriteShort(15);
+							outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
+							this.Parent.Client.Send(outPacket);
+						}
+						KartExcData.AddLevel12List(kart, sn, 5, 0, 0, 0, 15);
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12RestictTuningSkill", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						short field = iPacket.ReadShort();
+						var partsKartAndSN = new { Kart = kart, SN = sn };
+						var partsList = KartExcData.Level12List;
+						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						if (existingParts != null)
+						{
+							using (OutPacket outPacket = new OutPacket("PrKart12RestictTuningSkill"))
+							{
+								outPacket.WriteShort(kart);
+								outPacket.WriteShort(sn);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(field);
+								this.Parent.Client.Send(outPacket);
+							}
+							short point = existingParts[9];
+							short skill = 0;
+							short skilllevel = 0;
+							switch (field)
+							{
+								case 1:
+									skill = existingParts[3];
+									skilllevel = existingParts[4];
+									break;
+								case 2:
+									skill = existingParts[5];
+									skilllevel = existingParts[6];
+									break;
+								case 3:
+									skill = existingParts[7];
+									skilllevel = existingParts[8];
+									break;
+							}
+							KartExcData.AddLevel12List(kart, sn, -1, field, skill, 0, (short)(point + skilllevel));
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12ChangeTuningSkill", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						short Skill = iPacket.ReadShort();
+						short field = iPacket.ReadShort();
+						using (OutPacket outPacket = new OutPacket("PrKart12ChangeTuningSkill"))
+						{
+							outPacket.WriteShort(kart);
+							outPacket.WriteShort(sn);
+							outPacket.WriteShort(field);
+							outPacket.WriteShort(Skill);
+							outPacket.WriteShort(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						KartExcData.AddLevel12List(kart, sn, -1, field, Skill, -1, -1);
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12TuningPointUpdate", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						short field = iPacket.ReadShort();
+						byte AddDel = iPacket.ReadByte();
+						var partsKartAndSN = new { Kart = kart, SN = sn };
+						var partsList = KartExcData.Level12List;
+						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						if (existingParts != null)
+						{
+							short point = existingParts[9];
+							short skilllevel = 0;
+							switch (field)
+							{
+								case 1:
+									skilllevel = existingParts[4];
+									break;
+								case 2:
+									skilllevel = existingParts[6];
+									break;
+								case 3:
+									skilllevel = existingParts[8];
+									break;
+							}
+							if (AddDel == 1)
+							{
+								using (OutPacket outPacket = new OutPacket("PrKart12TuningPointUpdate"))
+								{
+									outPacket.WriteShort(kart);
+									outPacket.WriteShort(sn);
+									outPacket.WriteShort(field);
+									outPacket.WriteShort((short)((int)skilllevel + 1));
+									outPacket.WriteByte(1);
+									outPacket.WriteShort((short)((int)point - 1));
+									outPacket.WriteByte(1);
+									this.Parent.Client.Send(outPacket);
+								}
+								KartExcData.AddLevel12List(kart, sn, -1, field, -1, (short)((int)skilllevel + 1), (short)((int)point - 1));
+							}
+							else if (AddDel == 0)
+							{
+								using (OutPacket outPacket = new OutPacket("PrKart12TuningPointUpdate"))
+								{
+									outPacket.WriteShort(kart);
+									outPacket.WriteShort(sn);
+									outPacket.WriteShort(field);
+									outPacket.WriteShort((short)((int)skilllevel - 1));
+									outPacket.WriteByte(0);
+									outPacket.WriteShort((short)((int)point + 1));
+									outPacket.WriteByte(0);
+									this.Parent.Client.Send(outPacket);
+								}
+								KartExcData.AddLevel12List(kart, sn, -1, field, -1, (short)((int)skilllevel - 1), (short)((int)point + 1));
+							}
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelUp", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						iPacket.ReadShort();
+						byte parts = iPacket.ReadByte();
+						byte old = iPacket.ReadByte();
+						iPacket.ReadByte();
+						byte leve = iPacket.ReadByte();
+						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelUp"))
+						{
+							outPacket.WriteInt(1);
+							outPacket.WriteHexString("80841E000000");
+							this.Parent.Client.Send(outPacket);
+						}
+						short Item_Cat_Id = 0;
+						switch (parts)
+						{
+							case 0:
+								Item_Cat_Id = 72;
+								break;
+							case 1:
+								Item_Cat_Id = 73;
+								break;
+							case 2:
+								Item_Cat_Id = 74;
+								break;
+							case 3:
+								Item_Cat_Id = 75;
+								break;
+						}
+						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, leve, 0, 0);
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelReset", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						iPacket.ReadShort();
+						byte parts = iPacket.ReadByte();
+						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelReset"))
+						{
+							outPacket.WriteInt(1);
+							outPacket.WriteHexString("55C100000000");
+							this.Parent.Client.Send(outPacket);
+						}
+						short Item_Cat_Id = 0;
+						switch (parts)
+						{
+							case 0:
+								Item_Cat_Id = 72;
+								break;
+							case 1:
+								Item_Cat_Id = 73;
+								break;
+							case 2:
+								Item_Cat_Id = 74;
+								break;
+							case 3:
+								Item_Cat_Id = 75;
+								break;
+						}
+						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 0, 0);
+						return;
+					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
 					{
 						using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))
