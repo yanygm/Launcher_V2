@@ -16,9 +16,9 @@ namespace ExcData
 		{
 			if (Kart.defaultExceedType > 0)
 			{
-				Kart.TransAccelFactor = Kart.TransAccelFactor + 0.45254f;
-				Kart.SteerConstraint = Kart.SteerConstraint + 0.304f;
-				Kart.DriftEscapeForce = Kart.DriftEscapeForce + 402f;
+				Kart.TransAccelFactor = Kart.TransAccelFactor + 0.25204f;
+				Kart.SteerConstraint = Kart.SteerConstraint + -1.646f;
+				Kart.DriftEscapeForce = Kart.DriftEscapeForce + 2f;
 				Kart.NormalBoosterTime = Kart.NormalBoosterTime + -59f;
 				var kartAndSN = new { Id = SetRiderItem.Set_Kart, Sn = SetRiderItem.Set_KartSN };
 				var parts12List = KartExcData.Parts12List;
