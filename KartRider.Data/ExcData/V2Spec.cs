@@ -35,7 +35,7 @@ namespace ExcData
 					int SteerConstraint = (int)existingParts[3];
 					if (SteerConstraint > 0)
 						SteerConstraint = SteerConstraint - 1;
-					float V2_SteerConstraint = (float)(0.004M * (decimal)partsV2[SteerConstraint]);
+					float V2_SteerConstraint = (float)(0.004M / 3 * (decimal)partsV2[SteerConstraint]);
 					Kart.SteerConstraint = Kart.SteerConstraint + V2_SteerConstraint;
 					Console.WriteLine("V2_SteerConstraint: " + V2_SteerConstraint);
 					int DriftEscapeForce = (int)existingParts[4];
