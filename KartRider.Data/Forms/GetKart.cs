@@ -40,7 +40,7 @@ namespace KartRider
 							outPacket.WriteByte(1);
 							outPacket.WriteInt(1);
 							outPacket.WriteShort(GetKart.Item_Type);
-							outPacket.WriteShort(itemCode);
+							outPacket.WriteShort(GetKart.Item_Code);
 							outPacket.WriteShort(KartSN);
 							outPacket.WriteShort(1);//수량
 							outPacket.WriteShort(0);
@@ -50,7 +50,7 @@ namespace KartRider
 							outPacket.WriteShort(0);
 							RouterListener.MySession.Client.Send(outPacket);
 						}
-						var newList = new List<short> { itemCode, sn };
+						var newList = new List<short> { GetKart.Item_Code, KartSN };
 						KartExcData.NewKart.Add(newList);
 						Save_NewKartList(KartExcData.NewKart);
 					}
@@ -62,7 +62,7 @@ namespace KartRider
 							outPacket.WriteByte(1);
 							outPacket.WriteInt(1);
 							outPacket.WriteShort(GetKart.Item_Type);
-							outPacket.WriteShort(itemCode);
+							outPacket.WriteShort(GetKart.Item_Code);
 							outPacket.WriteShort(KartSN);
 							outPacket.WriteShort(1);//수량
 							outPacket.WriteShort(0);
@@ -72,6 +72,9 @@ namespace KartRider
 							outPacket.WriteShort(0);
 							RouterListener.MySession.Client.Send(outPacket);
 						}
+						var newList = new List<short> { GetKart.Item_Code, KartSN };
+						KartExcData.NewKart.Add(newList);
+						Save_NewKartList(KartExcData.NewKart);
 					}
 				}
 				else
