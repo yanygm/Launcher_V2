@@ -26,16 +26,12 @@ namespace KartRider
 			GetKart.Item_Code = short.Parse(this.tx_ItemCode.Text);
 			(new Thread(() =>
 			{
-				button1.Enabled = false;
-				Thread.Sleep(300);
-				short sn = 0, previous_sn;
 				if (GetKart.Item_Type == 3)
 				{
 					short KartSN = 2;
-					var existingItem = KartExcData.NewKart.FirstOrDefault(list => list[0] == GetKart.Item_Code);
-					if (existingItem == null)
+					if (KartExcData.NewKart == null)
 					{
-     						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 						{
 							outPacket.WriteByte(1);
 							outPacket.WriteInt(1);
@@ -56,25 +52,50 @@ namespace KartRider
 					}
 					else
 					{
-						KartSN = (existingItem.Count + 2);
-     						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+						var existingItems = KartExcData.NewKart.Where(list => list[0] == GetKart.Item_Code).ToList();
+						if (existingItems == null)
 						{
-							outPacket.WriteByte(1);
-							outPacket.WriteInt(1);
-							outPacket.WriteShort(GetKart.Item_Type);
-							outPacket.WriteShort(GetKart.Item_Code);
-							outPacket.WriteShort(KartSN);
-							outPacket.WriteShort(1);//수량
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(-1);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							RouterListener.MySession.Client.Send(outPacket);
+							using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+							{
+								outPacket.WriteByte(1);
+								outPacket.WriteInt(1);
+								outPacket.WriteShort(GetKart.Item_Type);
+								outPacket.WriteShort(GetKart.Item_Code);
+								outPacket.WriteShort(KartSN);
+								outPacket.WriteShort(1);//수량
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(-1);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								RouterListener.MySession.Client.Send(outPacket);
+							}
+							var newList = new List<short> { GetKart.Item_Code, KartSN };
+							KartExcData.NewKart.Add(newList);
+							Save_NewKartList(KartExcData.NewKart);
 						}
-						var newList = new List<short> { GetKart.Item_Code, KartSN };
-						KartExcData.NewKart.Add(newList);
-						Save_NewKartList(KartExcData.NewKart);
+						else
+						{
+							KartSN = (short)(existingItems.Count + (int)KartSN);
+							using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+							{
+								outPacket.WriteByte(1);
+								outPacket.WriteInt(1);
+								outPacket.WriteShort(GetKart.Item_Type);
+								outPacket.WriteShort(GetKart.Item_Code);
+								outPacket.WriteShort(KartSN);
+								outPacket.WriteShort(1);//수량
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(-1);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								RouterListener.MySession.Client.Send(outPacket);
+							}
+							var newList = new List<short> { GetKart.Item_Code, KartSN };
+							KartExcData.NewKart.Add(newList);
+							Save_NewKartList(KartExcData.NewKart);
+						}
 					}
 				}
 				else
@@ -95,8 +116,6 @@ namespace KartRider
 						RouterListener.MySession.Client.Send(outPacket);
 					}
 				}
-				Thread.Sleep(300);
-				button1.Enabled = true;
 			})).Start();
 		}
 

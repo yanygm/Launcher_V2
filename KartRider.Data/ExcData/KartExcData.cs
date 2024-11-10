@@ -512,16 +512,6 @@ namespace ExcData
 			}
 		}
 
-		public static void DelTuneList(short id, short sn)
-		{
-			var itemToRemove = TuneList.FirstOrDefault(list => list[0] == id && list[1] == sn);
-			if (itemToRemove != null)
-			{
-				TuneList.Remove(itemToRemove);
-				SaveTuneList(TuneList);
-			}
-		}
-
 		public static void SaveTuneList(List<List<short>> List)
 		{
 			File.Delete(@"Profile\TuneData.xml");
