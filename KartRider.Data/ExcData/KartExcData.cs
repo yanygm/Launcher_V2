@@ -8,6 +8,7 @@ using System.Xml;
 using System.Xml.Linq;
 using KartRider;
 using KartRider.IO.Packet;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ExcData
 {
@@ -99,10 +100,10 @@ namespace ExcData
 					oPacket.WriteShort(TuneList[i][2]);
 					oPacket.WriteShort(TuneList[i][3]);
 					oPacket.WriteShort(TuneList[i][4]);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(0);
+					oPacket.WriteShort(TuneList[i][5]);
+					oPacket.WriteShort(TuneList[i][6]);
+					oPacket.WriteShort(TuneList[i][7]);
+					oPacket.WriteShort(TuneList[i][8]);
 				}
 				oPacket.WriteBytes(new byte[29]);
 				RouterListener.MySession.Client.Send(oPacket);
@@ -490,12 +491,12 @@ namespace ExcData
 			}
 		}
 
-		public static void AddTuneList(short id, short sn, short tune1, short tune2, short tune3)
+		public static void AddTuneList(short id, short sn, short tune1, short tune2, short tune3, short slot1, short count1, short slot2, short count2)
 		{
 			var existingList = TuneList.FirstOrDefault(list => list[0] == id && list[1] == sn);
 			if (existingList == null)
 			{
-				var newList = new List<short> { id, sn, tune1, tune2, tune3 };
+				var newList = new List<short> { id, sn, tune1, tune2, tune3, slot1, count1, slot2, count2 };
 				TuneList.Add(newList);
 				SaveTuneList(TuneList);
 			}
@@ -504,6 +505,10 @@ namespace ExcData
 				existingList[2] = tune1;
 				existingList[3] = tune2;
 				existingList[4] = tune3;
+				existingList[5] = slot1;
+				existingList[6] = count1;
+				existingList[7] = slot2;
+				existingList[8] = count2;
 				SaveTuneList(TuneList);
 			}
 		}
@@ -538,6 +543,10 @@ namespace ExcData
 				xe1.SetAttribute("tune1", List[i][2].ToString());
 				xe1.SetAttribute("tune2", List[i][3].ToString());
 				xe1.SetAttribute("tune3", List[i][4].ToString());
+				xe1.SetAttribute("slot1", List[i][5].ToString());
+				xe1.SetAttribute("count1", List[i][6].ToString());
+				xe1.SetAttribute("slot2", List[i][7].ToString());
+				xe1.SetAttribute("count2", List[i][8].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\TuneData.xml");
 			}

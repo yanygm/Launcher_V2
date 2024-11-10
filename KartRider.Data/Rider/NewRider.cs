@@ -167,23 +167,7 @@ namespace RiderData
 
 		public static void kart()
 		{
-			List<List<short>> item = new List<List<short>>();
 			short sn = 1;
-			foreach (var id in KartExcData.kart)
-			{
-				short num = 1;
-				List<short> add = new List<short>{ id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(3, item);
-			List<List<short>> itemXV1 = new List<List<short>>();
-			foreach (var id in KartExcData.kartXV1)
-			{
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				itemXV1.Add(add);
-			}
-			LoRpGetRiderItemPacket(3, itemXV1);
 			List<List<short>> itemV2 = new List<List<short>>();
 			foreach (var id in KartExcData.kartV2)
 			{
@@ -192,6 +176,22 @@ namespace RiderData
 				itemV2.Add(add);
 			}
 			LoRpGetRiderItemPacket(3, itemV2);
+			List<List<short>> itemXV1 = new List<List<short>>();
+			foreach (var id in KartExcData.kartXV1)
+			{
+				short num = 1;
+				List<short> add = new List<short> { id, sn, num };
+				itemXV1.Add(add);
+			}
+			LoRpGetRiderItemPacket(3, itemXV1);
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.kart)
+			{
+				short num = 1;
+				List<short> add = new List<short>{ id, sn, num };
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(3, item);
 		}
 
 		public static void NewKart()

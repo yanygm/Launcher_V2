@@ -281,7 +281,11 @@ namespace KartRider
 						short tune1 = short.Parse(xe.GetAttribute("tune1"));
 						short tune2 = short.Parse(xe.GetAttribute("tune2"));
 						short tune3 = short.Parse(xe.GetAttribute("tune3"));
-						List<short> AddList = new List<short>{ i, sn, tune1, tune2, tune3 };
+						short slot1 = short.Parse(xe.GetAttribute("slot1"));
+						short count1 = short.Parse(xe.GetAttribute("count1"));
+						short slot2 = short.Parse(xe.GetAttribute("slot2"));
+						short count2 = short.Parse(xe.GetAttribute("count2"));
+						List<short> AddList = new List<short>{ i, sn, tune1, tune2, tune3, slot1, count1, slot2, count2 };
 						KartExcData.TuneList.Add(AddList);
 					}
 				}
