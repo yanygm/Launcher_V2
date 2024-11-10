@@ -196,14 +196,35 @@ namespace RiderData
 
 		public static void NewKart()
 		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var Kart in KartExcData.NewKart)
+			int num = KartExcData.NewKart.Count;
+			int range = 100;//分批次数
+			int times = num / range + (num % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
 			{
-				short num = 1;
-				List<short> add = new List<short> { Kart[0], Kart[1], num };
-				item.Add(add);
+				var tempList = KartExcData.NewKart.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
+				int num2 = tempList.Count;
+				foreach (var Kart in tempList)
+				{
+					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+					{
+						outPacket.WriteByte(1);
+						outPacket.WriteInt(num2);
+						for (int f = 0; f < num2; f++)
+						{
+							outPacket.WriteShort(3);
+							outPacket.WriteShort(Kart[0]);
+							outPacket.WriteShort(Kart[1]);
+						}
+						outPacket.WriteShort(1);//数量
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(-1);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						RouterListener.MySession.Client.Send(outPacket);
+					}
+				}
 			}
-			LoRpGetRiderItemPacket(3, item);
 		}
 
 		public static void color()
