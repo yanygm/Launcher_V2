@@ -57,9 +57,12 @@ namespace ExcData
 				if (existingLevel != null)
 				{
 					Dictionary<short, short> Skill = new Dictionary<short, short>();
-					Skill.Add(existingLevel[3], existingLevel[4]);
-					Skill.Add(existingLevel[5], existingLevel[6]);
-					Skill.Add(existingLevel[7], existingLevel[8]);
+					if (existingLevel[3] != 0)
+						Skill.Add(existingLevel[3], existingLevel[4]);
+					if (existingLevel[3] != 0)
+						Skill.Add(existingLevel[5], existingLevel[6]);
+					if (existingLevel[3] != 0)
+						Skill.Add(existingLevel[7], existingLevel[8]);
 					Console.WriteLine("-------------------------------------------------------------");
 					if (Skill.Keys.Contains(1))
 					{

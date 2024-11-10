@@ -325,13 +325,15 @@ namespace RHOParser
                                             KartExcData.color.Add(itemId);
                                         }
                                     }
-                                    //else if (itemCatId == 3)
-                                    //{
-                                    //    if (!(KartExcData.kart.Contains(itemId)))
-                                    //    {
-                                    //        KartExcData.kart.Add(itemId);
-                                    //    }
-                                    //}
+                                    /*
+                                    else if (itemCatId == 3)
+                                    {
+                                        if (!(KartExcData.kart.Contains(itemId)))
+                                        {
+                                            KartExcData.kart.Add(itemId);
+                                        }
+                                    }
+                                    */
                                     else if (itemCatId == 4)
                                     {
                                         if (!(KartExcData.plate.Contains(itemId)))

@@ -198,7 +198,7 @@ namespace KartRider
                 byte channel = iPacket.ReadByte();
                 Console.WriteLine("Channel Switch, channel = {0}", channel);
                 int channeldata1 = 0;
-                if (channel == 70)
+                if (channel == 72)
                 {
                     channeldata1 = 1;
                     channeldata2 = 4;
@@ -503,7 +503,9 @@ namespace KartRider
                 }
             }
             outPacket.WriteShort(SetRiderItem.Set_slotBg);
-            outPacket.WriteString("");
+            outPacket.WriteShort(0);
+            outPacket.WriteShort(0);
+            outPacket.WriteString("Y|S");
             outPacket.WriteInt(SetRider.RP);
             outPacket.WriteByte();
             outPacket.WriteByte();

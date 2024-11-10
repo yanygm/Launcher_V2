@@ -1909,6 +1909,31 @@ namespace KartRider
 						}
 						return;
 					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExchangeXPartsItem", 0))
+					{
+						short KartType = iPacket.ReadShort();
+						iPacket.ReadShort();
+						byte Grade = iPacket.ReadByte();
+						Random random = new Random();
+						short[] numbers = { 63, 64, 65, 66 };
+						int randomIndex = random.Next(0, numbers.Length);
+						short randomNumber = numbers[randomIndex];
+						using (OutPacket outPacket = new OutPacket("PrExchangeXPartsItem"))
+						{
+							outPacket.WriteInt(0);
+							outPacket.WriteInt(SetRider.SlotChanger);
+							outPacket.WriteShort(randomNumber);
+							outPacket.WriteShort(KartType);
+							outPacket.WriteShort(1);
+							outPacket.WriteShort(0);
+							outPacket.WriteByte(Grade);
+							outPacket.WriteByte(1);
+							outPacket.WriteShort(1180);
+							outPacket.WriteShort(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqTimeShopPacket", 0))
 					{
 						using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))

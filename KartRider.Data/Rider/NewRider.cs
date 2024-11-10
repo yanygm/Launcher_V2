@@ -14,6 +14,12 @@ namespace RiderData
 	{
 		public static void LoadItemData()
 		{
+			KartExcData.Tune_ExcData();
+			KartExcData.Plant_ExcData();
+			KartExcData.Level_ExcData();
+			KartExcData.Parts_ExcData();
+			KartExcData.Level12_ExcData();
+			KartExcData.Parts12_ExcData();
 			NewRider.character();
 			NewRider.color();
 			NewRider.plate();
@@ -64,12 +70,6 @@ namespace RiderData
 			NewRider.V1LegendPartsData();
 			NewRider.V1RarePartsData();
 			NewRider.V1NormalPartsData();
-			KartExcData.Tune_ExcData();
-			KartExcData.Plant_ExcData();
-			KartExcData.Level_ExcData();
-			KartExcData.Parts_ExcData();
-			KartExcData.Parts12_ExcData();
-			KartExcData.Level12_ExcData();
 			NewRider.kart();
 			NewRider.NewKart();
 			NewRider.NewRiderData();//라이더 인식
@@ -104,10 +104,10 @@ namespace RiderData
 				oPacket.WriteShort(SetRiderItem.Set_FlyingPet);
 				oPacket.WriteShort(SetRiderItem.Set_Aura);
 				oPacket.WriteShort(SetRiderItem.Set_SkidMark);
-				oPacket.WriteShort(3);
+				oPacket.WriteShort(0);
 				oPacket.WriteShort(SetRiderItem.Set_RidColor);
 				oPacket.WriteShort(SetRiderItem.Set_BonusCard);
-				oPacket.WriteShort(1);
+				oPacket.WriteShort(0);
 				var PlantKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
 				var plantList = KartExcData.PlantList;
 				var existingPlant = plantList.FirstOrDefault(list => list[0] == PlantKartAndSN.Kart && list[1] == PlantKartAndSN.SN);
@@ -196,22 +196,33 @@ namespace RiderData
 
 		public static void NewKart()
 		{
-			foreach (var Kart in KartExcData.NewKart)
+			int num = KartExcData.NewKart.Count;
+			int range = 100;//分批次数
+			int times = num / range + (num % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
 			{
-				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+				var tempList = KartExcData.NewKart.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
+				int num2 = tempList.Count;
+				foreach (var Kart in tempList)
 				{
-					outPacket.WriteByte(1);
-					outPacket.WriteInt(1);
-					outPacket.WriteShort(3);
-					outPacket.WriteShort(Kart[0]);
-					outPacket.WriteShort(Kart[1]);
-					outPacket.WriteShort(1);//수량
-					outPacket.WriteShort(0);
-					outPacket.WriteShort(-1);
-					outPacket.WriteShort(0);
-					outPacket.WriteShort(0);
-					outPacket.WriteShort(0);
-					RouterListener.MySession.Client.Send(outPacket);
+					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+					{
+						outPacket.WriteByte(1);
+						outPacket.WriteInt(num2);
+						for (int f = 0; f < num2; f++)
+						{
+							outPacket.WriteShort(3);
+							outPacket.WriteShort(Kart[0]);
+							outPacket.WriteShort(Kart[1]);
+						}
+						outPacket.WriteShort(1);//数量
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(-1);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						RouterListener.MySession.Client.Send(outPacket);
+					}
 				}
 			}
 		}
@@ -1371,7 +1382,7 @@ namespace RiderData
 
 		public static void LoRpGetRiderItemPacket(short itemCat, List<List<short>> item)
 		{
-			int range = 200;//分批次数
+			int range = 100;//分批次数
 			int times = item.Count / range + (item.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
