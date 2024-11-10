@@ -31,33 +31,47 @@ namespace KartRider
 				short sn = 0, previous_sn;
 				if (GetKart.Item_Type == 3)
 				{
-					sn = 1;
-					var itemCode = GetKart.Item_Code;
-					var matchingCount = KartExcData.kart.Count(k => k == itemCode);
-					sn += (short)matchingCount;
-					KartExcData.kart.Add(itemCode);
-					Console.WriteLine("kart: " + GetKart.Item_Code + " sn: " + sn);
-					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-					{
-						outPacket.WriteByte(1);
-						outPacket.WriteInt(1);
-						outPacket.WriteShort(GetKart.Item_Type);
-						outPacket.WriteShort(itemCode);
-						outPacket.WriteShort(sn);
-						outPacket.WriteShort(1);//수량
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(-1);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						RouterListener.MySession.Client.Send(outPacket);
-					}
-					var existingItem = KartExcData.NewKart.FirstOrDefault(list => list[0] == itemCode && list[1] == sn);
+					short KartSN = 2;
+					var existingItem = KartExcData.NewKart.FirstOrDefault(list => list[0] == GetKart.Item_Code);
 					if (existingItem == null)
 					{
+     						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+						{
+							outPacket.WriteByte(1);
+							outPacket.WriteInt(1);
+							outPacket.WriteShort(GetKart.Item_Type);
+							outPacket.WriteShort(itemCode);
+							outPacket.WriteShort(KartSN);
+							outPacket.WriteShort(1);//수량
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(-1);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							RouterListener.MySession.Client.Send(outPacket);
+						}
 						var newList = new List<short> { itemCode, sn };
 						KartExcData.NewKart.Add(newList);
 						Save_NewKartList(KartExcData.NewKart);
+					}
+					else
+					{
+						KartSN = (existingItem.Count + 2);
+     						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+						{
+							outPacket.WriteByte(1);
+							outPacket.WriteInt(1);
+							outPacket.WriteShort(GetKart.Item_Type);
+							outPacket.WriteShort(itemCode);
+							outPacket.WriteShort(KartSN);
+							outPacket.WriteShort(1);//수량
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(-1);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							RouterListener.MySession.Client.Send(outPacket);
+						}
 					}
 				}
 				else
