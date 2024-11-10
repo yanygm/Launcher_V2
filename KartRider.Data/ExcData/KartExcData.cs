@@ -8,7 +8,6 @@ using System.Xml;
 using System.Xml.Linq;
 using KartRider;
 using KartRider.IO.Packet;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ExcData
 {

@@ -14,8 +14,6 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
-using System.Diagnostics.Metrics;
-using Vortice.Mathematics.PackedVector;
 
 namespace KartRider
 {
@@ -808,6 +806,11 @@ namespace KartRider
 							outPacket.WriteHexString("00 00 00 00 FF FF 00 00 00 00 00 00 00 00");
 							this.Parent.Client.Send(outPacket);
 						}
+						using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
+						{
+							outPacket.WriteString("使用粒子激活器R直接获得启变佳！");
+							this.Parent.Client.Send(outPacket);
+						}
 						KartExcData.AddTuneList(Kart, KartSN, 0, 0, 0, 0, 0, 0, 0);
 						return;
 					}
@@ -822,84 +825,107 @@ namespace KartRider
 						var existingList = KartExcData.TuneList.FirstOrDefault(list => list[0] == Kart && list[1] == KartSN);
 						if (existingList != null)
 						{
-							List<short> tuneList1 = new List<short> { existingList[2], existingList[3], existingList[4] };
-							List<short> tuneList2 = new List<short>();
-							using (OutPacket outPacket = new OutPacket("PrUseTuneItem"))
+							if (Item == 5)
 							{
-								outPacket.WriteInt(0);
-								outPacket.WriteShort(Item);
-								outPacket.WriteShort(Item_Id);
-								outPacket.WriteShort(Kart);
-								outPacket.WriteShort(KartSN);
-								outPacket.WriteShort(0);
-								if (existingList[2] != 0)
+								using (OutPacket outPacket = new OutPacket("PrUseTuneItem"))
 								{
-									outPacket.WriteShort(existingList[2]);
+									outPacket.WriteInt(0);
+									outPacket.WriteShort(Item);
+									outPacket.WriteShort(Item_Id);
+									outPacket.WriteShort(Kart);
+									outPacket.WriteShort(KartSN);
+									outPacket.WriteShort(0);
+									outPacket.WriteShort(603);
+									outPacket.WriteShort(703);
+									outPacket.WriteShort(903);
+									outPacket.WriteShort(existingList[5]);
+									outPacket.WriteShort(existingList[6]);
+									outPacket.WriteShort(existingList[7]);
+									outPacket.WriteShort(existingList[8]);
+									this.Parent.Client.Send(outPacket);
 								}
-								else
+							}
+							else
+							{
+								List<short> tuneList1 = new List<short> { existingList[2], existingList[3], existingList[4] };
+								List<short> tuneList2 = new List<short>();
+								using (OutPacket outPacket = new OutPacket("PrUseTuneItem"))
 								{
-									while (tuneList1.Count < 4)
+									outPacket.WriteInt(0);
+									outPacket.WriteShort(Item);
+									outPacket.WriteShort(Item_Id);
+									outPacket.WriteShort(Kart);
+									outPacket.WriteShort(KartSN);
+									outPacket.WriteShort(0);
+									if (existingList[2] != 0)
 									{
-										short number = short.Parse(random.Next(1, 10).ToString() + "03");
-										if (!tuneList1.Contains(number))
-										{
-											outPacket.WriteShort(number);
-											existingList[2] = number;
-											tuneList1.Add(number);
-											tuneList2.Add(number);
-										}
+										outPacket.WriteShort(existingList[2]);
 									}
-									tuneList1.RemoveAt(3);
-								}
-								if (existingList[3] != 0)
-								{
-									outPacket.WriteShort(existingList[3]);
-								}
-								else
-								{
-									while (tuneList1.Count < 4)
+									else
 									{
-										short number = short.Parse(random.Next(1, 10).ToString() + "03");
-										if (!tuneList1.Contains(number))
+										while (tuneList1.Count < 4)
 										{
-											if (!tuneList2.Contains(number))
+											short number = short.Parse(random.Next(1, 10).ToString() + "03");
+											if (!tuneList1.Contains(number))
 											{
 												outPacket.WriteShort(number);
-												existingList[3] = number;
+												existingList[2] = number;
 												tuneList1.Add(number);
 												tuneList2.Add(number);
 											}
 										}
+										tuneList1.RemoveAt(3);
 									}
-									tuneList1.RemoveAt(3);
-								}
-								if (existingList[4] != 0)
-								{
-									outPacket.WriteShort(existingList[4]);
-								}
-								else
-								{
-									while (tuneList1.Count < 4)
+									if (existingList[3] != 0)
 									{
-										short number = short.Parse(random.Next(1, 10).ToString() + "03");
-										if (!tuneList1.Contains(number))
+										outPacket.WriteShort(existingList[3]);
+									}
+									else
+									{
+										while (tuneList1.Count < 4)
 										{
-											if (!tuneList2.Contains(number))
+											short number = short.Parse(random.Next(1, 10).ToString() + "03");
+											if (!tuneList1.Contains(number))
 											{
-												outPacket.WriteShort(number);
-												existingList[4] = number;
-												tuneList1.Add(number);
-												tuneList2.Add(number);
+												if (!tuneList2.Contains(number))
+												{
+													outPacket.WriteShort(number);
+													existingList[3] = number;
+													tuneList1.Add(number);
+													tuneList2.Add(number);
+												}
 											}
 										}
+										tuneList1.RemoveAt(3);
 									}
-									tuneList1.RemoveAt(3);
+									if (existingList[4] != 0)
+									{
+										outPacket.WriteShort(existingList[4]);
+									}
+									else
+									{
+										while (tuneList1.Count < 4)
+										{
+											short number = short.Parse(random.Next(1, 10).ToString() + "03");
+											if (!tuneList1.Contains(number))
+											{
+												if (!tuneList2.Contains(number))
+												{
+													outPacket.WriteShort(number);
+													existingList[4] = number;
+													tuneList1.Add(number);
+													tuneList2.Add(number);
+												}
+											}
+										}
+										tuneList1.RemoveAt(3);
+									}
+									outPacket.WriteShort(existingList[5]);
+									outPacket.WriteShort(existingList[6]);
+									outPacket.WriteShort(existingList[7]);
+									outPacket.WriteShort(existingList[8]);
+									this.Parent.Client.Send(outPacket);
 								}
-								outPacket.WriteShort(existingList[5]);
-								outPacket.WriteShort(existingList[6]);
-								outPacket.WriteShort(existingList[7]);
-								outPacket.WriteShort(existingList[8]);
-								this.Parent.Client.Send(outPacket);
 							}
 							KartExcData.SaveTuneList(KartExcData.TuneList);
 							TuneSpec.Use_TuneSpec(Kart, KartSN);
@@ -2205,7 +2231,21 @@ namespace KartRider
 							outPacket.WriteInt(1);
 							outPacket.WriteString("cc");
 							outPacket.WriteString(SessionGroup.Service);
-							outPacket.WriteInt(3);
+							outPacket.WriteInt(4);
+							outPacket.WriteString("content");
+							outPacket.WriteInt(0);
+							outPacket.WriteInt(2);
+							outPacket.WriteString("name");
+							outPacket.WriteString("dynamicPpl");
+							outPacket.WriteString("enable");
+							outPacket.WriteString("false");
+							outPacket.WriteInt(1);
+							outPacket.WriteString("region");
+							outPacket.WriteInt(0);
+							outPacket.WriteInt(1);
+							outPacket.WriteString("szId");
+							outPacket.WriteString(SessionGroup.usLocale.ToString());
+							outPacket.WriteInt(0);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(3);
