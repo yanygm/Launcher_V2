@@ -626,21 +626,6 @@ namespace KartRider
 							outPacket.WriteUInt(SetRider.Koin);
 							this.Parent.Client.Send(outPacket);
 						}
-						using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-						{
-							outPacket.WriteByte(1);
-							outPacket.WriteInt(1);
-							outPacket.WriteShort(3);
-							outPacket.WriteShort(Kart);
-							outPacket.WriteShort(SN);
-							outPacket.WriteShort(1);//수량
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(-1);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							this.Parent.Client.Send(outPacket);
-						}
 						KartExcData.AddPartsList(Kart, SN, 63, 0, 0, 0);
 						KartExcData.AddPartsList(Kart, SN, 64, 0, 0, 0);
 						KartExcData.AddPartsList(Kart, SN, 65, 0, 0, 0);
