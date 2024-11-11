@@ -2413,8 +2413,8 @@ namespace KartRider
 								outPacket.WriteShort(5);//1-1,2-3,3-6,4-10,5-15
 								outPacket.WriteShort(15);
 								outPacket.WriteShort(0);
-								outPacket.WriteShort(4);
-								outPacket.WriteShort(4);
+								outPacket.WriteShort(1);
+								outPacket.WriteShort(1);
 								outPacket.WriteInt(0);
 								outPacket.WriteInt(0);
 								outPacket.WriteInt(0);
