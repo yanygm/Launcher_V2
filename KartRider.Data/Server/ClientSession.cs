@@ -14,6 +14,8 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
+using System.Reflection.Emit;
+using System.Drawing;
 
 namespace KartRider
 {
@@ -1601,6 +1603,7 @@ namespace KartRider
 						{
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(0);
+							outPacket.WriteHexString("25 B2 6E 35");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1632,7 +1635,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrGetFavoriteChannel"))
 						{
-							outPacket.WriteHexString("02 00 00 00 00 00 00 00 00 00 01 00");
+							outPacket.WriteInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -2367,6 +2370,7 @@ namespace KartRider
 					{
 						short kart = iPacket.ReadShort();
 						short sn = iPacket.ReadShort();
+						uint[] money = new uint[] { 0, 10, 12, 15, 20, 30 };
 						var partsKartAndSN = new { Kart = kart, SN = sn };
 						var partsList = KartExcData.Level12List;
 						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
@@ -2385,10 +2389,17 @@ namespace KartRider
 								short Point = (short)((int)existingParts[9] + (int)Level);
 								existingParts[9] = Point;
 								outPacket.WriteShort(Point);
-								outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(4);
+								outPacket.WriteShort(4);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteUInt(money[(int)Level]);
+								outPacket.WriteUInt(SetRider.Lucci);
 								this.Parent.Client.Send(outPacket);
+								KartExcData.AddLevel12List(kart, sn, Level, -1, -1, -1, Point);
 							}
-							KartExcData.SaveTuning12List(KartExcData.Level12List);
 						}
 						else
 						{
@@ -2399,12 +2410,19 @@ namespace KartRider
 								outPacket.WriteShort(3);
 								outPacket.WriteShort(kart);
 								outPacket.WriteShort(sn);
-								outPacket.WriteShort(1);//1-1,2-3,3-6,4-10,5-15
-								outPacket.WriteShort(1);
-								outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
+								outPacket.WriteShort(5);//1-1,2-3,3-6,4-10,5-15
+								outPacket.WriteShort(15);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(4);
+								outPacket.WriteShort(4);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteUInt(10);
+								outPacket.WriteUInt(SetRider.Lucci);
 								this.Parent.Client.Send(outPacket);
+								KartExcData.AddLevel12List(kart, sn, 5, 0, 0, 0, 15);
 							}
-							KartExcData.AddLevel12List(kart, sn, 1, 0, 0, 0, 1);
 						}
 						return;
 					}
