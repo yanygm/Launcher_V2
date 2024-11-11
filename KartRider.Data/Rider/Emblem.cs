@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using KartRider.IO.Packet;
 using KartRider;
 using System.Xml;
 using ExcData;
-using System.Collections.Generic;
 
 namespace RiderData
 {
