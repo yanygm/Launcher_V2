@@ -14,7 +14,6 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace KartRider
 {
