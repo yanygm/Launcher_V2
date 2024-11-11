@@ -81,8 +81,6 @@ namespace ExcData
 		public static void Tune_ExcData()
 		{
 			int TuneCount = TuneList.Count;
-			if (TuneList == null || TuneCount == 0)
-				return;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 			{
 				oPacket.WriteByte(1);
@@ -115,8 +113,6 @@ namespace ExcData
 		public static void Plant_ExcData()
 		{
 			int PlantCount = PlantList.Count;
-			if (PlantList == null || PlantCount == 0)
-				return;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 			{
 				oPacket.WriteByte(0);
@@ -149,13 +145,11 @@ namespace ExcData
 		public static void Level_ExcData()
 		{
 			int LevelCount = LevelList.Count;
-			if (LevelList == null || LevelCount == 0)
-				return;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 			{
 				oPacket.WriteByte(0);
 				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
+				oPacket.WriteByte(1);
 				oPacket.WriteByte(0);
 				oPacket.WriteByte(0);
 				oPacket.WriteByte(0);
@@ -193,7 +187,7 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -278,7 +272,7 @@ namespace ExcData
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
-						oPacket.WriteByte(0);
+						oPacket.WriteByte(1);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteInt(0);
@@ -327,10 +321,10 @@ namespace ExcData
 				short sn = 1;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -408,10 +402,10 @@ namespace ExcData
 				{
 					using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 					{
-						oPacket.WriteByte(1);
-						oPacket.WriteByte(1);
-						oPacket.WriteByte(1);
-						oPacket.WriteByte(1);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteInt(0);
@@ -464,10 +458,10 @@ namespace ExcData
 				Console.WriteLine("tempList Count: " + tempList.Count);
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
