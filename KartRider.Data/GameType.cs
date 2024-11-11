@@ -4,7 +4,7 @@ namespace KartRider
 {
 	public class GameType
 	{
-		public static int TimeAttack_RP = 0;
+		public static uint TimeAttack_RP = 0;
 		public static uint TimeAttack_Lucci = 0;
 		public static byte RewardType = 0;
 

@@ -17,7 +17,7 @@ namespace Set_Data
 		public static short Emblem1 = 0;
 		public static short Emblem2 = 0;
 		public static uint Lucci = 1000000;
-		public static int RP = 2000000000;
+		public static uint RP = 2000000000;
 		public static uint Koin = 10000;
 		public static int Premium = 5;//100
 		public static byte Ranker = 0;
@@ -161,7 +161,7 @@ namespace Set_Data
 			if (File.Exists(Load_RP))
 			{
 				string textValue = System.IO.File.ReadAllText(Load_RP);
-				SetRider.RP = int.Parse(textValue);
+				SetRider.RP = uint.Parse(textValue);
 			}
 			else
 			{

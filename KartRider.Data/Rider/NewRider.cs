@@ -99,7 +99,7 @@ namespace RiderData
 				oPacket.WriteShort(SetRiderItem.Set_HandGearL);
 				oPacket.WriteShort(0);
 				oPacket.WriteShort(SetRiderItem.Set_Uniform);
-				oPacket.WriteShort(0);
+				oPacket.WriteShort(SetRiderItem.Set_Decal);
 				oPacket.WriteShort(SetRiderItem.Set_Pet);
 				oPacket.WriteShort(SetRiderItem.Set_FlyingPet);
 				oPacket.WriteShort(SetRiderItem.Set_Aura);
@@ -155,11 +155,10 @@ namespace RiderData
 					}
 				}
 				oPacket.WriteShort(SetRiderItem.Set_slotBg);
-				oPacket.WriteShort(0);
-				oPacket.WriteShort(0);
-				oPacket.WriteString("Y|S");
+				oPacket.WriteBytes(new byte[8]);
+				//oPacket.WriteString("Y|S");
 				oPacket.WriteUInt(SetRider.Lucci);
-				oPacket.WriteInt(SetRider.RP);
+				oPacket.WriteUInt(SetRider.RP);
 				oPacket.WriteBytes(new byte[100]);
 				RouterListener.MySession.Client.Send(oPacket);
 			}

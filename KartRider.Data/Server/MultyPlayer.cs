@@ -73,7 +73,7 @@ namespace KartRider
                 outPacket.WriteShort();
                 outPacket.WriteHexString("d0 78");
                 outPacket.WriteByte();
-                outPacket.WriteInt(SetRider.RP);
+                outPacket.WriteUInt(SetRider.RP);
                 outPacket.WriteInt(0); //Earned RP
                 outPacket.WriteInt(25); //Earned Lucci
                 outPacket.WriteUInt(SetRider.Lucci);
@@ -506,7 +506,7 @@ namespace KartRider
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteString("Y|S");
-            outPacket.WriteInt(SetRider.RP);
+            outPacket.WriteUInt(SetRider.RP);
             outPacket.WriteByte();
             outPacket.WriteByte();
             outPacket.WriteByte();

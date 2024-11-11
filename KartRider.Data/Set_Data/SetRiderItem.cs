@@ -14,6 +14,7 @@ namespace Set_Data
 		public static short Set_HeadBand = 0;
 		public static short Set_HandGearL = 0;
 		public static short Set_Uniform = 0;
+		public static short Set_Decal = 0;
 		public static short Set_Pet = 0;
 		public static short Set_FlyingPet = 0;
 		public static short Set_Aura = 0;
@@ -62,6 +63,10 @@ namespace Set_Data
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_Uniform + FileName.Extension, false))
 			{
 				streamWriter.Write(SetRiderItem.Set_Uniform);
+			}
+			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_Decal + FileName.Extension, false))
+			{
+				streamWriter.Write(SetRiderItem.Set_Decal);
 			}
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_Pet + FileName.Extension, false))
 			{
@@ -113,6 +118,7 @@ namespace Set_Data
 			Console.WriteLine("HeadBand: {0}", SetRiderItem.Set_HeadBand);
 			Console.WriteLine("HandGearL: {0}", SetRiderItem.Set_HandGearL);
 			Console.WriteLine("Uniform: {0}", SetRiderItem.Set_Uniform);
+			Console.WriteLine("Decal: {0}", SetRiderItem.Set_Decal);
 			Console.WriteLine("Pet: {0}", SetRiderItem.Set_Pet);
 			Console.WriteLine("FlyingPet: {0}", SetRiderItem.Set_FlyingPet);
 			Console.WriteLine("Aura: {0}", SetRiderItem.Set_Aura);
@@ -250,6 +256,20 @@ namespace Set_Data
 				using (StreamWriter streamWriter = new StreamWriter(Load_Uniform, false))
 				{
 					streamWriter.Write(SetRiderItem.Set_Uniform);
+				}
+			}
+			//-------------------------------------------------------------------------
+			string Load_Decal = FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_Decal + FileName.Extension;
+			if (File.Exists(Load_Decal))
+			{
+				string textValue = System.IO.File.ReadAllText(Load_Decal);
+				SetRiderItem.Set_Decal = short.Parse(textValue);
+			}
+			else
+			{
+				using (StreamWriter streamWriter = new StreamWriter(Load_Decal, false))
+				{
+					streamWriter.Write(SetRiderItem.Set_Decal);
 				}
 			}
 			//-------------------------------------------------------------------------

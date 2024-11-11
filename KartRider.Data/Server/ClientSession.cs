@@ -14,6 +14,7 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace KartRider
 {
@@ -160,7 +161,7 @@ namespace KartRider
 						SetRiderItem.Set_HandGearL = iPacket.ReadShort();
 						iPacket.ReadShort();
 						SetRiderItem.Set_Uniform = iPacket.ReadShort();
-						iPacket.ReadShort();
+						SetRiderItem.Set_Decal = iPacket.ReadShort();
 						SetRiderItem.Set_Pet = iPacket.ReadShort();
 						SetRiderItem.Set_FlyingPet = iPacket.ReadShort();
 						SetRiderItem.Set_Aura = iPacket.ReadShort();
@@ -211,7 +212,7 @@ namespace KartRider
 								}
 								outPacket.WriteByte(0);
 								outPacket.WriteString("");
-								outPacket.WriteInt(SetRider.RP);
+								outPacket.WriteUInt(SetRider.RP);
 								outPacket.WriteInt(0);
 								outPacket.WriteByte(6);//Licenses
 								outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
@@ -409,7 +410,7 @@ namespace KartRider
 							outPacket.WriteBytes(new byte[12]);
 							outPacket.WriteString(SetRider.Nickname);
 							outPacket.WriteBytes(new byte[70]);//67
-							outPacket.WriteInt(SetRider.RP);
+							outPacket.WriteUInt(SetRider.RP);
 							outPacket.WriteBytes(new byte[937]);//910
 							this.Parent.Client.Send(outPacket);
 						}
@@ -630,6 +631,8 @@ namespace KartRider
 						KartExcData.AddPartsList(Kart, SN, 64, 0, 0, 0);
 						KartExcData.AddPartsList(Kart, SN, 65, 0, 0, 0);
 						KartExcData.AddPartsList(Kart, SN, 66, 0, 0, 0);
+						KartExcData.AddPartsList(Kart, SN, 68, 0, 0, 0);
+						KartExcData.AddPartsList(Kart, SN, 69, 0, 0, 0);
 						KartExcData.AddPlantList(Kart, SN, 43, 0);
 						KartExcData.AddPlantList(Kart, SN, 44, 0);
 						KartExcData.AddPlantList(Kart, SN, 45, 0);
@@ -796,7 +799,7 @@ namespace KartRider
 							outPacket.WriteString("使用粒子激活器R直接获得启变佳！");
 							this.Parent.Client.Send(outPacket);
 						}
-						KartExcData.AddTuneList(Kart, KartSN, 0, 0, 0, 0, 0, 0, 0);
+						KartExcData.AddTuneList(Kart, KartSN, 0, 0, 0, -1, 0, -1, 0);
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseTuneItem", 0))
@@ -919,7 +922,7 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseProtectSpannerItem", 0))
 					{
-						short v1 = iPacket.ReadShort();
+						short Protect = iPacket.ReadShort();
 						short v2 = iPacket.ReadShort();
 						short Item_Id = iPacket.ReadShort();
 						short Kart = iPacket.ReadShort();
@@ -932,7 +935,7 @@ namespace KartRider
 							using (OutPacket outPacket = new OutPacket("PrUseProtectSpannerItem"))
 							{
 								outPacket.WriteInt(0);
-								outPacket.WriteShort(v1);
+								outPacket.WriteShort(Protect);
 								outPacket.WriteShort(v2);
 								outPacket.WriteShort(Item_Id);
 								outPacket.WriteShort(Kart);
@@ -943,7 +946,7 @@ namespace KartRider
 								outPacket.WriteShort(existingList[2]);
 								outPacket.WriteShort(existingList[3]);
 								outPacket.WriteShort(existingList[4]);
-								if (v1 == 49)
+								if (Protect == 49)
 								{
 									outPacket.WriteShort(slot);
 									outPacket.WriteShort(4);
@@ -952,7 +955,7 @@ namespace KartRider
 									existingList[5] = slot;
 									existingList[6] = 4;
 								}
-								else if (v1 == 53)
+								else if (Protect == 53)
 								{
 									outPacket.WriteShort(existingList[5]);
 									outPacket.WriteShort(existingList[6]);
@@ -1005,17 +1008,38 @@ namespace KartRider
 								this.Parent.Client.Send(outPacket);
 							}
 							List<short> secure = new List<short>();
-							if (existingList[6] != 0)
-								existingList[6] = (short)(existingList[6] - 1);
-							if (existingList[8] != 0)
-								existingList[8] = (short)(existingList[8] - 1);
+							if (existingList[6] == 0)
+							{
+								existingList[5] = -1;
+							}
+							else
+							{
+								existingList[6] = (short)((int)existingList[6] - 1);
+							}
+							if (existingList[8] == 0)
+							{
+								existingList[7] = -1;
+							}
+							else
+							{
+								existingList[8] = (short)((int)existingList[8] - 1);
+							}
+							Console.WriteLine("TuneProtect: " + existingList[5] + ", " + existingList[7]);
+							Console.WriteLine("TuneProtectCount: " + existingList[6] + ", " + existingList[8]);
 							for (int i = 2; i <= 4; i++)
 							{
-								if (existingList[i] != existingList[(int)(existingList[5]) + 2] && existingList[i] != existingList[(int)(existingList[7]) + 2])
+								if (existingList[5] != -1 && (int)(existingList[5]) + 2 == i)
+								{
+								}
+								else if(existingList[7] != -1 && (int)(existingList[7]) + 2 == i)
+								{
+								}
+								else
 								{
 									existingList[i] = 0;
 								}
 							}
+							Console.WriteLine("TuneList: " + existingList[2] + ", " + existingList[3] + ", " + existingList[4]);
 							KartExcData.SaveTuneList(KartExcData.TuneList);
 							TuneSpec.Use_TuneSpec(Kart, KartSN);
 						}
@@ -1244,7 +1268,7 @@ namespace KartRider
 						{
 							outPacket.WriteInt(type);
 							outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00");
-							outPacket.WriteInt(GameType.TimeAttack_RP);//RP
+							outPacket.WriteUInt(GameType.TimeAttack_RP);//RP
 							outPacket.WriteUInt(GameType.TimeAttack_Lucci);//LUCCI
 							this.Parent.Client.Send(outPacket);
 						}
