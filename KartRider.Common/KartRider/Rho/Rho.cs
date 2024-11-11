@@ -15,6 +15,8 @@ using KartLibrary.Data;
 using KartRider.IO.Packet;
 using System.Xml.Linq;
 using System.Linq;
+using System.Reflection;
+using Veldrid.MetalBindings;
 
 namespace RHOParser
 {
@@ -255,6 +257,19 @@ namespace RHOParser
                         using (MemoryStream stream = new MemoryStream(data))
                         {
                             XDocument doc = XDocument.Load(stream);
+                            var items = doc.Descendants("item");
+                            foreach (var item in items)
+                            {
+                                short catId = short.Parse(item.Attribute("catId")?.Value ?? "0");
+                                string valuesStr = item.Attribute("values")?.Value;
+                                string[] valuesArray = valuesStr?.Split(',');
+                                for (int i = 0; i < valuesArray.Count(); i++)
+                                {
+                                    List<short> Add = new List<short> { catId, short.Parse(valuesArray[i]) };
+                                    KartExcData.Dictionary.Add(Add);
+                                }
+                            }
+
                             var v2 = doc.Descendants("kartBody")
                                         .Where(kb => (string)kb.Attribute("kartBodyGrade") == "13")
                                         .Select(kb => (string)kb.Attribute("id"));

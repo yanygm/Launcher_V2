@@ -1840,15 +1840,17 @@ namespace KartRider
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSyncDictionaryInfoPacket", 0))
 					{
 						int Dictionary = iPacket.ReadInt();
+						int Count = KartExcData.Dictionary.Count;
 						using (OutPacket outPacket = new OutPacket("PrSyncDictionaryInfoPacket"))
 						{
 							outPacket.WriteInt(1);
 							outPacket.WriteInt(1);
-							outPacket.WriteInt(0);
-							outPacket.WriteInt(0);
-							outPacket.WriteInt(0);
-							outPacket.WriteInt(0);
-							outPacket.WriteInt(0);
+							outPacket.WriteInt(Count);
+							foreach (var item in KartExcData.Dictionary)
+							{
+								outPacket.WriteShort(item[0]);
+								outPacket.WriteShort(item[1]);
+							}
 							outPacket.WriteInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
