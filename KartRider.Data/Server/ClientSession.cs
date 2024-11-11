@@ -2411,8 +2411,8 @@ namespace KartRider
 								outPacket.WriteShort(5);//1-1,2-3,3-6,4-10,5-15
 								outPacket.WriteShort(15);
 								outPacket.WriteShort(0);
-								outPacket.WriteShort(1);
-								outPacket.WriteShort(1);
+								outPacket.WriteShort(4);
+								outPacket.WriteShort(4);
 								outPacket.WriteInt(0);
 								outPacket.WriteInt(0);
 								outPacket.WriteInt(0);
@@ -2421,6 +2421,31 @@ namespace KartRider
 								this.Parent.Client.Send(outPacket);
 								KartExcData.AddLevel12List(kart, sn, 5, 0, 0, 0, 15);
 							}
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12UnlockTuningSkill", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						int field = iPacket.ReadInt();
+						using (OutPacket outPacket = new OutPacket("PrKart12UnlockTuningSkill"))
+						{
+							outPacket.WriteShort(kart);
+							outPacket.WriteShort(sn);
+							outPacket.WriteInt(field);
+							if (field == 2)
+							{
+								outPacket.WriteShort(2);
+								outPacket.WriteShort(3);
+							}
+							else
+							{
+								outPacket.WriteShort(4);
+								outPacket.WriteShort(4);
+							}
+							outPacket.WriteShort(0);
+							this.Parent.Client.Send(outPacket);
 						}
 						return;
 					}
