@@ -2428,12 +2428,14 @@ namespace KartRider
 					{
 						short kart = iPacket.ReadShort();
 						short sn = iPacket.ReadShort();
-						int field = iPacket.ReadInt();
+						short field = iPacket.ReadShort();
+						short SI = iPacket.ReadShort();
 						using (OutPacket outPacket = new OutPacket("PrKart12UnlockTuningSkill"))
 						{
 							outPacket.WriteShort(kart);
 							outPacket.WriteShort(sn);
-							outPacket.WriteInt(field);
+							outPacket.WriteShort(field);
+							outPacket.WriteShort(SI);
 							if (field == 2)
 							{
 								outPacket.WriteShort(2);
