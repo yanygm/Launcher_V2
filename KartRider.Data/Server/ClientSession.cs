@@ -2367,19 +2367,45 @@ namespace KartRider
 					{
 						short kart = iPacket.ReadShort();
 						short sn = iPacket.ReadShort();
-						using (OutPacket outPacket = new OutPacket("PrKart12TuningLevelUp"))
+						var partsKartAndSN = new { Kart = kart, SN = sn };
+						var partsList = KartExcData.Level12List;
+						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						if (existingParts != null)
 						{
-							outPacket.WriteInt(0);
-							outPacket.WriteInt(1);
-							outPacket.WriteShort(3);
-							outPacket.WriteShort(kart);
-							outPacket.WriteShort(sn);
-							outPacket.WriteShort(5);//1-1,2-3,3-6,4-10,5-15
-							outPacket.WriteShort(15);
-							outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
-							this.Parent.Client.Send(outPacket);
+							using (OutPacket outPacket = new OutPacket("PrKart12TuningLevelUp"))
+							{
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(1);
+								outPacket.WriteShort(3);
+								outPacket.WriteShort(kart);
+								outPacket.WriteShort(sn);
+								short Level = (short)((int)existingParts[2] + 1);
+								existingParts[2] = Level;
+								outPacket.WriteShort(Level);//1-1,2-3,3-6,4-10,5-15
+								short Point = (short)((int)existingParts[9] + (int)Level);
+								existingParts[9] = Point;
+								outPacket.WriteShort(Point);
+								outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
+								this.Parent.Client.Send(outPacket);
+							}
+							KartExcData.SaveTuning12List(KartExcData.Level12List);
 						}
-						KartExcData.AddLevel12List(kart, sn, 5, 0, 0, 0, 15);
+						else
+						{
+							using (OutPacket outPacket = new OutPacket("PrKart12TuningLevelUp"))
+							{
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(1);
+								outPacket.WriteShort(3);
+								outPacket.WriteShort(kart);
+								outPacket.WriteShort(sn);
+								outPacket.WriteShort(1);//1-1,2-3,3-6,4-10,5-15
+								outPacket.WriteShort(1);
+								outPacket.WriteHexString("0000040004000000000000000000000000000000000080841E00");
+								this.Parent.Client.Send(outPacket);
+							}
+							KartExcData.AddLevel12List(kart, sn, 1, 0, 0, 0, 1);
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12RestictTuningSkill", 0))
