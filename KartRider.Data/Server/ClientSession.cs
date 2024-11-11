@@ -14,8 +14,6 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
-using System.Reflection.Emit;
-using System.Drawing;
 
 namespace KartRider
 {
