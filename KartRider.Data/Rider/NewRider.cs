@@ -206,26 +206,23 @@ namespace RiderData
 			{
 				var tempList = NewKart1.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
 				int num2 = tempList.Count;
-				foreach (var Kart in tempList)
+				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 				{
-					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+					outPacket.WriteByte(1);
+					outPacket.WriteInt(num2);
+					foreach (var Kart in tempList)
 					{
-						outPacket.WriteByte(1);
-						outPacket.WriteInt(num2);
-						for (int f = 0; f < num2; f++)
-						{
-							outPacket.WriteShort(3);
-							outPacket.WriteShort(Kart);
-							outPacket.WriteShort(sn);
-						}
-						outPacket.WriteShort(1);//数量
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(-1);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						RouterListener.MySession.Client.Send(outPacket);
+						outPacket.WriteShort(3);
+						outPacket.WriteShort(Kart);
+						outPacket.WriteShort(sn);
 					}
+					outPacket.WriteShort(1);//数量
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(-1);
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(0);
+					RouterListener.MySession.Client.Send(outPacket);
 				}
 			}
 		}
@@ -239,26 +236,23 @@ namespace RiderData
 			{
 				var tempList = KartExcData.NewKart.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
 				int num2 = tempList.Count;
-				foreach (var Kart in tempList)
+				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 				{
-					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+					outPacket.WriteByte(1);
+					outPacket.WriteInt(num2);
+					foreach (var Kart in tempList)
 					{
-						outPacket.WriteByte(1);
-						outPacket.WriteInt(num2);
-						for (int f = 0; f < num2; f++)
-						{
-							outPacket.WriteShort(3);
-							outPacket.WriteShort(Kart[0]);
-							outPacket.WriteShort(Kart[1]);
-						}
-						outPacket.WriteShort(1);//数量
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(-1);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						RouterListener.MySession.Client.Send(outPacket);
+						outPacket.WriteShort(3);
+						outPacket.WriteShort(Kart[0]);
+						outPacket.WriteShort(Kart[1]);
 					}
+					outPacket.WriteShort(1);//数量
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(-1);
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(0);
+					outPacket.WriteShort(0);
+					RouterListener.MySession.Client.Send(outPacket);
 				}
 			}
 		}
