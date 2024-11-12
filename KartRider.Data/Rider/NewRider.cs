@@ -185,14 +185,14 @@ namespace RiderData
 				itemXV1.Add(add);
 			}
 			LoRpGetRiderItemPacket(3, itemXV1);
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.kart)
+			List<List<short>> Old = new List<List<short>>();
+			foreach (var id in KartExcData.kartOld)
 			{
 				short num = 1;
 				List<short> add = new List<short>{ id, sn, num };
-				item.Add(add);
+				Old.Add(add);
 			}
-			LoRpGetRiderItemPacket(3, item);
+			LoRpGetRiderItemPacket(3, Old);
 		}
 
 		public static void NewKart1()
