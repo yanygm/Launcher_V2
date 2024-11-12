@@ -192,7 +192,7 @@ namespace ExcData
 			List<List<short>> result = new List<List<short>>();
 			foreach (var innerList in PartsList)
 			{
-				if (innerList.Count > 1 && innerList[1] > 1)
+				if (innerList[1] > 1)
 				{
 					result.Add(innerList);
 				}
@@ -202,10 +202,10 @@ namespace ExcData
 			{
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -253,10 +253,10 @@ namespace ExcData
 				short sn = 1;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -267,8 +267,7 @@ namespace ExcData
 					{
 						short id = tempList[f];
 						var partsKartAndSN = new { Kart = id, SN = sn };
-						var partsList = PartsList;
-						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						var existingParts = PartsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
 						if (existingParts != null)
 						{
 							oPacket.WriteShort(existingParts[0]);
@@ -380,7 +379,7 @@ namespace ExcData
 			List<List<short>> result = new List<List<short>>();
 			foreach (var innerList in Parts12List)
 			{
-				if (innerList.Count > 1 && innerList[1] > 1)
+				if (innerList[1] > 1)
 				{
 					result.Add(innerList);
 				}
