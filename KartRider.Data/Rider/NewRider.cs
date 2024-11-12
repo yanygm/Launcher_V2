@@ -718,13 +718,15 @@ namespace RiderData
 		{
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 			{
+				int count = KartExcData.partsEngine12.Count;
 				oPacket.WriteInt(1);
 				oPacket.WriteInt(1);
-				oPacket.WriteInt(KartExcData.partsEngine12.Count);
-				for (int i = 0; i < KartExcData.partsEngine12.Count; i++)
+				oPacket.WriteInt(count);
+				for (int i = 0; i < count; i++)
 				{
+					short id = KartExcData.partsEngine12[i];
 					oPacket.WriteShort(72);
-					oPacket.WriteShort(KartExcData.partsEngine12[i]);
+					oPacket.WriteShort(id);
 					oPacket.WriteShort(0);
 					oPacket.WriteShort(SetRider.SlotChanger);
 					oPacket.WriteByte(0);
@@ -733,7 +735,7 @@ namespace RiderData
 					oPacket.WriteShort(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(4);
-					oPacket.WriteShort((short)(201 + V2Spec.partsV2[i]));
+					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
@@ -741,15 +743,17 @@ namespace RiderData
 
 		public static void partsHandle12()
 		{
+			int count = KartExcData.partsHandle12.Count;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 			{
 				oPacket.WriteInt(1);
 				oPacket.WriteInt(1);
-				oPacket.WriteInt(KartExcData.partsHandle12.Count);
-				for (int i = 0; i < KartExcData.partsHandle12.Count; i++)
+				oPacket.WriteInt(count);
+				for (int i = 0; i < count; i++)
 				{
+					short id = KartExcData.partsHandle12[i];
 					oPacket.WriteShort(73);
-					oPacket.WriteShort(KartExcData.partsHandle12[i]);
+					oPacket.WriteShort(id);
 					oPacket.WriteShort(0);
 					oPacket.WriteShort(SetRider.SlotChanger);
 					oPacket.WriteByte(0);
@@ -758,7 +762,7 @@ namespace RiderData
 					oPacket.WriteShort(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(4);
-					oPacket.WriteShort((short)(201 + V2Spec.partsV2[i]));
+					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
@@ -766,15 +770,17 @@ namespace RiderData
 
 		public static void partsWheel12()
 		{
+			int count = KartExcData.partsWheel12.Count;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 			{
 				oPacket.WriteInt(1);
 				oPacket.WriteInt(1);
-				oPacket.WriteInt(KartExcData.partsWheel12.Count);
-				for (int i = 0; i < KartExcData.partsWheel12.Count; i++)
+				oPacket.WriteInt(count);
+				for (int i = 0; i < count; i++)
 				{
+					short id = KartExcData.partsWheel12[i];
 					oPacket.WriteShort(74);
-					oPacket.WriteShort(KartExcData.partsWheel12[i]);
+					oPacket.WriteShort(id);
 					oPacket.WriteShort(0);
 					oPacket.WriteShort(SetRider.SlotChanger);
 					oPacket.WriteByte(0);
@@ -783,7 +789,7 @@ namespace RiderData
 					oPacket.WriteShort(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(4);
-					oPacket.WriteShort((short)(201 + V2Spec.partsV2[i]));
+					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
@@ -791,15 +797,17 @@ namespace RiderData
 
 		public static void partsBooster12()
 		{
+			int count = KartExcData.partsBooster12.Count;
 			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 			{
 				oPacket.WriteInt(1);
 				oPacket.WriteInt(1);
-				oPacket.WriteInt(KartExcData.partsBooster12.Count);
-				for (int i = 0; i < KartExcData.partsBooster12.Count; i++)
+				oPacket.WriteInt(count);
+				for (int i = 0; i < count; i++)
 				{
+					short id = KartExcData.partsBooster12[i];
 					oPacket.WriteShort(75);
-					oPacket.WriteShort(KartExcData.partsBooster12[i]);
+					oPacket.WriteShort(id);
 					oPacket.WriteShort(0);
 					oPacket.WriteShort(SetRider.SlotChanger);
 					oPacket.WriteByte(0);
@@ -808,7 +816,7 @@ namespace RiderData
 					oPacket.WriteShort(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(4);
-					oPacket.WriteShort((short)(201 + V2Spec.partsV2[i]));
+					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
