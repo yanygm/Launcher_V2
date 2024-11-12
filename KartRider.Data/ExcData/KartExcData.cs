@@ -346,10 +346,10 @@ namespace ExcData
 				int Parts = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -393,10 +393,10 @@ namespace ExcData
 				short sn = 1;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -471,10 +471,10 @@ namespace ExcData
 			{
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
