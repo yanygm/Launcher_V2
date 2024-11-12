@@ -18,9 +18,11 @@ namespace RiderData
 			KartExcData.Plant_ExcData();
 			KartExcData.Level_ExcData();
 			KartExcData.Parts_ExcData();
-			KartExcData.Level12_ExcData();
+            KartExcData.PartsList_ExcData();
+            KartExcData.Level12_ExcData();
 			KartExcData.Parts12_ExcData();
-			NewRider.character();
+            KartExcData.Parts12List_ExcData();
+            NewRider.character();
 			NewRider.color();
 			NewRider.plate();
 			NewRider.slotChanger();
