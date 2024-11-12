@@ -34,6 +34,7 @@ namespace ExcData
 		public static List<short> character = new List<short>();
 		public static List<short> color = new List<short>();
 		public static List<short> kart = new List<short>();
+		public static List<short> kartOld = new List<short>();
 		public static List<short> kartXV1 = new List<short>();
 		public static List<short> kartV2 = new List<short>();
 		public static List<short> plate = new List<short>();
@@ -907,6 +908,23 @@ namespace ExcData
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Level12Data.xml");
 			}
+		}
+
+		public static List<short> MergeLists(List<short>[] lists)
+		{
+			return lists.SelectMany(list => list).Union().ToList();
+		}
+
+		public static List<short> GetElementsNotInB(List<short> a, List<short> b)
+		{
+			return a.Except(b).ToList();
+		}
+
+		public static List<short> GetNewKart()
+		{
+			List<short>[] allKart = new List<short>[] { kartV2, kartXV1, kartOld };
+			List<short> mergedList = MergeLists(allKart);
+			return GetElementsNotInB(kart, mergedList);
 		}
 	}
 }

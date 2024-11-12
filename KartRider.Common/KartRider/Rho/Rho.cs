@@ -297,15 +297,15 @@ namespace RHOParser
                                 }
                             }
 
-                            var kart = doc.Descendants("kartBody")
+                            var old = doc.Descendants("kartBody")
                                         .Where(kb => int.Parse((string)kb.Attribute("kartBodyGrade")) < 11)
                                         .Select(kb => (string)kb.Attribute("id"));
 
-                            foreach (var id in kart)
+                            foreach (var id in old)
                             {
-                                if (!(KartExcData.kart.Contains(short.Parse(id))))
+                                if (!(KartExcData.kartOld.Contains(short.Parse(id))))
                                 {
-                                    KartExcData.kart.Add(short.Parse(id));
+                                    KartExcData.kartOld.Add(short.Parse(id));
                                 }
                             }
                         }
@@ -340,7 +340,6 @@ namespace RHOParser
                                             KartExcData.color.Add(itemId);
                                         }
                                     }
-                                    /*
                                     else if (itemCatId == 3)
                                     {
                                         if (!(KartExcData.kart.Contains(itemId)))
@@ -348,7 +347,6 @@ namespace RHOParser
                                             KartExcData.kart.Add(itemId);
                                         }
                                     }
-                                    */
                                     else if (itemCatId == 4)
                                     {
                                         if (!(KartExcData.plate.Contains(itemId)))

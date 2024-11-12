@@ -71,7 +71,8 @@ namespace RiderData
 			NewRider.V1RarePartsData();
 			NewRider.V1NormalPartsData();
 			NewRider.kart();
-			NewRider.NewKart();
+			NewRider.NewKart1();
+			NewRider.NewKart2();
 			NewRider.NewRiderData();//라이더 인식
 		}
 
@@ -194,7 +195,42 @@ namespace RiderData
 			LoRpGetRiderItemPacket(3, item);
 		}
 
-		public static void NewKart()
+		public static void NewKart1()
+		{
+			List<short> NewKart1 = KartExcData.GetNewKart();
+			short sn = 1;
+			int num = NewKart1.Count;
+			int range = 100;//分批次数
+			int times = num / range + (num % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
+			{
+				var tempList = NewKart1.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
+				int num2 = tempList.Count;
+				foreach (var Kart in tempList)
+				{
+					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+					{
+						outPacket.WriteByte(1);
+						outPacket.WriteInt(num2);
+						for (int f = 0; f < num2; f++)
+						{
+							outPacket.WriteShort(3);
+							outPacket.WriteShort(Kart);
+							outPacket.WriteShort(sn);
+						}
+						outPacket.WriteShort(1);//数量
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(-1);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						outPacket.WriteShort(0);
+						RouterListener.MySession.Client.Send(outPacket);
+					}
+				}
+			}
+		}
+
+		public static void NewKart2()
 		{
 			int num = KartExcData.NewKart.Count;
 			int range = 100;//分批次数
