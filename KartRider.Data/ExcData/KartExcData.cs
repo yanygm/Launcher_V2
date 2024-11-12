@@ -454,8 +454,7 @@ namespace ExcData
 					{
 						short id = tempList[f];
 						var partsKartAndSN = new { Kart = id, SN = sn };
-						var partsList = Parts12List;
-						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						var existingParts = Parts12List.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
 						if (existingParts != null)
 						{
 							oPacket.WriteShort(existingParts[0]);
