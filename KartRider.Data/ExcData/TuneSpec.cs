@@ -1330,7 +1330,7 @@ namespace ExcData
 						short PartsValue = existingParts[4];
 						if (PartsValue != 0)
 						{
-							TuneSpec.PartSpec_TransAccelFactor = (existingParts[4] * 1.0f - 800.0f) / 25000.0f + 1.85f + -0.205f;
+							TuneSpec.PartSpec_TransAccelFactor = (float)(((decimal)existingParts[4] * 1.0M - 800.0M) / 25000.0M + 1.85M + -0.205M);
 						}
 						else
 						{
@@ -1344,7 +1344,7 @@ namespace ExcData
 						short PartsValue = existingParts[7];
 						if (PartsValue != 0)
 						{
-							TuneSpec.PartSpec_SteerConstraint = (existingParts[7] * 1.0f - 800.0f) / 250.0f + 2.1f + 20.3f;
+							TuneSpec.PartSpec_SteerConstraint = (float)(((decimal)existingParts[7] * 1.0M - 800.0M) / 250.0M + 2.1M + 20.3M);
 						}
 						else
 						{
@@ -1358,7 +1358,7 @@ namespace ExcData
 						short PartsValue = existingParts[10];
 						if (PartsValue != 0)
 						{
-							TuneSpec.PartSpec_DriftEscapeForce = existingParts[10] * 2.0f + 2200.0f;
+							TuneSpec.PartSpec_DriftEscapeForce = (float)((decimal)existingParts[10] * 2.0M + 2200.0M);
 						}
 						else
 						{
@@ -1372,7 +1372,7 @@ namespace ExcData
 						short PartsValue = existingParts[13];
 						if (PartsValue != 0)
 						{
-							TuneSpec.PartSpec_NormalBoosterTime = existingParts[13] * 1.0f - 940.0f + 3000.0f;
+							TuneSpec.PartSpec_NormalBoosterTime = (float)((decimal)existingParts[13] * 1.0M - 940.0M + 3000.0M);
 						}
 						else
 						{
