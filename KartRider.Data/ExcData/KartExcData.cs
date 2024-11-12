@@ -912,7 +912,12 @@ namespace ExcData
 
 		public static List<short> MergeLists(List<short>[] lists)
 		{
-			return lists.SelectMany(list => list).Union().ToList();
+			List<short> mergedList = lists[0];
+			for (int i = 1; i < lists.Length; i++)
+			{
+				mergedList = mergedList.Union(lists[i]).ToList();
+			}
+			return mergedList;
 		}
 
 		public static List<short> GetElementsNotInB(List<short> a, List<short> b)
