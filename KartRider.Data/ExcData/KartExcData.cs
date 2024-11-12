@@ -79,189 +79,46 @@ namespace ExcData
 
 		public static void Tune_ExcData()
 		{
-			int TuneCount = TuneList.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
-			{
-				oPacket.WriteByte(1);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(TuneCount);
-				for (var i = 0; i < TuneCount; i++)
-				{
-					oPacket.WriteShort(3);
-					oPacket.WriteShort(TuneList[i][0]);
-					oPacket.WriteShort(TuneList[i][1]);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(TuneList[i][2]);
-					oPacket.WriteShort(TuneList[i][3]);
-					oPacket.WriteShort(TuneList[i][4]);
-					oPacket.WriteShort(TuneList[i][5]);
-					oPacket.WriteShort(TuneList[i][6]);
-					oPacket.WriteShort(TuneList[i][7]);
-					oPacket.WriteShort(TuneList[i][8]);
-				}
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(0);
-				RouterListener.MySession.Client.Send(oPacket);
-			}
-		}
-
-		public static void Plant_ExcData()
-		{
-			int PlantCount = PlantList.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
-			{
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(1);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(PlantCount);
-				for (var i = 0; i < PlantCount; i++)
-				{
-					oPacket.WriteShort(PlantList[i][0]);
-					oPacket.WriteShort(PlantList[i][1]);
-					oPacket.WriteInt(4);
-					oPacket.WriteShort(PlantList[i][2]);
-					oPacket.WriteShort(PlantList[i][3]);
-					oPacket.WriteShort(PlantList[i][4]);
-					oPacket.WriteShort(PlantList[i][5]);
-					oPacket.WriteShort(PlantList[i][6]);
-					oPacket.WriteShort(PlantList[i][7]);
-					oPacket.WriteShort(PlantList[i][8]);
-					oPacket.WriteShort(PlantList[i][9]);
-				}
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(0);
-				RouterListener.MySession.Client.Send(oPacket);
-			}
-		}
-
-		public static void Level_ExcData()
-		{
-			int LevelCount = LevelList.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
-			{
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(1);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(LevelCount);
-				for (var i = 0; i < LevelCount; i++)
-				{
-					oPacket.WriteShort(LevelList[i][0]);
-					oPacket.WriteShort(LevelList[i][1]);
-					oPacket.WriteShort(LevelList[i][2]);
-					oPacket.WriteShort(LevelList[i][3]);
-					oPacket.WriteShort(LevelList[i][4]);
-					oPacket.WriteShort(LevelList[i][5]);
-					oPacket.WriteShort(LevelList[i][6]);
-					oPacket.WriteShort(LevelList[i][7]);
-					oPacket.WriteShort(LevelList[i][8]); //코팅
-				}
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteInt(0);
-				oPacket.WriteByte(0);
-				oPacket.WriteInt(0);
-				RouterListener.MySession.Client.Send(oPacket);
-			}
-		}
-
-		public static void Parts_ExcData()
-		{
 			int range = 100;//分批次数
-			int times = kartXV1.Count / range + (kartXV1.Count % range > 0 ? 1 : 0);
+			int times = TuneList.Count / range + (TuneList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
-				var tempList = kartXV1.GetRange(i * range, (i + 1) * range > kartXV1.Count ? (kartXV1.Count - i * range) : range);
-				int Parts = tempList.Count;
-				short sn = 1;
+				var tempList = TuneList.GetRange(i * range, (i + 1) * range > TuneList.Count ? (TuneList.Count - i * range) : range);
+				int TuneCount = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(Parts);
-					for (var f = 0; f < Parts; f++)
+					if (i == 0)
 					{
-						short id = tempList[f];
-						var partsKartAndSN = new { Kart = id, SN = sn };
-						var existingParts = PartsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
-						if (existingParts != null)
-						{
-							oPacket.WriteShort(existingParts[0]);
-							oPacket.WriteShort(existingParts[1]);
-							oPacket.WriteHexString("00 00 FF FF 00 00");
-							oPacket.WriteShort(existingParts[2]);
-							oPacket.WriteByte((byte)existingParts[3]);
-							oPacket.WriteShort(existingParts[4]);
-							oPacket.WriteShort(existingParts[5]);
-							oPacket.WriteByte((byte)existingParts[6]);
-							oPacket.WriteShort(existingParts[7]);
-							oPacket.WriteShort(existingParts[8]);
-							oPacket.WriteByte((byte)existingParts[9]);
-							oPacket.WriteShort(existingParts[10]);
-							oPacket.WriteShort(existingParts[11]);
-							oPacket.WriteByte((byte)existingParts[12]);
-							oPacket.WriteShort(existingParts[13]);
-							oPacket.WriteShort(existingParts[14]);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(existingParts[15]);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-						}
-						else
-						{
-							oPacket.WriteShort(id);
-							oPacket.WriteShort(sn);
-							oPacket.WriteHexString("00 00 FF FF 00 00");
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteByte(0);
-							oPacket.WriteShort(0);
-						}
+						oPacket.WriteByte(1);
 					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(TuneCount);
+					for (var f = 0; f < TuneCount; f++)
+					{
+						oPacket.WriteShort(3);
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort(tempList[f][6]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][8]);
+					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
@@ -271,9 +128,121 @@ namespace ExcData
 			}
 		}
 
-		public static void PartsList_ExcData()
+		public static void Plant_ExcData()
+		{
+			int range = 100;//分批次数
+			int times = PlantList.Count / range + (PlantList.Count % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
+			{
+				var tempList = PlantList.GetRange(i * range, (i + 1) * range > PlantList.Count ? (PlantList.Count - i * range) : range);
+				int PlantCount = tempList.Count;
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
+				{
+					oPacket.WriteByte(0);
+					if (i == 0)
+					{
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(PlantCount);
+					for (var f = 0; f < PlantCount; f++)
+					{
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
+						oPacket.WriteInt(4);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort(tempList[f][6]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][8]);
+						oPacket.WriteShort(tempList[f][9]);
+					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					RouterListener.MySession.Client.Send(oPacket);
+				}
+			}
+		}
+
+		public static void Level_ExcData()
+		{
+			int range = 100;//分批次数
+			int times = LevelList.Count / range + (LevelList.Count % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
+			{
+				var tempList = LevelList.GetRange(i * range, (i + 1) * range > LevelList.Count ? (LevelList.Count - i * range) : range);
+				int LevelCount = tempList.Count;
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
+				{
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					if (i == 0)
+					{
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(LevelCount);
+					for (var f = 0; f < LevelCount; f++)
+					{
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort(tempList[f][6]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][8]); //코팅
+					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					RouterListener.MySession.Client.Send(oPacket);
+				}
+			}
+		}
+
+		public static void Parts_ExcData()
 		{
 			List<List<short>> Parts = new List<List<short>>();
+			short sn = 1;
+			foreach (var id in kartXV1)
+			{
+				var partsKartAndSN = new { Kart = id, SN = sn };
+				var existingParts = PartsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+				if (existingParts == null)
+				{
+					Parts.Add(new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+				}
+				else
+				{
+					Parts.Add(existingParts);
+				}
+			}
 			foreach (var innerList in PartsList)
 			{
 				if (innerList[1] > 1)
@@ -281,42 +250,52 @@ namespace ExcData
 					Parts.Add(innerList);
 				}
 			}
-
-			if (Parts != null && Parts.Count > 0)
+			int range = 100;//分批次数
+			int times = Parts.Count / range + (Parts.Count % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
 			{
+				var tempList = Parts.GetRange(i * range, (i + 1) * range > Parts.Count ? (Parts.Count - i * range) : range);
+				int parts = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(Parts.Count);
-					foreach (var list in Parts)
+					if (i == 0)
 					{
-						oPacket.WriteShort(list[0]);
-						oPacket.WriteShort(list[1]);
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(parts);
+					for (var f = 0; f < parts; f++)
+					{
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
 						oPacket.WriteHexString("00 00 FF FF 00 00");
-						oPacket.WriteShort(list[2]);
-						oPacket.WriteByte((byte)list[3]);
-						oPacket.WriteShort(list[4]);
-						oPacket.WriteShort(list[5]);
-						oPacket.WriteByte((byte)list[6]);
-						oPacket.WriteShort(list[7]);
-						oPacket.WriteShort(list[8]);
-						oPacket.WriteByte((byte)list[9]);
-						oPacket.WriteShort(list[10]);
-						oPacket.WriteShort(list[11]);
-						oPacket.WriteByte((byte)list[12]);
-						oPacket.WriteShort(list[13]);
-						oPacket.WriteShort(list[14]);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteByte((byte)tempList[f][3]);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteByte((byte)tempList[f][6]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][8]);
+						oPacket.WriteByte((byte)tempList[f][9]);
+						oPacket.WriteShort(tempList[f][10]);
+						oPacket.WriteShort(tempList[f][11]);
+						oPacket.WriteByte((byte)tempList[f][12]);
+						oPacket.WriteShort(tempList[f][13]);
+						oPacket.WriteShort(tempList[f][14]);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(0);
-						oPacket.WriteShort(list[15]);
+						oPacket.WriteShort(tempList[f][15]);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(0);
 					}
@@ -332,8 +311,6 @@ namespace ExcData
 		public static void Level12_ExcData()
 		{
 			int range = 100;//分批次数
-			if (Level12List == null || Level12List.Count == 0)
-				return;
 			int times = Level12List.Count / range + (Level12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -346,7 +323,14 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					if (i == 0)
+					{
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
@@ -379,83 +363,21 @@ namespace ExcData
 
 		public static void Parts12_ExcData()
 		{
-			int range = 100;//分批次数
-			int times = kartV2.Count / range + (kartV2.Count % range > 0 ? 1 : 0);
-			for (int i = 0; i < times; i++)
+			List<List<short>> Parts12 = new List<List<short>>();
+			short sn = 1;
+			foreach (var id in kartV2)
 			{
-				var tempList = kartV2.GetRange(i * range, (i + 1) * range > kartV2.Count ? (kartV2.Count - i * range) : range);
-				int Parts = tempList.Count;
-				short sn = 1;
-				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
+				var parts12KartAndSN = new { Kart = id, SN = sn };
+				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == parts12KartAndSN.Kart && list[1] == parts12KartAndSN.SN);
+				if (existingParts12 == null)
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(Parts);
-					for (var f = 0; f < Parts; f++)
-					{
-						short id = tempList[f];
-						var partsKartAndSN = new { Kart = id, SN = sn };
-						var existingParts = Parts12List.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
-						if (existingParts != null)
-						{
-							oPacket.WriteShort(existingParts[0]);
-							oPacket.WriteShort(existingParts[1]);
-							oPacket.WriteHexString("00 00 FF FF 00 00");
-							oPacket.WriteShort(existingParts[2]);
-							oPacket.WriteShort(existingParts[3]);
-							oPacket.WriteShort(existingParts[4]);
-							oPacket.WriteShort(existingParts[5]);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteInt(0);
-						}
-						else
-						{
-							oPacket.WriteShort(id);
-							oPacket.WriteShort(sn);
-							oPacket.WriteHexString("00 00 FF FF 00 00");
-							oPacket.WriteShort(1);
-							oPacket.WriteShort(1);
-							oPacket.WriteShort(1);
-							oPacket.WriteShort(1);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteInt(0);
-						}
-					}
-					RouterListener.MySession.Client.Send(oPacket);
+					Parts12.Add(new List<short> { id, sn, 0, 0, 0, 0 });
+				}
+				else
+				{
+					Parts12.Add(existingParts12);
 				}
 			}
-		}
-
-		public static void Parts12List_ExcData()
-		{
-			List<List<short>> Parts12 = new List<List<short>>();
 			foreach (var innerList in Parts12List)
 			{
 				if (innerList[1] > 1)
@@ -463,9 +385,12 @@ namespace ExcData
 					Parts12.Add(innerList);
 				}
 			}
-
-			if (Parts12 != null && Parts12.Count > 0)
+			int range = 100;//分批次数
+			int times = Parts12.Count / range + (Parts12.Count % range > 0 ? 1 : 0);
+			for (int i = 0; i < times; i++)
 			{
+				var tempList = Parts12.GetRange(i * range, (i + 1) * range > Parts12.Count ? (Parts12.Count - i * range) : range);
+				int parts12 = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
 					oPacket.WriteByte(0);
@@ -480,27 +405,34 @@ namespace ExcData
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(Parts12.Count);
-					foreach (var list in Parts12)
+					if (i == 0)
 					{
-						oPacket.WriteShort(list[0]);
-						oPacket.WriteShort(list[1]);
-						oPacket.WriteHexString("00 00 FF FF 00 00");
-						oPacket.WriteShort(list[2]);
-						oPacket.WriteShort(list[3]);
-						oPacket.WriteShort(list[4]);
-						oPacket.WriteShort(list[5]);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteInt(0);
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
+					oPacket.WriteInt(parts12);
+					for (var f = 0; f < parts12; f++)
+					{
+							oPacket.WriteShort(tempList[f][0]);
+							oPacket.WriteShort(tempList[f][1]);
+							oPacket.WriteHexString("00 00 FF FF 00 00");
+							oPacket.WriteShort(tempList[f][2]);
+							oPacket.WriteShort(tempList[f][3]);
+							oPacket.WriteShort(tempList[f][4]);
+							oPacket.WriteShort(tempList[f][5]);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteShort(0);
+							oPacket.WriteInt(0);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
 				}
