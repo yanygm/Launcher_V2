@@ -199,23 +199,15 @@ namespace RiderData
 		{
 			List<short> NewKart1 = KartExcData.GetNewKart();
 			short sn = 1;
-			int num = NewKart1.Count;
-			int range = 100;//分批次数
-			int times = num / range + (num % range > 0 ? 1 : 0);
-			for (int i = 0; i < times; i++)
+			foreach (var Kart in NewKart1)
 			{
-				var tempList = NewKart1.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
-				int num2 = tempList.Count;
 				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 				{
 					outPacket.WriteByte(1);
-					outPacket.WriteInt(num2);
-					foreach (var Kart in tempList)
-					{
-						outPacket.WriteShort(3);
-						outPacket.WriteShort(Kart);
-						outPacket.WriteShort(sn);
-					}
+					outPacket.WriteInt(1);
+					outPacket.WriteShort(3);
+					outPacket.WriteShort(Kart);
+					outPacket.WriteShort(sn);
 					outPacket.WriteShort(1);//数量
 					outPacket.WriteShort(0);
 					outPacket.WriteShort(-1);
@@ -229,23 +221,15 @@ namespace RiderData
 
 		public static void NewKart2()
 		{
-			int num = KartExcData.NewKart.Count;
-			int range = 100;//分批次数
-			int times = num / range + (num % range > 0 ? 1 : 0);
-			for (int i = 0; i < times; i++)
+			foreach (var Kart in KartExcData.NewKart)
 			{
-				var tempList = KartExcData.NewKart.GetRange(i * range, (i + 1) * range > num ? (num - i * range) : range);
-				int num2 = tempList.Count;
 				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 				{
 					outPacket.WriteByte(1);
-					outPacket.WriteInt(num2);
-					foreach (var Kart in tempList)
-					{
-						outPacket.WriteShort(3);
-						outPacket.WriteShort(Kart[0]);
-						outPacket.WriteShort(Kart[1]);
-					}
+					outPacket.WriteInt(1);
+					outPacket.WriteShort(3);
+					outPacket.WriteShort(Kart[0]);
+					outPacket.WriteShort(Kart[1]);
 					outPacket.WriteShort(1);//数量
 					outPacket.WriteShort(0);
 					outPacket.WriteShort(-1);
