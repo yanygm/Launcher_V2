@@ -117,14 +117,9 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][7]);
 						oPacket.WriteShort(tempList[f][8]);
 					}
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[20]);
 					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -169,14 +164,9 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][8]);
 						oPacket.WriteShort(tempList[f][9]);
 					}
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[20]);
 					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -213,11 +203,9 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][7]);
 						oPacket.WriteShort(tempList[f][8]); //코팅
 					}
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[12]);
 					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -296,11 +284,9 @@ namespace ExcData
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(0);
 					}
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -345,11 +331,9 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][6]);
 						oPacket.WriteShort(tempList[f][8]);
 					}
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
+					oPacket.WriteBytes(new byte[8]);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
