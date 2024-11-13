@@ -194,14 +194,7 @@ namespace ExcData
 				{
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					if (i == 0)
-					{
-						oPacket.WriteByte(1);
-					}
-					else
-					{
-						oPacket.WriteByte(0);
-					}
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
@@ -328,14 +321,7 @@ namespace ExcData
 					oPacket.WriteByte(1);
 					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
-					if (i == 0)
-					{
-						oPacket.WriteByte(1);
-					}
-					else
-					{
-						oPacket.WriteByte(0);
-					}
+					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
