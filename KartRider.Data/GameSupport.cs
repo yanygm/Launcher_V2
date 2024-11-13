@@ -6,7 +6,6 @@ namespace KartRider
 {
 	public static class GameSupport
 	{
-		public static Timer timer;
 		public static void PcFirstMessage()
 		{
 			uint first_val = 418454259;
