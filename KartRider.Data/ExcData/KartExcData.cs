@@ -323,10 +323,10 @@ namespace ExcData
 				int Parts = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					if (i == 0)
 					{
@@ -359,7 +359,10 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][6]);
 						oPacket.WriteShort(tempList[f][8]);
 					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
@@ -398,10 +401,10 @@ namespace ExcData
 				int parts12 = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
+					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -437,7 +440,7 @@ namespace ExcData
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
 							oPacket.WriteShort(0);
-							oPacket.WriteInt(0);
+							oPacket.WriteInt(1);
 					}
 					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
