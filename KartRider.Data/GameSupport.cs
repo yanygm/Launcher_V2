@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Threading;
 using KartRider.IO.Packet;
 using Set_Data;
 
