@@ -205,12 +205,9 @@ namespace KartRider
 								outPacket.WriteString(SetRider.Nickname);
 								outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
 								outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
-								for (int i = 0; i < 35; i++)
-								{
-									outPacket.WriteShort(0);
-								}
+								outPacket.WriteBytes(new byte[70]);
 								outPacket.WriteByte(0);
-								outPacket.WriteString("");
+								outPacket.WriteString("Y|S");
 								outPacket.WriteUInt(SetRider.RP);
 								outPacket.WriteInt(0);
 								outPacket.WriteByte(6);//Licenses
