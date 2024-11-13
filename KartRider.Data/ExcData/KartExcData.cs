@@ -34,7 +34,6 @@ namespace ExcData
 		public static List<short> character = new List<short>();
 		public static List<short> color = new List<short>();
 		public static List<short> kart = new List<short>();
-		public static List<short> kartOld = new List<short>();
 		public static List<short> kartXV1 = new List<short>();
 		public static List<short> kartV2 = new List<short>();
 		public static List<short> plate = new List<short>();
@@ -117,9 +116,13 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][7]);
 						oPacket.WriteShort(tempList[f][8]);
 					}
-					oPacket.WriteBytes(new byte[20]);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -164,9 +167,12 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][8]);
 						oPacket.WriteShort(tempList[f][9]);
 					}
-					oPacket.WriteBytes(new byte[20]);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -184,7 +190,14 @@ namespace ExcData
 				{
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
+					if (i == 0)
+					{
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
@@ -203,9 +216,11 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][7]);
 						oPacket.WriteShort(tempList[f][8]); //코팅
 					}
-					oPacket.WriteBytes(new byte[12]);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -284,9 +299,10 @@ namespace ExcData
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(0);
 					}
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -302,12 +318,19 @@ namespace ExcData
 				int Parts = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					if (i == 0)
+					{
+						oPacket.WriteByte(1);
+					}
+					else
+					{
+						oPacket.WriteByte(0);
+					}
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
@@ -331,9 +354,8 @@ namespace ExcData
 						oPacket.WriteShort(tempList[f][6]);
 						oPacket.WriteShort(tempList[f][8]);
 					}
-					oPacket.WriteBytes(new byte[8]);
 					oPacket.WriteByte(0);
-					oPacket.WriteBytes(new byte[8]);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -371,10 +393,10 @@ namespace ExcData
 				int parts12 = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
-					oPacket.WriteByte(1);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
@@ -412,7 +434,6 @@ namespace ExcData
 							oPacket.WriteShort(0);
 							oPacket.WriteInt(1);
 					}
-					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -886,28 +907,6 @@ namespace ExcData
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Level12Data.xml");
 			}
-		}
-
-		public static List<short> MergeLists(List<short>[] lists)
-		{
-			List<short> mergedList = lists[0];
-			for (int i = 1; i < lists.Length; i++)
-			{
-				mergedList = mergedList.Union(lists[i]).ToList();
-			}
-			return mergedList;
-		}
-
-		public static List<short> GetElementsNotInB(List<short> a, List<short> b)
-		{
-			return a.Except(b).ToList();
-		}
-
-		public static List<short> GetNewKart()
-		{
-			List<short>[] allKart = new List<short>[] { kartV2, kartXV1, kartOld };
-			List<short> mergedList = MergeLists(allKart);
-			return GetElementsNotInB(kart, mergedList);
 		}
 	}
 }
