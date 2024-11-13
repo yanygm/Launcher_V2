@@ -124,6 +124,7 @@ namespace ExcData
 					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
@@ -172,7 +173,9 @@ namespace ExcData
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
@@ -219,8 +222,8 @@ namespace ExcData
 					}
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
@@ -303,6 +306,7 @@ namespace ExcData
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
@@ -435,6 +439,7 @@ namespace ExcData
 							oPacket.WriteShort(0);
 							oPacket.WriteInt(0);
 					}
+					oPacket.WriteInt(0);
 					RouterListener.MySession.Client.Send(oPacket);
 				}
 			}
