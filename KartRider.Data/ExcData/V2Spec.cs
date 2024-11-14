@@ -170,7 +170,7 @@ namespace ExcData
 				if (Kart.defaultExceedType == 1)
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
-					Kart.chargeInstAccelGaugeByGrip = 0.06f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.3f;
 					Kart.instAccelGaugeCooldownTime = 3000;
@@ -187,7 +187,7 @@ namespace ExcData
 				if (Kart.defaultExceedType == 3)
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
-					Kart.chargeInstAccelGaugeByGrip = 0.06f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.18f;
 					Kart.instAccelGaugeCooldownTime = 3000;
