@@ -280,7 +280,9 @@ namespace ExcData
 					{
 						oPacket.WriteShort(tempList[f][0]);
 						oPacket.WriteShort(tempList[f][1]);
-						oPacket.WriteHexString("00 00 FF FF 00 00");
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][2]);
 						oPacket.WriteByte((byte)tempList[f][3]);
 						oPacket.WriteShort(tempList[f][4]);
@@ -417,23 +419,32 @@ namespace ExcData
 					oPacket.WriteInt(parts12);
 					for (var f = 0; f < parts12; f++)
 					{
-							oPacket.WriteShort(tempList[f][0]);
-							oPacket.WriteShort(tempList[f][1]);
-							oPacket.WriteHexString("00 00 FF FF 00 00");
-							oPacket.WriteShort(tempList[f][2]);
-							oPacket.WriteShort(tempList[f][3]);
-							oPacket.WriteShort(tempList[f][4]);
-							oPacket.WriteShort(tempList[f][5]);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteShort(0);
-							oPacket.WriteInt(1);
+						oPacket.WriteShort(tempList[f][0]);
+						oPacket.WriteShort(tempList[f][1]);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(tempList[f][2]);
+						oPacket.WriteShort(1);
+						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort(1);
+						oPacket.WriteShort(tempList[f][4]);
+						oPacket.WriteShort(1);
+						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort(1);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteInt(0);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
 				}
@@ -626,6 +637,7 @@ namespace ExcData
 
 		public static void AddPartsList(short id, short sn, short Item_Cat_Id, short Item_Id, byte Grade, short PartsValue)
 		{
+			Console.WriteLine("AddPartsList: " + id + " " + sn + " " + Item_Cat_Id + " " + Item_Id + " " + Grade + " " + PartsValue);
 			if (Item_Cat_Id == 72 || Item_Cat_Id == 73 || Item_Cat_Id == 74 || Item_Cat_Id == 75 || Item_Cat_Id == 76 || Item_Cat_Id == 77 || Item_Cat_Id == 78)
 			{
 				var existing12List = Parts12List.FirstOrDefault(list => list[0] == id && list[1] == sn);
