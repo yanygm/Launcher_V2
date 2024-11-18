@@ -71,9 +71,9 @@ namespace RiderData
 			NewRider.V1RarePartsData();
 			NewRider.V1NormalPartsData();
 			NewRider.kart();
-			NewRider.NewRiderData();//라이더 인식
 			NewRider.NewKart1();
 			NewRider.NewKart2();
+			NewRider.NewRiderData();//라이더 인식
 		}
 
 		public static void NewRiderData()
