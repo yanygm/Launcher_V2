@@ -184,6 +184,23 @@ namespace ExcData
 					Kart.wallCollGaugeMinVelBound = 160f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
 				}
+				if (Kart.defaultExceedType == 2)
+				{
+					Kart.chargeInstAccelGaugeByBoost = 0.02f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByWall = 0.15f;
+					Kart.instAccelFactor = 1.29f;
+					Kart.instAccelGaugeCooldownTime = 3000;
+					Kart.instAccelGaugeLength = 1040f;
+					Kart.instAccelGaugeMinUsable = 208f;
+					Kart.instAccelGaugeMinVelBound = 0f;
+					Kart.instAccelGaugeMinVelLoss = 50f;
+					Kart.useExtendedAfterBoosterMore = 0;
+					Kart.wallCollGaugeCooldownTime = 3000;
+					Kart.wallCollGaugeMaxVelLoss = 200f;
+					Kart.wallCollGaugeMinVelBound = 200f;
+					Kart.wallCollGaugeMinVelLoss = 50f;
+				}
 				if (Kart.defaultExceedType == 3)
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
@@ -193,6 +210,23 @@ namespace ExcData
 					Kart.instAccelGaugeCooldownTime = 3000;
 					Kart.instAccelGaugeLength = 2000f;
 					Kart.instAccelGaugeMinUsable = 400f;
+					Kart.instAccelGaugeMinVelBound = 0f;
+					Kart.instAccelGaugeMinVelLoss = 50f;
+					Kart.useExtendedAfterBoosterMore = 0;
+					Kart.wallCollGaugeCooldownTime = 3000;
+					Kart.wallCollGaugeMaxVelLoss = 200f;
+					Kart.wallCollGaugeMinVelBound = 200f;
+					Kart.wallCollGaugeMinVelLoss = 50f;
+				}
+				if (Kart.defaultExceedType == 4)
+				{
+					Kart.chargeInstAccelGaugeByBoost = 0.02f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByWall = 0.15f;
+					Kart.instAccelFactor = 1.14f;
+					Kart.instAccelGaugeCooldownTime = 3000;
+					Kart.instAccelGaugeLength = 2500f;
+					Kart.instAccelGaugeMinUsable = 500f;
 					Kart.instAccelGaugeMinVelBound = 0f;
 					Kart.instAccelGaugeMinVelLoss = 50f;
 					Kart.useExtendedAfterBoosterMore = 0;
