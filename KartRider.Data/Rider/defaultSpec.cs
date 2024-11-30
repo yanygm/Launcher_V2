@@ -81,8 +81,6 @@ namespace RiderData
 			Kart.modelMaxX = 0;
 			Kart.modelMaxY = 0;
 			Kart.defaultExceedType = 0;
-			Kart.v12 = 1;
-			Kart.v12_0 = 0;
 			Kart.v12_1 = 1;
 			Kart.v12_2 = 2;
 			Kart.v12_3 = 3;
@@ -94,11 +92,11 @@ namespace RiderData
 			Kart.chargeInstAccelGaugeByBoostAdded = 0f;
 			Kart.chargerSystemboosterUseCount = 0;
 			Kart.chargerSystemUseTime = 0;
-			Kart.v12_4 = 0;
 			Kart.chargeBoostBySpeedAdded = 0f;
 			Kart.driftGaugeFactor = 0f;
+			Kart.chargeAntiCollideBalance = 0f;
+			Kart.v12_4 = 0;
 			Kart.v12_5 = 0f;
-			Kart.v12_6 = 0f;
 		}
 	}
 }

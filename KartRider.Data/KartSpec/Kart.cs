@@ -77,8 +77,6 @@ namespace KartRider
 		public static float modelMaxX;
 		public static float modelMaxY;
 		public static byte defaultExceedType;
-		public static byte v12;
-		public static byte v12_0;
 		public static byte v12_1;
 		public static byte v12_2;
 		public static byte v12_3;
@@ -90,10 +88,10 @@ namespace KartRider
 		public static float chargeInstAccelGaugeByBoostAdded;
 		public static byte chargerSystemboosterUseCount;
 		public static float chargerSystemUseTime;
-		public static float v12_4;
 		public static float chargeBoostBySpeedAdded;
 		public static float driftGaugeFactor;
+		public static float chargeAntiCollideBalance;
+		public static float v12_4;
 		public static float v12_5;
-		public static float v12_6;
 	}
 }

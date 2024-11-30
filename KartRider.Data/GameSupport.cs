@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using KartRider.IO.Packet;
 using Set_Data;
 
