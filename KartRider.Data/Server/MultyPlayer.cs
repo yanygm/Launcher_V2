@@ -733,30 +733,24 @@ namespace KartRider
             oPacket.WriteEncFloat(Kart.wallCollGaugeMinVelLoss);
             oPacket.WriteEncFloat(Kart.modelMaxX);
             oPacket.WriteEncFloat(Kart.modelMaxY);
-            oPacket.WriteEncByte(Kart.defaultExceedType);
-            oPacket.WriteEncByte(Kart.v12_1);
-            oPacket.WriteEncByte(Kart.v12_2);
-            oPacket.WriteEncByte(Kart.v12_3);
-            oPacket.WriteEncByte(Kart.defaultEngineType);
-            oPacket.WriteEncByte(Kart.defaultEngineType);
-            oPacket.WriteEncByte(Kart.defaultHandleType);
-            oPacket.WriteEncByte(Kart.defaultHandleType);
-            oPacket.WriteEncByte(Kart.defaultWheelType);
-            oPacket.WriteEncByte(Kart.defaultWheelType);
-            oPacket.WriteEncByte(Kart.defaultBoosterType);
-            oPacket.WriteEncByte(Kart.defaultBoosterType);
-            oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
-            oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
-            oPacket.WriteEncByte(Kart.chargerSystemboosterUseCount);
-            oPacket.WriteEncByte(Kart.v12_1);
-            oPacket.WriteEncByte(Kart.v12_2);
-            oPacket.WriteEncByte(Kart.v12_3);
-            oPacket.WriteEncFloat(Kart.chargerSystemUseTime);
-            oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
-            oPacket.WriteEncFloat(Kart.driftGaugeFactor);
-            oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
-            oPacket.WriteEncFloat(Kart.v12_4);
-            oPacket.WriteEncFloat(Kart.v12_5);
+			oPacket.WriteEncInt(Kart.defaultExceedType);
+			oPacket.WriteEncByte(Kart.defaultEngineType);
+			oPacket.WriteEncByte(Kart.EngineType);
+			oPacket.WriteEncByte(Kart.defaultHandleType);
+			oPacket.WriteEncByte(Kart.HandleType);
+			oPacket.WriteEncByte(Kart.defaultWheelType);
+			oPacket.WriteEncByte(Kart.WheelType);
+			oPacket.WriteEncByte(Kart.defaultBoosterType);
+			oPacket.WriteEncByte(Kart.BoosterType);
+			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
+			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
+			oPacket.WriteEncInt(Kart.chargerSystemboosterUseCount);
+			oPacket.WriteEncFloat(Kart.chargerSystemUseTime);
+			oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
+			oPacket.WriteEncFloat(Kart.driftGaugeFactor);
+			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
+			oPacket.WriteEncFloat(Kart.v12_1);
+			oPacket.WriteEncFloat(Kart.v12_2);
             //------------------------------------------------------------------------KartSpac End
         }
 

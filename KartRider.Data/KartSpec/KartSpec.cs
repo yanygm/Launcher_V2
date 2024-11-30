@@ -139,22 +139,21 @@ namespace KartRider
 		("modelMaxX", 0M, 0M, 1M),
 		("modelMaxY", 0M, 0M, 1M),
 		("defaultExceedType", 0M, 0M, 1M),
-		("v12_1", 0M, 1M, 1M),
-		("v12_2", 0M, 2M, 1M),
-		("v12_3", 0M, 3M, 1M),
 		("defaultEngineType", 0M, 0M, 1M),
+		("EngineType", 0M, 1M, 1M),
 		("defaultHandleType", 0M, 0M, 1M),
+		("HandleType", 0M, 1M, 1M),
 		("defaultWheelType", 0M, 0M, 1M),
+		("WheelType", 0M, 1M, 1M),
 		("defaultBoosterType", 0M, 0M, 1M),
+		("BoosterType", 0M, 1M, 1M),
 		("chargeInstAccelGaugeByWallAdded", 0M, 0M, 1M),
 		("chargeInstAccelGaugeByBoostAdded", 0M, 0M, 1M),
 		("chargerSystemboosterUseCount", 0M, 0M, 1M),
 		("chargerSystemUseTime", 0M, 0M, 1M),
 		("chargeBoostBySpeedAdded", 0M, 0M, 1M),
 		("driftGaugeFactor", 0M, 0M, 1M),
-		("chargeAntiCollideBalance", 0M, 0M, 1M),
-		("v12_4", 0M, 0M, 1M),
-		("v12_5", 0M, 0M, 1M),
+		("chargeAntiCollideBalance", 0M, 1M, 1M),
 		};
 			List<string> AddList = new List<string>();
 			foreach (var (attributeName, fallbackValue, defaultValue, scale) in attributes)
@@ -234,23 +233,24 @@ namespace KartRider
 			Kart.wallCollGaugeMinVelLoss = float.Parse(AddList[69]);
 			Kart.modelMaxX = float.Parse(AddList[70]);
 			Kart.modelMaxY = float.Parse(AddList[71]);
-			Kart.defaultExceedType = byte.Parse(AddList[72]);
-			Kart.v12_1 = byte.Parse(AddList[73]);
-			Kart.v12_2 = byte.Parse(AddList[74]);
-			Kart.v12_3 = byte.Parse(AddList[75]);
-			Kart.defaultEngineType = byte.Parse(AddList[76]);
-			Kart.defaultHandleType = byte.Parse(AddList[77]);
-			Kart.defaultWheelType = byte.Parse(AddList[78]);
+			Kart.defaultExceedType = int.Parse(AddList[72]);
+			Kart.defaultEngineType = byte.Parse(AddList[73]);
+			Kart.EngineType = byte.Parse(AddList[74]);
+			Kart.defaultHandleType = byte.Parse(AddList[75]);
+			Kart.HandleType = byte.Parse(AddList[76]);
+			Kart.defaultWheelType = byte.Parse(AddList[77]);
+			Kart.WheelType = byte.Parse(AddList[78]);
 			Kart.defaultBoosterType = byte.Parse(AddList[79]);
-			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[80]);
-			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[81]);
-			Kart.chargerSystemboosterUseCount = byte.Parse(AddList[82]);
-			Kart.chargerSystemUseTime = float.Parse(AddList[83]);
-			Kart.chargeBoostBySpeedAdded = float.Parse(AddList[84]);
-			Kart.driftGaugeFactor = float.Parse(AddList[85]);
-			Kart.chargeAntiCollideBalance = float.Parse(AddList[86]);
-			Kart.v12_4 = float.Parse(AddList[87]);
-			Kart.v12_5 = float.Parse(AddList[88]);
+			Kart.BoosterType = byte.Parse(AddList[80]);
+			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[81]);
+			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[82]);
+			Kart.chargerSystemboosterUseCount = int.Parse(AddList[83]);
+			Kart.chargerSystemUseTime = float.Parse(AddList[84]);
+			Kart.chargeBoostBySpeedAdded = float.Parse(AddList[85]);
+			Kart.driftGaugeFactor = float.Parse(AddList[86]);
+			Kart.chargeAntiCollideBalance = float.Parse(AddList[87]);
+			Kart.v12_1 = 0f;
+			Kart.v12_2 = 0f;
 			V2Spec.ExceedSpec();
 			Console.WriteLine($"-------------------------------------------------------------");
 			Console.WriteLine($"draftMulAccelFactor:{Kart.draftMulAccelFactor}");
