@@ -136,6 +136,10 @@ namespace RHOParser
                                     XmlElement xe = (XmlElement)xn;
                                     int id = int.Parse(xe.GetAttribute("id"));
                                     string name = xe.GetAttribute("name");
+                                    if (config.region && name = "estocV1")
+                                    {
+                                        name = "estocV1_gold"
+                                    }
                                     if (!(KartExcData.KartName.ContainsKey(id)))
                                     {
                                         KartExcData.KartName.Add(id, name);
