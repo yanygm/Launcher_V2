@@ -17,6 +17,7 @@ using System.Xml.Linq;
 using System.Linq;
 using System.Reflection;
 using Veldrid.MetalBindings;
+using SharpGen.Runtime;
 
 namespace RHOParser
 {
@@ -136,10 +137,6 @@ namespace RHOParser
                                     XmlElement xe = (XmlElement)xn;
                                     int id = int.Parse(xe.GetAttribute("id"));
                                     string name = xe.GetAttribute("name");
-                                    if (config.region && name = "estocV1")
-                                    {
-                                        name = "estocV1_gold"
-                                    }
                                     if (!(KartExcData.KartName.ContainsKey(id)))
                                     {
                                         KartExcData.KartName.Add(id, name);
@@ -155,6 +152,49 @@ namespace RHOParser
                                     int id = int.Parse(xe.GetAttribute("id"));
                                     string name = xe.GetAttribute("name");
                                     if (!(KartExcData.flyingName.ContainsKey(id)))
+                                    {
+                                        KartExcData.flyingName.Add(id, name);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "etc_/itemTable@" + config.region + ".xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            var kartsWithName = doc.Descendants("kart").Where(kart => kart.Attribute("name") != null);
+                            if (kartsWithName.Count() > 0)
+                            {
+                                foreach (var kart in kartsWithName)
+                                {
+                                    int id = int.Parse(kart.Attribute("id").Value);
+                                    string name = kart.Attribute("name").Value;
+                                    if (KartExcData.KartName.ContainsKey(id))
+                                    {
+                                        KartExcData.KartName[id] = name;
+                                    }
+                                    else
+                                    {
+                                        KartExcData.KartName.Add(id, name);
+                                    }
+                                }
+                            }
+                            var flyingsWithName = doc.Descendants("flyingPet").Where(flyingPet => flyingPet.Attribute("name") != null);
+                            if (flyingsWithName.Count() > 0)
+                            {
+                                foreach (var flyingPet in flyingsWithName)
+                                {
+                                    int id = int.Parse(flyingPet.Attribute("id").Value);
+                                    string name = flyingPet.Attribute("name").Value;
+                                    if (KartExcData.flyingName.ContainsKey(id))
+                                    {
+                                        KartExcData.flyingName[id] = name;
+                                    }
+                                    else
                                     {
                                         KartExcData.flyingName.Add(id, name);
                                     }
