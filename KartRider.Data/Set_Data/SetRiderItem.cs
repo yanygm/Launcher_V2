@@ -121,7 +121,7 @@ namespace Set_Data
 			Console.WriteLine("Goggle: {0}", SetRiderItem.Set_Goggle);
 			Console.WriteLine("Balloon: {0}", SetRiderItem.Set_Balloon);
 			Console.WriteLine("HeadBand: {0}", SetRiderItem.Set_HeadBand);
-			Console.WriteLine("HeadBand: {0}", SetRiderItem.Set_HeadPhone);
+			Console.WriteLine("HeadPhone: {0}", SetRiderItem.Set_HeadPhone);
 			Console.WriteLine("HandGearL: {0}", SetRiderItem.Set_HandGearL);
 			Console.WriteLine("Uniform: {0}", SetRiderItem.Set_Uniform);
 			Console.WriteLine("Decal: {0}", SetRiderItem.Set_Decal);
