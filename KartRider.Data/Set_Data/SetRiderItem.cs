@@ -12,6 +12,7 @@ namespace Set_Data
 		public static short Set_Goggle = 0;
 		public static short Set_Balloon = 0;
 		public static short Set_HeadBand = 0;
+		public static short Set_HeadPhone = 0;
 		public static short Set_HandGearL = 0;
 		public static short Set_Uniform = 0;
 		public static short Set_Decal = 0;
@@ -55,6 +56,10 @@ namespace Set_Data
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_HeadBand + FileName.Extension, false))
 			{
 				streamWriter.Write(SetRiderItem.Set_HeadBand);
+			}
+			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_HeadPhone + FileName.Extension, false))
+			{
+				streamWriter.Write(SetRiderItem.Set_HeadPhone);
 			}
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_HandGearL + FileName.Extension, false))
 			{
@@ -116,6 +121,7 @@ namespace Set_Data
 			Console.WriteLine("Goggle: {0}", SetRiderItem.Set_Goggle);
 			Console.WriteLine("Balloon: {0}", SetRiderItem.Set_Balloon);
 			Console.WriteLine("HeadBand: {0}", SetRiderItem.Set_HeadBand);
+			Console.WriteLine("HeadBand: {0}", SetRiderItem.Set_HeadPhone);
 			Console.WriteLine("HandGearL: {0}", SetRiderItem.Set_HandGearL);
 			Console.WriteLine("Uniform: {0}", SetRiderItem.Set_Uniform);
 			Console.WriteLine("Decal: {0}", SetRiderItem.Set_Decal);
@@ -228,6 +234,20 @@ namespace Set_Data
 				using (StreamWriter streamWriter = new StreamWriter(Load_HeadBand, false))
 				{
 					streamWriter.Write(SetRiderItem.Set_HeadBand);
+				}
+			}
+			//-------------------------------------------------------------------------
+			string Load_HeadPhone = FileName.SetRiderItem_LoadFile + FileName.SetRiderItem_HeadPhone + FileName.Extension;
+			if (File.Exists(Load_HeadPhone))
+			{
+				string textValue = System.IO.File.ReadAllText(Load_HeadPhone);
+				SetRiderItem.Set_HeadPhone = short.Parse(textValue);
+			}
+			else
+			{
+				using (StreamWriter streamWriter = new StreamWriter(Load_HeadPhone, false))
+				{
+					streamWriter.Write(SetRiderItem.Set_HeadPhone);
 				}
 			}
 			//-------------------------------------------------------------------------
