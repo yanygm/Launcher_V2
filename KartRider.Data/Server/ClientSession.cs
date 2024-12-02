@@ -156,7 +156,7 @@ namespace KartRider
 						SetRiderItem.Set_Balloon = iPacket.ReadShort();
 						iPacket.ReadShort();
 						SetRiderItem.Set_HeadBand = iPacket.ReadShort();
-						iPacket.ReadShort();
+						SetRiderItem.Set_HeadPhone = iPacket.ReadShort();
 						SetRiderItem.Set_HandGearL = iPacket.ReadShort();
 						iPacket.ReadShort();
 						SetRiderItem.Set_Uniform = iPacket.ReadShort();
