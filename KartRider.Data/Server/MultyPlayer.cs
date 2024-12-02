@@ -75,7 +75,7 @@ namespace KartRider
                 outPacket.WriteByte();
                 outPacket.WriteUInt(SetRider.RP);
                 outPacket.WriteInt(0); //Earned RP
-                outPacket.WriteInt(25); //Earned Lucci
+                outPacket.WriteInt(1000); //Earned Lucci
                 outPacket.WriteUInt(SetRider.Lucci);
                 outPacket.WriteBytes(new byte[41]);
                 outPacket.WriteInt(1);
@@ -134,7 +134,7 @@ namespace KartRider
                 if (state == 0)
                 {
                     BootTicksNow = GetUpTime();
-                    StartTicks += (StartTicks == 0) ? (BootTicksNow + 15780) : (BootTicksNow - BootTicksPrev);
+                    StartTicks += (StartTicks == 0) ? (BootTicksNow + 8000) : (BootTicksNow - BootTicksPrev);
                     BootTicksPrev = BootTicksNow;
                     using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
                     {
@@ -165,7 +165,7 @@ namespace KartRider
                     }
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
-                        EndTicks = ArrivalTicks + 10180;
+                        EndTicks = ArrivalTicks + 8000;
                         oPacket.WriteByte(3);
                         oPacket.WriteInt();
                         oPacket.WriteUInt(EndTicks);
@@ -173,7 +173,7 @@ namespace KartRider
                         oPacket.WriteByte(0x85);
                     }
                     Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
-                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 10180);
+                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 8000);
                     Set_settleTrigger();
                 }
                 return;
@@ -198,7 +198,7 @@ namespace KartRider
                 byte channel = iPacket.ReadByte();
                 Console.WriteLine("Channel Switch, channel = {0}", channel);
                 int channeldata1 = 0;
-                if (channel == 72)
+                if (channel == 70)
                 {
                     channeldata1 = 1;
                     channeldata2 = 4;
@@ -272,8 +272,7 @@ namespace KartRider
                 RoomUnkBytes = iPacket.ReadBytes(32);
                 using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
                 {
-                    //oPacket.WriteInt(0);
-                    oPacket.WriteHexString("01 00");
+                    oPacket.WriteShort(1);
                     oPacket.WriteByte((byte)Playernum);
                     oPacket.WriteByte(unk1);
                     RouterListener.MySession.Client.Send(oPacket);
@@ -341,22 +340,65 @@ namespace KartRider
                     //kart data
                     PrStartTimeAttack(oPacket);
 
-                    // 6x6 EncFloat
-                    oPacket.WriteInt(1);
-                    oPacket.WriteEncFloat(0.67f);
-                    oPacket.WriteEncFloat(2300);
-                    oPacket.WriteEncFloat(2930);
-                    oPacket.WriteEncFloat(1.494f);
-                    oPacket.WriteEncFloat(1000);
-                    oPacket.WriteEncFloat(1500);
+                    //AI data
+                    oPacket.WriteInt(7); //AI count
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
+
+                    oPacket.WriteEncFloat(1f);
+                    oPacket.WriteEncFloat(2300f);
+                    oPacket.WriteEncFloat(2930f);
+                    oPacket.WriteEncFloat(1.4f);
+                    oPacket.WriteEncFloat(1000f);
+                    oPacket.WriteEncFloat(1500f);
 
                     oPacket.WriteUInt(StartGameData.StartTimeAttack_Track); //track name hash
                     oPacket.WriteInt(10000);
 
                     oPacket.WriteInt();
                     oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("MissionInfo")));
-                    oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 ff ff ff ff 00 00 00 00 00");
-                    oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
+                    oPacket.WriteHexString("00000000000000000000FFFFFFFF000000000000000000");
+                    //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
                     RouterListener.MySession.Client.Send(oPacket);
                 }
                 //StartGameRacing.KartSpecLog();
@@ -413,12 +455,12 @@ namespace KartRider
             outPacket.WriteBytes(RoomUnkBytes);
             outPacket.WriteInt(0); //RoomMaster
             outPacket.WriteInt(2);
-            outPacket.WriteInt(65535); // outPacket.WriteShort(); outPacket.WriteShort(3);
+            outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
             outPacket.WriteShort(0); // 797
             outPacket.WriteByte(0);
             var unk1 = 0;
             outPacket.WriteInt(unk1);
-            for (int i = 0; i < unk1; i++) outPacket.WriteByte();
+            //for (int i = 0; i < unk1; i++) outPacket.WriteByte();
             for (int i = 0; i < 4; i++) outPacket.WriteInt();
 
             /* ---- One/First player ---- */
@@ -447,7 +489,7 @@ namespace KartRider
             outPacket.WriteShort(SetRiderItem.Set_HandGearL);
             outPacket.WriteShort(0);
             outPacket.WriteShort(SetRiderItem.Set_Uniform);
-            outPacket.WriteShort(0); //decal
+            outPacket.WriteShort(SetRiderItem.Set_Decal); //decal
             outPacket.WriteShort(SetRiderItem.Set_Pet);
             outPacket.WriteShort(SetRiderItem.Set_FlyingPet);
             outPacket.WriteShort(SetRiderItem.Set_Aura);
@@ -512,8 +554,8 @@ namespace KartRider
             outPacket.WriteByte();
             for (int i = 0; i < 8; i++) outPacket.WriteInt();
             outPacket.WriteInt(1500); //outPacket.WriteInt(1500);
-            outPacket.WriteInt(1499); //outPacket.WriteInt(2000);
-            outPacket.WriteInt(0); //outPacket.WriteInt();
+            outPacket.WriteInt(2512); //outPacket.WriteInt(2000);
+            outPacket.WriteInt(162); //outPacket.WriteInt();
             outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
             outPacket.WriteInt(5); //outPacket.WriteInt(5);
             outPacket.WriteByte(255); //outPacket.WriteInt(1677721855);
@@ -530,71 +572,92 @@ namespace KartRider
             outPacket.WriteByte();
             outPacket.WriteInt();
 
-            for (int i = 0; i < 7; i++) outPacket.WriteInt(0);
-            outPacket.WriteBytes(new byte[36]);
-            for (int i = 0; i < 7; i++) outPacket.WriteUInt(4294967295); //FFFFFFFF
-            outPacket.WriteInt(0);
             /*---- One/First player ----*/
+            /*
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteInt(0);
+            outPacket.WriteBytes(new byte[38]);
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteHexString("FFFFFFFF");
+            outPacket.WriteInt(0);
+            */
+            //outPacket.WriteHexString("030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000");
 
             // AI Data
-            /*
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1112);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1111);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1119);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1111);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1108);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1111);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
+
+            outPacket.WriteShort(0);
             outPacket.WriteInt(7);
             outPacket.WriteShort(1);
             outPacket.WriteShort(0);
-            outPacket.WriteShort(1142);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(1508);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
             outPacket.WriteByte(0);
-            outPacket.WriteBytes(new byte[36]);
+
+            outPacket.WriteBytes(new byte[38]);
             outPacket.WriteUInt(4);
             outPacket.WriteUInt(1);
             outPacket.WriteUInt(5);
@@ -603,7 +666,6 @@ namespace KartRider
             outPacket.WriteUInt(3);
             outPacket.WriteUInt(7);
             outPacket.WriteInt(0);
-            */
         }
 
         public static void PrStartTimeAttack(OutPacket oPacket)
@@ -733,24 +795,24 @@ namespace KartRider
             oPacket.WriteEncFloat(Kart.wallCollGaugeMinVelLoss);
             oPacket.WriteEncFloat(Kart.modelMaxX);
             oPacket.WriteEncFloat(Kart.modelMaxY);
-			oPacket.WriteEncInt(Kart.defaultExceedType);
-			oPacket.WriteEncByte(Kart.defaultEngineType);
-			oPacket.WriteEncByte(Kart.EngineType);
-			oPacket.WriteEncByte(Kart.defaultHandleType);
-			oPacket.WriteEncByte(Kart.HandleType);
-			oPacket.WriteEncByte(Kart.defaultWheelType);
-			oPacket.WriteEncByte(Kart.WheelType);
-			oPacket.WriteEncByte(Kart.defaultBoosterType);
-			oPacket.WriteEncByte(Kart.BoosterType);
-			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
-			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
-			oPacket.WriteEncInt(Kart.chargerSystemboosterUseCount);
-			oPacket.WriteEncFloat(Kart.chargerSystemUseTime);
-			oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
-			oPacket.WriteEncFloat(Kart.driftGaugeFactor);
-			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
-			oPacket.WriteEncFloat(Kart.v12_1);
-			oPacket.WriteEncFloat(Kart.v12_2);
+            oPacket.WriteEncInt(Kart.defaultExceedType);
+            oPacket.WriteEncByte(Kart.defaultEngineType);
+            oPacket.WriteEncByte(Kart.EngineType);
+            oPacket.WriteEncByte(Kart.defaultHandleType);
+            oPacket.WriteEncByte(Kart.HandleType);
+            oPacket.WriteEncByte(Kart.defaultWheelType);
+            oPacket.WriteEncByte(Kart.WheelType);
+            oPacket.WriteEncByte(Kart.defaultBoosterType);
+            oPacket.WriteEncByte(Kart.BoosterType);
+            oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
+            oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
+            oPacket.WriteEncInt(Kart.chargerSystemboosterUseCount);
+            oPacket.WriteEncFloat(Kart.chargerSystemUseTime);
+            oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
+            oPacket.WriteEncFloat(Kart.driftGaugeFactor);
+            oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
+            oPacket.WriteEncFloat(Kart.v12_1);
+            oPacket.WriteEncFloat(Kart.v12_2);
             //------------------------------------------------------------------------KartSpac End
         }
 
@@ -791,7 +853,7 @@ namespace KartRider
             outPacket.WriteByte(1);
             outPacket.WriteByte(7); //(byte)channeldata2
             outPacket.WriteInt(0);
-            outPacket.WriteHexString("089637AF70"); //08 24 72 F5 9E
+            outPacket.WriteHexString("083E781F5E"); //08 24 72 F5 9E
             outPacket.WriteInt(0);
             outPacket.WriteByte(0);
             outPacket.WriteByte(0);

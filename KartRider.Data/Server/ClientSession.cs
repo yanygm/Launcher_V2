@@ -2644,6 +2644,7 @@ namespace KartRider
 						}
 						return;
 					}
+					/*
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelSwitch", 0))
 					{
 						using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
@@ -2658,9 +2659,10 @@ namespace KartRider
 						}
 						return;
 					}
+					*/
 					else
 					{
-						//MultyPlayer.Clientsession(hash, iPacket);
+						MultyPlayer.Clientsession(hash, iPacket);
 						return;
 					}
 				}
