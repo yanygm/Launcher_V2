@@ -96,7 +96,7 @@ namespace RiderData
 				oPacket.WriteShort(SetRiderItem.Set_Balloon);
 				oPacket.WriteShort(0);
 				oPacket.WriteShort(SetRiderItem.Set_HeadBand);
-				oPacket.WriteShort(0);
+				oPacket.WriteShort(SetRiderItem.Set_HeadPhone);
 				oPacket.WriteShort(SetRiderItem.Set_HandGearL);
 				oPacket.WriteShort(0);
 				oPacket.WriteShort(SetRiderItem.Set_Uniform);
