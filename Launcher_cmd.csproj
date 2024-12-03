@@ -32,7 +32,5 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Ionic.Zlib.Core" Version="1.0.0" />
-    <PackageReference Include="Veldrid" Version="4.9.0" />
-    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
   </ItemGroup>
 </Project>

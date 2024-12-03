@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Numerics;
 using System.Text;
-using KartLibrary.Game.Engine;
 using KartLibrary.Xml;
 
 namespace KartLibrary.IO;
@@ -104,12 +103,5 @@ public static class BinaryReaderExt
         float z = br.ReadSingle();
         float w = br.ReadSingle();
         return new Vector4(x, y, z, w);
-    }
-
-    public static BoundingBox ReadBoundBox(this BinaryReader br)
-    {
-        Vector3 minPos = br.ReadVector3();
-        Vector3 maxPos = br.ReadVector3();
-        return new BoundingBox(minPos, maxPos);
     }
 }

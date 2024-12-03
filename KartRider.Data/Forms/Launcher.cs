@@ -16,6 +16,7 @@ using KartRider.IO.Packet;
 using KartRider.Common.Utilities;
 using KartLibrary.File;
 using static KartRider.Common.Data.PINFile;
+using System.Collections;
 
 namespace KartRider
 {
@@ -247,6 +248,38 @@ namespace KartRider
 
 		public void Load_KartExcData()
 		{
+			if (!File.Exists(@"Profile\AI.xml"))
+			{
+				XmlTextWriter writer = new XmlTextWriter(@"Profile\AI.xml", System.Text.Encoding.UTF8);
+				writer.Formatting = Formatting.Indented;
+				writer.WriteStartDocument();
+				writer.WriteStartElement("AI");
+				writer.WriteEndElement();
+				writer.Close();
+				XmlDocument xmlDoc = new XmlDocument();
+				xmlDoc.Load(@"Profile\AI.xml");
+				XmlNode root = xmlDoc.SelectSingleNode("AI");
+				for (var i = 0; i < 7; i++)
+				{
+					XmlElement xe1 = xmlDoc.CreateElement("AiList");
+					xe1.SetAttribute("a", "1");
+					xe1.SetAttribute("b", "0");
+					xe1.SetAttribute("c", "1508");
+					xe1.SetAttribute("d", "0");
+					xe1.SetAttribute("e", "0");
+					xe1.SetAttribute("f", "0");
+					root.AppendChild(xe1);
+				}
+				XmlElement xe2 = xmlDoc.CreateElement("AiData");
+				xe2.SetAttribute("a", "1");
+				xe2.SetAttribute("b", "2300");
+				xe2.SetAttribute("c", "2930");
+				xe2.SetAttribute("d", "1.4");
+				xe2.SetAttribute("e", "1000");
+				xe2.SetAttribute("f", "1500");
+				root.AppendChild(xe2);
+				xmlDoc.Save(@"Profile\AI.xml");
+			}
 			if (File.Exists(@"Profile\NewKart.xml"))
 			{
 				XmlDocument doc = new XmlDocument();

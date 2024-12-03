@@ -183,6 +183,8 @@ namespace KartRider
 						iPacket.ReadByte();
 						SetRiderItem.Set_slotBg = iPacket.ReadByte();
 						SetRiderItem.Save_SetRiderItem();
+						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
+						StartGameData.Kart_id = SetRiderItem.Set_Kart;
 						TuneSpec.Use_PartsSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
 						TuneSpec.Use_TuneSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
 						TuneSpec.Use_PlantSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
