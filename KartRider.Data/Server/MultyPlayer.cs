@@ -547,18 +547,8 @@ namespace KartRider
             }
             else
             {
-                var levelList = KartExcData.LevelList;
-                var existingLevel = levelList.FirstOrDefault(list => list[0] == ExcKartAndSN.Kart && list[1] == ExcKartAndSN.SN);
-                if (existingLevel != null)
-                {
-                    outPacket.WriteShort(7);
-                    outPacket.WriteShort(0);
-                }
-                else
-                {
-                    outPacket.WriteShort(0);
-                    outPacket.WriteShort(0);
-                }
+                outPacket.WriteShort(0);
+                outPacket.WriteShort(0);
             }
             outPacket.WriteShort(SetRiderItem.Set_slotBg);
             outPacket.WriteShort(0);
