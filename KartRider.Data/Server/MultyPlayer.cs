@@ -76,7 +76,7 @@ namespace KartRider
                 outPacket.WriteByte();
                 outPacket.WriteUInt(SetRider.RP);
                 outPacket.WriteInt(0); //Earned RP
-                outPacket.WriteInt(1000); //Earned Lucci
+                outPacket.WriteInt(0); //Earned Lucci
                 outPacket.WriteUInt(SetRider.Lucci);
                 outPacket.WriteBytes(new byte[41]);
                 outPacket.WriteInt(1);
@@ -342,13 +342,19 @@ namespace KartRider
                     PrStartTimeAttack(oPacket);
 
                     //AI data
-                    oPacket.WriteInt(7); //AI count
                     XmlDocument doc = new XmlDocument();
                     doc.Load(@"Profile\AI.xml");
+                    int listCount = 0;
+                    if (!(doc.GetElementsByTagName("AiList") == null))
+                    {
+                        XmlNodeList lis = doc.GetElementsByTagName("AiList");
+                        listCount = lis.Count;
+                    }
+                    oPacket.WriteInt(listCount); //AI count
                     if (!(doc.GetElementsByTagName("AiData") == null))
                     {
                         XmlNodeList lis = doc.GetElementsByTagName("AiData");
-                        for (int i = 0; i < 7; i++)
+                        for (int i = 0; i < listCount; i++)
                         {
                             oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[0].Value));
                             oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[1].Value));
@@ -358,56 +364,6 @@ namespace KartRider
                             oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[5].Value));
                         }
                     }
-                    /*
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-
-                    oPacket.WriteEncFloat(1f);
-                    oPacket.WriteEncFloat(2300f);
-                    oPacket.WriteEncFloat(2930f);
-                    oPacket.WriteEncFloat(1.4f);
-                    oPacket.WriteEncFloat(1000f);
-                    oPacket.WriteEncFloat(1500f);
-                    */
                     oPacket.WriteUInt(StartGameData.StartTimeAttack_Track); //track name hash
                     oPacket.WriteInt(10000);
 
@@ -443,7 +399,16 @@ namespace KartRider
                     oPacket.WriteInt(0);
                     oPacket.WriteByte(1);
                     oPacket.WriteInt(unk1);
-                    oPacket.WriteHexString("1400150053040000000016000000000000FFFFFFFF01000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(1508);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteHexString("FFFFFFFF01000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                     RouterListener.MySession.Client.Send(oPacket);
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
@@ -564,7 +529,7 @@ namespace KartRider
             outPacket.WriteInt(162); //outPacket.WriteInt();
             outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
             outPacket.WriteInt(5); //outPacket.WriteInt(5);
-            outPacket.WriteByte(255); //outPacket.WriteInt(1677721855);
+            outPacket.WriteByte(255);
             outPacket.WriteByte(0);
             outPacket.WriteByte(0);
             outPacket.WriteByte(0);
@@ -602,9 +567,11 @@ namespace KartRider
             // AI Data
             XmlDocument doc = new XmlDocument();
             doc.Load(@"Profile\AI.xml");
+            int listCount = 7;
             if (!(doc.GetElementsByTagName("AiList") == null))
             {
                 XmlNodeList lis = doc.GetElementsByTagName("AiList");
+                listCount = listCount - lis.Count;
                 foreach (XmlNode xn in lis)
                 {
                     outPacket.WriteShort(0);
@@ -617,79 +584,33 @@ namespace KartRider
                     outPacket.WriteShort(short.Parse(xe.GetAttribute("e")));
                     outPacket.WriteByte(byte.Parse(xe.GetAttribute("f")));
                 }
+                if (listCount > 0)
+                {
+                    for (int i = 0; i < listCount; i++)
+                    {
+                        outPacket.WriteInt(0);
+                    }
+                }
             }
-            /*
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-
-            outPacket.WriteShort(0);
-            outPacket.WriteInt(7);
-            outPacket.WriteShort(1);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(1508);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
-            outPacket.WriteByte(0);
-            */
+            else
+            {
+                for (int i = 0; i < listCount; i++)
+                {
+                    outPacket.WriteInt(0);
+                }
+            }
             outPacket.WriteBytes(new byte[38]);
-            outPacket.WriteUInt(4);
-            outPacket.WriteUInt(1);
-            outPacket.WriteUInt(5);
-            outPacket.WriteUInt(2);
-            outPacket.WriteUInt(6);
-            outPacket.WriteUInt(3);
-            outPacket.WriteUInt(7);
+            if ((7 - listCount) > 0)
+            {
+                for (uint i = 0; i < (7 - listCount); i++)
+                {
+                    outPacket.WriteUInt(i + 1);
+                }
+            }
+            for (int i = 0; i < listCount; i++)
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
             outPacket.WriteInt(0);
         }
 
