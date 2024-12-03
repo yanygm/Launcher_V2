@@ -142,18 +142,8 @@ namespace RiderData
 				}
 				else
 				{
-					var levelList = KartExcData.LevelList;
-					var existingLevel = levelList.FirstOrDefault(list => list[0] == ExcKartAndSN.Kart && list[1] == ExcKartAndSN.SN);
-					if (existingLevel != null)
-					{
-						oPacket.WriteShort(7);
-						oPacket.WriteShort(0);
-					}
-					else
-					{
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-					}
+					oPacket.WriteShort(0);
+					oPacket.WriteShort(0);
 				}
 				oPacket.WriteShort(SetRiderItem.Set_slotBg);
 				oPacket.WriteShort(0);
