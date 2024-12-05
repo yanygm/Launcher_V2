@@ -420,13 +420,17 @@ namespace KartRider
 						short i = short.Parse(xe.GetAttribute("id"));
 						short sn = short.Parse(xe.GetAttribute("sn"));
 						short Engine = short.Parse(xe.GetAttribute("Engine"));
+						short Grade1 = short.Parse(xe.GetAttribute("Grade1"));
 						short Handle = short.Parse(xe.GetAttribute("Handle"));
+						short Grade2 = short.Parse(xe.GetAttribute("Grade2"));
 						short Wheel = short.Parse(xe.GetAttribute("Wheel"));
+						short Grade3 = short.Parse(xe.GetAttribute("Grade3"));
 						short Booster = short.Parse(xe.GetAttribute("Booster"));
+						short Grade4 = short.Parse(xe.GetAttribute("Grade4"));
 						short Coating = short.Parse(xe.GetAttribute("Coating"));
 						short TailLamp = short.Parse(xe.GetAttribute("TailLamp"));
-						short BoosterWave = short.Parse(xe.GetAttribute("BoosterWave"));
-						List<short> AddList = new List<short>{ i, sn, Engine, Handle, Wheel, Booster, Coating, TailLamp, BoosterWave };
+						short BoosterWave = short.Parse(xe.GetAttribute("BoosterEffect"));
+						List<short> AddList = new List<short>{ i, sn, Engine, Grade1, Handle, Grade2, Wheel, Grade3, Booster, Grade4, Coating, TailLamp, BoosterWave };
 						KartExcData.Parts12List.Add(AddList);
 					}
 				}

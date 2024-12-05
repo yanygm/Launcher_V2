@@ -61,6 +61,7 @@ namespace RiderData
 			NewRider.partsHandle12();
 			NewRider.partsWheel12();
 			NewRider.partsBooster12();
+			NewRider.partsBoosterEffect12();
 			NewRider.ethisItem();
 			NewRider.XUniquePartsData();
 			NewRider.XLegendPartsData();
@@ -750,9 +751,24 @@ namespace RiderData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
-					oPacket.WriteShort(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(4);
+					oPacket.WriteShort(-1);
+					oPacket.WriteByte(1);
+					if (id < 11)
+					{
+						oPacket.WriteByte(4);
+					}
+					else if (id < 21)
+					{
+						oPacket.WriteByte(3);
+					}
+					else if (id < 31)
+					{
+						oPacket.WriteByte(2);
+					}
+					else if (id < 41)
+					{
+						oPacket.WriteByte(1);
+					}
 					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
@@ -777,9 +793,24 @@ namespace RiderData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
-					oPacket.WriteShort(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(4);
+					oPacket.WriteShort(-1);
+					oPacket.WriteByte(1);
+					if (id < 11)
+					{
+						oPacket.WriteByte(4);
+					}
+					else if (id < 21)
+					{
+						oPacket.WriteByte(3);
+					}
+					else if (id < 31)
+					{
+						oPacket.WriteByte(2);
+					}
+					else if (id < 41)
+					{
+						oPacket.WriteByte(1);
+					}
 					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
@@ -804,9 +835,24 @@ namespace RiderData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
-					oPacket.WriteShort(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(4);
+					oPacket.WriteShort(-1);
+					oPacket.WriteByte(1);
+					if (id < 11)
+					{
+						oPacket.WriteByte(4);
+					}
+					else if (id < 21)
+					{
+						oPacket.WriteByte(3);
+					}
+					else if (id < 31)
+					{
+						oPacket.WriteByte(2);
+					}
+					else if (id < 41)
+					{
+						oPacket.WriteByte(1);
+					}
 					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
@@ -831,13 +877,41 @@ namespace RiderData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
-					oPacket.WriteShort(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(4);
+					oPacket.WriteShort(-1);
+					oPacket.WriteByte(1);
+					if (id < 11)
+					{
+						oPacket.WriteByte(4);
+					}
+					else if (id < 21)
+					{
+						oPacket.WriteByte(3);
+					}
+					else if (id < 31)
+					{
+						oPacket.WriteByte(2);
+					}
+					else if (id < 41)
+					{
+						oPacket.WriteByte(1);
+					}
 					oPacket.WriteShort(V2Spec.Get12Parts(id));
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
+		}
+
+		public static void partsBoosterEffect12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsBoosterEffect12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short> { id, sn, num };
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(78, item);
 		}
 
 		public static void ethisItem()

@@ -661,6 +661,13 @@ namespace RHOParser
                                             KartExcData.partsBooster12.Add(itemId);
                                         }
                                     }
+                                    else if (itemCatId == 78)
+                                    {
+                                        if (!(KartExcData.partsBoosterEffect12.Contains(itemId)))
+                                        {
+                                            KartExcData.partsBoosterEffect12.Add(itemId);
+                                        }
+                                    }
                                     else if (itemCatId == 79)
                                     {
                                         if (!(KartExcData.ethisItem.Contains(itemId)))

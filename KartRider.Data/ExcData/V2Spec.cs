@@ -14,17 +14,48 @@ namespace ExcData
 
 		public static short Get12Parts(short input)
 		{
-			int increment = 2;
-			int result = 0;
-			for (int i = 1; i <= (int)input; i++)
+			if (input < 11)
 			{
-				if (i % 3 == 1)
+				int increment = 2;
+				int result = 0;
+				for (int i = 1; i <= (int)input; i++)
 				{
-					increment++;
+					if (i % 3 == 1)
+					{
+						increment++;
+					}
+					result += increment;
 				}
-				result += increment;
+				return (short)(result + 199 - (int)input);
 			}
-			return (short)(result + 199 - (int)input);
+			else if (input < 21)
+			{
+				int increment = 2;
+				int result = 0;
+				for (int i = 1; i <= (int)input - 10; i++)
+				{
+					if (i % 3 == 1)
+					{
+						increment++;
+					}
+					result += increment;
+				}
+				return (short)(result + 232 - (int)input);
+			}
+			else
+			{
+				int increment = 2;
+				int result = 0;
+				for (int i = 1; i <= (int)input; i++)
+				{
+					if (i % 3 == 1)
+					{
+						increment++;
+					}
+					result += increment;
+				}
+				return (short)(result + 199 - (int)input);
+			}
 		}
 
 		public static void ExceedSpec()

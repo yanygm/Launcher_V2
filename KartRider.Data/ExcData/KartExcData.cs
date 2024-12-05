@@ -76,6 +76,7 @@ namespace ExcData
 		public static List<short> partsHandle12 = new List<short>();
 		public static List<short> partsWheel12 = new List<short>();
 		public static List<short> partsBooster12 = new List<short>();
+		public static List<short> partsBoosterEffect12 = new List<short>();
 		public static List<short> ethisItem = new List<short>();
 
 		public static void Tune_ExcData()
@@ -374,7 +375,7 @@ namespace ExcData
 				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == parts12KartAndSN.Kart && list[1] == parts12KartAndSN.SN);
 				if (existingParts12 == null)
 				{
-					Parts12.Add(new List<short> { id, sn, 0, 0, 0, 0 });
+					Parts12.Add(new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
 				}
 				else
 				{
@@ -425,18 +426,18 @@ namespace ExcData
 						oPacket.WriteShort(-1);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][2]);
-						oPacket.WriteShort(1);
 						oPacket.WriteShort(tempList[f][3]);
-						oPacket.WriteShort(1);
 						oPacket.WriteShort(tempList[f][4]);
-						oPacket.WriteShort(1);
 						oPacket.WriteShort(tempList[f][5]);
-						oPacket.WriteShort(1);
+						oPacket.WriteShort(tempList[f][6]);
+						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort(tempList[f][8]);
+						oPacket.WriteShort(tempList[f][9]);
+						oPacket.WriteShort(tempList[f][10]);
 						oPacket.WriteShort(0);
+						oPacket.WriteShort(tempList[f][11]);
 						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
+						oPacket.WriteShort(tempList[f][12]);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
@@ -648,24 +649,28 @@ namespace ExcData
 					{
 						case 72:
 							newList[2] = Item_Id;
+							newList[3] = Grade;
 							break;
 						case 73:
-							newList[3] = Item_Id;
+							newList[4] = Item_Id;
+							newList[5] = Grade;
 							break;
 						case 74:
-							newList[4] = Item_Id;
+							newList[6] = Item_Id;
+							newList[7] = Grade;
 							break;
 						case 75:
-							newList[5] = Item_Id;
+							newList[8] = Item_Id;
+							newList[9] = Grade;
 							break;
 						case 76:
-							newList[6] = Item_Id;
+							newList[10] = Item_Id;
 							break;
 						case 77:
-							newList[7] = Item_Id;
+							newList[11] = Item_Id;
 							break;
 						case 78:
-							newList[8] = Item_Id;
+							newList[12] = Item_Id;
 							break;
 					}
 					Parts12List.Add(newList);
@@ -677,24 +682,28 @@ namespace ExcData
 					{
 						case 72:
 							existing12List[2] = Item_Id;
+							existing12List[3] = Grade;
 							break;
 						case 73:
-							existing12List[3] = Item_Id;
+							existing12List[4] = Item_Id;
+							existing12List[5] = Grade;
 							break;
 						case 74:
-							existing12List[4] = Item_Id;
+							existing12List[6] = Item_Id;
+							existing12List[7] = Grade;
 							break;
 						case 75:
-							existing12List[5] = Item_Id;
+							existing12List[8] = Item_Id;
+							existing12List[9] = Grade;
 							break;
 						case 76:
-							existing12List[6] = Item_Id;
+							existing12List[10] = Item_Id;
 							break;
 						case 77:
-							existing12List[7] = Item_Id;
+							existing12List[11] = Item_Id;
 							break;
 						case 78:
-							existing12List[8] = Item_Id;
+							existing12List[12] = Item_Id;
 							break;
 					}
 					SaveParts12List(Parts12List);
@@ -826,12 +835,16 @@ namespace ExcData
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
 				xe1.SetAttribute("Engine", List[i][2].ToString());
-				xe1.SetAttribute("Handle", List[i][3].ToString());
-				xe1.SetAttribute("Wheel", List[i][4].ToString());
-				xe1.SetAttribute("Booster", List[i][5].ToString());
-				xe1.SetAttribute("Coating", List[i][6].ToString());
-				xe1.SetAttribute("TailLamp", List[i][7].ToString());
-				xe1.SetAttribute("BoosterWave", List[i][8].ToString());
+				xe1.SetAttribute("Grade1", List[i][3].ToString());
+				xe1.SetAttribute("Handle", List[i][4].ToString());
+				xe1.SetAttribute("Grade2", List[i][5].ToString());
+				xe1.SetAttribute("Wheel", List[i][6].ToString());
+				xe1.SetAttribute("Grade3", List[i][7].ToString());
+				xe1.SetAttribute("Booster", List[i][8].ToString());
+				xe1.SetAttribute("Grade4", List[i][9].ToString());
+				xe1.SetAttribute("Coating", List[i][10].ToString());
+				xe1.SetAttribute("TailLamp", List[i][11].ToString());
+				xe1.SetAttribute("BoosterEffect", List[i][12].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Parts12Data.xml");
 			}
