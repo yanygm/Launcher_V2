@@ -54,7 +54,7 @@ namespace ExcData
 					}
 					result += increment;
 				}
-				return (short)(result + 245 - (int)input);
+				return (short)(result + 265 - (int)input);
 			}
 			else if (input < 41)
 			{
@@ -68,7 +68,7 @@ namespace ExcData
 					}
 					result += increment;
 				}
-				return (short)(result + 268 - (int)input);
+				return (short)(result + 298 - (int)input);
 			}
 			else
 			{
