@@ -42,11 +42,11 @@ namespace ExcData
 				}
 				return (short)(result + 232 - (int)input);
 			}
-			else
+			else if (input < 31)
 			{
 				int increment = 2;
 				int result = 0;
-				for (int i = 1; i <= (int)input; i++)
+				for (int i = 1; i <= (int)input - 20; i++)
 				{
 					if (i % 3 == 1)
 					{
@@ -54,7 +54,25 @@ namespace ExcData
 					}
 					result += increment;
 				}
-				return (short)(result + 199 - (int)input);
+				return (short)(result + 245 - (int)input);
+			}
+			else if (input < 41)
+			{
+				int increment = 2;
+				int result = 0;
+				for (int i = 1; i <= (int)input - 30; i++)
+				{
+					if (i % 3 == 1)
+					{
+						increment++;
+					}
+					result += increment;
+				}
+				return (short)(result + 268 - (int)input);
+			}
+			else
+			{
+				return (short)(201);
 			}
 		}
 
