@@ -375,7 +375,7 @@ namespace ExcData
 				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == parts12KartAndSN.Kart && list[1] == parts12KartAndSN.SN);
 				if (existingParts12 == null)
 				{
-					Parts12.Add(new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+					Parts12.Add(new List<short> { id, sn, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0 });
 				}
 				else
 				{
