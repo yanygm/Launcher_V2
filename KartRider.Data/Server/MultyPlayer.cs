@@ -466,7 +466,7 @@ namespace KartRider
             outPacket.WriteShort(SetRiderItem.Set_Balloon);
             outPacket.WriteShort(0);
             outPacket.WriteShort(SetRiderItem.Set_HeadBand);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(SetRiderItem.Set_HeadPhone);
             outPacket.WriteShort(SetRiderItem.Set_HandGearL);
             outPacket.WriteShort(0);
             outPacket.WriteShort(SetRiderItem.Set_Uniform);
