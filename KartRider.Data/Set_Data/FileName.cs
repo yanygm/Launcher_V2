@@ -14,6 +14,7 @@ namespace Set_Data
 
 		public static string SetRider_Nickname = "Set_Nickname";
 		public static string SetRider_RiderIntro = "Set_RiderIntro";
+		public static string SetRider_Card = "Set_Card";
 		public static string SetRider_Emblem1 = "Set_Emblem1";
 		public static string SetRider_Emblem2 = "Set_Emblem2";
 		public static string SetRider_Lucci = "Set_Lucci";

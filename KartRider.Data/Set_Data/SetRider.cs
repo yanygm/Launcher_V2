@@ -14,6 +14,7 @@ namespace Set_Data
 		public static uint UserNO = 614990519;
 		public static string Nickname = "Yany";
 		public static string RiderIntro = "";
+		public static string Card = "";
 		public static short Emblem1 = 0;
 		public static short Emblem2 = 0;
 		public static uint Lucci = 1000000;
@@ -34,6 +35,10 @@ namespace Set_Data
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRider_LoadFile + FileName.SetRider_RiderIntro + FileName.Extension, false))
 			{
 				streamWriter.Write(SetRider.RiderIntro);
+			}
+			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRider_LoadFile + FileName.SetRider_Card + FileName.Extension, false))
+			{
+				streamWriter.Write(SetRider.Card);
 			}
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRider_LoadFile + FileName.SetRider_Emblem1 + FileName.Extension, false))
 			{
@@ -104,6 +109,20 @@ namespace Set_Data
 				using (StreamWriter streamWriter = new StreamWriter(Load_RiderIntro, false))
 				{
 					streamWriter.Write(SetRider.RiderIntro);
+				}
+			}
+			//-------------------------------------------------------------------------
+			string Load_Card = FileName.SetRider_LoadFile + FileName.SetRider_Card + FileName.Extension;
+			if (File.Exists(Load_Card))
+			{
+				string textValue = System.IO.File.ReadAllText(Load_Card);
+				SetRider.Card = textValue;
+			}
+			else
+			{
+				using (StreamWriter streamWriter = new StreamWriter(Load_Card, false))
+				{
+					streamWriter.Write(SetRider.Card);
 				}
 			}
 			//-------------------------------------------------------------------------

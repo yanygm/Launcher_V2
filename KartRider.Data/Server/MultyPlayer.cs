@@ -518,7 +518,7 @@ namespace KartRider
             outPacket.WriteShort(SetRiderItem.Set_slotBg);
             outPacket.WriteShort(0);
             outPacket.WriteShort(0);
-            outPacket.WriteString("Y|S");
+            outPacket.WriteString(SetRider.Card);
             outPacket.WriteUInt(SetRider.RP);
             outPacket.WriteByte();
             outPacket.WriteByte();

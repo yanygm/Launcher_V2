@@ -2,7 +2,6 @@
 using System.IO;
 using KartRider;
 using ExcData;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
 namespace Set_Data
 {
@@ -74,6 +73,14 @@ namespace Set_Data
 			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRider_LoadFile + FileName.SetRider_SlotChanger + FileName.Extension, false))
 			{
 				streamWriter.Write(SetRider.SlotChanger);
+			}
+		}
+
+		public static void Save_Card()
+		{
+			using (StreamWriter streamWriter = new StreamWriter(FileName.SetRider_LoadFile + FileName.SetRider_Card + FileName.Extension, false))
+			{
+				streamWriter.Write(SetRider.Card);
 			}
 		}
 	}

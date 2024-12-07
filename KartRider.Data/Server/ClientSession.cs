@@ -209,7 +209,7 @@ namespace KartRider
 								outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
 								outPacket.WriteBytes(new byte[70]);
 								outPacket.WriteByte(0);
-								outPacket.WriteString("Y|S");
+								outPacket.WriteString(SetRider.Card);
 								outPacket.WriteUInt(SetRider.RP);
 								outPacket.WriteInt(0);
 								outPacket.WriteByte(6);//Licenses
@@ -2363,6 +2363,17 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("RpBoomhillExchangeKoin"))
 						{
 							outPacket.WriteInt(0);
+							outPacket.WriteInt(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqUseInitialCardPacket", 0))
+					{
+						SetRider.Card = iPacket.ReadString();
+						SetGameData.Save_Card();
+						using (OutPacket outPacket = new OutPacket("SpRpUseInitialCardPacket"))
+						{
 							outPacket.WriteInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
