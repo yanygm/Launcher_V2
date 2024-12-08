@@ -240,17 +240,10 @@ namespace ExcData
 				{
 					Parts.Add(new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
 				}
-				else
-				{
-					Parts.Add(existingParts);
-				}
 			}
 			foreach (var innerList in PartsList)
 			{
-				if (innerList[1] > 1)
-				{
-					Parts.Add(innerList);
-				}
+				Parts.Add(innerList);
 			}
 			int range = 100;//分批次数
 			int times = Parts.Count / range + (Parts.Count % range > 0 ? 1 : 0);
@@ -377,17 +370,10 @@ namespace ExcData
 				{
 					Parts12.Add(new List<short> { id, sn, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0 });
 				}
-				else
-				{
-					Parts12.Add(existingParts12);
-				}
 			}
 			foreach (var innerList in Parts12List)
 			{
-				if (innerList[1] > 1)
-				{
-					Parts12.Add(innerList);
-				}
+				Parts12.Add(innerList);
 			}
 			int range = 100;//分批次数
 			int times = Parts12.Count / range + (Parts12.Count % range > 0 ? 1 : 0);
