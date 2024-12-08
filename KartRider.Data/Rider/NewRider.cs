@@ -14,12 +14,12 @@ namespace RiderData
 	{
 		public static void LoadItemData()
 		{
-			KartExcData.Parts12_ExcData();
-			KartExcData.Level12_ExcData();
-			KartExcData.Parts_ExcData();
-			KartExcData.Level_ExcData();
-			KartExcData.Plant_ExcData();
 			KartExcData.Tune_ExcData();
+			KartExcData.Plant_ExcData();
+			KartExcData.Level_ExcData();
+			KartExcData.Parts_ExcData();
+			KartExcData.Level12_ExcData();
+			KartExcData.Parts12_ExcData();
 			NewRider.character();
 			NewRider.color();
 			NewRider.plate();
