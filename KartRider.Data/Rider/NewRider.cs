@@ -14,12 +14,6 @@ namespace RiderData
 	{
 		public static void LoadItemData()
 		{
-			KartExcData.Parts12_ExcData();
-			KartExcData.Level12_ExcData();
-			KartExcData.Parts_ExcData();
-			KartExcData.Level_ExcData();
-			KartExcData.Plant_ExcData();
-			KartExcData.Tune_ExcData();
 			NewRider.character();
 			NewRider.color();
 			NewRider.plate();
@@ -74,6 +68,12 @@ namespace RiderData
 			NewRider.kart();
 			NewRider.NewKart1();
 			NewRider.NewKart2();
+			KartExcData.Tune_ExcData();
+			KartExcData.Plant_ExcData();
+			KartExcData.Level_ExcData();
+			KartExcData.Parts_ExcData();
+			KartExcData.Level12_ExcData();
+			KartExcData.Parts12_ExcData();
 			NewRider.NewRiderData();//라이더 인식
 		}
 
