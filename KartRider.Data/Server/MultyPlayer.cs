@@ -516,8 +516,19 @@ namespace KartRider
                 outPacket.WriteShort(0);
             }
             outPacket.WriteShort(SetRiderItem.Set_slotBg);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
+			var Parts12KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+			var Parts12List = KartExcData.Parts12List;
+			var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
+			if (existingParts12 != null)
+			{
+				oPacket.WriteShort(existingParts12[12]);
+				oPacket.WriteShort(0);
+			}
+			else
+			{
+				oPacket.WriteShort(0);
+				oPacket.WriteShort(0);
+			}
             outPacket.WriteString(SetRider.Card);
             outPacket.WriteUInt(SetRider.RP);
             outPacket.WriteByte();
