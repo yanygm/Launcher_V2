@@ -310,45 +310,6 @@ namespace RHOParser
                                     KartExcData.Dictionary.Add(Add);
                                 }
                             }
-
-                            var v2 = doc.Descendants("kartBody")
-                                        .Where(kb => (string)kb.Attribute("kartBodyGrade") == "13")
-                                        .Select(kb => (string)kb.Attribute("id"));
-
-                            foreach (var id in v2)
-                            {
-                                if (!(KartExcData.kartV2.Contains(short.Parse(id))))
-                                {
-                                    KartExcData.kartV2.Add(short.Parse(id));
-                                }
-                            }
-
-                            var xv1 = doc.Descendants("kartBody")
-                                        .Where(kb =>
-                                        {
-                                            int grade = int.Parse((string)kb.Attribute("kartBodyGrade"));
-                                            return grade > 10 && grade < 13;
-                                        })
-                                        .Select(kb => (string)kb.Attribute("id"));
-                            foreach (var id in xv1)
-                            {
-                                if (!(KartExcData.kartXV1.Contains(short.Parse(id))))
-                                {
-                                    KartExcData.kartXV1.Add(short.Parse(id));
-                                }
-                            }
-
-                            var old = doc.Descendants("kartBody")
-                                        .Where(kb => int.Parse((string)kb.Attribute("kartBodyGrade")) < 11)
-                                        .Select(kb => (string)kb.Attribute("id"));
-
-                            foreach (var id in old)
-                            {
-                                if (!(KartExcData.kartOld.Contains(short.Parse(id))))
-                                {
-                                    KartExcData.kartOld.Add(short.Parse(id));
-                                }
-                            }
                         }
                     }
                     if (fullName == "zeta_/" + config.region + "/shop/data/item.kml")

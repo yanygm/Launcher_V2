@@ -178,10 +178,11 @@ namespace KartRider
 						SetRiderItem.Set_Tachometer = iPacket.ReadShort();
 						SetRiderItem.Set_Dye = iPacket.ReadShort();
 						SetRiderItem.Set_KartSN = iPacket.ReadShort();
-						short Set_KartEffect = iPacket.ReadShort();
-						short Set_KartBoosterEffect = iPacket.ReadShort();
 						iPacket.ReadByte();
-						SetRiderItem.Set_slotBg = iPacket.ReadByte();
+						short Set_KartCoating = iPacket.ReadShort();
+						short Set_KartTailLamp = iPacket.ReadShort();
+						SetRiderItem.Set_slotBg = iPacket.ReadShort();
+						short Set_KartBoosterEffect = iPacket.ReadShort();
 						SetRiderItem.Save_SetRiderItem();
 						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
 						StartGameData.Kart_id = SetRiderItem.Set_Kart;

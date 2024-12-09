@@ -71,7 +71,6 @@ namespace RiderData
 			NewRider.V1LegendPartsData();
 			NewRider.V1RarePartsData();
 			NewRider.V1NormalPartsData();
-			NewRider.kart();
 			NewRider.NewKart1();
 			NewRider.NewKart2();
 			NewRider.NewRiderData();//라이더 인식
@@ -147,8 +146,21 @@ namespace RiderData
 					oPacket.WriteShort(0);
 				}
 				oPacket.WriteShort(SetRiderItem.Set_slotBg);
-				oPacket.WriteShort(0);
-				oPacket.WriteShort(0);
+				var Parts12KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+				var Parts12List = KartExcData.Parts12List;
+				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
+				if (existingParts12 != null)
+				{
+					oPacket.WriteShort(existingParts12[12]);
+					oPacket.WriteShort(0);
+				}
+				else
+				{
+					oPacket.WriteShort(0);
+					oPacket.WriteShort(0);
+				}
+				//oPacket.WriteShort(0);
+				//oPacket.WriteShort(0);
 				oPacket.WriteString(SetRider.Card);
 				oPacket.WriteUInt(SetRider.Lucci);
 				oPacket.WriteUInt(SetRider.RP);
@@ -157,44 +169,14 @@ namespace RiderData
 			}
 		}
 
-		public static void kart()
-		{
-			short sn = 1;
-			List<List<short>> itemV2 = new List<List<short>>();
-			foreach (var id in KartExcData.kartV2)
-			{
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				itemV2.Add(add);
-			}
-			LoRpGetRiderItemPacket(3, itemV2);
-			List<List<short>> itemXV1 = new List<List<short>>();
-			foreach (var id in KartExcData.kartXV1)
-			{
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				itemXV1.Add(add);
-			}
-			LoRpGetRiderItemPacket(3, itemXV1);
-			List<List<short>> Old = new List<List<short>>();
-			foreach (var id in KartExcData.kartOld)
-			{
-				short num = 1;
-				List<short> add = new List<short>{ id, sn, num };
-				Old.Add(add);
-			}
-			LoRpGetRiderItemPacket(3, Old);
-		}
-
 		public static void NewKart1()
 		{
-			List<short> NewKart1 = KartExcData.GetNewKart();
 			short sn = 1;
 			int range = 100;//分批次数
-			int times = NewKart1.Count / range + (NewKart1.Count % range > 0 ? 1 : 0);
+			int times = KartExcData.kart.Count / range + (KartExcData.kart.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
-				var tempList = NewKart1.GetRange(i * range, (i + 1) * range > NewKart1.Count ? (NewKart1.Count - i * range) : range);
+				var tempList = KartExcData.kart.GetRange(i * range, (i + 1) * range > KartExcData.kart.Count ? (KartExcData.kart.Count - i * range) : range);
 				int Count = tempList.Count;
 				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 				{

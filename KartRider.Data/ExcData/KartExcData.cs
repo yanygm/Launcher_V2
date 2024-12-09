@@ -34,9 +34,6 @@ namespace ExcData
 		public static List<short> character = new List<short>();
 		public static List<short> color = new List<short>();
 		public static List<short> kart = new List<short>();
-		public static List<short> kartOld = new List<short>();
-		public static List<short> kartXV1 = new List<short>();
-		public static List<short> kartV2 = new List<short>();
 		public static List<short> plate = new List<short>();
 		public static List<short> slotChanger = new List<short>();
 		public static List<short> goggle = new List<short>();
@@ -230,26 +227,11 @@ namespace ExcData
 
 		public static void Parts_ExcData()
 		{
-			List<List<short>> Parts = new List<List<short>>();
-			short sn = 1;
-			foreach (var id in kartXV1)
-			{
-				var partsKartAndSN = new { Kart = id, SN = sn };
-				var existingParts = PartsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
-				if (existingParts == null)
-				{
-					Parts.Add(new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
-				}
-			}
-			foreach (var innerList in PartsList)
-			{
-				Parts.Add(innerList);
-			}
 			int range = 100;//分批次数
-			int times = Parts.Count / range + (Parts.Count % range > 0 ? 1 : 0);
+			int times = PartsList.Count / range + (PartsList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
-				var tempList = Parts.GetRange(i * range, (i + 1) * range > Parts.Count ? (Parts.Count - i * range) : range);
+				var tempList = PartsList.GetRange(i * range, (i + 1) * range > PartsList.Count ? (PartsList.Count - i * range) : range);
 				int parts = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
@@ -360,26 +342,11 @@ namespace ExcData
 
 		public static void Parts12_ExcData()
 		{
-			List<List<short>> Parts12 = new List<List<short>>();
-			short sn = 1;
-			foreach (var id in kartV2)
-			{
-				var parts12KartAndSN = new { Kart = id, SN = sn };
-				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == parts12KartAndSN.Kart && list[1] == parts12KartAndSN.SN);
-				if (existingParts12 == null)
-				{
-					Parts12.Add(new List<short> { id, sn, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0 });
-				}
-			}
-			foreach (var innerList in Parts12List)
-			{
-				Parts12.Add(innerList);
-			}
 			int range = 100;//分批次数
-			int times = Parts12.Count / range + (Parts12.Count % range > 0 ? 1 : 0);
+			int times = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
-				var tempList = Parts12.GetRange(i * range, (i + 1) * range > Parts12.Count ? (Parts12.Count - i * range) : range);
+				var tempList = Parts12List.GetRange(i * range, (i + 1) * range > Parts12List.Count ? (Parts12List.Count - i * range) : range);
 				int parts12 = tempList.Count;
 				using (OutPacket oPacket = new OutPacket("LoRpGetRiderExcDataPacket"))
 				{
@@ -919,28 +886,6 @@ namespace ExcData
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Level12Data.xml");
 			}
-		}
-
-		public static List<short> MergeLists(List<short>[] lists)
-		{
-			List<short> mergedList = lists[0];
-			for (int i = 1; i < lists.Length; i++)
-			{
-				mergedList = mergedList.Union(lists[i]).ToList();
-			}
-			return mergedList;
-		}
-
-		public static List<short> GetElementsNotInB(List<short> a, List<short> b)
-		{
-			return a.Except(b).ToList();
-		}
-
-		public static List<short> GetNewKart()
-		{
-			List<short>[] allKart = new List<short>[] { kartV2, kartXV1, kartOld };
-			List<short> mergedList = MergeLists(allKart);
-			return GetElementsNotInB(kart, mergedList);
 		}
 	}
 }

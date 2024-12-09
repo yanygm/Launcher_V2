@@ -423,7 +423,7 @@ namespace Set_Data
 			if (File.Exists(Load_slotBg))
 			{
 				string textValue = System.IO.File.ReadAllText(Load_slotBg);
-				SetRiderItem.Set_slotBg = short.Parse(textValue);
+				SetRiderItem.Set_slotBg = byte.Parse(textValue);
 			}
 			else
 			{
