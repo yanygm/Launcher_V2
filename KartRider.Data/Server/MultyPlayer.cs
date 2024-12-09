@@ -521,13 +521,13 @@ namespace KartRider
             var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
             if (existingParts12 != null)
             {
-                oPacket.WriteShort(existingParts12[12]);
-                oPacket.WriteShort(0);
+                outPacket.WriteShort(existingParts12[12]);
+                outPacket.WriteShort(0);
             }
             else
             {
-                oPacket.WriteShort(0);
-                oPacket.WriteShort(0);
+                outPacket.WriteShort(0);
+                outPacket.WriteShort(0);
             }
             outPacket.WriteString(SetRider.Card);
             outPacket.WriteUInt(SetRider.RP);
