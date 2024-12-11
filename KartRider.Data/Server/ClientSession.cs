@@ -589,7 +589,7 @@ namespace KartRider
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(0);
-							outPacket.WriteInt(10000);
+							outPacket.WriteUInt(SetRider.Koin);
 							this.Parent.Client.Send(outPacket);
 						}
 						KartExcData.AddLevelList(Kart, SN, 5, 35, 0, 0, 0, 0, 0);
