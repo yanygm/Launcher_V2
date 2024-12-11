@@ -615,10 +615,10 @@ namespace KartRider
 							outPacket.WriteInt(0);
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(Kart);
-							outPacket.WriteShort(1);
+							outPacket.WriteShort(SN);
 							outPacket.WriteShort(0);
 							outPacket.WriteByte(1);
-							outPacket.WriteByte(2);
+							outPacket.WriteByte((byte)SN);
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(0);
 							outPacket.WriteBytes(data);
