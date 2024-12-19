@@ -2339,9 +2339,13 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBoomhillExchangeInfo", 0))
 					{
+						short Type = iPacket.ReadShort();
+						iPacket.ReadInt();
 						using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeInfo"))
 						{
-							outPacket.WriteBytes(new byte[8]);
+							outPacket.WriteInt();
+							outPacket.WriteShort(Type);
+							outPacket.WriteInt();
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
