@@ -39,8 +39,9 @@ namespace KartRider
 			using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
 			{
 				outPacket.WriteHexString("05 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00");
-				RouterListener.MySession.Client.Send(outPacket);
+				//RouterListener.MySession.Client.Send(outPacket);
 			}
+			return;
 		}
 
 		public static void PrGetGameOption()
