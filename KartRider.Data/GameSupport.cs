@@ -38,7 +38,7 @@ namespace KartRider
 		{
 			using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
 			{
-				outPacket.WriteInt(5);
+				outPacket.WriteHexString("05 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
 				RouterListener.MySession.Client.Send(outPacket);
 			}
 		}
