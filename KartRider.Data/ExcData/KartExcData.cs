@@ -301,7 +301,6 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
 					if (i == 0)
 					{
 						oPacket.WriteByte(1);
@@ -310,6 +309,7 @@ namespace ExcData
 					{
 						oPacket.WriteByte(0);
 					}
+					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
@@ -355,13 +355,6 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
-					oPacket.WriteInt(0);
 					if (i == 0)
 					{
 						oPacket.WriteByte(1);
@@ -370,6 +363,13 @@ namespace ExcData
 					{
 						oPacket.WriteByte(0);
 					}
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteInt(0);
+					oPacket.WriteByte(0);
 					oPacket.WriteInt(parts12);
 					for (var f = 0; f < parts12; f++)
 					{
@@ -379,13 +379,13 @@ namespace ExcData
 						oPacket.WriteShort(-1);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][2]);
-						oPacket.WriteShort(tempList[f][3]);
+						oPacket.WriteShort((short)(5 - tempList[f][3]));
 						oPacket.WriteShort(tempList[f][4]);
-						oPacket.WriteShort(tempList[f][5]);
+						oPacket.WriteShort((short)(5 - tempList[f][5]));
 						oPacket.WriteShort(tempList[f][6]);
-						oPacket.WriteShort(tempList[f][7]);
+						oPacket.WriteShort((short)(5 - tempList[f][7]));
 						oPacket.WriteShort(tempList[f][8]);
-						oPacket.WriteShort(tempList[f][9]);
+						oPacket.WriteShort((short)(5 - tempList[f][9]));
 						oPacket.WriteShort(tempList[f][10]);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][11]);
@@ -397,8 +397,7 @@ namespace ExcData
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
-						oPacket.WriteInt(0);
+						oPacket.WriteShort(4);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
 				}
