@@ -301,6 +301,7 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
+					oPacket.WriteByte(0);
 					if (i == 0)
 					{
 						oPacket.WriteByte(1);
@@ -309,7 +310,6 @@ namespace ExcData
 					{
 						oPacket.WriteByte(0);
 					}
-					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
@@ -354,7 +354,6 @@ namespace ExcData
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
 					if (i == 0)
 					{
 						oPacket.WriteByte(1);
@@ -363,6 +362,7 @@ namespace ExcData
 					{
 						oPacket.WriteByte(0);
 					}
+					oPacket.WriteByte(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
 					oPacket.WriteInt(0);
