@@ -78,7 +78,7 @@ namespace ExcData
 
 		public static void ExceedSpec()
 		{
-			var kartAndSN = new { Id = id, Sn = sn };
+			var kartAndSN = new { Id = SetRiderItem.Set_Kart, Sn = SetRiderItem.Set_KartSN };
 			var parts12List = KartExcData.Parts12List;
 			var existingParts = parts12List.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
 			Console.WriteLine("-------------------------------------------------------------");
