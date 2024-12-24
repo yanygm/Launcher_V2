@@ -186,6 +186,10 @@ namespace ExcData
 				{
 					TuneSpec.Tune_DriftEscapeForce = 210f;
 				}
+				else
+				{
+					TuneSpec.Reset_Tune_SpecData();
+				}
 			}
 			else
 			{
