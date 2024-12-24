@@ -84,27 +84,55 @@ namespace ExcData
 				var parts12List = KartExcData.Parts12List;
 				var existingParts = parts12List.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
 				Console.WriteLine("-------------------------------------------------------------");
-				short Parts_TransAccelFactor = 1;
-				if (existingParts != null && existingParts[2] > 0) Parts_TransAccelFactor = existingParts[2];
-				float V2Parts_TransAccelFactor = (float)((Get12Parts(Parts_TransAccelFactor) * 1.0M - 800M) / 25000.0M + 0.4765M);
+				short Parts_TransAccelFactor;
+				if (existingParts == null || existingParts[4] < 1)
+				{
+					Parts_TransAccelFactor = Get12Parts(1);
+				}
+				else
+				{
+					Parts_TransAccelFactor = existingParts[4];
+				}
+				float V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
 				Kart.TransAccelFactor = Kart.TransAccelFactor + V2Parts_TransAccelFactor;
 				Console.WriteLine("V2Parts_TransAccelFactor: " + V2Parts_TransAccelFactor);
 
-				short Parts_SteerConstraint = 1;
-				if (existingParts != null && existingParts[3] > 0) Parts_SteerConstraint = existingParts[3];
-				float V2Parts_SteerConstraint = (float)(((Get12Parts(Parts_SteerConstraint) * 1.0M - 800M) / 250.0M + 3.308M) / 3M);
+				short Parts_SteerConstraint;
+				if (existingParts == null || existingParts[7] < 1)
+				{
+					Parts_SteerConstraint = Get12Parts(1);
+				}
+				else
+				{
+					Parts_SteerConstraint = existingParts[7];
+				}
+				float V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.308M) / 3M);
 				Kart.SteerConstraint = Kart.SteerConstraint + V2Parts_SteerConstraint;
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
 
-				short Parts_DriftEscapeForce = 1;
-				if (existingParts != null && existingParts[4] > 0) Parts_DriftEscapeForce = existingParts[4];
-				float V2Parts_DriftEscapeForce = (float)(Get12Parts(Parts_DriftEscapeForce) * 2.0M);
+				short Parts_DriftEscapeForce;
+				if (existingParts == null || existingParts[10] < 1)
+				{
+					Parts_DriftEscapeForce = Get12Parts(1);
+				}
+				else
+				{
+					Parts_DriftEscapeForce = existingParts[10];
+				}
+				float V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
 				Kart.DriftEscapeForce = Kart.DriftEscapeForce + V2Parts_DriftEscapeForce;
 				Console.WriteLine("V2Parts_DriftEscapeForce: " + V2Parts_DriftEscapeForce);
 
-				short Parts_NormalBoosterTime = 1;
-				if (existingParts != null && existingParts[5] > 0) Parts_NormalBoosterTime = existingParts[5];
-				float V2Parts_NormalBoosterTime = (float)(Get12Parts(Parts_NormalBoosterTime) * 1.0M - 260M);
+				short Parts_NormalBoosterTime;
+				if (existingParts == null || existingParts[13] < 1)
+				{
+					Parts_NormalBoosterTime = Get12Parts(1);
+				}
+				else
+				{
+					Parts_NormalBoosterTime = existingParts[13];
+				}
+				float V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
 				Kart.NormalBoosterTime = Kart.NormalBoosterTime + V2Parts_NormalBoosterTime;
 				Console.WriteLine("V2Parts_NormalBoosterTime: " + V2Parts_NormalBoosterTime);
 				Console.WriteLine("-------------------------------------------------------------");

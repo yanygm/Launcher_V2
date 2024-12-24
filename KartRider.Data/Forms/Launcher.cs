@@ -419,18 +419,22 @@ namespace KartRider
 						XmlElement xe = (XmlElement)xn;
 						short i = short.Parse(xe.GetAttribute("id"));
 						short sn = short.Parse(xe.GetAttribute("sn"));
-						short Engine = short.Parse(xe.GetAttribute("Engine"));
+						short Item_Id1 = short.Parse(xe.GetAttribute("Item_Id1"));
 						short Grade1 = short.Parse(xe.GetAttribute("Grade1"));
-						short Handle = short.Parse(xe.GetAttribute("Handle"));
+						short PartsValue1 = short.Parse(xe.GetAttribute("PartsValue1"));
+						short Item_Id2 = short.Parse(xe.GetAttribute("Item_Id2"));
 						short Grade2 = short.Parse(xe.GetAttribute("Grade2"));
-						short Wheel = short.Parse(xe.GetAttribute("Wheel"));
+						short PartsValue2 = short.Parse(xe.GetAttribute("PartsValue2"));
+						short Item_Id3 = short.Parse(xe.GetAttribute("Item_Id3"));
 						short Grade3 = short.Parse(xe.GetAttribute("Grade3"));
-						short Booster = short.Parse(xe.GetAttribute("Booster"));
+						short PartsValue3 = short.Parse(xe.GetAttribute("PartsValue3"));
+						short Item_Id4 = short.Parse(xe.GetAttribute("Item_Id4"));
 						short Grade4 = short.Parse(xe.GetAttribute("Grade4"));
-						short Coating = short.Parse(xe.GetAttribute("Coating"));
-						short TailLamp = short.Parse(xe.GetAttribute("TailLamp"));
-						short BoosterWave = short.Parse(xe.GetAttribute("BoosterEffect"));
-						List<short> AddList = new List<short>{ i, sn, Engine, Grade1, Handle, Grade2, Wheel, Grade3, Booster, Grade4, Coating, TailLamp, BoosterWave };
+						short PartsValue4 = short.Parse(xe.GetAttribute("PartsValue4"));
+						short partsCoating = short.Parse(xe.GetAttribute("partsCoating"));
+						short partsTailLamp = short.Parse(xe.GetAttribute("partsTailLamp"));
+						short partsBoosterEffect = short.Parse(xe.GetAttribute("partsBoosterEffect"));
+						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect };
 						KartExcData.Parts12List.Add(AddList);
 					}
 				}
