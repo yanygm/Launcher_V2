@@ -2,7 +2,7 @@ using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
 using System;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zlib;
 using System.Net;
 
 namespace KartRider.Common.Security

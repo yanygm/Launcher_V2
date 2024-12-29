@@ -429,8 +429,6 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
 
     private byte[] getData(uint dataIndex, uint key)
     {
-        //IL_0080: Unknown result type (might be due to invalid IL or missing references)
-        //IL_008f: Expected O, but got Unknown
         if (!_dataInfoMap.ContainsKey(dataIndex))
         {
             throw new Exception("index not exist.");
@@ -445,7 +443,7 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
         {
             using MemoryStream memoryStream = new MemoryStream(array);
             array = new byte[rhoDataInfo.UncompressedSize];
-            ((Stream)new ZlibStream((Stream)memoryStream, (CompressionMode)1)).Read(array, 0, array.Length);
+            new ZlibStream(memoryStream, CompressionMode.Decompress).Read(array, 0, array.Length);
         }
 
         if ((rhoDataInfo.BlockProperty & RhoBlockProperty.PartialEncrypted) != 0)
@@ -468,12 +466,6 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
 
     private void storeFolderAndFiles(RhoFolder folder, Queue<DataSavingInfo> savingInfo, HashSet<uint> usedIndex, ref int dataOffset, uint outRhoKey)
     {
-        //IL_01cf: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01d4: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01e1: Expected O, but got Unknown
-        //IL_01e1: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01e7: Expected O, but got Unknown
-        //IL_01ec: Expected O, but got Unknown
         if (folder.Name == "" && folder.Parent != null)
         {
             throw new Exception("folder name couldn't be empty.");
@@ -530,10 +522,10 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
                 if (item2.FileEncryptionProperty == RhoFileProperty.CompressedEncrypted || item2.FileEncryptionProperty == RhoFileProperty.Compressed)
                 {
                     using MemoryStream memoryStream2 = new MemoryStream();
-                    ZlibStream val = new ZlibStream((Stream)memoryStream2, (CompressionMode)0, (CompressionLevel)9, true);
-                    ((Stream)val).Write(array, 0, array.Length);
-                    ((Stream)val).Flush();
-                    ((Stream)val).Close();
+                    ZlibStream val = new ZlibStream(memoryStream2, CompressionMode.Compress, CompressionLevel.Level9, true);
+                    val.Write(array, 0, array.Length);
+                    val.Flush();
+                    val.Close();
                     array = memoryStream2.ToArray();
                 }
 

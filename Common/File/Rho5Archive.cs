@@ -270,17 +270,11 @@ public class Rho5Archive : IRhoArchive<Rho5Folder, Rho5File>, IDisposable
             queue.Enqueue(item);
         }
 
-        saveSingleFileTo(output, dataPackName, dataPackID, getMixingString(code), queue);
+        saveSingleFileTo(output, dataPackName, dataPackID, getMixingString(code), queue, 1992294400, false);
     }
 
-    private void saveSingleFileTo(string dataPackPath, string dataPackName, int dataPackID, string mixingStr, Queue<Rho5File> allFileQueue, int maxSize = 1992294400, bool reopen = false)
+    private void saveSingleFileTo(string dataPackPath, string dataPackName, int dataPackID, string mixingStr, Queue<Rho5File> allFileQueue, int maxSize, bool reopen)
     {
-        //IL_01e0: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01e5: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01f2: Expected O, but got Unknown
-        //IL_01f2: Unknown result type (might be due to invalid IL or missing references)
-        //IL_01f8: Expected O, but got Unknown
-        //IL_01fd: Expected O, but got Unknown
         string dataPackFilePath = getDataPackFilePath(dataPackPath, dataPackName, dataPackID);
         if (!Directory.Exists(Path.GetDirectoryName(dataPackFilePath) ?? ""))
         {
@@ -342,10 +336,10 @@ public class Rho5Archive : IRhoArchive<Rho5Folder, Rho5File>, IDisposable
             byte[] array2;
             using (MemoryStream memoryStream3 = new MemoryStream())
             {
-                ZlibStream val = new ZlibStream((Stream)memoryStream3, (CompressionMode)0, true);
-                ((Stream)val).Write(bytes, 0, bytes.Length);
-                ((Stream)val).Flush();
-                ((Stream)val).Close();
+                ZlibStream val = new ZlibStream(memoryStream3, CompressionMode.Compress, true);
+                val.Write(bytes, 0, bytes.Length);
+                val.Flush();
+                val.Close();
                 array2 = memoryStream3.ToArray();
                 Rho5EncryptStream rho5EncryptStream2 = new Rho5EncryptStream(memoryStream3, packedFileKey);
                 rho5EncryptStream2.Seek(0L, SeekOrigin.Begin);
@@ -491,8 +485,6 @@ public class Rho5Archive : IRhoArchive<Rho5Folder, Rho5File>, IDisposable
 
     internal byte[] getData(Rho5FileHandler handler)
     {
-        //IL_0103: Unknown result type (might be due to invalid IL or missing references)
-        //IL_0114: Expected O, but got Unknown
         if (!_rho5Streams.ContainsKey(handler._dataPackID) || !_dataBeginPoses.ContainsKey(handler._dataPackID))
         {
             throw new Exception("Invalid data pack id in file handler.");
@@ -517,7 +509,7 @@ public class Rho5Archive : IRhoArchive<Rho5Folder, Rho5File>, IDisposable
         }
 
         using MemoryStream baseStream = new MemoryStream(array);
-        ((Stream)new ZlibStream((Stream)new Rho5DecryptStream(baseStream, handler._key), (CompressionMode)1)).Read(array2, 0, array2.Length);
+        new ZlibStream(new Rho5DecryptStream(baseStream, handler._key), CompressionMode.Decompress).Read(array2, 0, array2.Length);
         return array2;
     }
 }

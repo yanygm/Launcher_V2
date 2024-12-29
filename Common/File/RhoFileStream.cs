@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zlib;
 using KartLibrary.Encrypt;
 
 namespace KartLibrary.File;
@@ -56,7 +56,7 @@ public class RhoFileStream : Stream
 
         if ((_baseBlockInfo.BlockProperty & RhoBlockProperty.Compressed) != 0)
         {
-            _baseStream = new ZLibStream(_baseStream, CompressionMode.Decompress);
+            _baseStream = new ZlibStream(_baseStream, CompressionMode.Decompress);
         }
 
         if ((_baseBlockInfo.BlockProperty & RhoBlockProperty.FullEncrypted) != 0)
@@ -91,7 +91,7 @@ public class RhoFileStream : Stream
 
         if ((_baseBlockInfo.BlockProperty & RhoBlockProperty.Compressed) != 0)
         {
-            _baseStream = new ZLibStream(_baseStream, CompressionMode.Decompress);
+            _baseStream = new ZlibStream(_baseStream, CompressionMode.Decompress);
         }
 
         if ((_baseBlockInfo.BlockProperty & RhoBlockProperty.FullEncrypted) != 0)

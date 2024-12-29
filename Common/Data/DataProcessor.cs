@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 using Ionic.Zlib;
 using KartLibrary.Encrypt;
 using KartLibrary.IO;
@@ -21,7 +20,7 @@ public static class DataProcessor
         if (Compressed)
         {
             using MemoryStream stream = new MemoryStream();
-            new ZLibStream(stream, System.IO.Compression.CompressionMode.Compress).Write(array, 0, array.Length);
+            new ZlibStream(stream, CompressionMode.Compress).Write(array, 0, array.Length);
             array = memoryStream.ToArray();
         }
 
@@ -72,7 +71,7 @@ public static class DataProcessor
         {
             using MemoryStream stream = new MemoryStream(array);
             array = new byte[num4];
-            new ZLibStream(stream, System.IO.Compression.CompressionMode.Decompress).Read(array, 0, array.Length);
+            new ZlibStream(stream, CompressionMode.Decompress).Read(array, 0, array.Length);
         }
 
         if (IO.Adler.Adler32(0u, array, 0, array.Length) != num2)
@@ -107,7 +106,7 @@ public static class DataProcessor
         {
             using MemoryStream memoryStream = new MemoryStream(array);
             array = new byte[num4];
-            ((Stream)new ZlibStream((Stream)memoryStream, (Ionic.Zlib.CompressionMode)1)).Read(array, 0, array.Length);
+            new ZlibStream(memoryStream, CompressionMode.Decompress).Read(array, 0, array.Length);
         }
 
         if (IO.Adler.Adler32(0u, array, 0, array.Length) != num2)
@@ -128,7 +127,7 @@ public static class DataProcessor
         if (Compressed)
         {
             using MemoryStream memoryStream = new MemoryStream();
-            new ZLibStream(memoryStream, System.IO.Compression.CompressionMode.Compress).Write(array, 0, array.Length);
+            new ZlibStream(memoryStream, CompressionMode.Compress).Write(array, 0, array.Length);
             array = memoryStream.ToArray();
         }
 

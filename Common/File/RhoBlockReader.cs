@@ -41,8 +41,6 @@ public static class RhoBlockReader
 
     public static byte[] ReadBlock(this BinaryReader reader, Rho RhoFile, uint BlockIndex, uint Key)
     {
-        //IL_004d: Unknown result type (might be due to invalid IL or missing references)
-        //IL_005c: Expected O, but got Unknown
         RhoDataInfo blockInfo = RhoFile.GetBlockInfo(BlockIndex);
         if (blockInfo == null)
         {
@@ -55,7 +53,7 @@ public static class RhoBlockReader
         {
             using MemoryStream memoryStream = new MemoryStream(array);
             array = new byte[blockInfo.UncompressedSize];
-            ((Stream)new ZlibStream((Stream)memoryStream, (CompressionMode)1)).Read(array, 0, array.Length);
+            new ZlibStream(memoryStream, CompressionMode.Decompress).Read(array, 0, array.Length);
         }
 
         if ((blockInfo.BlockProperty & RhoBlockProperty.PartialEncrypted) == RhoBlockProperty.PartialEncrypted)

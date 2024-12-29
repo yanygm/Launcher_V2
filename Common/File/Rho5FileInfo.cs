@@ -28,8 +28,6 @@ public class Rho5FileInfo
 
     public byte[] GetData()
     {
-        //IL_00d2: Unknown result type (might be due to invalid IL or missing references)
-        //IL_00e1: Expected O, but got Unknown
         byte[] array = new byte[CompressedSize];
         byte[] array2 = new byte[DecompressedSize];
         byte[] packedFileKey = Rho5Key.GetPackedFileKey(Key, Rho5Key.GetFileKey_U1(BaseRho5.anotherData), FullPath);
@@ -43,7 +41,7 @@ public class Rho5FileInfo
 
         new Rho5DecryptStream(new MemoryStream(array), packedFileKey).Read(array, 0, array.Length);
         using MemoryStream memoryStream = new MemoryStream(array);
-        ((Stream)new ZlibStream((Stream)memoryStream, (CompressionMode)1)).Read(array2, 0, array2.Length);
+        new ZlibStream(memoryStream, CompressionMode.Decompress).Read(array2, 0, array2.Length);
         return array2;
     }
 
