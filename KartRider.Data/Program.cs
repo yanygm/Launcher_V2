@@ -44,6 +44,13 @@ namespace KartRider
 				string textValue = System.IO.File.ReadAllText(Load_cc);
 				CC = (CountryCode)Enum.Parse(typeof(CountryCode), textValue);
 			}
+			else
+			{
+				using (StreamWriter streamWriter = new StreamWriter(Load_cc, false))
+				{
+					streamWriter.Write(CC.ToString());
+				}
+			}
 			if (args == null || args.Length == 0)
 			{
 				string text = "HKEY_CURRENT_USER\\SOFTWARE\\TCGame\\kart";
@@ -137,10 +144,6 @@ namespace KartRider
 				if (!input.EndsWith("/"))
 					input += "/";
 				rho5Archive.SaveFolder(input, dataPackName, fullName, CC, dataPackID);
-				using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "\\" + FileName.config_LoadFile + FileName.SetRider_CC + FileName.Extension, false))
-				{
-					streamWriter.Write(CC.ToString());
-				}
 			}
 			else
 			{
@@ -156,10 +159,6 @@ namespace KartRider
 				output = output.Replace(".rho5", "");
 			PackFolderManager packFolderManager = new PackFolderManager();
 			packFolderManager.OpenSingleFile(input, CC);
-			using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "\\" + FileName.config_LoadFile + FileName.SetRider_CC + FileName.Extension, false))
-			{
-				streamWriter.Write(CC.ToString());
-			}
 			Queue<PackFolderInfo> packFolderInfoQueue = new Queue<PackFolderInfo>();
 			packFolderInfoQueue.Enqueue(packFolderManager.GetRootFolder());
 			packFolderManager.GetRootFolder();
