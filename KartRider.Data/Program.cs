@@ -175,7 +175,7 @@ namespace KartRider
 			}
 			else
 			{
-				Console.WriteLine($"Â·¾¶²»´æÔÚ£º{output}");
+				Console.WriteLine($"è·¯å¾„ä¸å­˜åœ¨ï¼š{output}");
 			}
 		}
 
@@ -205,7 +205,7 @@ namespace KartRider
 					}
 					else
 					{
-						Console.WriteLine($"Â·¾¶²»´æÔÚ£º{str}");
+						Console.WriteLine($"è·¯å¾„ä¸å­˜åœ¨ï¼š{str}");
 					}
 					using (FileStream fileStream = new FileStream(str, FileMode.OpenOrCreate))
 					{
@@ -255,10 +255,10 @@ namespace KartRider
 						{
 							string elementName = reader.Name;
 							int attCount = reader.AttributeCount;
-							Console.WriteLine($"ÔªËØ: {elementName}");
+							Console.WriteLine($"å…ƒç´ : {elementName}");
 							outPacket.WriteString(elementName);
 							outPacket.WriteInt(0);
-							Console.WriteLine($"ÊôĞÔÊıÁ¿: {attCount}");
+							Console.WriteLine($"å±æ€§æ•°é‡: {attCount}");
 							outPacket.WriteInt(attCount);
 							for (int i = 0; i < attCount; i++)
 							{
@@ -267,9 +267,9 @@ namespace KartRider
 								outPacket.WriteString(attName);
 								string attValue = reader.Value;
 								outPacket.WriteString(attValue);
-								Console.WriteLine($"ÊôĞÔÃû: {attName}, ÊôĞÔÖµ: {attValue}");
+								Console.WriteLine($"å±æ€§å: {attName}, å±æ€§å€¼: {attValue}");
 							}
-							Console.WriteLine($"×ÓÔªËØÊıÁ¿: {childCounts[Count]}");
+							Console.WriteLine($"å­å…ƒç´ æ•°é‡: {childCounts[Count]}");
 							outPacket.WriteInt(childCounts[Count]);
 							Count++;
 							reader.MoveToElement();
@@ -326,7 +326,7 @@ namespace KartRider
 
 		private static void AAAC(string input, string[] files)
 		{
-			string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "ice_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
+			string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
 			string[] blacklist = { "character_" };
 			string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Whitelist.ini";
 			string Blacklist = AppDomain.CurrentDomain.BaseDirectory + "Blacklist.ini";

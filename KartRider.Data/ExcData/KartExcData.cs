@@ -30,6 +30,7 @@ namespace ExcData
 		public static List<short> emblem = new List<short>();
 		public static List<short> dictionary = new List<short>();
 		public static Dictionary<uint, string> track = new Dictionary<uint, string>();
+		public static List<int> scenario = new List<int>();
 
 		public static List<short> character = new List<short>();
 		public static List<short> color = new List<short>();
