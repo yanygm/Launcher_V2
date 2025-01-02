@@ -64,5 +64,14 @@ namespace Launcher.Properties {
 				return ResourceManager.GetObject("$this.Icon", resourceCulture) as System.Drawing.Icon;
 			}
 		}
+
+		internal static byte[] PPAAAMaker
+		{
+			get
+			{
+				object obj = ResourceManager.GetObject("PPAAAMaker", resourceCulture);
+				return ((byte[])(obj));
+			}
+		}
 	}
 }
