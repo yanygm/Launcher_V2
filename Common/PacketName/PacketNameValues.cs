@@ -1576,5 +1576,6 @@ namespace KartRider_PacketName
 		PrKart12PartsLevelReset = 1696860348,
 		PqKart12UnlockTuningSkill = 2022443414,
 		PrKart12UnlockTuningSkill = 2024016279,
+  		PrMissionAttendUserStatePacket = 3105033212,
 	}
 }
