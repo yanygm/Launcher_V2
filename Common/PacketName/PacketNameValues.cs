@@ -1577,5 +1577,9 @@ namespace KartRider_PacketName
 		PqKart12UnlockTuningSkill = 2022443414,
 		PrKart12UnlockTuningSkill = 2024016279,
   		PrMissionAttendUserStatePacket = 3105033212,
+  		PrMissionAttendNRUserStatePacket = 3479768220,
+  		PrSimGameRankRewardPacket = 2074479022,
+  		PrBoomhillExchangeNeedNotice = 2657094393,
+  		PqMIssionAttendGetCurUserInfoPacket = 4095086000,
 	}
 }
