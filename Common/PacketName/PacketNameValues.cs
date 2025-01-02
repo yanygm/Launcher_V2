@@ -1552,7 +1552,9 @@ namespace KartRider_PacketName
 		PqTcCashEventUserInfoPacket = 2415659644,
 		PrTcCashEventUserInfoPacket = 2417363581,
 		PqMissionAttendUserStatePacket = 3103132667,
+  		PrMissionAttendUserStatePacket = 3105033212,
 		PqMissionAttendNRUserStatePacket = 3477736603,
+  		PrMissionAttendNRUserStatePacket = 3479768220,
 		PqQuestUX2ndForShutDownPacket = 2788231999,
 		PrQuestUX2ndForShutDownPacket = 2790067008,
 		PqMixItemExchangeCount = 1636960426,
@@ -1562,6 +1564,7 @@ namespace KartRider_PacketName
 		PqBoomhillExchangeInfo = 1654655142,
 		PrBoomhillExchangeInfo = 1656031399,
 		PqBoomhillExchangeNeedNotice = 2655324920,
+  		PrBoomhillExchangeNeedNotice = 2657094393,
 		PqKart12TuningLevelUp = 1418725352,
 		PrKart12TuningLevelUp = 1420036073,
 		PqKart12RestictTuningSkill = 2197162504,
@@ -1576,10 +1579,7 @@ namespace KartRider_PacketName
 		PrKart12PartsLevelReset = 1696860348,
 		PqKart12UnlockTuningSkill = 2022443414,
 		PrKart12UnlockTuningSkill = 2024016279,
-  		PrMissionAttendUserStatePacket = 3105033212,
-  		PrMissionAttendNRUserStatePacket = 3479768220,
   		PrSimGameRankRewardPacket = 2074479022,
-  		PrBoomhillExchangeNeedNotice = 2657094393,
   		PqMIssionAttendGetCurUserInfoPacket = 4095086000,
 	}
 }

@@ -2347,7 +2347,7 @@ namespace KartRider
 						}
 						return;
 					}
-					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendNRUserStatePacket", 0))
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0))
 					{
 						return;
 					}
@@ -2366,6 +2366,12 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBoomhillExchangeNeedNotice", 0))
 					{
+						using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
+						{
+							outPacket.WriteInt(0);
+							outPacket.WriteByte(0);
+							this.Parent.Client.Send(outPacket);
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMixItemExchangeCount", 0))
@@ -2665,6 +2671,26 @@ namespace KartRider
 								break;
 						}
 						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 0, 0);
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendNRUserStatePacket", 0))
+					{
+						using (OutPacket outPacket = new OutPacket("PrMissionAttendNRUserStatePacket"))
+						{
+							outPacket.WriteByte(4);
+							outPacket.WriteByte(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0))
+					{
+						using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
+						{
+							outPacket.WriteByte(4);
+							outPacket.WriteByte(1);
+							this.Parent.Client.Send(outPacket);
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
