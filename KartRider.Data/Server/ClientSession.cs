@@ -485,7 +485,7 @@ namespace KartRider
 							foreach (int id in KartExcData.scenario)
 							{
 								outPacket.WriteInt(id | 0x1000000);
-								outPacket.WriteInt((int)(Math.Pow(2, 21) - 1));
+								outPacket.WriteInt((int)(Math.Pow(2, 30) - 1));
 								outPacket.WriteInt(0);
 								outPacket.WriteByte(0);
 							}
