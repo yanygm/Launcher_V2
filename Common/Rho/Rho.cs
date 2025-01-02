@@ -291,7 +291,34 @@ namespace RHOParser
                             }
                         }
                     }
-                    if (fullName == "zeta_/cn/content/itemDictionary.xml")
+                    if (fullName == "zeta/" + config.region + "/scenario/scenario.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XmlDocument Scenario = new XmlDocument();
+                            Scenario.Load(stream);
+                            XmlNodeList ScenarioParams = Scenario.GetElementsByTagName("Chapter");
+                            if (ScenarioParams.Count > 0)
+                            {
+                                foreach (XmlNode xn in ScenarioParams)
+                                {
+                                    XmlElement xe = (XmlElement)xn;
+                                    int id = int.Parse(xe.GetAttribute("id"));
+                                    if (!(KartExcData.scenario.Contains(id)))
+                                    {
+                                        KartExcData.scenario.Add(id);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "zeta_/" + config.region + "/content/itemDictionary.xml")
                     {
                         Console.WriteLine(fullName);
                         byte[] data = packFileInfo.GetData();

@@ -5,6 +5,7 @@ using System.Text;
 using Ionic.Zlib;
 using KartLibrary.Encrypt;
 using KartLibrary.IO;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace KartLibrary.File;
 
@@ -20,7 +21,7 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
 
         public byte[] Data;
     }
-
+    
     private int _layerVersion;
 
     private FileStream? _rhoStream;
@@ -204,6 +205,48 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
         _closed = false;
     }
 
+    public void SaveFolder(string intput, string output, int layerVersion) 
+    {
+        _layerVersion = layerVersion;//0是版本1.0 1是版本1.1,这里是1
+        string lastFolderName = Path.GetFileName(intput);
+        Console.WriteLine(lastFolderName);
+        string array = lastFolderName.Replace('_', '\\'); ;
+        GetAllFiles(intput + "\\" + array, new List<string>(), RootFolder);
+
+        SaveTo(output);
+    }
+
+    public void GetAllFiles(string folderPath, List<string> fileList, RhoFolder folder)
+    {
+        // 获取当前目录下的所有文件
+        string[] files = Directory.GetFiles(folderPath);
+
+        // 将文件路径添加到文件列表中
+        foreach (string file in files)
+        {
+            RhoFile item = new RhoFile
+            {
+                DataSource = new FileDataSource(file),
+                Name = Path.GetFileName(file)
+            };
+            folder.AddFile(item);
+        }
+
+        // 获取当前目录下的所有子目录
+        string[] subdirectories = Directory.GetDirectories(folderPath);
+
+        // 对每个子目录递归调用
+        foreach (string subdirectory in subdirectories)
+        {
+            RhoFolder folder2 = new RhoFolder
+            {
+                Name = Path.GetFileName(subdirectory)
+            };
+            folder.AddFolder(folder2);
+            GetAllFiles(subdirectory, fileList, folder2);
+        }
+    }
+
     public void Save()
     {
         if (_closed)
@@ -214,6 +257,7 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
 
     public void SaveTo(string filePath)
     {
+     
         string fullPath = Path.GetFullPath(filePath);
         string text = Path.GetDirectoryName(fullPath) ?? "";
         if (!Directory.Exists(text))
@@ -234,6 +278,7 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
         Queue<DataSavingInfo> queue = new Queue<DataSavingInfo>();
         HashSet<uint> usedIndex = new HashSet<uint>();
         int dataOffset = 0;
+
         storeFolderAndFiles(RootFolder, queue, usedIndex, ref dataOffset, rhoKey);
         if (_rhoStream != null)
         {
@@ -301,7 +346,7 @@ public class RhoArchive : IRhoArchive<RhoFolder, RhoFile>, IDisposable
             RhoEncrypt.EncryptData(rhoKey, array, 0, array.Length);
         }
         else if (_layerVersion == 1)
-        {
+        {            
             array = RhoEncrypt.EncryptHeaderInfo(array, rhoKey);
         }
 

@@ -126,8 +126,11 @@ public static class DataProcessor
         byte[] array = Data;
         if (Compressed)
         {
-            using MemoryStream memoryStream = new MemoryStream();
-            new ZlibStream(memoryStream, CompressionMode.Compress).Write(array, 0, array.Length);
+            using MemoryStream memoryStream = new MemoryStream(array.Length);
+            using (var zlib = new ZlibStream(memoryStream, CompressionMode.Compress))
+            {
+                zlib.Write(array, 0, array.Length);
+            }
             array = memoryStream.ToArray();
         }
 
@@ -135,7 +138,7 @@ public static class DataProcessor
         {
             array = RhoEncrypt.DecryptData(EncryptKey, array);
         }
-
+        bw.Write((int)0);
         bw.Write((byte)83);
         bw.Write(value);
         bw.Write(value2);
@@ -150,6 +153,10 @@ public static class DataProcessor
         }
 
         bw.Write(array);
+        int len = (int)(bw.BaseStream.Position - position) -4;
+        bw.BaseStream.Seek(0,SeekOrigin.Begin);
+        bw.Write(len);
+
         return (int)(bw.BaseStream.Position - position);
     }
 }

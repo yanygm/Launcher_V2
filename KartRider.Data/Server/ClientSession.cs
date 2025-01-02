@@ -481,11 +481,11 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrChapterInfoPacket"))
 						{
-							outPacket.WriteInt(56);
-							for (int i = 1; i <= 56; i++)
+							outPacket.WriteInt(KartExcData.scenario.Count);
+							foreach (int id in KartExcData.scenario)
 							{
-								outPacket.WriteInt(i | 0x1000000);
-								outPacket.WriteInt((int)(Math.Pow(2, 20) - 1));
+								outPacket.WriteInt(id | 0x1000000);
+								outPacket.WriteInt((int)(Math.Pow(2, 21) - 1));
 								outPacket.WriteInt(0);
 								outPacket.WriteByte(0);
 							}

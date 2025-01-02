@@ -12,7 +12,6 @@ namespace Set_Data
 		public static string SetGameOption_LoadFile = @"Profile\Launcher\GameOption\";
 		public static string config_LoadFile = @"Profile\Launcher\config\";
 
-		public static string SetRider_CC = "Set_CC";
 		public static string SetRider_Nickname = "Set_Nickname";
 		public static string SetRider_RiderIntro = "Set_RiderIntro";
 		public static string SetRider_Card = "Set_Card";

@@ -15,6 +15,8 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 using System.Xml;
 using System.Linq;
+using KartRider.Common.Utilities;
+using System.Security.Cryptography;
 
 namespace KartRider
 {
@@ -38,17 +40,17 @@ namespace KartRider
 		{
 			string input;
 			string output;
-			string Load_cc = AppDomain.CurrentDomain.BaseDirectory + FileName.config_LoadFile + FileName.SetRider_CC + FileName.Extension;
-			if (File.Exists(Load_cc))
+			string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "CountryCode.ini";
+			if (File.Exists(Load_CC))
 			{
-				string textValue = System.IO.File.ReadAllText(Load_cc);
-				CC = (CountryCode)Enum.Parse(typeof(CountryCode), textValue);
+				string textValue = System.IO.File.ReadAllText(Load_CC);
+				Program.CC = (CountryCode)Enum.Parse(typeof(CountryCode), textValue);
 			}
 			else
 			{
-				using (StreamWriter streamWriter = new StreamWriter(Load_cc, false))
+				using (StreamWriter streamWriter = new StreamWriter(Load_CC, false))
 				{
-					streamWriter.Write(CC.ToString());
+					streamWriter.Write(Program.CC.ToString());
 				}
 			}
 			if (args == null || args.Length == 0)
@@ -101,31 +103,57 @@ namespace KartRider
 			{
 				Program.decode(input, output);
 			}
-			else if(input.EndsWith(".xml"))
+			if (input.EndsWith(".xml"))
 			{
-				Program.XtoB(input, output);
+				Program.XtoB(input);
+			}
+			if (input.EndsWith("aaa.bml"))
+			{
+				Program.AAAD(input);
 			}
 			else if (input.EndsWith(".bml"))
 			{
-				Program.BtoX(input, output);
+				Program.BtoX(input);
 			}
-			else if (input.EndsWith(".pk"))
+			if (input.EndsWith(".pk"))
 			{
-				Program.AAAR(input, output);
+				Program.AAAR(input);
 			}
 			else
 			{
 				if (!Directory.Exists(input))
 					return;
-				Program.encode(input, output);
+				if (input.Contains("_0"))
+				{
+					Program.encode(input, output);
+				}
+				else
+				{
+					string[] files = Directory.GetFiles(input, "*.rho");
+					if (files.Length > 0)
+					{
+						Program.AAAC(input, files);
+					}
+					else
+					{
+						Program.encodea(input, output);
+					}
+				}
 			}
+		}
+
+		private static void encodea(string input, string output)
+		{
+			RhoArchive rhoArchive = new RhoArchive();
+			if (!output.EndsWith(".rho"))
+				output += ".rho";
+
+			rhoArchive.SaveFolder(input, output, 1);
 		}
 
 		private static void encode(string input, string output)
 		{
 			Rho5Archive rho5Archive = new Rho5Archive();
-			if (output.EndsWith(".rho"))
-				return;
 			if (!output.EndsWith(".rho5"))
 				output += ".rho5";
 			var fileInfo = new FileInfo(output);
@@ -195,7 +223,7 @@ namespace KartRider
 			return file.IndexOf(".rho") > -1 ? file.Substring(0, file.IndexOf(".rho")).Replace("_", "/") + file.Substring(file.IndexOf(".rho") + 4) : file;
 		}
 
-		private static void BtoX(string input, string output)
+		private static void BtoX(string input)
 		{
 			byte[] data = File.ReadAllBytes(input);
 			BinaryXmlDocument bxd = new BinaryXmlDocument();
@@ -210,9 +238,11 @@ namespace KartRider
 			}
 		}
 
-		private static void XtoB(string input, string output)
+		private static void XtoB(string input)
 		{
 			XDocument xdoc = XDocument.Load(input);
+			if (xdoc.Root == null)
+				return;
 			List<int> childCounts = CountChildren(xdoc.Root, 0, new List<int>());
 			using (XmlReader reader = XmlReader.Create(input))
 			{
@@ -266,7 +296,7 @@ namespace KartRider
 			return childCounts;
 		}
 
-		private static void AAAR(string input, string output)
+		private static void AAAR(string input)
 		{
 			using FileStream fileStream = new FileStream(input, FileMode.Open, FileAccess.Read);
 			BinaryReader binaryReader = new BinaryReader(fileStream);
@@ -283,6 +313,109 @@ namespace KartRider
 			{
 				fs.Write(output_data, 0, output_data.Length);
 			}
+		}
+
+		private static void AAAD(string input)
+		{
+			byte[] array = File.ReadAllBytes(input);
+			string filePath = System.IO.Path.ChangeExtension(input, "pk");
+			using FileStream fileStream = new FileStream(filePath, FileMode.Create);
+			BinaryWriter binaryWriter = new BinaryWriter(fileStream);
+			binaryWriter.WriteKRData(array, false, true);
+		}
+
+		private static void AAAC(string input, string[] files)
+		{
+			string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "ice_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
+			string[] blacklist = { "character_" };
+			string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Whitelist.ini";
+			string Blacklist = AppDomain.CurrentDomain.BaseDirectory + "Blacklist.ini";
+			if (File.Exists(Whitelist))
+			{
+				whitelist = File.ReadAllLines(Whitelist);
+			}
+			else
+			{
+				using (StreamWriter writer = new StreamWriter(Whitelist))
+				{
+					foreach (string white in whitelist)
+					{
+						writer.WriteLine(white);
+					}
+				}
+			}
+			if (File.Exists(Blacklist))
+			{
+				blacklist = File.ReadAllLines(Blacklist);
+			}
+			else
+			{
+				using (StreamWriter blackr = new StreamWriter(Blacklist))
+				{
+					foreach (string black in blacklist)
+					{
+						blackr.WriteLine(black);
+					}
+				}
+			}
+			XElement root = new XElement("PackFolder", new XAttribute("name", "KartRider"));
+			foreach (string file in files)
+			{
+				string fileName = Path.GetFileName(file);
+				string result = fileName;
+				foreach (string white in whitelist)
+				{
+					result = result.Replace(white, white.Replace("_", "!"));
+				}
+				foreach (string black in blacklist)
+				{
+					result = result.Replace(black.Replace("_", "!"), black);
+				}
+				Console.WriteLine(result);
+				string[] splitParts = result.Split('_');
+				XElement currentFolder = root;
+				for (int i = 0; i < splitParts.Length - 1; i++)
+				{
+					string folderName = splitParts[i];
+					XElement? subFolder = currentFolder.Elements("PackFolder")
+													 .FirstOrDefault(f => (string?)f.Attribute("name") == folderName);
+					if (subFolder == null)
+					{
+						if (folderName == "character" || folderName == "flyingPet" || folderName == "pet" || folderName == "track")
+						{
+							subFolder = new XElement("PackFolder", new XAttribute("name", folderName), new XAttribute("loadPass", "1"));
+						}
+						else
+						{
+							subFolder = new XElement("PackFolder", new XAttribute("name", folderName));
+						}
+						currentFolder.Add(subFolder);
+					}
+					currentFolder = subFolder;
+				}
+				Rho rho = new Rho(file);
+				uint rhoKey = rho.GetFileKey();
+				long size = rho.baseStream.Length;
+				byte[] hashBytes;
+				using (var sha = SHA256.Create())
+				{
+					using (FileStream fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+					{
+						hashBytes = sha.ComputeHash(fileStream);
+					}
+				}
+				var dataHash = "";
+				string rhoFolderName = splitParts.Length > 0 ? Path.ChangeExtension(splitParts[splitParts.Length - 1], null) : "";
+				XElement rhoFolder = new XElement("RhoFolder",
+					new XAttribute("name", rhoFolderName.Replace('!', '_')),
+					new XAttribute("fileName", Path.GetFileName(file)),
+					new XAttribute("key", rhoKey.ToString()),
+					new XAttribute("dataHash", dataHash.ToString()),
+					new XAttribute("mediaSize", size.ToString()));
+				currentFolder.Add(rhoFolder);
+			}
+
+			root.Save(input + "\\aaa.xml");
 		}
 	}
 }

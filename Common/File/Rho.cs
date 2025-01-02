@@ -59,7 +59,7 @@ public class Rho : IDisposable
         }
         else if (Version == 1.1)
         {
-            array = RhoEncrypt.DecryptHeaderInfo(array, RhoFileKey);
+            array = RhoEncrypt.DecryptHeaderInfo(array, RhoFileKey);           
         }
 
         int num2 = 0;
