@@ -19,6 +19,8 @@ public class Rho : IDisposable
 
     private uint RhoFileKey;
 
+    private uint RhoDataHash;
+
     private uint BlockWhiteningKey;
 
     private Dictionary<uint, RhoDataInfo> Blocks;
@@ -61,6 +63,10 @@ public class Rho : IDisposable
         {
             array = RhoEncrypt.DecryptHeaderInfo(array, RhoFileKey);           
         }
+
+        byte[] subArray = new byte[4];
+        Array.Copy(array, 24, subArray, 0, 4);
+        RhoDataHash = BitConverter.ToUInt32(subArray, 0);
 
         int num2 = 0;
         byte[] key = new byte[0];
@@ -142,6 +148,11 @@ public class Rho : IDisposable
     internal uint GetFileKey()
     {
         return RhoFileKey;
+    }
+
+    internal uint GetDataHash()
+    {
+        return RhoDataHash;
     }
 
     internal RhoDataInfo GetBlockInfo(uint Index)

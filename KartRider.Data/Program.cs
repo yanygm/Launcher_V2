@@ -14,8 +14,6 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using System.Xml;
-using System.Linq;
-using Launcher.Properties;
 
 namespace KartRider
 {
@@ -325,42 +323,6 @@ namespace KartRider
 
 		private static void AAAC(string input, string[] files)
 		{
-			Dictionary<string, string> dataHash = new Dictionary<string, string>();
-			try
-			{
-				using (FileStream fs = new FileStream("PPAAAMaker.exe", FileMode.Create, FileAccess.Write))
-				{
-					fs.Write(Resources.PPAAAMaker, 0, Resources.PPAAAMaker.Length);
-				}
-				Process process = new Process();
-				process.StartInfo.FileName = "PPAAAMaker.exe";
-				process.StartInfo.Arguments = input;
-				process.StartInfo.UseShellExecute = false;
-				process.StartInfo.RedirectStandardOutput = true;
-				process.Start();
-				process.WaitForExit();
-				string output = process.StandardOutput.ReadToEnd();
-				Console.WriteLine(output);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine("启动进程时出错: " + ex.Message);
-			}
-			File.Delete("PPAAAMaker.exe");
-			XDocument doc = XDocument.Load(input + "\\aaa.xml");
-			var items = doc.Descendants("RhoFolder")
-			   .Where(x => (long)x.Attribute("dataHash") != 0)
-			   .Select(x => new
-			   {
-				   FileName = (string)x.Attribute("fileName"),
-				   DataHash = (string)x.Attribute("dataHash")
-			   });
-
-			foreach (var item in items)
-			{
-				dataHash.Add(item.FileName, item.DataHash);
-			}
-
 			string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
 			string[] blacklist = { "character_" };
 			string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Whitelist.ini";
@@ -429,14 +391,15 @@ namespace KartRider
 					currentFolder = subFolder;
 				}
 				Rho rho = new Rho(file);
-				uint rhoKey = rho.GetFileKey();
-				long size = rho.baseStream.Length;
+                uint rhoKey = rho.GetFileKey();
+                uint dataHash = rho.GetDataHash();
+                long size = rho.baseStream.Length;
 				string rhoFolderName = splitParts.Length > 0 ? Path.ChangeExtension(splitParts[splitParts.Length - 1], null) : "";
 				XElement rhoFolder = new XElement("RhoFolder",
 					new XAttribute("name", rhoFolderName.Replace('!', '_')),
 					new XAttribute("fileName", fileName),
 					new XAttribute("key", rhoKey.ToString()),
-					new XAttribute("dataHash", dataHash[fileName]),
+					new XAttribute("dataHash", dataHash.ToString()),
 					new XAttribute("mediaSize", size.ToString()));
 				currentFolder.Add(rhoFolder);
 			}

@@ -121,7 +121,4 @@
   <data name="$this.Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>1.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="PPAAAMaker" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>PPAAAMaker.exe;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
 </root>
