@@ -199,35 +199,19 @@ namespace KartRider
                 byte channel = iPacket.ReadByte();
                 Console.WriteLine("Channel Switch, channel = {0}", channel);
                 int channeldata1 = 0;
-                if (channel == 70)
+                channeldata1 = 1;
+                channeldata2 = 4;
+                //StartGameRacing.GameRacing_SpeedType = 4;
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
                 {
-                    channeldata1 = 1;
-                    channeldata2 = 4;
-                    //StartGameRacing.GameRacing_SpeedType = 4;
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        //oPacket.WriteInt(channeldata1);
-                        oPacket.WriteInt(4);
-                        oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), 39312);
-                        RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
-                        RouterListener.MySession.Client.Send(oPacket);
-                    }
-                    GameSupport.OnDisconnect();
+                    oPacket.WriteInt(0);
+                    //oPacket.WriteInt(channeldata1);
+                    oPacket.WriteInt(4);
+                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), 39312);
+                    RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
+                    RouterListener.MySession.Client.Send(oPacket);
                 }
-                else
-                {
-                    using (OutPacket oPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
-                    {
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(0);
-                        oPacket.WriteByte(0);
-                        RouterListener.MySession.Client.Send(oPacket);
-                    }
-                }
+                GameSupport.OnDisconnect();
                 return;
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelMovein", 0))
@@ -299,7 +283,7 @@ namespace KartRider
             {
                 int Data = iPacket.ReadInt();
                 GrSlotDataPacket();
-                GrSlotStatePacket(Data);
+                //GrSlotStatePacket(Data);
                 GrReplySetSlotStatePacket(Data);
                 return;
             }
@@ -434,7 +418,7 @@ namespace KartRider
             outPacket.WriteUInt(track); //track name hash
             outPacket.WriteInt(0);
             outPacket.WriteBytes(RoomUnkBytes);
-            outPacket.WriteInt(0); //RoomMaster
+            outPacket.WriteInt(0); //RoomMaster 
             outPacket.WriteInt(2);
             outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
             outPacket.WriteShort(0); // 797

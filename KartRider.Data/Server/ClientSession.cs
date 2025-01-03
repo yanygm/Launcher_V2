@@ -1721,7 +1721,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrDisassembleFeeInfo"))
 						{
-							outPacket.WriteHexString("00 00 00 00 06 00 00 00 00 00 E8 03 01 00 F4 01 00 00 E8 03 01 00 F4 01 00 00 E8 03 01 00 F4 01");
+							outPacket.WriteHexString("0000000008000000030000E803030100F401020000E803020100F401010000E803010100F401000000E803000100F401");
 							this.Parent.Client.Send(outPacket);
 						}
 						using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
@@ -2236,7 +2236,7 @@ namespace KartRider
 							outPacket.WriteByte(0);
 							outPacket.WriteInt(0);
 							outPacket.WriteByte(0);
-							outPacket.WriteInt(1415577599);
+							outPacket.WriteHexString("FF FF 5F 54");
 							outPacket.WriteUInt(SetRider.pmap);
 							for (int i = 0; i < 11; i++)
 							{
@@ -2298,7 +2298,7 @@ namespace KartRider
 							outPacket.WriteString("true");
 							outPacket.WriteString("visible");
 							outPacket.WriteString("true");
-								outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(5);
