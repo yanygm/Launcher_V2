@@ -145,6 +145,15 @@ namespace ExcData
 
 		public static void Use_TuneSpec(short Set_Kart, short Set_KartSN)
 		{
+			float[] Tune_DragFactor_List = { 0f, -0.0008f, -0.0015f, -0.0022f };
+			float[] Tune_ForwardAccel_List = { 0f, 1.5f, 2.5f, 3.5f };
+			float[] Tune_CornerDrawFactor_List = { 0f, 0.0007f, 0.0014f, 0.002f };
+			float[] Tune_TeamBoosterTime_List = { 0f, 100f, 180f, 250f };
+			float[] Tune_NormalBoosterTime_List = { 0f, 70f, 120f, 190f };
+			float[] Tune_StartBoosterTimeSpeed_List = { 0f, 200f, 400f, 800f };
+			float[] Tune_TransAccelFactor_List = { 0f, 0.006f, 0.01f, 0.018f };
+			float[] Tune_DriftMaxGauge_List = { 0f, -70f, -140f, -200f };
+			float[] Tune_DriftEscapeForce_List = { 0f, 80f, 140f, 210f };
 			var kartAndSN = new { Kart = Set_Kart, SN = Set_KartSN };
 			var tuneList = KartExcData.TuneList;
 			var existingTune = tuneList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
@@ -152,39 +161,39 @@ namespace ExcData
 			{
 				if (existingTune[2] == 103 || existingTune[3] == 103 || existingTune[4] == 103)
 				{
-					TuneSpec.Tune_DragFactor = -0.0022f;
+					TuneSpec.Tune_DragFactor = Tune_DragFactor_List[3];
 				}
 				else if (existingTune[2] == 203 || existingTune[3] == 203 || existingTune[4] == 203)
 				{
-					TuneSpec.Tune_ForwardAccel = 3.5f;
+					TuneSpec.Tune_ForwardAccel = Tune_ForwardAccel_List[3];
 				}
 				else if (existingTune[2] == 303 || existingTune[3] == 303 || existingTune[4] == 303)
 				{
-					TuneSpec.Tune_CornerDrawFactor = 0.0020f;
+					TuneSpec.Tune_CornerDrawFactor = Tune_CornerDrawFactor_List[3];
 				}
 				else if (existingTune[2] == 403 || existingTune[3] == 403 || existingTune[4] == 403)
 				{
-					TuneSpec.Tune_TeamBoosterTime = 250f;
+					TuneSpec.Tune_TeamBoosterTime = Tune_TeamBoosterTime_List[3];
 				}
 				else if (existingTune[2] == 503 || existingTune[3] == 503 || existingTune[4] == 503)
 				{
-					TuneSpec.Tune_NormalBoosterTime = 190f;
+					TuneSpec.Tune_NormalBoosterTime = Tune_NormalBoosterTime_List[3];
 				}
 				else if (existingTune[2] == 603 || existingTune[3] == 603 || existingTune[4] == 603)
 				{
-					TuneSpec.Tune_StartBoosterTimeSpeed = 800f;
+					TuneSpec.Tune_StartBoosterTimeSpeed = Tune_StartBoosterTimeSpeed_List[3];
 				}
 				else if (existingTune[2] == 703 || existingTune[3] == 703 || existingTune[4] == 703)
 				{
-					TuneSpec.Tune_TransAccelFactor = 0.018f;
+					TuneSpec.Tune_TransAccelFactor = Tune_TransAccelFactor_List[3];
 				}
 				else if (existingTune[2] == 803 || existingTune[3] == 803 || existingTune[4] == 803)
 				{
-					TuneSpec.Tune_DriftMaxGauge = -200f;
+					TuneSpec.Tune_DriftMaxGauge = Tune_DriftMaxGauge_List[3];
 				}
 				else if (existingTune[2] == 903 || existingTune[3] == 903 || existingTune[4] == 903)
 				{
-					TuneSpec.Tune_DriftEscapeForce = 210f;
+					TuneSpec.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
 				}
 				else
 				{

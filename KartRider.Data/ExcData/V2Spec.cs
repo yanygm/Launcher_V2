@@ -10,7 +10,20 @@ namespace ExcData
 {
 	public static class V2Spec
 	{
-		public static short[] LevelV2 = new short[] { 0, 1, 2, 4, 7, 10 };
+		public static float V2Parts_TransAccelFactor = 0f;
+		public static float V2Parts_SteerConstraint = 0f;
+		public static float V2Parts_DriftEscapeForce = 0f;
+		public static float V2Parts_NormalBoosterTime = 0f;
+
+		public static float V2Level_ForwardAccelForce = 0f;
+		public static float V2Level_CornerDrawFactor = 0f;
+		public static float V2Level_DragFactor = 0f;
+		public static float V2Level_NormalBoosterTime = 0f;
+		public static float V2Level_TeamBoosterTime = 0f;
+		public static float V2Level_StartBoosterTimeSpeed = 0f;
+		public static float V2Level_TransAccelFactor = 0f;
+		public static float V2Level_DriftEscapeForce = 0f;
+		public static float V2Level_DriftMaxGauge = 0f;
 
 		public static short Get12Parts(short input)
 		{
@@ -76,6 +89,19 @@ namespace ExcData
 			}
 		}
 
+		public static void Reset_V2Level_SpecData()
+		{
+			V2Level_ForwardAccelForce = 0f;
+			V2Level_CornerDrawFactor = 0f;
+			V2Level_DragFactor = 0f;
+			V2Level_NormalBoosterTime = 0f;
+			V2Level_TeamBoosterTime = 0f;
+			V2Level_StartBoosterTimeSpeed = 0f;
+			V2Level_TransAccelFactor = 0f;
+			V2Level_DriftEscapeForce = 0f;
+			V2Level_DriftMaxGauge = 0f;
+		}
+
 		public static void ExceedSpec()
 		{
 			if (Kart.defaultExceedType > 0)
@@ -93,8 +119,7 @@ namespace ExcData
 				{
 					Parts_TransAccelFactor = existingParts[4];
 				}
-				float V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
-				Kart.TransAccelFactor = Kart.TransAccelFactor + V2Parts_TransAccelFactor;
+				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
 				Console.WriteLine("V2Parts_TransAccelFactor: " + V2Parts_TransAccelFactor);
 
 				short Parts_SteerConstraint;
@@ -106,8 +131,7 @@ namespace ExcData
 				{
 					Parts_SteerConstraint = existingParts[7];
 				}
-				float V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.308M) / 3M);
-				Kart.SteerConstraint = Kart.SteerConstraint + V2Parts_SteerConstraint;
+				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.308M) / 3M);
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
 
 				short Parts_DriftEscapeForce;
@@ -119,8 +143,7 @@ namespace ExcData
 				{
 					Parts_DriftEscapeForce = existingParts[10];
 				}
-				float V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
-				Kart.DriftEscapeForce = Kart.DriftEscapeForce + V2Parts_DriftEscapeForce;
+				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
 				Console.WriteLine("V2Parts_DriftEscapeForce: " + V2Parts_DriftEscapeForce);
 
 				short Parts_NormalBoosterTime;
@@ -132,11 +155,11 @@ namespace ExcData
 				{
 					Parts_NormalBoosterTime = existingParts[13];
 				}
-				float V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
-				Kart.NormalBoosterTime = Kart.NormalBoosterTime + V2Parts_NormalBoosterTime;
+				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
 				Console.WriteLine("V2Parts_NormalBoosterTime: " + V2Parts_NormalBoosterTime);
 				Console.WriteLine("-------------------------------------------------------------");
 
+				Reset_V2Level_SpecData();
 				var level12List = KartExcData.Level12List;
 				var existingLevel = level12List.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
 				if (existingLevel != null)
@@ -149,97 +172,61 @@ namespace ExcData
 					if (existingLevel[7] != 0)
 						Skill.Add(new List<short> { existingLevel[7], existingLevel[8] });
 					Console.WriteLine("-------------------------------------------------------------");
+					float[] ForwardAccelForce = { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f };
+					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f };
+					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };
+					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 150f };
+					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 150f, 200f };
+					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 700f };
+					float[] TransAccelFactor = { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f };
+					float[] DriftEscapeForce = { 0f, 35f, 50f, 65f, 90f, 105f };
+					float[] DriftMaxGauge = { 0f, -50f, -60f, -70f, -90f, -120f };
 					foreach (var skill in Skill)
 					{
 						if (skill[0] == 1)
 						{
-							int Level_ForwardAccelForce = (int)skill[1];
-							if (Level_ForwardAccelForce > 0)
-							{
-								float V2Level_ForwardAccelForce = (float)(0.35M * (decimal)LevelV2[Level_ForwardAccelForce]);
-								Kart.ForwardAccelForce = Kart.ForwardAccelForce + V2Level_ForwardAccelForce;
-								Console.WriteLine("V2Level_ForwardAccelForce: " + V2Level_ForwardAccelForce);
-							}
+							V2Level_ForwardAccelForce = ForwardAccelForce[(int)skill[1]];
+							Console.WriteLine("V2Level_ForwardAccelForce: " + V2Level_ForwardAccelForce);
 						}
 						if (skill[0] == 2)
 						{
-							int Level_CornerDrawFactor = (int)skill[1];
-							if (Level_CornerDrawFactor > 0)
-							{
-								float V2Level_CornerDrawFactor = (float)(0.00015M * (decimal)LevelV2[Level_CornerDrawFactor]);
-								Kart.CornerDrawFactor = Kart.CornerDrawFactor + V2Level_CornerDrawFactor;
-								Console.WriteLine("V2Level_CornerDrawFactor: " + V2Level_CornerDrawFactor);
-							}
+							V2Level_CornerDrawFactor = CornerDrawFactor[(int)skill[1]];
+							Console.WriteLine("V2Level_CornerDrawFactor: " + V2Level_CornerDrawFactor);
 						}
 						if (skill[0] == 3)
 						{
-							int Level_DragFactor = (int)skill[1];
-							if (Level_DragFactor > 0)
-							{
-								float V2Level_DragFactor = (float)(-0.000225M * (decimal)LevelV2[Level_DragFactor]);
-								Kart.DragFactor = Kart.DragFactor + V2Level_DragFactor;
-								Console.WriteLine("V2Level_DragFactor: " + V2Level_DragFactor);
-							}
+							V2Level_DragFactor = DragFactor[(int)skill[1]];
+							Console.WriteLine("V2Level_DragFactor: " + V2Level_DragFactor);
 						}
 						if (skill[0] == 4)
 						{
-							int Level_NormalBoosterTime = (int)skill[1];;
-							if (Level_NormalBoosterTime > 0)
-							{
-								float V2Level_NormalBoosterTime = (float)(15M * (decimal)LevelV2[Level_NormalBoosterTime]);
-								Kart.NormalBoosterTime = Kart.NormalBoosterTime + V2Level_NormalBoosterTime;
-								Console.WriteLine("V2Level_NormalBoosterTime: " + V2Level_NormalBoosterTime);
-							}
+							V2Level_NormalBoosterTime = NormalBoosterTime[(int)skill[1]];
+							Console.WriteLine("V2Level_NormalBoosterTime: " + V2Level_NormalBoosterTime);
 						}
 						if (skill[0] == 5)
 						{
-							int Level_TeamBoosterTime = (int)skill[1];
-							if (Level_TeamBoosterTime > 0)
-							{
-								float V2Level_TeamBoosterTime = (float)(20M * (decimal)LevelV2[Level_TeamBoosterTime]);
-								Kart.TeamBoosterTime = Kart.TeamBoosterTime + V2Level_TeamBoosterTime;
-								Console.WriteLine("V2Level_TeamBoosterTime: " + V2Level_TeamBoosterTime);
-							}
+							V2Level_TeamBoosterTime = TeamBoosterTime[(int)skill[1]];
+							Console.WriteLine("V2Level_TeamBoosterTime: " + V2Level_TeamBoosterTime);
 						}
 						if (skill[0] == 6)
 						{
-							int Level_StartBoosterTimeSpeed = (int)skill[1];
-							if (Level_StartBoosterTimeSpeed > 0)
-							{
-								float V2Level_StartBoosterTimeSpeed = (float)(70M * (decimal)LevelV2[Level_StartBoosterTimeSpeed]);
-								Kart.StartBoosterTimeSpeed = Kart.StartBoosterTimeSpeed + V2Level_StartBoosterTimeSpeed;
-								Console.WriteLine("V2Level_StartBoosterTimeSpeed: " + V2Level_StartBoosterTimeSpeed);
-							}
+							V2Level_StartBoosterTimeSpeed = StartBoosterTimeSpeed[(int)skill[1]];
+							Console.WriteLine("V2Level_StartBoosterTimeSpeed: " + V2Level_StartBoosterTimeSpeed);
 						}
 						if (skill[0] == 7)
 						{
-							int Level_TransAccelFactor = (int)skill[1];
-							if (Level_TransAccelFactor > 0)
-							{
-								float V2Level_TransAccelFactor = (float)(0.001M * (decimal)LevelV2[Level_TransAccelFactor]);
-								Kart.TransAccelFactor = Kart.TransAccelFactor + V2Level_TransAccelFactor;
-								Console.WriteLine("V2Level_TransAccelFactor: " + V2Level_TransAccelFactor);
-							}
+							V2Level_TransAccelFactor = TransAccelFactor[(int)skill[1]];
+							Console.WriteLine("V2Level_TransAccelFactor: " + V2Level_TransAccelFactor);
 						}
 						if (skill[0] == 8)
 						{
-							int Level_DriftEscapeForce = (int)skill[1];
-							if (Level_DriftEscapeForce > 0)
-							{
-								float V2Level_DriftEscapeForce = (float)(10.5M * (decimal)LevelV2[Level_DriftEscapeForce]);
-								Kart.DriftEscapeForce = Kart.DriftEscapeForce + V2Level_DriftEscapeForce;
-								Console.WriteLine("V2Level_DriftEscapeForce: " + V2Level_DriftEscapeForce);
-							}
+							V2Level_DriftEscapeForce = DriftEscapeForce[(int)skill[1]];
+							Console.WriteLine("V2Level_DriftEscapeForce: " + V2Level_DriftEscapeForce);
 						}
 						if (skill[0] == 9)
 						{
-							int Level_DriftMaxGauge = (int)skill[1];
-							if (Level_DriftMaxGauge > 0)
-							{
-								float V2Level_DriftMaxGauge = (float)(-12M * (decimal)LevelV2[Level_DriftMaxGauge]);
-								Kart.DriftMaxGauge = Kart.DriftMaxGauge + V2Level_DriftMaxGauge;
-								Console.WriteLine("V2Level_DriftMaxGauge: " + V2Level_DriftMaxGauge);
-							}
+							V2Level_DriftMaxGauge = DriftMaxGauge[(int)skill[1]];
+							Console.WriteLine("V2Level_DriftMaxGauge: " + V2Level_DriftMaxGauge);
 						}
 					}
 					Console.WriteLine("-------------------------------------------------------------");
