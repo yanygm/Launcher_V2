@@ -152,15 +152,12 @@ namespace RiderData
 				if (existingParts12 != null)
 				{
 					oPacket.WriteShort(existingParts12[12]);
-					oPacket.WriteShort(0);
 				}
 				else
 				{
 					oPacket.WriteShort(0);
-					oPacket.WriteShort(0);
 				}
-				//oPacket.WriteShort(0);
-				//oPacket.WriteShort(0);
+				oPacket.WriteShort(0);
 				oPacket.WriteString(SetRider.Card);
 				oPacket.WriteUInt(SetRider.Lucci);
 				oPacket.WriteUInt(SetRider.RP);

@@ -183,6 +183,13 @@ namespace KartRider
 						short Set_KartTailLamp = iPacket.ReadShort();
 						SetRiderItem.Set_slotBg = iPacket.ReadShort();
 						short Set_KartBoosterEffect = iPacket.ReadShort();
+						Console.WriteLine($"KartPlant1: {Set_KartPlant1}");
+						Console.WriteLine($"KartPlant2: {Set_KartPlant2}");
+						Console.WriteLine($"KartPlant3: {Set_KartPlant3}");
+						Console.WriteLine($"KartPlant4: {Set_KartPlant4}");
+						Console.WriteLine($"KartCoating: {Set_KartCoating}");
+						Console.WriteLine($"KartTailLamp: {Set_KartTailLamp}");
+						Console.WriteLine($"KartBoosterEffect: {Set_KartBoosterEffect}");
 						SetRiderItem.Save_SetRiderItem();
 						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
 						StartGameData.Kart_id = SetRiderItem.Set_Kart;
@@ -2291,7 +2298,7 @@ namespace KartRider
 							outPacket.WriteString("true");
 							outPacket.WriteString("visible");
 							outPacket.WriteString("true");
-       							outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(5);

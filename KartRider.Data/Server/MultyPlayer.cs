@@ -522,13 +522,12 @@ namespace KartRider
             if (existingParts12 != null)
             {
                 outPacket.WriteShort(existingParts12[12]);
-                outPacket.WriteShort(0);
             }
             else
             {
                 outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
             }
+            outPacket.WriteShort(0);
             outPacket.WriteString(SetRider.Card);
             outPacket.WriteUInt(SetRider.RP);
             outPacket.WriteByte();
