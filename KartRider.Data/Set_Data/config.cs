@@ -9,7 +9,6 @@ namespace Set_Data
 		public static byte PreventItem_Use = 0;
 		public static byte SpeedPatch_Use = 0;
 		public static byte SpeedType = 7;
-		public static string region = "";
 
 		public static void Load_PreventItem()
 		{
