@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Linq;
 using System.Xml.Linq;
+using Vortice.Direct3D11;
 
 namespace KartRider
 {
@@ -236,44 +237,38 @@ namespace KartRider
                 foreach (PackFolderInfo packFolderInfo in packFolderInfos.GetFoldersInfo())
                 {
                     string fileName = Path.GetFileNameWithoutExtension(packFolderInfo.FolderName);
-                    RhoFolders(output, output + "/" + fileName, packFolderInfo.Folders);
-                    foreach (var item in packFolderInfo.GetFilesInfo())
-                    {
-                        Console.WriteLine(item.FullName);
-                        Console.WriteLine(ReplacePath(item.FullName));
-                        string fullName = output + "/" + ReplacePath(item.FullName);
-                        byte[] data = item.GetData();
-                        using (FileStream fileStream = new FileStream(fullName, FileMode.OpenOrCreate))
-                        {
-                            fileStream.Write(data, 0, data.Length);
-                        }
-                    }
+                    RhoFolders(output, output + "/" + fileName, packFolderInfo);
                 }
             }
         }
 
-        private static void RhoFolders(string input, string output, List<PackFolderInfo> rhoFolders)
+        private static void RhoFolders(string input, string output, PackFolderInfo rhoFolders)
         {
-            if (rhoFolders.Count > 0)
+            if (rhoFolders.GetFilesInfo() != null)
             {
-                foreach (var rhoFolder in rhoFolders)
+                foreach (var item in rhoFolders.GetFilesInfo())
+                {
+                    string fullName = input + "/" + ReplacePath(item.FullName);
+                    string Name = Path.GetDirectoryName(fullName);
+                    if (!Directory.Exists(Name))
+                        Directory.CreateDirectory(Name);
+                    byte[] data = item.GetData();
+                    using (FileStream fileStream = new FileStream(fullName, FileMode.OpenOrCreate))
+                    {
+                        fileStream.Write(data, 0, data.Length);
+                    }
+                }
+            }
+            if (rhoFolders.Folders != null)
+            {
+                foreach (var rhoFolder in rhoFolders.Folders)
                 {
                     string Folder = output + "/" + rhoFolder.FolderName;
                     if (!Directory.Exists(Folder))
                         Directory.CreateDirectory(Folder);
-                    foreach (var item in rhoFolder.GetFilesInfo())
-                    {
-                        string fullName = input + "/" + ReplacePath(item.FullName);
-                        byte[] data = item.GetData();
-                        using (FileStream fileStream = new FileStream(fullName, FileMode.OpenOrCreate))
-                        {
-                            fileStream.Write(data, 0, data.Length);
-                        }
-                    }
-                    RhoFolders(input, Folder, rhoFolder.Folders);
+                    RhoFolders(input, Folder, rhoFolder);
                 }
             }
-            return;
         }
 
         private static string ReplacePath(string file)
