@@ -25,21 +25,15 @@ namespace KartRider
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
 
-        [DllImport("kernel32.dll")]
-        public static extern bool FreeConsole();
-
+        [DllImport("user32.dll")]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        const int SW_HIDE = 0;
         public static Launcher LauncherDlg;
         public static GetKart GetKartDlg;
         public static bool SpeedPatch;
         public static bool PreventItem;
-        public static bool Developer_Name;
         public static string RootDirectory;
         public static CountryCode CC = CountryCode.CN;
-
-        static Program()
-        {
-            Program.Developer_Name = true;
-        }
 
         [STAThread]
         private static void Main(string[] args)
@@ -47,7 +41,7 @@ namespace KartRider
             string input;
             string output;
             AllocConsole();
-            string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "CountryCode.ini";
+            string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "Profile\\CountryCode.ini";
             if (File.Exists(Load_CC))
             {
                 string textValue = System.IO.File.ReadAllText(Load_CC);
@@ -55,6 +49,10 @@ namespace KartRider
             }
             else
             {
+                if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "Profile"))
+                {
+                    Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "Profile");
+                }
                 using (StreamWriter streamWriter = new StreamWriter(Load_CC, false))
                 {
                     streamWriter.Write(Program.CC.ToString());
@@ -67,31 +65,46 @@ namespace KartRider
                 if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "KartRider.pin") && File.Exists(AppDomain.CurrentDomain.BaseDirectory + "KartRider.exe"))
                 {
                     RootDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    KartRhoFile.Dump(RootDirectory + @"Data\aaa.pk");
-                    KartRhoFile.packFolderManager.Reset();
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    Launcher StartLauncher = new Launcher();
-                    Program.LauncherDlg = StartLauncher;
-                    Program.LauncherDlg.kartRiderDirectory = RootDirectory;
-                    FreeConsole();
-                    Application.Run(StartLauncher);
                 }
                 else if (File.Exists(RootDirectory + "KartRider.pin") && File.Exists(RootDirectory + "KartRider.exe"))
                 {
-                    KartRhoFile.Dump(RootDirectory + @"Data\aaa.pk");
-                    KartRhoFile.packFolderManager.Reset();
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    Launcher StartLauncher = new Launcher();
-                    Program.LauncherDlg = StartLauncher;
-                    Program.LauncherDlg.kartRiderDirectory = RootDirectory;
-                    FreeConsole();
-                    Application.Run(StartLauncher);
                 }
                 else
                 {
                     LauncherSystem.MessageBoxType3();
+                    return;
+                }
+                if (!string.IsNullOrEmpty(RootDirectory))
+                {
+                    try
+                    {
+                        KartRhoFile.Dump(RootDirectory + "Data\\aaa.pk");
+                        KartRhoFile.packFolderManager.Reset();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"读取Data文件时出错: {ex.Message}");
+                    }
+                    string Load_Console = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Console.ini";
+                    IntPtr consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+                    if (!File.Exists(Load_Console))
+                    {
+                        using (StreamWriter streamWriter = new StreamWriter(Load_Console, false))
+                        {
+                            streamWriter.Write("0");
+                        }
+                    }
+                    string textValue = System.IO.File.ReadAllText(Load_Console);
+                    if (textValue == "0")
+                    {
+                        ShowWindow(consoleHandle, SW_HIDE);
+                    }
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+                    Launcher StartLauncher = new Launcher();
+                    Program.LauncherDlg = StartLauncher;
+                    Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                    Application.Run(StartLauncher);
                 }
                 input = "";
                 output = "";
@@ -172,10 +185,7 @@ namespace KartRider
 
         private static void GetAllFiles(string folderPath, List<string> fileList, RhoFolder folder)
         {
-            // 获取当前目录下的所有文件
             string[] files = Directory.GetFiles(folderPath);
-
-            // 将文件路径添加到文件列表中
             foreach (string file in files)
             {
                 RhoFile item = new RhoFile
@@ -186,11 +196,7 @@ namespace KartRider
                 };
                 folder.AddFile(item);
             }
-
-            // 获取当前目录下的所有子目录
             string[] subdirectories = Directory.GetDirectories(folderPath);
-
-            // 对每个子目录递归调用
             foreach (string subdirectory in subdirectories)
             {
                 RhoFolder folder2 = new RhoFolder
@@ -390,8 +396,8 @@ namespace KartRider
         {
             string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
             string[] blacklist = { "character_" };
-            string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Whitelist.ini";
-            string Blacklist = AppDomain.CurrentDomain.BaseDirectory + "Blacklist.ini";
+            string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Whitelist.ini";
+            string Blacklist = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Blacklist.ini";
             if (File.Exists(Whitelist))
             {
                 whitelist = File.ReadAllLines(Whitelist);
