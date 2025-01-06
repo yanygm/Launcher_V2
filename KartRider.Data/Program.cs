@@ -172,7 +172,8 @@ namespace KartRider
                 RhoFile item = new RhoFile
                 {
                     DataSource = new FileDataSource(file),
-                    Name = Path.GetFileName(file)
+                    Name = Path.GetFileName(file),
+                    FileEncryptionProperty = RhoFileProperty.Compressed
                 };
                 folder.AddFile(item);
             }
