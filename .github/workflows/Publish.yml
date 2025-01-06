@@ -18,15 +18,10 @@ jobs:
       run: dotnet restore Launcher.csproj
 
     - name: Publish
-      run: |
-        mkdir Launcher
-        dotnet publish Launcher.csproj -o PublishedWinExe
-        cp PublishedWinExe/Launcher.exe Launcher/Launcher.exe
-        dotnet publish Launcher_cmd.csproj -o PublishedExe
-        cp PublishedExe/Launcher.exe Launcher/Launcher_cmd.exe
+      run: dotnet publish Launcher.csproj -o PublishedWinExe
 
     - name: Archive Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Launcher
-        path: Launcher/*
+        path: PublishedWinExe/Launcher.exe
