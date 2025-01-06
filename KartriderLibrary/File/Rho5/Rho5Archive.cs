@@ -264,7 +264,7 @@ namespace KartLibrary.File
             }
 
             // Enqueue all files 
-            maxSize = (int)Math.Round(maxSize * 1.3); // dataLenSum is sum of "uncompressed data" length.
+            maxSize = (int)Math.Round((double)maxSize * 1.05); // * 1.3. dataLenSum is sum of "uncompressed data" length.
             int filesInfoDataLen = 0;
             int dataLenSum = 0;
             Queue<Rho5File> fileQueue = new Queue<Rho5File>();
@@ -326,7 +326,8 @@ namespace KartLibrary.File
                     processedData = memStream.ToArray();
                 }
                 int fileInfoChksum = 7 + ((dataOffset - dataBeginOffset) >> 10) + data.Length + processedData.Length;
-                foreach (byte b in fileChksum)
+                byte[] array = fileChksum;
+                foreach (byte b in array)
                     fileInfoChksum += b;
                 filesInfoWriter.WriteKRString(file.FullName);
                 filesInfoWriter.Write(fileInfoChksum);
