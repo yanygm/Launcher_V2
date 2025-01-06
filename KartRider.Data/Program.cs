@@ -8,6 +8,7 @@ using RHOParser;
 using Set_Data;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -21,6 +22,12 @@ namespace KartRider
 {
     internal static class Program
     {
+        [DllImport("kernel32.dll")]
+        public static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll")]
+        public static extern bool FreeConsole();
+
         public static Launcher LauncherDlg;
         public static GetKart GetKartDlg;
         public static bool SpeedPatch;
@@ -39,6 +46,7 @@ namespace KartRider
         {
             string input;
             string output;
+            AllocConsole();
             string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "CountryCode.ini";
             if (File.Exists(Load_CC))
             {
@@ -66,6 +74,7 @@ namespace KartRider
                     Launcher StartLauncher = new Launcher();
                     Program.LauncherDlg = StartLauncher;
                     Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                    FreeConsole();
                     Application.Run(StartLauncher);
                 }
                 else if (File.Exists(RootDirectory + "KartRider.pin") && File.Exists(RootDirectory + "KartRider.exe"))
@@ -77,6 +86,7 @@ namespace KartRider
                     Launcher StartLauncher = new Launcher();
                     Program.LauncherDlg = StartLauncher;
                     Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                    FreeConsole();
                     Application.Run(StartLauncher);
                 }
                 else
@@ -154,7 +164,6 @@ namespace KartRider
         {
             RhoArchive rhoArchive = new RhoArchive();
             string lastFolderName = Path.GetFileName(intput);
-            Console.WriteLine(lastFolderName);
             string array = lastFolderName.Replace('_', '\\'); ;
             GetAllFiles(intput + "\\" + array, new List<string>(), rhoArchive.RootFolder);
 
@@ -283,7 +292,6 @@ namespace KartRider
             BinaryXmlDocument bxd = new BinaryXmlDocument();
             bxd.Read(Encoding.GetEncoding("UTF-16"), data);
             string output_bml = bxd.RootTag.ToString();
-            Console.WriteLine(output_bml);
             byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
             string filePath = System.IO.Path.ChangeExtension(input, "xml");
             using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
@@ -309,10 +317,8 @@ namespace KartRider
                         {
                             string elementName = reader.Name;
                             int attCount = reader.AttributeCount;
-                            Console.WriteLine($"元素: {elementName}");
                             outPacket.WriteString(elementName);
                             outPacket.WriteInt(0);
-                            Console.WriteLine($"属性数量: {attCount}");
                             outPacket.WriteInt(attCount);
                             for (int i = 0; i < attCount; i++)
                             {
@@ -321,9 +327,7 @@ namespace KartRider
                                 outPacket.WriteString(attName);
                                 string attValue = reader.Value;
                                 outPacket.WriteString(attValue);
-                                Console.WriteLine($"属性名: {attName}, 属性值: {attValue}");
                             }
-                            Console.WriteLine($"子元素数量: {childCounts[Count]}");
                             outPacket.WriteInt(childCounts[Count]);
                             Count++;
                             reader.MoveToElement();
@@ -360,7 +364,6 @@ namespace KartRider
             BinaryXmlDocument bxd = new BinaryXmlDocument();
             bxd.Read(Encoding.GetEncoding("UTF-16"), array);
             string output_bml = bxd.RootTag.ToString();
-            Console.WriteLine(output_bml);
             byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
             string filePath = System.IO.Path.ChangeExtension(input, "xml");
             using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
@@ -378,7 +381,6 @@ namespace KartRider
                 BinaryWriter binaryWriter = new BinaryWriter(fileStream);
                 binaryWriter.Write((int)0);
                 int KRDataLength = binaryWriter.WriteKRData(array, false, true);
-                Console.WriteLine(KRDataLength);
                 binaryWriter.BaseStream.Seek(0, SeekOrigin.Begin);
                 binaryWriter.Write(KRDataLength);
             }
@@ -431,7 +433,6 @@ namespace KartRider
                 {
                     result = result.Replace(black.Replace("_", "!"), black);
                 }
-                Console.WriteLine(result);
                 string[] splitParts = result.Split('_');
                 XElement currentFolder = root;
                 for (int i = 0; i < splitParts.Length - 1; i++)
