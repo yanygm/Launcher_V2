@@ -188,12 +188,18 @@ namespace KartRider
             string[] files = Directory.GetFiles(folderPath);
             foreach (string file in files)
             {
-                RhoFile item = new RhoFile
+                string extension = Path.GetExtension(file);
+                RhoFile item = new RhoFile();
+                item.DataSource = new FileDataSource(file);
+                item.Name = Path.GetFileName(file);
+                if (extension == ".kml" || extension == ".xml" || extension == ".bml" || extension == ".bmh" || extension == ".bmx" || extension == ".kap" || extension == ".ksv" || extension == ".1s")
                 {
-                    DataSource = new FileDataSource(file),
-                    Name = Path.GetFileName(file),
-                    FileEncryptionProperty = RhoFileProperty.Compressed
-                };
+                    item.FileEncryptionProperty = RhoFileProperty.Compressed;
+                }
+                else
+                {
+                    item.FileEncryptionProperty = RhoFileProperty.PartialEncrypted;
+                }
                 folder.AddFile(item);
             }
             string[] subdirectories = Directory.GetDirectories(folderPath);

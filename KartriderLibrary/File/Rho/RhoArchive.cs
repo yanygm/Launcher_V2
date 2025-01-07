@@ -501,21 +501,14 @@ namespace KartLibrary.File
                     }
                     if (subFile.FileEncryptionProperty == RhoFileProperty.CompressedEncrypted || subFile.FileEncryptionProperty == RhoFileProperty.Compressed)
                     {
-                        using MemoryStream ms = new MemoryStream();
-                        using (var compressStream = new Ionic.Zlib.ZlibStream(ms, Ionic.Zlib.CompressionMode.Compress, Ionic.Zlib.CompressionLevel.BestCompression, true))
+                        using (MemoryStream ms = new MemoryStream())
                         {
-                            compressStream.Write(fileData, 0, fileData.Length);
-                        }
-                        fileData = ms.ToArray();
-                        /*
-                        {
-                            Ionic.Zlib.ZlibStream compressStream = new Ionic.Zlib.ZlibStream(ms, Ionic.Zlib.CompressionMode.Compress, Ionic.Zlib.CompressionLevel.BestCompression, true);
+                            Ionic.Zlib.ZlibStream compressStream = new Ionic.Zlib.ZlibStream(memStream, Ionic.Zlib.CompressionMode.Compress, true);
                             compressStream.Write(fileData, 0, fileData.Length);
                             compressStream.Flush();
                             compressStream.Close();
                             fileData = ms.ToArray();
                         }
-                        */
                     }
 
                     memWriter.WriteNullTerminatedText(subFile.NameWithoutExt, true);
