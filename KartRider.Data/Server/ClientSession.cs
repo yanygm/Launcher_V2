@@ -183,6 +183,9 @@ namespace KartRider
 						short Set_KartTailLamp = iPacket.ReadShort();
 						SetRiderItem.Set_slotBg = iPacket.ReadShort();
 						short Set_KartBoosterEffect = iPacket.ReadShort();
+						short X1 = iPacket.ReadShort();
+						short X2 = iPacket.ReadShort();
+						short X3 = iPacket.ReadShort();
 						Console.WriteLine($"KartPlant1: {Set_KartPlant1}");
 						Console.WriteLine($"KartPlant2: {Set_KartPlant2}");
 						Console.WriteLine($"KartPlant3: {Set_KartPlant3}");
@@ -190,6 +193,9 @@ namespace KartRider
 						Console.WriteLine($"KartCoating: {Set_KartCoating}");
 						Console.WriteLine($"KartTailLamp: {Set_KartTailLamp}");
 						Console.WriteLine($"KartBoosterEffect: {Set_KartBoosterEffect}");
+						Console.WriteLine($"X1: {X1}");
+						Console.WriteLine($"X2: {X2}");
+						Console.WriteLine($"X3: {X3}");
 						SetRiderItem.Save_SetRiderItem();
 						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
 						StartGameData.Kart_id = SetRiderItem.Set_Kart;
@@ -415,9 +421,87 @@ namespace KartRider
 							outPacket.WriteUInt(SetRider.UserNO);
 							outPacket.WriteBytes(new byte[12]);
 							outPacket.WriteString(SetRider.Nickname);
-							outPacket.WriteBytes(new byte[70]);//67
+							outPacket.WriteShort(SetRiderItem.Set_Character);
+							outPacket.WriteShort(SetRiderItem.Set_Paint);
+							outPacket.WriteShort(SetRiderItem.Set_Kart);
+							outPacket.WriteShort(SetRiderItem.Set_Plate);
+							outPacket.WriteShort(SetRiderItem.Set_Goggle);
+							outPacket.WriteShort(SetRiderItem.Set_Balloon);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(SetRiderItem.Set_HeadBand);
+							outPacket.WriteShort(SetRiderItem.Set_HeadPhone);
+							outPacket.WriteShort(SetRiderItem.Set_HandGearL);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(SetRiderItem.Set_Uniform);
+							outPacket.WriteShort(SetRiderItem.Set_Decal);
+							outPacket.WriteShort(SetRiderItem.Set_Pet);
+							outPacket.WriteShort(SetRiderItem.Set_FlyingPet);
+							outPacket.WriteShort(SetRiderItem.Set_Aura);
+							outPacket.WriteShort(SetRiderItem.Set_SkidMark);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(SetRiderItem.Set_RidColor);
+							outPacket.WriteShort(SetRiderItem.Set_BonusCard);
+							outPacket.WriteShort(0);
+							var PlantKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+							var plantList = KartExcData.PlantList;
+							var existingPlant = plantList.FirstOrDefault(list => list[0] == PlantKartAndSN.Kart && list[1] == PlantKartAndSN.SN);
+							if (existingPlant != null)
+							{
+								outPacket.WriteShort(existingPlant[3]);
+								outPacket.WriteShort(existingPlant[7]);
+								outPacket.WriteShort(existingPlant[5]);
+								outPacket.WriteShort(existingPlant[9]);
+							}
+							else
+							{
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+							}
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(SetRiderItem.Set_Tachometer);
+							outPacket.WriteShort(SetRiderItem.Set_Dye);
+							outPacket.WriteShort(SetRiderItem.Set_KartSN);
+							outPacket.WriteByte(0);
+							var ExcKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+							var partsList = KartExcData.PartsList;
+							var existingParts = partsList.FirstOrDefault(list => list[0] == ExcKartAndSN.Kart && list[1] == ExcKartAndSN.SN);
+							if (existingParts != null)
+							{
+								outPacket.WriteShort(existingParts[14]);
+								outPacket.WriteShort(existingParts[15]);
+							}
+							else
+							{
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+							}
+							outPacket.WriteShort(SetRiderItem.Set_slotBg);
+							var Parts12KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+							var Parts12List = KartExcData.Parts12List;
+							var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
+							if (existingParts12 != null)
+							{
+								outPacket.WriteShort(existingParts12[14]);
+								outPacket.WriteShort(existingParts12[15]);
+								outPacket.WriteShort(existingParts12[16]);
+							}
+							else
+							{
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+							}
+							outPacket.WriteShort(0);
 							outPacket.WriteUInt(SetRider.RP);
-							outPacket.WriteBytes(new byte[937]);//910
+							outPacket.WriteBytes(new byte[34]);
+							for (int i = 0; i < 7; i++)
+							{
+								outPacket.WriteBytes(new byte[132]);
+								outPacket.WriteHexString("FF");
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
