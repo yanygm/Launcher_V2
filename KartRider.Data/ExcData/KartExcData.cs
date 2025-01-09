@@ -75,6 +75,8 @@ namespace ExcData
 		public static List<short> partsHandle12 = new List<short>();
 		public static List<short> partsWheel12 = new List<short>();
 		public static List<short> partsBooster12 = new List<short>();
+		public static List<short> partsCoating12 = new List<short>();
+		public static List<short> partsTailLamp12 = new List<short>();
 		public static List<short> partsBoosterEffect12 = new List<short>();
 		public static List<short> ethisItem = new List<short>();
 

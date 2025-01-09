@@ -61,6 +61,8 @@ namespace RiderData
 			NewRider.partsHandle12();
 			NewRider.partsWheel12();
 			NewRider.partsBooster12();
+			NewRider.partsCoating12();
+			NewRider.partsTailLamp12();
 			NewRider.partsBoosterEffect12();
 			NewRider.ethisItem();
 			NewRider.XUniquePartsData();
@@ -151,10 +153,14 @@ namespace RiderData
 				var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
 				if (existingParts12 != null)
 				{
-					oPacket.WriteShort(existingParts12[12]);
+					oPacket.WriteShort(existingParts12[14]);
+					oPacket.WriteShort(existingParts12[15]);
+					oPacket.WriteShort(existingParts12[16]);
 				}
 				else
 				{
+					oPacket.WriteShort(0);
+					oPacket.WriteShort(0);
 					oPacket.WriteShort(0);
 				}
 				oPacket.WriteShort(0);
@@ -878,6 +884,32 @@ namespace RiderData
 				}
 				RouterListener.MySession.Client.Send(oPacket);
 			}
+		}
+
+		public static void partsCoating12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsCoating12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short> { id, sn, num };
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(76, item);
+		}
+
+		public static void partsTailLamp12()
+		{
+			List<List<short>> item = new List<List<short>>();
+			foreach (var id in KartExcData.partsTailLamp12)
+			{
+				short sn = 0;
+				short num = SetRider.SlotChanger;
+				List<short> add = new List<short> { id, sn, num };
+				item.Add(add);
+			}
+			LoRpGetRiderItemPacket(77, item);
 		}
 
 		public static void partsBoosterEffect12()
