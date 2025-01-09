@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
 using Set_Data;
@@ -16,7 +17,7 @@ namespace KartRider
 				outPacket.WriteUShort(SessionGroup.usLocale);
 				outPacket.WriteUShort(1);
 				outPacket.WriteUShort(SetGameOption.Version);
-				outPacket.WriteString("http://kartupdate.tiancity.cn/patch/TPWFPZJPVQPLNWT");
+				outPacket.WriteString("http://kartupdate.tiancity.cn/patch/JDVDDSVTJVLGHXJ");
 				outPacket.WriteUInt(first_val);
 				outPacket.WriteUInt(second_val);
 				outPacket.WriteByte(SessionGroup.nClientLoc);
@@ -205,11 +206,88 @@ namespace KartRider
 					outPacket.WriteInt(0);
 					outPacket.WriteInt(0);
 					outPacket.WriteInt(0);
-					outPacket.WriteInt(2);
+					outPacket.WriteInt(1);
 					outPacket.WriteInt(0);
 					outPacket.WriteByte(0);
 				}
 				RouterListener.MySession.Client.Send(outPacket);
+			}
+		}
+
+		public static void GetRider(OutPacket outPacket)
+		{
+			outPacket.WriteShort(SetRiderItem.Set_Character);
+			outPacket.WriteShort(SetRiderItem.Set_Paint);
+			outPacket.WriteShort(SetRiderItem.Set_Kart);
+			outPacket.WriteShort(SetRiderItem.Set_Plate);
+			outPacket.WriteShort(SetRiderItem.Set_Goggle);
+			outPacket.WriteShort(SetRiderItem.Set_Balloon);
+			outPacket.WriteShort(0);
+			outPacket.WriteShort(SetRiderItem.Set_HeadBand);
+			outPacket.WriteShort(SetRiderItem.Set_HeadPhone);
+			outPacket.WriteShort(SetRiderItem.Set_HandGearL);
+			outPacket.WriteShort(0);
+			outPacket.WriteShort(SetRiderItem.Set_Uniform);
+			outPacket.WriteShort(SetRiderItem.Set_Decal);
+			outPacket.WriteShort(SetRiderItem.Set_Pet);
+			outPacket.WriteShort(SetRiderItem.Set_FlyingPet);
+			outPacket.WriteShort(SetRiderItem.Set_Aura);
+			outPacket.WriteShort(SetRiderItem.Set_SkidMark);
+			outPacket.WriteShort(0);
+			outPacket.WriteShort(SetRiderItem.Set_RidColor);
+			outPacket.WriteShort(SetRiderItem.Set_BonusCard);
+			outPacket.WriteShort(0);//bossModeCard
+			var PlantKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+			var plantList = KartExcData.PlantList;
+			var existingPlant = plantList.FirstOrDefault(list => list[0] == PlantKartAndSN.Kart && list[1] == PlantKartAndSN.SN);
+			if (existingPlant != null)
+			{
+				outPacket.WriteShort(existingPlant[3]);
+				outPacket.WriteShort(existingPlant[7]);
+				outPacket.WriteShort(existingPlant[5]);
+				outPacket.WriteShort(existingPlant[9]);
+			}
+			else
+			{
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
+			}
+			outPacket.WriteShort(0);
+			outPacket.WriteShort(0);
+			outPacket.WriteShort(SetRiderItem.Set_Tachometer);
+			outPacket.WriteShort(SetRiderItem.Set_Dye);
+			outPacket.WriteShort(SetRiderItem.Set_KartSN);
+			outPacket.WriteByte(0);
+			var ExcKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+			var partsList = KartExcData.PartsList;
+			var existingParts = partsList.FirstOrDefault(list => list[0] == ExcKartAndSN.Kart && list[1] == ExcKartAndSN.SN);
+			if (existingParts != null)
+			{
+				outPacket.WriteShort(existingParts[14]);
+				outPacket.WriteShort(existingParts[15]);
+			}
+			else
+			{
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
+			}
+			outPacket.WriteShort(SetRiderItem.Set_slotBg);
+			var Parts12KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+			var Parts12List = KartExcData.Parts12List;
+			var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
+			if (existingParts12 != null)
+			{
+				outPacket.WriteShort(existingParts12[14]);
+				outPacket.WriteShort(existingParts12[15]);
+				outPacket.WriteShort(existingParts12[16]);
+			}
+			else
+			{
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
+				outPacket.WriteShort(0);
 			}
 		}
 	}
