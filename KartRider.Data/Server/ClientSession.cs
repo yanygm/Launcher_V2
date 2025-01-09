@@ -182,17 +182,19 @@ namespace KartRider
 						short Set_KartCoating = iPacket.ReadShort();
 						short Set_KartTailLamp = iPacket.ReadShort();
 						SetRiderItem.Set_slotBg = iPacket.ReadShort();
-						short Set_KartBoosterEffect = iPacket.ReadShort();
+						short Set_KartCoating12 = iPacket.ReadShort();
+						short Set_KartTailLamp12 = iPacket.ReadShort();
+						short Set_KartBoosterEffect12 = iPacket.ReadShort();
 						iPacket.ReadShort();
-						iPacket.ReadShort();
-						iPacket.ReadShort();
-						Console.WriteLine($"KartPlant1: {Set_KartPlant1}");
-						Console.WriteLine($"KartPlant2: {Set_KartPlant2}");
-						Console.WriteLine($"KartPlant3: {Set_KartPlant3}");
-						Console.WriteLine($"KartPlant4: {Set_KartPlant4}");
-						Console.WriteLine($"KartCoating: {Set_KartCoating}");
-						Console.WriteLine($"KartTailLamp: {Set_KartTailLamp}");
-						Console.WriteLine($"KartBoosterEffect: {Set_KartBoosterEffect}");
+						Console.WriteLine($"Set_KartPlant1: {Set_KartPlant1}");
+						Console.WriteLine($"Set_KartPlant2: {Set_KartPlant2}");
+						Console.WriteLine($"Set_KartPlant3: {Set_KartPlant3}");
+						Console.WriteLine($"Set_KartPlant4: {Set_KartPlant4}");
+						Console.WriteLine($"Set_KartCoating: {Set_KartCoating}");
+						Console.WriteLine($"Set_KartTailLamp: {Set_KartTailLamp}");
+						Console.WriteLine($"Set_KartCoating12: {Set_KartCoating12}");
+						Console.WriteLine($"Set_KartTailLamp12: {Set_KartTailLamp12}");
+						Console.WriteLine($"Set_KartBoosterEffect12: {Set_KartBoosterEffect12}");
 						SetRiderItem.Save_SetRiderItem();
 						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
 						StartGameData.Kart_id = SetRiderItem.Set_Kart;
@@ -304,7 +306,8 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrSetPlaytimeEventTick"))
 						{
-							outPacket.WriteByte(0);
+							outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+							outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1622,7 +1625,7 @@ namespace KartRider
 						{
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(0);
-							outPacket.WriteHexString("25 B2 6E 35");
+							outPacket.WriteHexString("60 B2 6B 2B");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1663,8 +1666,9 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrKartPassInitPacket"))
 						{
-							outPacket.WriteInt(3);
-							outPacket.WriteInt(0);
+							//outPacket.WriteInt(3);
+							//outPacket.WriteInt(0);
+							outPacket.WriteHexString("0000000001000000000000000000000000");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1694,7 +1698,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
 						{
 							outPacket.WriteUInt(99);
-							outPacket.WriteUInt(0);
+							outPacket.WriteUInt(10);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1797,7 +1801,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveRankInfo"))
 						{
-							outPacket.WriteHexString("01 00 00 00 00 FF 00 00 00 00 00 00 00 00 00 00 00 00");
+							outPacket.WriteHexString("0100000000FF000000000000000000000000");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1883,7 +1887,7 @@ namespace KartRider
 						{
 							outPacket.WriteShort(56);
 							outPacket.WriteInt(1);
-							//this.Parent.Client.Send(outPacket);
+							this.Parent.Client.Send(outPacket);
 						}
 						return;
 					}
