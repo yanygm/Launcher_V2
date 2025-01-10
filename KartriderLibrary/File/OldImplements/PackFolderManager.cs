@@ -98,6 +98,7 @@ namespace KartLibrary.File
                     case "RhoFolder":
                         string name = currentTag.GetAttribute("name");
                         string fileName = currentTag.GetAttribute("fileName");
+                        uint rhoFileKey = uint.Parse(currentTag.GetAttribute("key"));
                         PackFolderInfo NewFolder = new PackFolderInfo()
                         {
                             FolderName = currectProcObj.Parent is null ? $"{name}" : name,
@@ -113,7 +114,7 @@ namespace KartLibrary.File
                             else
                                 currectProcObj.Parent.Folders.Add(NewFolder);
                         }
-                        Rho rhoFile = new Rho($"{fileInfo.DirectoryName}\\{fileName}");
+                        Rho rhoFile = new Rho($"{fileInfo.DirectoryName}\\{fileName}", rhoFileKey);
                         Queue<(PackFolderInfo, RhoDirectory)> dirQue = new Queue<(PackFolderInfo, RhoDirectory)>();
                         RhoDirectory rootDir = rhoFile.RootDirectory;
                         dirQue.Enqueue((NewFolder, rootDir));

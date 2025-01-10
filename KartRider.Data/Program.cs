@@ -125,19 +125,19 @@ namespace KartRider
             {
                 Program.decode(input, output);
             }
-            if (input.EndsWith(".xml"))
-            {
-                Program.XtoB(input);
-            }
-            if (input.EndsWith("aaa.bml"))
+            else if (input.EndsWith("aaa.xml"))
             {
                 Program.AAAD(input);
+            }
+            else if (input.EndsWith(".xml"))
+            {
+                Program.XtoB(input);
             }
             else if (input.EndsWith(".bml"))
             {
                 Program.BtoX(input);
             }
-            if (input.EndsWith(".pk"))
+            else if (input.EndsWith(".pk"))
             {
                 Program.AAAR(input);
             }
@@ -394,13 +394,48 @@ namespace KartRider
 
         private static void AAAD(string input)
         {
-            byte[] array = File.ReadAllBytes(input);
+            XDocument xdoc = XDocument.Load(input);
+            if (xdoc.Root == null)
+                return;
+            List<int> childCounts = CountChildren(xdoc.Root, 0, new List<int>());
+            byte[] byteArray;
+            using (XmlReader reader = XmlReader.Create(input))
+            {
+                using (OutPacket outPacket = new OutPacket())
+                {
+                    int Count = 0;
+                    while (reader.Read())
+                    {
+                        if (reader.NodeType == XmlNodeType.Element)
+                        {
+                            string elementName = reader.Name;
+                            int attCount = reader.AttributeCount;
+                            outPacket.WriteString(elementName);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(attCount);
+                            for (int i = 0; i < attCount; i++)
+                            {
+                                reader.MoveToAttribute(i);
+                                string attName = reader.Name;
+                                outPacket.WriteString(attName);
+                                string attValue = reader.Value;
+                                outPacket.WriteString(attValue);
+                            }
+                            outPacket.WriteInt(childCounts[Count]);
+                            Count++;
+                            reader.MoveToElement();
+                        }
+                    }
+                    byteArray = outPacket.ToArray();
+                }
+            }
+
             string filePath = System.IO.Path.ChangeExtension(input, "pk");
             using FileStream fileStream = new FileStream(filePath, FileMode.Create);
             {
                 BinaryWriter binaryWriter = new BinaryWriter(fileStream);
                 binaryWriter.Write((int)0);
-                int KRDataLength = binaryWriter.WriteKRData(array, false, true);
+                int KRDataLength = binaryWriter.WriteKRData(byteArray, false, true);
                 binaryWriter.BaseStream.Seek(0, SeekOrigin.Begin);
                 binaryWriter.Write(KRDataLength);
             }

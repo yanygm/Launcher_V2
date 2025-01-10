@@ -33,7 +33,7 @@ namespace KartLibrary.File
 
         public RhoDirectory RootDirectory { get; set; }
 
-        public Rho(string FileName)
+        public Rho(string FileName, uint rhoFileKey = 0)
         {
             if (!System.IO.File.Exists(FileName))
                 throw new FileNotFoundException($"Exception: Could't find the file:{FileName}.", FileName);
@@ -44,7 +44,14 @@ namespace KartLibrary.File
             this.FileName = FileName;
             BinaryReader reader = new BinaryReader(baseStream);
             FileInfo fileInfo = new FileInfo(FileName);
-            RhoFileKey = RhoKey.GetRhoKey(fileInfo.Name.Replace(".rho", ""));
+            if (rhoFileKey == 0)
+            {
+                RhoFileKey = RhoKey.GetRhoKey(fileInfo.Name.Replace(".rho", ""));
+            }
+            else
+            {
+                RhoFileKey = rhoFileKey;
+            }
             // Read Magic String
             byte[] magicStrBytes = reader.ReadBytes(0x22);
             string magicStr = Encoding.GetEncoding("UTF-16").GetString(magicStrBytes);
