@@ -216,6 +216,7 @@ namespace KartRider
 
 		public static void GetRider(OutPacket outPacket)
 		{
+			var KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
 			outPacket.WriteShort(SetRiderItem.Set_Character);
 			outPacket.WriteShort(SetRiderItem.Set_Paint);
 			outPacket.WriteShort(SetRiderItem.Set_Kart);
@@ -237,9 +238,7 @@ namespace KartRider
 			outPacket.WriteShort(SetRiderItem.Set_RidColor);
 			outPacket.WriteShort(SetRiderItem.Set_BonusCard);
 			outPacket.WriteShort(0);//bossModeCard
-			var PlantKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
-			var plantList = KartExcData.PlantList;
-			var existingPlant = plantList.FirstOrDefault(list => list[0] == PlantKartAndSN.Kart && list[1] == PlantKartAndSN.SN);
+			var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 			if (existingPlant != null)
 			{
 				outPacket.WriteShort(existingPlant[3]);
@@ -260,9 +259,7 @@ namespace KartRider
 			outPacket.WriteShort(SetRiderItem.Set_Dye);
 			outPacket.WriteShort(SetRiderItem.Set_KartSN);
 			outPacket.WriteByte(0);
-			var ExcKartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
-			var partsList = KartExcData.PartsList;
-			var existingParts = partsList.FirstOrDefault(list => list[0] == ExcKartAndSN.Kart && list[1] == ExcKartAndSN.SN);
+			var existingParts = KartExcData.PartsList.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 			if (existingParts != null)
 			{
 				outPacket.WriteShort(existingParts[14]);
@@ -274,9 +271,7 @@ namespace KartRider
 				outPacket.WriteShort(0);
 			}
 			outPacket.WriteShort(SetRiderItem.Set_slotBg);
-			var Parts12KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
-			var Parts12List = KartExcData.Parts12List;
-			var existingParts12 = Parts12List.FirstOrDefault(list => list[0] == Parts12KartAndSN.Kart && list[1] == Parts12KartAndSN.SN);
+			var existingParts12 = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 			if (existingParts12 != null)
 			{
 				outPacket.WriteShort(existingParts12[14]);

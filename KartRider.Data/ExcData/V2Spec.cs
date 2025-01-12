@@ -106,9 +106,8 @@ namespace ExcData
 		{
 			if (Kart.defaultExceedType > 0)
 			{
-				var kartAndSN = new { Id = SetRiderItem.Set_Kart, Sn = SetRiderItem.Set_KartSN };
-				var parts12List = KartExcData.Parts12List;
-				var existingParts = parts12List.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
+				var KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
+				var existingParts = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 				Console.WriteLine("-------------------------------------------------------------");
 				short Parts_TransAccelFactor;
 				if (existingParts == null || existingParts[4] < 1)
@@ -160,8 +159,7 @@ namespace ExcData
 				Console.WriteLine("-------------------------------------------------------------");
 
 				Reset_V2Level_SpecData();
-				var level12List = KartExcData.Level12List;
-				var existingLevel = level12List.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
+				var existingLevel = KartExcData.Level12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 				if (existingLevel != null)
 				{
 					List<List<short>> Skill = new List<List<short>>();
@@ -299,6 +297,23 @@ namespace ExcData
 					Kart.wallCollGaugeMinVelBound = 200f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
 				}
+			}
+			else
+			{
+				V2Parts_TransAccelFactor = 0f;
+				V2Parts_SteerConstraint = 0f;
+				V2Parts_DriftEscapeForce = 0f;
+				V2Parts_NormalBoosterTime = 0f;
+
+				V2Level_ForwardAccelForce = 0f;
+				V2Level_CornerDrawFactor = 0f;
+				V2Level_DragFactor = 0f;
+				V2Level_NormalBoosterTime = 0f;
+				V2Level_TeamBoosterTime = 0f;
+				V2Level_StartBoosterTimeSpeed = 0f;
+				V2Level_TransAccelFactor = 0f;
+				V2Level_DriftEscapeForce = 0f;
+				V2Level_DriftMaxGauge = 0f;
 			}
 		}
 	}

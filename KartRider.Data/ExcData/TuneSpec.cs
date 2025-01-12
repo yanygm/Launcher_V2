@@ -154,9 +154,7 @@ namespace ExcData
 			float[] Tune_TransAccelFactor_List = { 0f, 0.006f, 0.01f, 0.018f };
 			float[] Tune_DriftMaxGauge_List = { 0f, -70f, -140f, -200f };
 			float[] Tune_DriftEscapeForce_List = { 0f, 80f, 140f, 210f };
-			var kartAndSN = new { Kart = Set_Kart, SN = Set_KartSN };
-			var tuneList = KartExcData.TuneList;
-			var existingTune = tuneList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
+			var existingTune = KartExcData.TuneList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
 			if (existingTune!= null)
 			{
 				if (existingTune[2] == 103 || existingTune[3] == 103 || existingTune[4] == 103)
@@ -208,9 +206,7 @@ namespace ExcData
 
 		public static void Use_PlantSpec(short Set_Kart, short Set_KartSN)
 		{
-			var kartAndSN = new { Kart = Set_Kart, SN = Set_KartSN };
-			var plantList = KartExcData.PlantList;
-			var existingPlant = plantList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
+			var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
 			if (existingPlant!= null)
 			{
 				if (existingPlant[2] == 43)
@@ -1084,9 +1080,7 @@ namespace ExcData
 
 		public static void Use_KartLevelSpec(short Set_Kart, short Set_KartSN)
 		{
-			var kartAndSN = new { Kart = Set_Kart, SN = Set_KartSN };
-			var levelList = KartExcData.LevelList;
-			var existingLevel = levelList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
+			var existingLevel = KartExcData.LevelList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
 			if (existingLevel!= null)
 			{
 				if (existingLevel[4] == 0)
@@ -1329,9 +1323,7 @@ namespace ExcData
 
 		public static void Use_PartsSpec(short id, short sn)
 		{
-			var kartAndSN = new { Id = id, Sn = sn };
-			var partsList = KartExcData.PartsList;
-			var existingParts = partsList.FirstOrDefault(list => list[0] == kartAndSN.Id && list[1] == kartAndSN.Sn);
+			var existingParts = KartExcData.PartsList.FirstOrDefault(list => list[0] == id && list[1] == sn);
 			if (existingParts!= null)
 			{
 				for (short i = 63; i < 67; i++)

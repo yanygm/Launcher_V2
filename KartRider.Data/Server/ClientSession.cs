@@ -728,13 +728,11 @@ namespace KartRider
 							this.Parent.Client.Send(outPacket);
 						}
 						TuneSpec.Use_KartLevelSpec(Kart, SN);
-						var kartLevelList = KartExcData.LevelList;
-						var kartAndSN = new { Kart, SN };
-						var existingLevelList = kartLevelList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
+						var existingLevelList = KartExcData.LevelList.FirstOrDefault(list => list[0] == Kart && list[1] == SN);
 						if (existingLevelList == null)
 						{
 							pointleft = (short)(35 - v1 - v2 - v3 - v4);
-							KartExcData.AddLevelList(kartAndSN.Kart, kartAndSN.SN, 5, pointleft, v1, v2, v3, v4, 0);
+							KartExcData.AddLevelList(Kart, SN, 5, pointleft, v1, v2, v3, v4, 0);
 						}
 						else
 						{
@@ -744,7 +742,7 @@ namespace KartRider
 							short v3New = (short)(existingLevelList[6] + v3);
 							short v4New = (short)(existingLevelList[7] + v4);
 							short effect = existingLevelList[8];
-							KartExcData.AddLevelList(kartAndSN.Kart, kartAndSN.SN, 5, pointleft, v1New, v2New, v3New, v4New, effect);
+							KartExcData.AddLevelList(Kart, SN, 5, pointleft, v1New, v2New, v3New, v4New, effect);
 						}
 						return;
 					}
@@ -758,15 +756,13 @@ namespace KartRider
 						short SN = iPacket.ReadShort();
 						short Effect = iPacket.ReadShort();
 
-						var kartLevelList = KartExcData.LevelList;
-						var kartAndSN = new { Kart, SN };
-						var existingLevelList = kartLevelList.FirstOrDefault(list => list[0] == kartAndSN.Kart && list[1] == kartAndSN.SN);
+						var existingLevelList = KartExcData.LevelList.FirstOrDefault(list => list[0] == Kart && list[1] == SN);
 
 						using (OutPacket outPacket = new OutPacket("PrKartLevelSpecialSlotUpdate"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteShort(kartAndSN.Kart);
-							outPacket.WriteShort(kartAndSN.SN);
+							outPacket.WriteShort(Kart);
+							outPacket.WriteShort(SN);
 							if (existingLevelList != null)
 							{
 								outPacket.WriteShort(existingLevelList[2]);
@@ -776,7 +772,7 @@ namespace KartRider
 								outPacket.WriteShort(existingLevelList[6]);
 								outPacket.WriteShort(existingLevelList[7]);
 								outPacket.WriteShort(Effect);
-								KartExcData.AddLevelList(kartAndSN.Kart, kartAndSN.SN, existingLevelList[2], existingLevelList[3], existingLevelList[4], existingLevelList[5], existingLevelList[6], existingLevelList[7], Effect);
+								KartExcData.AddLevelList(Kart, SN, existingLevelList[2], existingLevelList[3], existingLevelList[4], existingLevelList[5], existingLevelList[6], existingLevelList[7], Effect);
 							}
 							else
 							{
@@ -787,7 +783,7 @@ namespace KartRider
 								outPacket.WriteShort(10);
 								outPacket.WriteShort(5);
 								outPacket.WriteShort(Effect);
-								KartExcData.AddLevelList(kartAndSN.Kart, kartAndSN.SN, 5, 0, 10, 10, 10, 5, Effect);
+								KartExcData.AddLevelList(Kart, SN, 5, 0, 10, 10, 10, 5, Effect);
 							}
 							this.Parent.Client.Send(outPacket);
 						}
@@ -2435,9 +2431,7 @@ namespace KartRider
 						short kart = iPacket.ReadShort();
 						short sn = iPacket.ReadShort();
 						uint[] money = new uint[] { 0, 10, 12, 15, 20, 30 };
-						var partsKartAndSN = new { Kart = kart, SN = sn };
-						var partsList = KartExcData.Level12List;
-						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						var existingParts = KartExcData.Level12List.FirstOrDefault(list => list[0] == kart && list[1] == sn);
 						if (existingParts != null)
 						{
 							using (OutPacket outPacket = new OutPacket("PrKart12TuningLevelUp"))
@@ -2522,9 +2516,7 @@ namespace KartRider
 						short kart = iPacket.ReadShort();
 						short sn = iPacket.ReadShort();
 						short field = iPacket.ReadShort();
-						var partsKartAndSN = new { Kart = kart, SN = sn };
-						var partsList = KartExcData.Level12List;
-						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						var existingParts = KartExcData.Level12List.FirstOrDefault(list => list[0] == kart && list[1] == sn);
 						if (existingParts != null)
 						{
 							using (OutPacket outPacket = new OutPacket("PrKart12RestictTuningSkill"))
@@ -2582,9 +2574,7 @@ namespace KartRider
 						short sn = iPacket.ReadShort();
 						short field = iPacket.ReadShort();
 						byte AddDel = iPacket.ReadByte();
-						var partsKartAndSN = new { Kart = kart, SN = sn };
-						var partsList = KartExcData.Level12List;
-						var existingParts = partsList.FirstOrDefault(list => list[0] == partsKartAndSN.Kart && list[1] == partsKartAndSN.SN);
+						var existingParts = KartExcData.Level12List.FirstOrDefault(list => list[0] == kart && list[1] == sn);
 						if (existingParts != null)
 						{
 							short point = existingParts[9];
