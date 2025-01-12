@@ -198,10 +198,10 @@ namespace KartRider
 						SetRiderItem.Save_SetRiderItem();
 						StartGameData.FlyingPet_id = SetRiderItem.Set_FlyingPet;
 						StartGameData.Kart_id = SetRiderItem.Set_Kart;
-						TuneSpec.Use_PartsSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
-						TuneSpec.Use_TuneSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
-						TuneSpec.Use_PlantSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
-						TuneSpec.Use_KartLevelSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
+						ExcSpec.Use_PartsSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
+						ExcSpec.Use_ExcSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
+						ExcSpec.Use_PlantSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
+						ExcSpec.Use_KartLevelSpec(SetRiderItem.Set_Kart, SetRiderItem.Set_KartSN);
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderInfo", 0))
@@ -655,8 +655,8 @@ namespace KartRider
 						KartExcData.AddPlantList(Kart, SN, 44, 0);
 						KartExcData.AddPlantList(Kart, SN, 45, 0);
 						KartExcData.AddPlantList(Kart, SN, 46, 0);
-						TuneSpec.Use_PartsSpec(Kart, SN);
-						TuneSpec.Use_PlantSpec(Kart, SN);
+						ExcSpec.Use_PartsSpec(Kart, SN);
+						ExcSpec.Use_PlantSpec(Kart, SN);
 						//GameSupport.OnDisconnect();
 						return;
 					}
@@ -727,7 +727,7 @@ namespace KartRider
 							outPacket.WriteShort(Effect);
 							this.Parent.Client.Send(outPacket);
 						}
-						TuneSpec.Use_KartLevelSpec(Kart, SN);
+						ExcSpec.Use_KartLevelSpec(Kart, SN);
 						var existingLevelList = KartExcData.LevelList.FirstOrDefault(list => list[0] == Kart && list[1] == SN);
 						if (existingLevelList == null)
 						{
@@ -850,7 +850,7 @@ namespace KartRider
 								existingList[3] = 703;
 								existingList[4] = 903;
 								KartExcData.SaveTuneList(KartExcData.TuneList);
-								TuneSpec.Use_TuneSpec(Kart, KartSN);
+								ExcSpec.Use_ExcSpec(Kart, KartSN);
 							}
 							else
 							{
@@ -935,7 +935,7 @@ namespace KartRider
 								}
 							}
 							KartExcData.SaveTuneList(KartExcData.TuneList);
-							TuneSpec.Use_TuneSpec(Kart, KartSN);
+							ExcSpec.Use_ExcSpec(Kart, KartSN);
 						}
 						return;
 					}
@@ -1060,7 +1060,7 @@ namespace KartRider
 							}
 							Console.WriteLine("TuneList: " + existingList[2] + ", " + existingList[3] + ", " + existingList[4]);
 							KartExcData.SaveTuneList(KartExcData.TuneList);
-							TuneSpec.Use_TuneSpec(Kart, KartSN);
+							ExcSpec.Use_ExcSpec(Kart, KartSN);
 						}
 						return;
 					}
@@ -1072,7 +1072,7 @@ namespace KartRider
 						short Kart_Id = iPacket.ReadShort();
 						short SN = iPacket.ReadShort();
 						KartExcData.AddPlantList(Kart_Id, SN, Item, Item_Id);
-						TuneSpec.Use_PlantSpec(Kart_Id, SN);
+						ExcSpec.Use_PlantSpec(Kart_Id, SN);
 						using (OutPacket outPacket = new OutPacket("PrEquipTuningPacket"))
 						{
 							outPacket.WriteByte(1);
@@ -1130,7 +1130,7 @@ namespace KartRider
 						}
 						KartExcData.AddPartsList(Kart, KartSN, Item_Cat_Id, Item_Id, Grade, PartsValue);
 						Console.WriteLine("ClientSession : Kart: {0}, KartSN: {1}, Item: {2}:{3}, Quantity: {4}, Grade: {5}, PartsValue: {6}", Kart, KartSN, Item_Cat_Id, Item_Id, Quantity, Grade, PartsValue);
-						TuneSpec.Use_PartsSpec(Kart, KartSN);
+						ExcSpec.Use_PartsSpec(Kart, KartSN);
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetTrainingMission", 0))

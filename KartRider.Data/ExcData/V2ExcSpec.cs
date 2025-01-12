@@ -102,6 +102,14 @@ namespace ExcData
 			V2Level_DriftMaxGauge = 0f;
 		}
 
+		public static void Reset_V2Parts_SpecData()
+		{
+			V2Parts_TransAccelFactor = 0f;
+			V2Parts_SteerConstraint = 0f;
+			V2Parts_DriftEscapeForce = 0f;
+			V2Parts_NormalBoosterTime = 0f;
+		}
+
 		public static void ExceedSpec()
 		{
 			if (Kart.defaultExceedType > 0)
@@ -300,20 +308,8 @@ namespace ExcData
 			}
 			else
 			{
-				V2Parts_TransAccelFactor = 0f;
-				V2Parts_SteerConstraint = 0f;
-				V2Parts_DriftEscapeForce = 0f;
-				V2Parts_NormalBoosterTime = 0f;
-
-				V2Level_ForwardAccelForce = 0f;
-				V2Level_CornerDrawFactor = 0f;
-				V2Level_DragFactor = 0f;
-				V2Level_NormalBoosterTime = 0f;
-				V2Level_TeamBoosterTime = 0f;
-				V2Level_StartBoosterTimeSpeed = 0f;
-				V2Level_TransAccelFactor = 0f;
-				V2Level_DriftEscapeForce = 0f;
-				V2Level_DriftMaxGauge = 0f;
+				Reset_V2Parts_SpecData();
+				Reset_V2Level_SpecData();
 			}
 		}
 	}
