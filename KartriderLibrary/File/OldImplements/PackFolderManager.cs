@@ -66,6 +66,7 @@ namespace KartLibrary.File
                     Path = ""
                 });
             }
+            HashSet<string> fileNameSet = new HashSet<string>();
             while (ProcessQue.Count > 0)
             {
                 ProcessObj currectProcObj = ProcessQue.Dequeue();
@@ -99,6 +100,9 @@ namespace KartLibrary.File
                         string name = currentTag.GetAttribute("name");
                         string fileName = currentTag.GetAttribute("fileName");
                         uint rhoFileKey = uint.Parse(currentTag.GetAttribute("key"));
+                        if (fileNameSet.Contains(fileName))
+                            continue;
+                        fileNameSet.Add(fileName);
                         PackFolderInfo NewFolder = new PackFolderInfo()
                         {
                             FolderName = currectProcObj.Parent is null ? $"{name}" : name,
