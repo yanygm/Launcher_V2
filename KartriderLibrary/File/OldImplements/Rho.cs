@@ -14,7 +14,7 @@ namespace KartLibrary.File
     [Obsolete("Rho class is deprecated. Use RhoArchive instead.")]
     public class Rho : IDisposable
     {
-        internal Stream baseStream;
+        public Stream baseStream;
         private (double, string)[] MagicString =
         {
             (1.0d, "Rh layer spec 1.0") ,
@@ -23,9 +23,9 @@ namespace KartLibrary.File
         public double Version { get; private set; }
         public string FileName { get; private set; }
 
-        private uint RhoFileKey = 0;
+        public uint RhoFileKey = 0;
 
-        private uint DataHash = 0;
+        public uint DataHash = 0;
 
         private uint BlockWhiteningKey = 0;
 
@@ -57,7 +57,7 @@ namespace KartLibrary.File
             string magicStr = Encoding.GetEncoding("UTF-16").GetString(magicStrBytes);
             int verIndex = Array.FindIndex(MagicString, x => x.Item2 == magicStr);
             if (verIndex == -1)
-                throw new NotSupportedException("Exception: This file is not supported.");
+                throw new NotSupportedException($"Exception: This file:{FileName} is not supported.");
             Version = MagicString[verIndex].Item1;
             baseStream.Seek(0x80, SeekOrigin.Begin);
             // Part 2
@@ -75,10 +75,10 @@ namespace KartLibrary.File
                 uint part2Hash = br.ReadUInt32();
                 uint checkHash = Adler.Adler32(0, part2Data, 4, 0x7C);
                 if (part2Hash != checkHash)
-                    throw new NotSupportedException("Exception: This file was modified. [ Part 2 Hash not euqal ]");
+                    throw new NotSupportedException($"Exception: This file:{FileName} was modified. [ Part 2 Hash not euqal ]");
                 int MagicCode = br.ReadInt32();
                 if (Version == 1.0d && MagicCode != 0x00010000 || Version == 1.1d && MagicCode != 0x00010001)
-                    throw new NotSupportedException("Exception: This file is not Rho File. [ Header check failure ]");
+                    throw new NotSupportedException($"Exception: This file:{FileName} is not Rho File. [ Header check failure ]");
                 BlockCount = br.ReadInt32(); // 10
                 BlockWhiteningKey = br.ReadUInt32(); //14 // BlockInfoKey = RhoFileKey ^  BlockWhiteningKey. 
                 BlockInfoKey = RhoFileKey ^ BlockWhiteningKey;
@@ -139,11 +139,11 @@ namespace KartLibrary.File
                 trtt.Add(blockKeyPair.Value);
             }
         }
-        internal uint GetFileKey()
+        public uint GetFileKey()
         {
             return RhoFileKey;
         }
-        internal uint GetDataHash()
+        public uint GetDataHash()
         {
             return DataHash;
         }
