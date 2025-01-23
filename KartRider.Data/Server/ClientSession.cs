@@ -694,8 +694,8 @@ namespace KartRider
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(0);
 							outPacket.WriteInt(0);
-							outPacket.WriteShort(Kart2);
-							outPacket.WriteShort(SN2);
+							outPacket.WriteShort(0);//Kart2
+							outPacket.WriteShort(0);//SN2
 							outPacket.WriteUInt(SetRider.Koin);
 							outPacket.WriteUInt(SetRider.Lucci);
 							outPacket.WriteInt(0);
@@ -2696,8 +2696,8 @@ namespace KartRider
 						int ExceedType = Random.Shared.Next(1, 5);
 						using (OutPacket outPacket = new OutPacket("PrKartExceedTypeChange"))
 						{
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);//kart2
+							outPacket.WriteShort(0);//sn2
 							outPacket.WriteShort(Spanner);
 							outPacket.WriteUInt(SetRider.Lucci);
 							outPacket.WriteInt(ExceedType);
