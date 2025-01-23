@@ -401,6 +401,10 @@ namespace ExcData
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(tempList[f][17]);
 						oPacket.WriteShort(4);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
@@ -599,7 +603,7 @@ namespace ExcData
 				var existing12List = Parts12List.FirstOrDefault(list => list[0] == id && list[1] == sn);
 				if (existing12List == null)
 				{
-					var newList = new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+					var newList = new List<short> { id, sn, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 					switch (Item_Cat_Id)
 					{
 						case 72:
@@ -812,6 +816,7 @@ namespace ExcData
 				xe1.SetAttribute("partsCoating", List[i][14].ToString());
 				xe1.SetAttribute("partsTailLamp", List[i][15].ToString());
 				xe1.SetAttribute("partsBoosterEffect", List[i][16].ToString());
+				xe1.SetAttribute("ExceedType", List[i][17].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Parts12Data.xml");
 			}

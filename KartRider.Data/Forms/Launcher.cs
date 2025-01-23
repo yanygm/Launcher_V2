@@ -434,7 +434,8 @@ namespace KartRider
 						short partsCoating = short.Parse(xe.GetAttribute("partsCoating"));
 						short partsTailLamp = short.Parse(xe.GetAttribute("partsTailLamp"));
 						short partsBoosterEffect = short.Parse(xe.GetAttribute("partsBoosterEffect"));
-						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect };
+						short ExceedType = short.Parse(xe.GetAttribute("ExceedType"));
+						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect, ExceedType };
 						KartExcData.Parts12List.Add(AddList);
 					}
 				}

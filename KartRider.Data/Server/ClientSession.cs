@@ -14,6 +14,7 @@ using KartRider_PacketName;
 using System.Linq;
 using KartRider;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace KartRider
 {
@@ -1733,11 +1734,6 @@ namespace KartRider
 							outPacket.WriteHexString("0000000008000000030000E803030100F401020000E803020100F401010000E803010100F401000000E803000100F401");
 							this.Parent.Client.Send(outPacket);
 						}
-						using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
-						{
-							outPacket.WriteString("分解卡丁车可以重置此车装备的部件！");
-							this.Parent.Client.Send(outPacket);
-						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestExchangeInitPacket", 0))
@@ -2687,6 +2683,39 @@ namespace KartRider
 								break;
 						}
 						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 0, 0);
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartExceedTypeChange", 0))
+					{
+						short kart1 = iPacket.ReadShort();
+						short sn1 = iPacket.ReadShort();
+						short kart2 = iPacket.ReadShort();
+						short sn2 = iPacket.ReadShort();
+						short Spanner = iPacket.ReadShort();
+						uint Lucci = iPacket.ReadUInt();
+						int ExceedType = Random.Shared.Next(1, 5);
+						using (OutPacket outPacket = new OutPacket("PrKartExceedTypeChange"))
+						{
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(Spanner);
+							outPacket.WriteUInt(SetRider.Lucci);
+							outPacket.WriteInt(ExceedType);
+							this.Parent.Client.Send(outPacket);
+						}
+						var existing12List = KartExcData.Parts12List.FirstOrDefault(list => list[0] == kart1 && list[1] == sn1);
+						if (existing12List == null)
+						{
+							var newList = new List<short> { kart1, sn1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (short)ExceedType };
+							KartExcData.Parts12List.Add(newList);
+							KartExcData.SaveParts12List(KartExcData.Parts12List);
+						}
+						else
+						{
+							existing12List[17] = (short)ExceedType;
+							KartExcData.SaveParts12List(KartExcData.Parts12List);
+						}
+						Console.WriteLine("ExceedType: " + ExceedType);
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendNRUserStatePacket", 0))
