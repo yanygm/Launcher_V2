@@ -257,6 +257,14 @@ namespace ExcData
 					Kart.wallCollGaugeMaxVelLoss = 200f;
 					Kart.wallCollGaugeMinVelBound = 160f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 4;
+					Kart.chargerSystemUseTime = 3000;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
 				}
 				if (Kart.defaultExceedType == 2)
 				{
@@ -274,6 +282,14 @@ namespace ExcData
 					Kart.wallCollGaugeMaxVelLoss = 200f;
 					Kart.wallCollGaugeMinVelBound = 200f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 4;
+					Kart.chargerSystemUseTime = 3000;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
 				}
 				if (Kart.defaultExceedType == 3)
 				{
@@ -291,6 +307,14 @@ namespace ExcData
 					Kart.wallCollGaugeMaxVelLoss = 200f;
 					Kart.wallCollGaugeMinVelBound = 200f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 5;
+					Kart.chargerSystemUseTime = 3750;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
 				}
 				if (Kart.defaultExceedType == 4)
 				{
@@ -308,6 +332,14 @@ namespace ExcData
 					Kart.wallCollGaugeMaxVelLoss = 200f;
 					Kart.wallCollGaugeMinVelBound = 200f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 6;
+					Kart.chargerSystemUseTime = 4500;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
 				}
 			}
 			else
