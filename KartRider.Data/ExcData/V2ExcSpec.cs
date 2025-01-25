@@ -124,7 +124,7 @@ namespace ExcData
 				short Parts_TransAccelFactor;
 				if (existingParts == null || existingParts[4] < 1)
 				{
-					Parts_TransAccelFactor = Get12Parts(1);
+					Parts_TransAccelFactor = Get12Parts((short)Kart.defaultEngineType);
 				}
 				else
 				{
@@ -136,7 +136,7 @@ namespace ExcData
 				short Parts_SteerConstraint;
 				if (existingParts == null || existingParts[7] < 1)
 				{
-					Parts_SteerConstraint = Get12Parts(1);
+					Parts_SteerConstraint = Get12Parts((short)Kart.defaultHandleType);
 				}
 				else
 				{
@@ -148,7 +148,7 @@ namespace ExcData
 				short Parts_DriftEscapeForce;
 				if (existingParts == null || existingParts[10] < 1)
 				{
-					Parts_DriftEscapeForce = Get12Parts(1);
+					Parts_DriftEscapeForce = Get12Parts((short)Kart.defaultWheelType);
 				}
 				else
 				{
@@ -160,7 +160,7 @@ namespace ExcData
 				short Parts_NormalBoosterTime;
 				if (existingParts == null || existingParts[13] < 1)
 				{
-					Parts_NormalBoosterTime = Get12Parts(1);
+					Parts_NormalBoosterTime = Get12Parts((short)Kart.defaultBoosterType);
 				}
 				else
 				{
