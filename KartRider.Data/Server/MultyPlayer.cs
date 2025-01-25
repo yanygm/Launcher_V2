@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
 using KartRider_PacketName;
@@ -329,23 +329,23 @@ namespace KartRider
                     XmlDocument doc = new XmlDocument();
                     doc.Load(@"Profile\AI.xml");
                     int listCount = 0;
-                    if (!(doc.GetElementsByTagName("AiList") == null))
+                    XmlNodeList lis = doc.GetElementsByTagName("AiList");
+                    if (lis.Count > 0)
                     {
-                        XmlNodeList lis = doc.GetElementsByTagName("AiList");
                         listCount = lis.Count;
                     }
                     oPacket.WriteInt(listCount); //AI count
-                    if (!(doc.GetElementsByTagName("AiData") == null))
+                    XmlNodeList Data = doc.GetElementsByTagName("AiData");
+                    if (Data.Count > 0)
                     {
-                        XmlNodeList lis = doc.GetElementsByTagName("AiData");
                         for (int i = 0; i < listCount; i++)
                         {
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[0].Value));
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[1].Value));
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[2].Value));
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[3].Value));
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[4].Value));
-                            oPacket.WriteEncFloat(float.Parse(lis[0].Attributes[5].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[0].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[1].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[2].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[3].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[4].Value));
+                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[5].Value));
                         }
                     }
                     oPacket.WriteUInt(StartGameData.StartTimeAttack_Track); //track name hash
@@ -494,9 +494,9 @@ namespace KartRider
             XmlDocument doc = new XmlDocument();
             doc.Load(@"Profile\AI.xml");
             int listCount = 7;
-            if (!(doc.GetElementsByTagName("AiList") == null))
+            XmlNodeList lis = doc.GetElementsByTagName("AiList");
+            if (lis.Count > 0)
             {
-                XmlNodeList lis = doc.GetElementsByTagName("AiList");
                 listCount = listCount - lis.Count;
                 foreach (XmlNode xn in lis)
                 {
