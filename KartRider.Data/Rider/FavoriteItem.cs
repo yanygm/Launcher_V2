@@ -132,8 +132,8 @@ namespace RiderData
 						outPacket.WriteInt(Name.Count); //主题数量
 						for (int i = 0; i < Name.Count; i++)
 						{
-                            XmlNodeList lis = doc.GetElementsByTagName(Name[i]);
-                            if (lis.Count > 0)
+							XmlNodeList lis = doc.GetElementsByTagName(Name[i]);
+							if (lis.Count > 0)
 							{
 								string theme = Name[i].Replace("theme", "");
 								outPacket.WriteInt(int.Parse(theme)); //主题代码
