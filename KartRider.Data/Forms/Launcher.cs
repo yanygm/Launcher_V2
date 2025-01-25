@@ -248,224 +248,262 @@ namespace KartRider
 
 		public void Load_KartExcData()
 		{
-			if (!File.Exists(@"Profile\AI.xml"))
+			EnsureDefaultDataFileExists(@"Profile\AI.xml", CreateAIDefaultData);
+
+			KartExcData.NewKart = LoadKartData(@"Profile\NewKart.xml", LoadNewKart);
+			KartExcData.TuneList = LoadKartData(@"Profile\TuneData.xml", LoadTuneData);
+			KartExcData.PlantList = LoadKartData(@"Profile\PlantData.xml", LoadPlantData);
+			KartExcData.LevelList = LoadKartData(@"Profile\LevelData.xml", LoadLevelData);
+			KartExcData.PartsList = LoadKartData(@"Profile\PartsData.xml", LoadPartsData);
+			KartExcData.Parts12List = LoadKartData(@"Profile\Parts12Data.xml", LoadParts12Data);
+			KartExcData.Level12List = LoadKartData(@"Profile\Level12Data.xml", LoadLevel12Data);
+		}
+
+		private void EnsureDefaultDataFileExists(string filePath, Action createDefaultData)
+		{
+			if (!File.Exists(filePath))
 			{
-				XmlTextWriter writer = new XmlTextWriter(@"Profile\AI.xml", System.Text.Encoding.UTF8);
+				createDefaultData();
+			}
+		}
+
+		private void CreateAIDefaultData()
+		{
+			using (XmlTextWriter writer = new XmlTextWriter(@"Profile\AI.xml", System.Text.Encoding.UTF8))
+			{
 				writer.Formatting = Formatting.Indented;
 				writer.WriteStartDocument();
 				writer.WriteStartElement("AI");
 				writer.WriteEndElement();
-				writer.Close();
-				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\AI.xml");
-				XmlNode root = xmlDoc.SelectSingleNode("AI");
-				for (var i = 0; i < 7; i++)
-				{
-					XmlElement xe1 = xmlDoc.CreateElement("AiList");
-					xe1.SetAttribute("a", "1");
-					xe1.SetAttribute("b", "0");
-					xe1.SetAttribute("c", "1508");
-					xe1.SetAttribute("d", "0");
-					xe1.SetAttribute("e", "0");
-					xe1.SetAttribute("f", "0");
-					root.AppendChild(xe1);
-				}
-				XmlElement xe2 = xmlDoc.CreateElement("AiData");
-				xe2.SetAttribute("a", "1");
-				xe2.SetAttribute("b", "2300");
-				xe2.SetAttribute("c", "2930");
-				xe2.SetAttribute("d", "1.4");
-				xe2.SetAttribute("e", "1000");
-				xe2.SetAttribute("f", "1500");
-				root.AppendChild(xe2);
-				xmlDoc.Save(@"Profile\AI.xml");
 			}
-			if (File.Exists(@"Profile\NewKart.xml"))
+
+			XmlDocument xmlDoc = new XmlDocument();
+			xmlDoc.Load(@"Profile\AI.xml");
+			XmlNode root = xmlDoc.SelectSingleNode("AI");
+			for (var i = 0; i < 7; i++)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\NewKart.xml");
-				KartExcData.NewKart = new List<List<short>>();
-				if (!(doc.GetElementsByTagName("Kart") == null))
-				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short id = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						List<short> AddList = new List<short>{ id, sn };
-						KartExcData.NewKart.Add(AddList);
-					}
-				}
+				XmlElement xe1 = xmlDoc.CreateElement("AiList");
+				xe1.SetAttribute("a", "1");
+				xe1.SetAttribute("b", "0");
+				xe1.SetAttribute("c", "1508");
+				xe1.SetAttribute("d", "0");
+				xe1.SetAttribute("e", "0");
+				xe1.SetAttribute("f", "0");
+				root.AppendChild(xe1);
 			}
-			if (File.Exists(@"Profile\TuneData.xml"))
+			XmlElement xe2 = xmlDoc.CreateElement("AiData");
+			xe2.SetAttribute("a", "1");
+			xe2.SetAttribute("b", "2300");
+			xe2.SetAttribute("c", "2930");
+			xe2.SetAttribute("d", "1.4");
+			xe2.SetAttribute("e", "1000");
+			xe2.SetAttribute("f", "1500");
+			root.AppendChild(xe2);
+			xmlDoc.Save(@"Profile\AI.xml");
+		}
+
+		private List<List<short>> LoadKartData(string filePath, Func<XmlNodeList, List<List<short>>> parseDataFunction)
+		{
+			if (!File.Exists(filePath)) return new List<List<short>>();
+
+			XmlDocument doc = new XmlDocument();
+			doc.Load(filePath);
+			XmlNodeList lis = doc.GetElementsByTagName("Kart");
+			return parseDataFunction(lis);
+		}
+
+		private List<List<short>> LoadNewKart(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\TuneData.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.TuneList = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short tune1 = short.Parse(xe.GetAttribute("tune1"));
-						short tune2 = short.Parse(xe.GetAttribute("tune2"));
-						short tune3 = short.Parse(xe.GetAttribute("tune3"));
-						short slot1 = short.Parse(xe.GetAttribute("slot1"));
-						short count1 = short.Parse(xe.GetAttribute("count1"));
-						short slot2 = short.Parse(xe.GetAttribute("slot2"));
-						short count2 = short.Parse(xe.GetAttribute("count2"));
-						List<short> AddList = new List<short>{ i, sn, tune1, tune2, tune3, slot1, count1, slot2, count2 };
-						KartExcData.TuneList.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\NewKart.xml”文件失败，建议删除文件后重试！");
 				}
 			}
-			if (File.Exists(@"Profile\PlantData.xml"))
+			return result;
+		}
+
+		private List<List<short>> LoadTuneData(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\PlantData.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("tune1"), out short tune1) &&
+					short.TryParse(xe.GetAttribute("tune2"), out short tune2) &&
+					short.TryParse(xe.GetAttribute("tune3"), out short tune3) &&
+					short.TryParse(xe.GetAttribute("slot1"), out short slot1) &&
+					short.TryParse(xe.GetAttribute("count1"), out short count1) &&
+					short.TryParse(xe.GetAttribute("slot2"), out short slot2) &&
+					short.TryParse(xe.GetAttribute("count2"), out short count2))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.PlantList = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short item1 = short.Parse(xe.GetAttribute("item1"));
-						short item_id1 = short.Parse(xe.GetAttribute("item_id1"));
-						short item2 = short.Parse(xe.GetAttribute("item2"));
-						short item_id2 = short.Parse(xe.GetAttribute("item_id2"));
-						short item3 = short.Parse(xe.GetAttribute("item3"));
-						short item_id3 = short.Parse(xe.GetAttribute("item_id3"));
-						short item4 = short.Parse(xe.GetAttribute("item4"));
-						short item_id4 = short.Parse(xe.GetAttribute("item_id4"));
-						List<short> AddList = new List<short>{ i, sn, item1, item_id1, item2, item_id2, item3, item_id3, item4, item_id4 };
-						KartExcData.PlantList.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn, tune1, tune2, tune3, slot1, count1, slot2, count2 });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\TuneData.xml”文件失败，建议删除文件后重试！");
 				}
 			}
-			if (File.Exists(@"Profile\LevelData.xml"))
+			return result;
+		}
+
+		private List<List<short>> LoadPlantData(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\LevelData.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("item1"), out short item1) &&
+					short.TryParse(xe.GetAttribute("item_id1"), out short item_id1) &&
+					short.TryParse(xe.GetAttribute("item2"), out short item2) &&
+					short.TryParse(xe.GetAttribute("item_id2"), out short item_id2) &&
+					short.TryParse(xe.GetAttribute("item3"), out short item3) &&
+					short.TryParse(xe.GetAttribute("item_id3"), out short item_id3) &&
+					short.TryParse(xe.GetAttribute("item4"), out short item4) &&
+					short.TryParse(xe.GetAttribute("item_id4"), out short item_id4))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.LevelList = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short level = short.Parse(xe.GetAttribute("level"));
-						short point = short.Parse(xe.GetAttribute("point"));
-						short v1 = short.Parse(xe.GetAttribute("v1"));
-						short v2 = short.Parse(xe.GetAttribute("v2"));
-						short v3 = short.Parse(xe.GetAttribute("v3"));
-						short v4 = short.Parse(xe.GetAttribute("v4"));
-						short Effect = short.Parse(xe.GetAttribute("Effect"));
-						List<short> AddList = new List<short>{ i, sn, level, point, v1, v2, v3, v4, Effect };
-						KartExcData.LevelList.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn, item1, item_id1, item2, item_id2, item3, item_id3, item4, item_id4 });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\PlantData.xml”文件失败，建议删除文件后重试！");
 				}
 			}
-			if (File.Exists(@"Profile\PartsData.xml"))
+			return result;
+		}
+
+		private List<List<short>> LoadLevelData(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\PartsData.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("level"), out short level) &&
+					short.TryParse(xe.GetAttribute("point"), out short point) &&
+					short.TryParse(xe.GetAttribute("v1"), out short v1) &&
+					short.TryParse(xe.GetAttribute("v2"), out short v2) &&
+					short.TryParse(xe.GetAttribute("v3"), out short v3) &&
+					short.TryParse(xe.GetAttribute("v4"), out short v4) &&
+					short.TryParse(xe.GetAttribute("Effect"), out short Effect))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.PartsList = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short Item_Id1 = short.Parse(xe.GetAttribute("Item_Id1"));
-						byte Grade1 = byte.Parse(xe.GetAttribute("Grade1"));
-						short PartsValue1 = short.Parse(xe.GetAttribute("PartsValue1"));
-						short Item_Id2 = short.Parse(xe.GetAttribute("Item_Id2"));
-						byte Grade2 = byte.Parse(xe.GetAttribute("Grade2"));
-						short PartsValue2 = short.Parse(xe.GetAttribute("PartsValue2"));
-						short Item_Id3 = short.Parse(xe.GetAttribute("Item_Id3"));
-						byte Grade3 = byte.Parse(xe.GetAttribute("Grade3"));
-						short PartsValue3 = short.Parse(xe.GetAttribute("PartsValue3"));
-						short Item_Id4 = short.Parse(xe.GetAttribute("Item_Id4"));
-						byte Grade4 = byte.Parse(xe.GetAttribute("Grade4"));
-						short PartsValue4 = short.Parse(xe.GetAttribute("PartsValue4"));
-						short partsCoating = byte.Parse(xe.GetAttribute("partsCoating"));
-						short partsTailLamp = short.Parse(xe.GetAttribute("partsTailLamp"));
-						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp };
-						KartExcData.PartsList.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn, level, point, v1, v2, v3, v4, Effect });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\LevelData.xml”文件失败，建议删除文件后重试！");
 				}
 			}
-			if (File.Exists(@"Profile\Parts12Data.xml"))
+			return result;
+		}
+
+		private List<List<short>> LoadPartsData(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\Parts12Data.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
+					short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
+					short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
+					short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
+					short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
+					short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
+					short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
+					short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
+					short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
+					short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
+					short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
+					short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
+					short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
+					short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp) &&
+					short.TryParse(xe.GetAttribute("partsBoosterEffect"), out short partsBoosterEffect))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.Parts12List = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short Item_Id1 = short.Parse(xe.GetAttribute("Item_Id1"));
-						short Grade1 = short.Parse(xe.GetAttribute("Grade1"));
-						short PartsValue1 = short.Parse(xe.GetAttribute("PartsValue1"));
-						short Item_Id2 = short.Parse(xe.GetAttribute("Item_Id2"));
-						short Grade2 = short.Parse(xe.GetAttribute("Grade2"));
-						short PartsValue2 = short.Parse(xe.GetAttribute("PartsValue2"));
-						short Item_Id3 = short.Parse(xe.GetAttribute("Item_Id3"));
-						short Grade3 = short.Parse(xe.GetAttribute("Grade3"));
-						short PartsValue3 = short.Parse(xe.GetAttribute("PartsValue3"));
-						short Item_Id4 = short.Parse(xe.GetAttribute("Item_Id4"));
-						short Grade4 = short.Parse(xe.GetAttribute("Grade4"));
-						short PartsValue4 = short.Parse(xe.GetAttribute("PartsValue4"));
-						short partsCoating = short.Parse(xe.GetAttribute("partsCoating"));
-						short partsTailLamp = short.Parse(xe.GetAttribute("partsTailLamp"));
-						short partsBoosterEffect = short.Parse(xe.GetAttribute("partsBoosterEffect"));
-						short ExceedType = short.Parse(xe.GetAttribute("ExceedType"));
-						List<short> AddList = new List<short>{ i, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect, ExceedType };
-						KartExcData.Parts12List.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\PartsData.xml”文件失败，建议删除文件后重试！");
 				}
 			}
-			if (File.Exists(@"Profile\Level12Data.xml"))
+			return result;
+		}
+
+		private List<List<short>> LoadParts12Data(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\Level12Data.xml");
-				if (!(doc.GetElementsByTagName("Kart") == null))
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
+					short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
+					short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
+					short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
+					short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
+					short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
+					short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
+					short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
+					short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
+					short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
+					short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
+					short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
+					short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
+					short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp) &&
+					short.TryParse(xe.GetAttribute("partsBoosterEffect"), out short partsBoosterEffect) &&
+					short.TryParse(xe.GetAttribute("ExceedType"), out short ExceedType))
 				{
-					XmlNodeList lis = doc.GetElementsByTagName("Kart");
-					KartExcData.Level12List = new List<List<short>>();
-					foreach (XmlNode xn in lis)
-					{
-						XmlElement xe = (XmlElement)xn;
-						short i = short.Parse(xe.GetAttribute("id"));
-						short sn = short.Parse(xe.GetAttribute("sn"));
-						short Level = short.Parse(xe.GetAttribute("Level"));
-						short Skill1 = short.Parse(xe.GetAttribute("Skill1"));
-						short SkillLevel1 = short.Parse(xe.GetAttribute("SkillLevel1"));
-						short Skill2 = short.Parse(xe.GetAttribute("Skill2"));
-						short SkillLevel2 = short.Parse(xe.GetAttribute("SkillLevel2"));
-						short Skill3 = short.Parse(xe.GetAttribute("Skill3"));
-						short SkillLevel3 = short.Parse(xe.GetAttribute("SkillLevel3"));
-						short Point = short.Parse(xe.GetAttribute("Point"));
-						List<short> AddList = new List<short> { i, sn, Level, Skill1, SkillLevel1, Skill2, SkillLevel2, Skill3, SkillLevel3, Point };
-						KartExcData.Level12List.Add(AddList);
-					}
+					result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect, ExceedType });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\Parts12Data.xml”文件失败，建议删除文件后重试！");
 				}
 			}
+			return result;
+		}
+
+		private List<List<short>> LoadLevel12Data(XmlNodeList lis)
+		{
+			var result = new List<List<short>>();
+			foreach (XmlNode xn in lis)
+			{
+				XmlElement xe = (XmlElement)xn;
+				if (short.TryParse(xe.GetAttribute("id"), out short id) &&
+					short.TryParse(xe.GetAttribute("sn"), out short sn) &&
+					short.TryParse(xe.GetAttribute("Level"), out short Level) &&
+					short.TryParse(xe.GetAttribute("Skill1"), out short Skill1) &&
+					short.TryParse(xe.GetAttribute("SkillLevel1"), out short SkillLevel1) &&
+					short.TryParse(xe.GetAttribute("Skill2"), out short Skill2) &&
+					short.TryParse(xe.GetAttribute("SkillLevel2"), out short SkillLevel2) &&
+					short.TryParse(xe.GetAttribute("Skill3"), out short Skill3) &&
+					short.TryParse(xe.GetAttribute("SkillLevel3"), out short SkillLevel3) &&
+					short.TryParse(xe.GetAttribute("Point"), out short Point))
+				{
+					result.Add(new List<short> { id, sn, Level, Skill1, SkillLevel1, Skill2, SkillLevel2, Skill3, SkillLevel3, Point });
+				}
+				else
+				{
+					Console.WriteLine(@"读取“Profile\Level12Data.xml”文件失败，建议删除文件后重试！");
+				}
+			}
+			return result;
 		}
 
 		private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
