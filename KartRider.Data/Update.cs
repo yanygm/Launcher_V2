@@ -15,9 +15,7 @@ namespace KartRider
     {
         public static async Task<bool> UpdateDataAsync()
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string assemblyPath = assembly.Location;
-            DateTime compilationDate = File.GetLastWriteTime(assemblyPath);
+            DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = "";
             string owner = "yanygm";
