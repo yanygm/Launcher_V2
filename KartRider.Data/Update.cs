@@ -1,4 +1,5 @@
-﻿using System;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -38,7 +39,15 @@ namespace KartRider
             }
             if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
-                DownloadUpdate("https://ghproxy.cc/?q=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                string country = await GetCountryAsync();
+                if (country != "" && country == "CN")
+                {
+                    DownloadUpdate("https://ghproxy.cc/?q=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                }
+                else
+                {
+                    DownloadUpdate("=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                }
                 Console.WriteLine($"Launcher正在更新，请耐心等待...");
                 return true;
             }
@@ -116,6 +125,34 @@ start {AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe"}
             catch (Exception ex)
             {
                 Console.WriteLine($"应用更新时出错: {ex.Message}");
+            }
+        }
+
+        public static async Task<string> GetCountryAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.GetAsync("https://ipinfo.io/json");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        JObject data = JObject.Parse(json);
+                        string country = data["country"]?.ToString();
+                        return country;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"请求失败，状态码: {response.StatusCode}");
+                        return "";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"发生异常: {ex.Message}");
+                return "";
             }
         }
     }
