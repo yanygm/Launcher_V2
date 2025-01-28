@@ -18,38 +18,28 @@ namespace KartRider
         {
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
-            string tag_name = "";
-            string owner = "yanygm";
-            string repo = "Launcher_V2";
-            string url = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", repo);
-                HttpResponseMessage response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-                    tag_name = data.tag_name;
-                }
-                else
-                {
-                    Console.WriteLine($"请求失败，状态码: {response.StatusCode}");
-                }
-            }
+            string tag_name = await GetTag_name();
             if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
-                string country = await GetCountryAsync();
-                if (country != "" && country == "CN")
+                try
                 {
-                    DownloadUpdate("https://ghproxy.cc/?q=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                    string country = await GetCountryAsync();
+                    if (country != "" && country == "CN")
+                    {
+                        DownloadUpdate("https://ghproxy.cc/?q=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                    }
+                    else
+                    {
+                        DownloadUpdate("=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                    }
+                    Console.WriteLine($"Launcher正在更新，请耐心等待...");
+                    return true;
                 }
-                else
+                catch (Exception ex)
                 {
-                    DownloadUpdate("=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                    Console.WriteLine($"下载过程中出现错误: {ex.Message}");
+                    return false;
                 }
-                Console.WriteLine($"Launcher正在更新，请耐心等待...");
-                return true;
             }
             else
             {
@@ -141,6 +131,37 @@ start {AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe"}
                         JObject data = JObject.Parse(json);
                         string country = data["country"]?.ToString();
                         return country;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"请求失败，状态码: {response.StatusCode}");
+                        return "";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"发生异常: {ex.Message}");
+                return "";
+            }
+        }
+
+        public static async Task<string> GetTag_name()
+        {
+            try
+            {
+                string owner = "yanygm";
+                string repo = "Launcher_V2";
+                string url = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("User-Agent", repo);
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+                        return data.tag_name;
                     }
                     else
                     {
