@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,11 +26,11 @@ namespace KartRider
                     string country = await GetCountryAsync();
                     if (country != "" && country == "CN")
                     {
-                        DownloadUpdate("https://ghproxy.cc/?q=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                        DownloadUpdate("https://hub.myany.uk/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
                     }
                     else
                     {
-                        DownloadUpdate("=https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                        DownloadUpdate("https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
                     }
                     Console.WriteLine($"Launcher正在更新，请耐心等待...");
                     return true;
