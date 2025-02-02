@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -24,16 +25,32 @@ namespace KartRider
                 try
                 {
                     string country = await GetCountryAsync();
+                    string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
                     if (country != "" && country == "CN")
                     {
-                        DownloadUpdate("https://hub.myany.uk/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                        List<string> urls = new List<string>() { "https://ghproxy.net/", "https://gh-proxy.com/", "https://hub.myany.uk/", "http://kra.myany.uk:2233/", "http://krb.myany.uk:2233/" };
+                        foreach (string url_ in urls)
+                        {
+                            if (url_ == "https://ghproxy.net/" || url_ == "https://hub.myany.uk/")
+                            {
+                                url = url_ + url;
+                            }
+                            else
+                            {
+                                url = url_ + url.Replace("https://", "");
+                            }
+                            if (await GetUrl(url))
+                            {
+                                return await DownloadUpdate(url);
+                                break;
+                            }
+                        }
                     }
                     else
                     {
-                        DownloadUpdate("https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip");
+                        return await DownloadUpdate(url);
                     }
-                    Console.WriteLine($"Launcher正在更新，请耐心等待...");
-                    return true;
+                    return false;
                 }
                 catch (Exception ex)
                 {
@@ -47,10 +64,11 @@ namespace KartRider
             }
         }
 
-        public static async void DownloadUpdate(string UpdatePackageUrl)
+        public static async Task<bool> DownloadUpdate(string UpdatePackageUrl)
         {
             try
             {
+                Console.WriteLine($"开始下载更新包: {UpdatePackageUrl}");
                 using (HttpClient client = new HttpClient())
                 {
                     using (HttpResponseMessage response = await client.GetAsync(UpdatePackageUrl, HttpCompletionOption.ResponseHeadersRead))
@@ -79,17 +97,17 @@ namespace KartRider
                             }
                         }
                     }
-                    Console.WriteLine($"\n{UpdatePackageUrl} 下载完成.");
-                    ApplyUpdate();
+                    return ApplyUpdate();
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"下载过程中出现错误: {ex.Message}");
+                return false;
             }
         }
 
-        public static void ApplyUpdate()
+        public static bool ApplyUpdate()
         {
             try
             {
@@ -103,18 +121,20 @@ start {AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe"}
                 try
                 {
                     File.WriteAllText(filePath, script);
-                    Console.WriteLine("文本已成功写入文件。");
+                    Console.WriteLine("\n写入文件成功。");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"写入文件时出错: {ex.Message}");
+                    Console.WriteLine($"\n写入文件时出错: {ex.Message}");
                 }
                 Process.Start(filePath);
                 Process.GetCurrentProcess().Kill();
+                return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"应用更新时出错: {ex.Message}");
+                Console.WriteLine($"\n应用更新时出错: {ex.Message}");
+                return false;
             }
         }
 
@@ -174,6 +194,30 @@ start {AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe"}
             {
                 Console.WriteLine($"发生异常: {ex.Message}");
                 return "";
+            }
+        }
+
+        public static async Task<bool> GetUrl(string url)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
             }
         }
     }
