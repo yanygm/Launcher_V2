@@ -42,7 +42,7 @@ namespace KartRider
             string input;
             string output;
             AllocConsole();
-            if (await Update.UpdateDataAsync() == false)
+            if (!await Update.UpdateDataAsync())
             {
                 string Update_File = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
                 string Update_Folder = AppDomain.CurrentDomain.BaseDirectory + "Update";
@@ -175,11 +175,6 @@ namespace KartRider
                         }
                     }
                 }
-            }
-            else
-            {
-                Console.WriteLine("按回车键结束程序...");
-                Console.ReadLine();
             }
         }
 
