@@ -2401,6 +2401,15 @@ namespace KartRider
 						}
 						return;
 					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMixItem", 0))
+					{
+						using (OutPacket outPacket = new OutPacket("PrMixItem"))
+						{
+							outPacket.WriteInt(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("RqBoomhillExchangeKoin", 0))
 					{
 						using (OutPacket outPacket = new OutPacket("RpBoomhillExchangeKoin"))
