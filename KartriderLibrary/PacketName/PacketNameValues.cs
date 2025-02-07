@@ -1558,7 +1558,7 @@ namespace KartRider_PacketName
 		PqQuestUX2ndForShutDownPacket = 2788231999,
 		PrQuestUX2ndForShutDownPacket = 2790067008,
 		PqMixItemExchangeCount = 1636960426,
-		PrMixItemExchangeCount = 1638795435,
+		PrMixItemExchangeCount = 1638336683,
 		RqBoomhillExchangeKoin = 1658587309,
 		RpBoomhillExchangeKoin = 1657211052,
 		PqBoomhillExchangeInfo = 1654655142,
