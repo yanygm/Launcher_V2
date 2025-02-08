@@ -431,10 +431,9 @@ namespace KartRider
 					short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
 					short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
 					short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
-					short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp) &&
-					short.TryParse(xe.GetAttribute("partsBoosterEffect"), out short partsBoosterEffect))
+					short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp))
 				{
-					result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect });
+					result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp });
 				}
 				else
 				{
