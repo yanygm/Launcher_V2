@@ -20,7 +20,7 @@ namespace KartRider
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
-            if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
+            if (tag_name != "" && int.Parse(formattedDate) > int.Parse(tag_name))
             {
                 try
                 {
@@ -111,11 +111,13 @@ namespace KartRider
         {
             try
             {
+                Console.OutputEncoding = Encoding.UTF8;
+                Console.InputEncoding = Encoding.UTF8;
                 System.IO.Compression.ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.zip", AppDomain.CurrentDomain.BaseDirectory + "Update\\");
                 string script = @$"@echo off
 timeout /t 3 /nobreak
-move {AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.exe"} {AppDomain.CurrentDomain.BaseDirectory}
-start {AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe"}
+move {"\"" + AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.exe\""} {"\"" + AppDomain.CurrentDomain.BaseDirectory + "\""}
+start {"\"\" \"" + AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe\""}
 ";
                 string filePath = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
                 try
