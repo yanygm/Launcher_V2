@@ -20,7 +20,7 @@ namespace KartRider
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
-            if (tag_name != "" && int.Parse(formattedDate) > int.Parse(tag_name))
+            if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
                 try
                 {
