@@ -41,21 +41,19 @@ namespace KartRider
         {
             string input;
             string output;
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.InputEncoding = Encoding.UTF8;
+            string Update_File = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
+            string Update_Folder = AppDomain.CurrentDomain.BaseDirectory + "Update";
+            if (File.Exists(Update_File))
+            {
+                File.Delete(Update_File);
+            }
+            if (Directory.Exists(Update_Folder))
+            {
+                Directory.Delete(Update_Folder, true);
+            }
             AllocConsole();
             if (!await Update.UpdateDataAsync())
             {
-                string Update_File = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
-                string Update_Folder = AppDomain.CurrentDomain.BaseDirectory + "Update";
-                if (File.Exists(Update_File))
-                {
-                    File.Delete(Update_File);
-                }
-                if (Directory.Exists(Update_Folder))
-                {
-                    Directory.Delete(Update_Folder, true);
-                }
                 string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "Profile\\CountryCode.ini";
                 if (File.Exists(Load_CC))
                 {
