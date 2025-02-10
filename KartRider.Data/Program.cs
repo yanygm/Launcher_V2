@@ -41,6 +41,8 @@ namespace KartRider
         {
             string input;
             string output;
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
             AllocConsole();
             if (!await Update.UpdateDataAsync())
             {
