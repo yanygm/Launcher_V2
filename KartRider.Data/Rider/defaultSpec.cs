@@ -98,6 +98,7 @@ namespace RiderData
 			Kart.chargeAntiCollideBalance = 1f;
 			Kart.v12_1 = 0f;
 			Kart.v12_2 = 0f;
+			Kart.v12_3 = 0f;
 		}
 	}
 }
