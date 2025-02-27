@@ -259,6 +259,7 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
 			oPacket.WriteEncFloat(Kart.v12_1);
 			oPacket.WriteEncFloat(Kart.v12_2);
+			oPacket.WriteEncFloat(Kart.v12_3);
 			//------------------------------------------------------------------------KartSpac End
 		}
 
@@ -376,6 +377,7 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
 			oPacket.WriteEncFloat(Kart.v12_1);
 			oPacket.WriteEncFloat(Kart.v12_2);
+			oPacket.WriteEncFloat(Kart.v12_3);
 			//------------------------------------------------------------------------KartSpac End
 		}
 
