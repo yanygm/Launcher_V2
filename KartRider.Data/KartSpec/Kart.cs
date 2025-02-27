@@ -94,5 +94,6 @@ namespace KartRider
 		public static float chargeAntiCollideBalance;
 		public static float v12_1;
 		public static float v12_2;
+		public static float v12_3;
 	}
 }
