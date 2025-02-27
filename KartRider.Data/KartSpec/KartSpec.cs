@@ -251,6 +251,7 @@ namespace KartRider
 			Kart.chargeAntiCollideBalance = float.Parse(AddList[87]);
 			Kart.v12_1 = 0f;
 			Kart.v12_2 = 0f;
+			Kart.v12_3 = 0f;
 			V2Spec.ExceedSpec();
 			//StartGameData.Start_KartSpac();
 		}
