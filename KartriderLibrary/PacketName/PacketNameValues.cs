@@ -1583,5 +1583,7 @@ namespace KartRider_PacketName
 		PqMIssionAttendGetCurUserInfoPacket = 4095086000,
 		PqKartExceedTypeChange = 1631455369,
 		PrKartExceedTypeChange = 1632831626,
+		PqGetlotteryMileageMultiInfoPacket = 3991932311,
+		PrGetlotteryMileageMultiInfoPacket = 3994095000,
 	}
 }

@@ -2747,6 +2747,22 @@ namespace KartRider
 						}
 						return;
 					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetlotteryMileageMultiInfoPacket", 0))
+					{
+						uint v1 = iPacket.ReadInt();
+						uint v2 = iPacket.ReadInt();
+						uint v3 = iPacket.ReadInt();
+						using (OutPacket outPacket = new OutPacket("PrGetlotteryMileageMultiInfoPacket"))
+						{
+							outPacket.WriteUInt(v1);
+							outPacket.WriteUInt(v2);
+							outPacket.WriteShort(32);
+							outPacket.WriteUInt(v3);
+							outPacket.WriteShort(1);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
 					{
 						using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))
