@@ -577,8 +577,9 @@ namespace KartRider
             outPacket.WriteByte(1);
             outPacket.WriteByte(7); //(byte)channeldata2
             outPacket.WriteInt(0);
-            outPacket.WriteHexString("083E781F5E"); //08 24 72 F5 9E
+            outPacket.WriteHexString("083483D162"); //08 24 72 F5 9E
             outPacket.WriteInt(0);
+            outPacket.WriteByte(0);
             outPacket.WriteByte(0);
             outPacket.WriteByte(0);
         }

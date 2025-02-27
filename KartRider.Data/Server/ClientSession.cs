@@ -2749,16 +2749,20 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetlotteryMileageMultiInfoPacket", 0))
 					{
-						uint v1 = iPacket.ReadInt();
-						uint v2 = iPacket.ReadInt();
-						uint v3 = iPacket.ReadInt();
+						int Count = iPacket.ReadInt();
+						uint[] Data = new uint[Count];
+						for (int i = 0; i < Count; i++)
+						{
+							Data[i] = iPacket.ReadUInt();
+						}
 						using (OutPacket outPacket = new OutPacket("PrGetlotteryMileageMultiInfoPacket"))
 						{
-							outPacket.WriteUInt(v1);
-							outPacket.WriteUInt(v2);
-							outPacket.WriteShort(32);
-							outPacket.WriteUInt(v3);
-							outPacket.WriteShort(1);
+							outPacket.WriteInt(Count);
+							for (int i = 0; i < Count; i++)
+							{
+								outPacket.WriteUInt(Data[i]);
+								outPacket.WriteShort(1);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
