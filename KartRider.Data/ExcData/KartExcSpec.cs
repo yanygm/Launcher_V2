@@ -193,10 +193,6 @@ namespace ExcData
 				{
 					ExcSpec.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
 				}
-				else
-				{
-					ExcSpec.Reset_Tune_SpecData();
-				}
 			}
 			else
 			{
