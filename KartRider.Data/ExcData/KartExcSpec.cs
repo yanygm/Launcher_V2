@@ -155,41 +155,41 @@ namespace ExcData
 			float[] Tune_DriftMaxGauge_List = { 0f, -70f, -140f, -200f };
 			float[] Tune_DriftEscapeForce_List = { 0f, 80f, 140f, 210f };
 			var existingTune = KartExcData.TuneList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingTune!= null)
+			if (existingTune != null)
 			{
 				if (existingTune[2] == 103 || existingTune[3] == 103 || existingTune[4] == 103)
 				{
 					ExcSpec.Tune_DragFactor = Tune_DragFactor_List[3];
 				}
-				else if (existingTune[2] == 203 || existingTune[3] == 203 || existingTune[4] == 203)
+				if (existingTune[2] == 203 || existingTune[3] == 203 || existingTune[4] == 203)
 				{
 					ExcSpec.Tune_ForwardAccel = Tune_ForwardAccel_List[3];
 				}
-				else if (existingTune[2] == 303 || existingTune[3] == 303 || existingTune[4] == 303)
+				if (existingTune[2] == 303 || existingTune[3] == 303 || existingTune[4] == 303)
 				{
 					ExcSpec.Tune_CornerDrawFactor = Tune_CornerDrawFactor_List[3];
 				}
-				else if (existingTune[2] == 403 || existingTune[3] == 403 || existingTune[4] == 403)
+				if (existingTune[2] == 403 || existingTune[3] == 403 || existingTune[4] == 403)
 				{
 					ExcSpec.Tune_TeamBoosterTime = Tune_TeamBoosterTime_List[3];
 				}
-				else if (existingTune[2] == 503 || existingTune[3] == 503 || existingTune[4] == 503)
+				if (existingTune[2] == 503 || existingTune[3] == 503 || existingTune[4] == 503)
 				{
 					ExcSpec.Tune_NormalBoosterTime = Tune_NormalBoosterTime_List[3];
 				}
-				else if (existingTune[2] == 603 || existingTune[3] == 603 || existingTune[4] == 603)
+				if (existingTune[2] == 603 || existingTune[3] == 603 || existingTune[4] == 603)
 				{
 					ExcSpec.Tune_StartBoosterTimeSpeed = Tune_StartBoosterTimeSpeed_List[3];
 				}
-				else if (existingTune[2] == 703 || existingTune[3] == 703 || existingTune[4] == 703)
+				if (existingTune[2] == 703 || existingTune[3] == 703 || existingTune[4] == 703)
 				{
 					ExcSpec.Tune_TransAccelFactor = Tune_TransAccelFactor_List[3];
 				}
-				else if (existingTune[2] == 803 || existingTune[3] == 803 || existingTune[4] == 803)
+				if (existingTune[2] == 803 || existingTune[3] == 803 || existingTune[4] == 803)
 				{
 					ExcSpec.Tune_DriftMaxGauge = Tune_DriftMaxGauge_List[3];
 				}
-				else if (existingTune[2] == 903 || existingTune[3] == 903 || existingTune[4] == 903)
+				if (existingTune[2] == 903 || existingTune[3] == 903 || existingTune[4] == 903)
 				{
 					ExcSpec.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
 				}
