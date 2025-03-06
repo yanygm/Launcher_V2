@@ -157,6 +157,7 @@ namespace ExcData
 			var existingTune = KartExcData.TuneList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
 			if (existingTune != null)
 			{
+				ExcSpec.Reset_Tune_SpecData();
 				if (existingTune[2] == 103 || existingTune[3] == 103 || existingTune[4] == 103)
 				{
 					ExcSpec.Tune_DragFactor = Tune_DragFactor_List[3];
