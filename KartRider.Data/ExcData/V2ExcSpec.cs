@@ -241,7 +241,7 @@ namespace ExcData
 					}
 					Console.WriteLine("-------------------------------------------------------------");
 				}
-				if (Kart.defaultExceedType == 1)
+				if (Kart.defaultExceedType == 1)//item S
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -266,7 +266,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 2)
+				if (Kart.defaultExceedType == 2)//S
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -291,7 +291,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 3)
+				if (Kart.defaultExceedType == 3)//B
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -316,7 +316,57 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 4)
+				if (Kart.defaultExceedType == 4)//L
+				{
+					Kart.chargeInstAccelGaugeByBoost = 0.02f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByWall = 0.15f;
+					Kart.instAccelFactor = 1.14f;
+					Kart.instAccelGaugeCooldownTime = 3000;
+					Kart.instAccelGaugeLength = 2500f;
+					Kart.instAccelGaugeMinUsable = 500f;
+					Kart.instAccelGaugeMinVelBound = 0f;
+					Kart.instAccelGaugeMinVelLoss = 50f;
+					Kart.useExtendedAfterBoosterMore = 0;
+					Kart.wallCollGaugeCooldownTime = 3000;
+					Kart.wallCollGaugeMaxVelLoss = 200f;
+					Kart.wallCollGaugeMinVelBound = 200f;
+					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 6;
+					Kart.chargerSystemUseTime = 4500;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
+				}
+				if (Kart.defaultExceedType == 5)//?
+				{
+					Kart.chargeInstAccelGaugeByBoost = 0.016f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByWall = 0.15f;
+					Kart.instAccelFactor = 1.3f;
+					Kart.instAccelGaugeCooldownTime = 3000;
+					Kart.instAccelGaugeLength = 1000f;
+					Kart.instAccelGaugeMinUsable = 300f;
+					Kart.instAccelGaugeMinVelBound = 0f;
+					Kart.instAccelGaugeMinVelLoss = 50f;
+					Kart.useExtendedAfterBoosterMore = 1;
+					Kart.wallCollGaugeCooldownTime = 3000;
+					Kart.wallCollGaugeMaxVelLoss = 200f;
+					Kart.wallCollGaugeMinVelBound = 160f;
+					Kart.wallCollGaugeMinVelLoss = 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargerSystemboosterUseCount = 4;
+					Kart.chargerSystemUseTime = 3000;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
+				}
+				if (Kart.defaultExceedType == 6)//L+
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
