@@ -2702,7 +2702,12 @@ namespace KartRider
 						short sn2 = iPacket.ReadShort();
 						short Spanner = iPacket.ReadShort();
 						uint Lucci = iPacket.ReadUInt();
-						int ExceedType = Random.Shared.Next(2, 5);
+
+						int[] numbers = { 2, 3, 4, 6 };
+						Random random = new Random();
+						int index = random.Next(numbers.Length);
+						int ExceedType = numbers[index];
+						//int ExceedType = Random.Shared.Next(2, 5);
 						using (OutPacket outPacket = new OutPacket("PrKartExceedTypeChange"))
 						{
 							outPacket.WriteShort(0);//kart2
