@@ -140,13 +140,9 @@ namespace KartRider
 		("modelMaxY", 0M, 0M, 1M),
 		("defaultExceedType", 0M, 0M, 1M),
 		("defaultEngineType", 0M, 0M, 1M),
-		("EngineType", 0M, 1M, 1M),
 		("defaultHandleType", 0M, 0M, 1M),
-		("HandleType", 0M, 1M, 1M),
 		("defaultWheelType", 0M, 0M, 1M),
-		("WheelType", 0M, 1M, 1M),
 		("defaultBoosterType", 0M, 0M, 1M),
-		("BoosterType", 0M, 1M, 1M),
 		("chargeInstAccelGaugeByWallAdded", 0M, 0M, 1M),
 		("chargeInstAccelGaugeByBoostAdded", 0M, 0M, 1M),
 		("chargerSystemboosterUseCount", 0M, 0M, 1M),
@@ -234,24 +230,19 @@ namespace KartRider
 			Kart.modelMaxX = float.Parse(AddList[70]);
 			Kart.modelMaxY = float.Parse(AddList[71]);
 			Kart.defaultExceedType = int.Parse(AddList[72]);
-			Kart.defaultEngineType = byte.Parse(AddList[73]);
-			Kart.EngineType = byte.Parse(AddList[74]);
-			Kart.defaultHandleType = byte.Parse(AddList[75]);
-			Kart.HandleType = byte.Parse(AddList[76]);
-			Kart.defaultWheelType = byte.Parse(AddList[77]);
-			Kart.WheelType = byte.Parse(AddList[78]);
-			Kart.defaultBoosterType = byte.Parse(AddList[79]);
-			Kart.BoosterType = byte.Parse(AddList[80]);
-			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[81]);
-			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[82]);
-			Kart.chargerSystemboosterUseCount = int.Parse(AddList[83]);
-			Kart.chargerSystemUseTime = float.Parse(AddList[84]);
-			Kart.chargeBoostBySpeedAdded = float.Parse(AddList[85]);
-			Kart.driftGaugeFactor = float.Parse(AddList[86]);
-			Kart.chargeAntiCollideBalance = float.Parse(AddList[87]);
-			Kart.v12_1 = 0f;
-			Kart.v12_2 = 0f;
-			Kart.v12_3 = 0f;
+			Kart.defaultEngineType = short.Parse(AddList[73]);
+			Kart.defaultHandleType = short.Parse(AddList[74]);
+			Kart.defaultWheelType = short.Parse(AddList[75]);
+			Kart.defaultBoosterType = short.Parse(AddList[76]);
+			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[77]);
+			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[78]);
+			Kart.chargerSystemboosterUseCount = int.Parse(AddList[79]);
+			Kart.chargerSystemUseTime = float.Parse(AddList[80]);
+			Kart.chargeBoostBySpeedAdded = float.Parse(AddList[81]);
+			Kart.driftGaugeFactor = float.Parse(AddList[82]);
+			Kart.chargeAntiCollideBalance = float.Parse(AddList[83]);
+			Kart.startItemTableId = 0;
+			Kart.startItemId = 0;
 			V2Spec.ExceedSpec();
 			//StartGameData.Start_KartSpac();
 		}
