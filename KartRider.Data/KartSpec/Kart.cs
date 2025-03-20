@@ -77,14 +77,10 @@ namespace KartRider
 		public static float modelMaxX;
 		public static float modelMaxY;
 		public static int defaultExceedType;
-		public static byte defaultEngineType;
-		public static byte EngineType;
-		public static byte defaultHandleType;
-		public static byte HandleType;
-		public static byte defaultWheelType;
-		public static byte WheelType;
-		public static byte defaultBoosterType;
-		public static byte BoosterType;
+		public static short defaultEngineType;
+		public static short defaultHandleType;
+		public static short defaultWheelType;
+		public static short defaultBoosterType;
 		public static float chargeInstAccelGaugeByWallAdded;
 		public static float chargeInstAccelGaugeByBoostAdded;
 		public static int chargerSystemboosterUseCount;
@@ -92,8 +88,7 @@ namespace KartRider
 		public static float chargeBoostBySpeedAdded;
 		public static float driftGaugeFactor;
 		public static float chargeAntiCollideBalance;
-		public static float v12_1;
-		public static float v12_2;
-		public static float v12_3;
+		public static int startItemTableId;
+		public static int startItemId;
 	}
 }
