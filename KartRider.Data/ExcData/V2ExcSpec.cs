@@ -244,7 +244,7 @@ namespace ExcData
 				if (Kart.defaultExceedType == 1)//item S
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
-					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByGrip = 0.06f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.3f;
 					Kart.instAccelGaugeCooldownTime = 3000;
@@ -258,13 +258,13 @@ namespace ExcData
 					Kart.wallCollGaugeMinVelBound = 160f;
 					Kart.wallCollGaugeMinVelLoss = 50f;
 
-					Kart.chargeAntiCollideBalance = 0.8f;
-					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
-					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
-					Kart.chargerSystemboosterUseCount = 4;
-					Kart.chargerSystemUseTime = 3000;
-					Kart.chargeBoostBySpeedAdded = 350.0f;
-					Kart.driftGaugeFactor = 2.0f;
+					Kart.chargeAntiCollideBalance = 0f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0f;
+					Kart.chargerSystemboosterUseCount = 0;
+					Kart.chargerSystemUseTime = 0;
+					Kart.chargeBoostBySpeedAdded = 0f;
+					Kart.driftGaugeFactor = 0f;
 				}
 				if (Kart.defaultExceedType == 2)//S
 				{
@@ -369,12 +369,12 @@ namespace ExcData
 				if (Kart.defaultExceedType == 6)//L+
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.017f;
-					Kart.chargeInstAccelGaugeByGrip = 0.06f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.14f;
 					Kart.instAccelGaugeCooldownTime = 3000;
 					Kart.instAccelGaugeLength = 3000f;
-					Kart.instAccelGaugeMinUsable = 200f;
+					Kart.instAccelGaugeMinUsable = 600f;
 					Kart.instAccelGaugeMinVelBound = 0f;
 					Kart.instAccelGaugeMinVelLoss = 50f;
 					Kart.useExtendedAfterBoosterMore = 0;
@@ -385,7 +385,7 @@ namespace ExcData
 
 					Kart.chargeAntiCollideBalance = 0.8f;
 					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
-					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.02f;
 					Kart.chargerSystemboosterUseCount = 6;
 					Kart.chargerSystemUseTime = 4500;
 					Kart.chargeBoostBySpeedAdded = 350.0f;
