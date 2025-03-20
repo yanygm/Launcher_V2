@@ -81,14 +81,10 @@ namespace RiderData
 			Kart.modelMaxX = 0;
 			Kart.modelMaxY = 0;
 			Kart.defaultExceedType = 0;
-			Kart.defaultEngineType = 0;
-			Kart.EngineType = 1;
-			Kart.defaultHandleType = 0;
-			Kart.HandleType = 1;
-			Kart.defaultWheelType = 0;
-			Kart.WheelType = 1;
-			Kart.defaultBoosterType = 0;
-			Kart.BoosterType = 1;
+			Kart.defaultEngineType = 1;
+			Kart.defaultHandleType = 1;
+			Kart.defaultWheelType = 1;
+			Kart.defaultBoosterType = 1;
 			Kart.chargeInstAccelGaugeByWallAdded = 0f;
 			Kart.chargeInstAccelGaugeByBoostAdded = 0f;
 			Kart.chargerSystemboosterUseCount = 0;
@@ -96,9 +92,8 @@ namespace RiderData
 			Kart.chargeBoostBySpeedAdded = 0f;
 			Kart.driftGaugeFactor = 0f;
 			Kart.chargeAntiCollideBalance = 1f;
-			Kart.v12_1 = 0f;
-			Kart.v12_2 = 0f;
-			Kart.v12_3 = 0f;
+			Kart.startItemTableId = 0;
+			Kart.startItemId = 0;
 		}
 	}
 }
