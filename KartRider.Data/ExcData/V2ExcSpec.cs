@@ -368,13 +368,13 @@ namespace ExcData
 				}
 				if (Kart.defaultExceedType == 6)//L+
 				{
-					Kart.chargeInstAccelGaugeByBoost = 0.02f;
-					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByBoost = 0.017f;
+					Kart.chargeInstAccelGaugeByGrip = 0.06f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.14f;
 					Kart.instAccelGaugeCooldownTime = 3000;
-					Kart.instAccelGaugeLength = 2500f;
-					Kart.instAccelGaugeMinUsable = 500f;
+					Kart.instAccelGaugeLength = 3000f;
+					Kart.instAccelGaugeMinUsable = 200f;
 					Kart.instAccelGaugeMinVelBound = 0f;
 					Kart.instAccelGaugeMinVelLoss = 50f;
 					Kart.useExtendedAfterBoosterMore = 0;
