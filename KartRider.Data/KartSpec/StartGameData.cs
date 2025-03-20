@@ -242,14 +242,10 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.modelMaxX);
 			oPacket.WriteEncFloat(Kart.modelMaxY);
 			oPacket.WriteEncInt(Kart.defaultExceedType);
-			oPacket.WriteEncByte(Kart.defaultEngineType);
-			oPacket.WriteEncByte(Kart.EngineType);
-			oPacket.WriteEncByte(Kart.defaultHandleType);
-			oPacket.WriteEncByte(Kart.HandleType);
-			oPacket.WriteEncByte(Kart.defaultWheelType);
-			oPacket.WriteEncByte(Kart.WheelType);
-			oPacket.WriteEncByte(Kart.defaultBoosterType);
-			oPacket.WriteEncByte(Kart.BoosterType);
+			oPacket.WriteEncShort(Kart.defaultEngineType);
+			oPacket.WriteEncShort(Kart.defaultHandleType);
+			oPacket.WriteEncShort(Kart.defaultWheelType);
+			oPacket.WriteEncShort(Kart.defaultBoosterType);
 			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
 			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
 			oPacket.WriteEncInt(Kart.chargerSystemboosterUseCount);
@@ -257,9 +253,9 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
 			oPacket.WriteEncFloat(Kart.driftGaugeFactor);
 			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
-			oPacket.WriteEncFloat(Kart.v12_1);
-			oPacket.WriteEncFloat(Kart.v12_2);
-			oPacket.WriteEncFloat(Kart.v12_3);
+			oPacket.WriteEncInt(Kart.startItemTableId);
+			oPacket.WriteEncInt(Kart.startItemId);
+			oPacket.WriteEncInt(0);
 			//------------------------------------------------------------------------KartSpac End
 		}
 
@@ -360,14 +356,10 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.modelMaxX);
 			oPacket.WriteEncFloat(Kart.modelMaxY);
 			oPacket.WriteEncInt(Kart.defaultExceedType);
-			oPacket.WriteEncByte(Kart.defaultEngineType);
-			oPacket.WriteEncByte(Kart.EngineType);
-			oPacket.WriteEncByte(Kart.defaultHandleType);
-			oPacket.WriteEncByte(Kart.HandleType);
-			oPacket.WriteEncByte(Kart.defaultWheelType);
-			oPacket.WriteEncByte(Kart.WheelType);
-			oPacket.WriteEncByte(Kart.defaultBoosterType);
-			oPacket.WriteEncByte(Kart.BoosterType);
+			oPacket.WriteEncShort(Kart.defaultEngineType);
+			oPacket.WriteEncShort(Kart.defaultHandleType);
+			oPacket.WriteEncShort(Kart.defaultWheelType);
+			oPacket.WriteEncShort(Kart.defaultBoosterType);
 			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByWallAdded);
 			oPacket.WriteEncFloat(Kart.chargeInstAccelGaugeByBoostAdded);
 			oPacket.WriteEncInt(Kart.chargerSystemboosterUseCount);
@@ -375,9 +367,9 @@ namespace KartRider
 			oPacket.WriteEncFloat(Kart.chargeBoostBySpeedAdded);
 			oPacket.WriteEncFloat(Kart.driftGaugeFactor);
 			oPacket.WriteEncFloat(Kart.chargeAntiCollideBalance);
-			oPacket.WriteEncFloat(Kart.v12_1);
-			oPacket.WriteEncFloat(Kart.v12_2);
-			oPacket.WriteEncFloat(Kart.v12_3);
+			oPacket.WriteEncInt(Kart.startItemTableId);
+			oPacket.WriteEncInt(Kart.startItemId);
+			oPacket.WriteEncInt(0);
 			//------------------------------------------------------------------------KartSpac End
 		}
 
@@ -463,14 +455,10 @@ namespace KartRider
 			Console.WriteLine($"modelMaxX:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"modelMaxY:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"defaultExceedType:{iPacket.ReadEncodedInt()}");
-			Console.WriteLine($"defaultEngineType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"EngineType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"defaultHandleType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"HandleType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"defaultWheelType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"WheelType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"defaultBoosterType:{iPacket.ReadEncodedByte()}");
-			Console.WriteLine($"BoosterType:{iPacket.ReadEncodedByte()}");
+			Console.WriteLine($"defaultEngineType:{iPacket.ReadEncodedShort()}");
+			Console.WriteLine($"defaultHandleType:{iPacket.ReadEncodedShort()}");
+			Console.WriteLine($"defaultWheelType:{iPacket.ReadEncodedShort()}");
+			Console.WriteLine($"defaultBoosterType:{iPacket.ReadEncodedShort()}");
 			Console.WriteLine($"chargeInstAccelGaugeByWallAdded:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"chargeInstAccelGaugeByBoostAdded:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"chargerSystemboosterUseCount:{iPacket.ReadEncodedInt()}");
@@ -478,8 +466,8 @@ namespace KartRider
 			Console.WriteLine($"chargeBoostBySpeedAdded:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"driftGaugeFactor:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"chargeAntiCollideBalance:{iPacket.ReadEncodedFloat()}");
-			Console.WriteLine($"v12_1:{iPacket.ReadEncodedFloat()}");
-			Console.WriteLine($"v12_2:{iPacket.ReadEncodedFloat()}");
+			Console.WriteLine($"startItemTableId:{iPacket.ReadEncodedFloat()}");
+			Console.WriteLine($"startItemId:{iPacket.ReadEncodedFloat()}");
 			Console.WriteLine($"-------------------------------------------------------------");
 		}
 	}
