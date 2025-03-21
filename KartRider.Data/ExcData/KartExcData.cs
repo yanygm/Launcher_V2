@@ -33,52 +33,7 @@ namespace ExcData
 		public static List<int> scenario = new List<int>();
 		public static List<int> quest = new List<int>();
 
-		public static List<short> character = new List<short>();
-		public static List<short> color = new List<short>();
-		public static List<short> kart = new List<short>();
-		public static List<short> plate = new List<short>();
-		public static List<short> slotChanger = new List<short>();
-		public static List<short> goggle = new List<short>();
-		public static List<short> balloon = new List<short>();
-		public static List<short> headBand = new List<short>();
-		public static List<short> headPhone = new List<short>();
-		public static List<short> ticket = new List<short>();
-		public static List<short> upgradeKit = new List<short>();
-		public static List<short> handGearL = new List<short>();
-		public static List<short> uniform = new List<short>();
-		public static List<short> decal = new List<short>();
-		public static List<short> pet = new List<short>();
-		public static List<short> initialCard = new List<short>();
-		public static List<short> card = new List<short>();
-		public static List<short> aura = new List<short>();
-		public static List<short> skidMark = new List<short>();
-		public static List<short> roomCard = new List<short>();
-		public static List<short> ridColor = new List<short>();
-		public static List<short> rpLucciBonus = new List<short>();
-		public static List<short> socket = new List<short>();
-		public static List<short> tune = new List<short>();
-		public static List<short> resetSocket = new List<short>();
-		public static List<short> tuneEnginePatch = new List<short>();
-		public static List<short> tuneHandle = new List<short>();
-		public static List<short> tuneWheel = new List<short>();
-		public static List<short> tuneSupportKit = new List<short>();
-		public static List<short> enchantProtect = new List<short>();
-		public static List<short> flyingPet = new List<short>();
-		public static List<short> enchantProtect2 = new List<short>();
-		public static List<short> tachometer = new List<short>();
-		public static List<short> partsCoating = new List<short>();
-		public static List<short> partsTailLamp = new List<short>();
-		public static List<short> dye = new List<short>();
-		public static List<short> slotBg = new List<short>();
-		public static List<short> partsPiece = new List<short>();
-		public static List<short> partsEngine12 = new List<short>();
-		public static List<short> partsHandle12 = new List<short>();
-		public static List<short> partsWheel12 = new List<short>();
-		public static List<short> partsBooster12 = new List<short>();
-		public static List<short> partsCoating12 = new List<short>();
-		public static List<short> partsTailLamp12 = new List<short>();
-		public static List<short> partsBoosterEffect12 = new List<short>();
-		public static List<short> ethisItem = new List<short>();
+		public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
 
 		public static void Tune_ExcData()
 		{

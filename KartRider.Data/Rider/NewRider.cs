@@ -20,51 +20,6 @@ namespace RiderData
 			KartExcData.Parts_ExcData();
 			KartExcData.Level12_ExcData();
 			KartExcData.Parts12_ExcData();
-			NewRider.character();
-			NewRider.color();
-			NewRider.plate();
-			NewRider.slotChanger();
-			NewRider.goggle();
-			NewRider.balloon();
-			NewRider.headBand();
-			NewRider.headPhone();
-			NewRider.ticket();
-			NewRider.upgradeKit();
-			NewRider.handGearL();
-			NewRider.uniform();
-			NewRider.decal();
-			NewRider.pet();
-			NewRider.initialCard();
-			NewRider.card();
-			NewRider.aura();
-			NewRider.skidMark();
-			NewRider.roomCard();
-			NewRider.ridColor();
-			NewRider.rpLucciBonus();
-			NewRider.socket();
-			NewRider.tune();
-			NewRider.resetSocket();
-			NewRider.tuneEnginePatch();
-			NewRider.tuneHandle();
-			NewRider.tuneWheel();
-			NewRider.tuneSupportKit();
-			NewRider.enchantProtect();
-			NewRider.flyingPet();
-			NewRider.enchantProtect2();
-			NewRider.tachometer();
-			NewRider.partsCoating();
-			NewRider.partsTailLamp();
-			NewRider.dye();
-			NewRider.slotBg();
-			NewRider.partsPiece();
-			NewRider.partsEngine12();
-			NewRider.partsHandle12();
-			NewRider.partsWheel12();
-			NewRider.partsBooster12();
-			NewRider.partsCoating12();
-			NewRider.partsTailLamp12();
-			NewRider.partsBoosterEffect12();
-			NewRider.ethisItem();
 			NewRider.XUniquePartsData();
 			NewRider.XLegendPartsData();
 			NewRider.XRarePartsData();
@@ -73,6 +28,11 @@ namespace RiderData
 			NewRider.V1LegendPartsData();
 			NewRider.V1RarePartsData();
 			NewRider.V1NormalPartsData();
+			NewRider.partsEngine12();
+			NewRider.partsHandle12();
+			NewRider.partsWheel12();
+			NewRider.partsBooster12();
+			NewRider.items();
 			NewRider.NewKart1();
 			NewRider.NewKart2();
 			NewRider.NewRiderData();//라이더 인식
@@ -102,30 +62,35 @@ namespace RiderData
 
 		public static void NewKart1()
 		{
+			
 			short sn = 1;
 			int range = 100;//分批次数
-			int times = KartExcData.kart.Count / range + (KartExcData.kart.Count % range > 0 ? 1 : 0);
-			for (int i = 0; i < times; i++)
+			if (KartExcData.items.TryGetValue(3, out Dictionary<short, string> resultDict))
 			{
-				var tempList = KartExcData.kart.GetRange(i * range, (i + 1) * range > KartExcData.kart.Count ? (KartExcData.kart.Count - i * range) : range);
-				int Count = tempList.Count;
-				using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+				List<short> kart = new List<short>(resultDict.Keys);
+				int times = kart.Count / range + (kart.Count % range > 0 ? 1 : 0);
+				for (int i = 0; i < times; i++)
 				{
-					outPacket.WriteByte(1);
-					outPacket.WriteInt(Count);
-					foreach (var Kart in tempList)
+					var tempList = kart.GetRange(i * range, (i + 1) * range > kart.Count ? (kart.Count - i * range) : range);
+					int Count = tempList.Count;
+					using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
 					{
-						outPacket.WriteShort(3);
-						outPacket.WriteShort(Kart);
-						outPacket.WriteShort(sn);
-						outPacket.WriteShort(1);//数量
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(-1);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
-						outPacket.WriteShort(0);
+						outPacket.WriteByte(1);
+						outPacket.WriteInt(Count);
+						foreach (var Kart in tempList)
+						{
+							outPacket.WriteShort(3);
+							outPacket.WriteShort(Kart);
+							outPacket.WriteShort(sn);
+							outPacket.WriteShort(1);//数量
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(-1);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+						}
+						RouterListener.MySession.Client.Send(outPacket);
 					}
-					RouterListener.MySession.Client.Send(outPacket);
 				}
 			}
 		}
@@ -159,711 +124,233 @@ namespace RiderData
 			}
 		}
 
-		public static void color()
+		public static void items()
 		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.color)
+			HashSet<short> excludedKeys = new HashSet<short>{ 3, 6, 10, 15, 19, 24, 25, 29, 30, 32, 33, 34, 35, 36, 40, 41, 47, 48, 50, 51, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
+			foreach (var category in KartExcData.items)
 			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(2, item);
-		}
-
-		public static void dye()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.dye)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(70, item);
-		}
-
-		public static void character()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.character)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(1, item);
-		}
-
-		public static void pet()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.pet)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(21, item);
-		}
-
-		public static void initialCard()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.initialCard)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(22, item);
-		}
-
-		public static void flyingPet()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.flyingPet)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(52, item);
-		}
-
-		public static void enchantProtect2()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.enchantProtect2)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(53, item);
-		}
-
-		public static void uniform()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.uniform)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(18, item);
-		}
-
-		public static void aura()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.aura)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(26, item);
-		}
-
-		public static void skidMark()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.skidMark)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(27, item);
-		}
-
-		public static void plate()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.plate)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(4, item);
-		}
-
-		public static void balloon()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.balloon)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(9, item);
-		}
-
-		public static void goggle()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.goggle)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(8, item);
-		}
-
-		public static void headBand()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.headBand)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(11, item);
-		}
-
-		public static void headPhone()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.headPhone)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(12, item);
-		}
-
-		public static void handGearL()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.handGearL)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(16, item);
-		}
-
-		public static void roomCard()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.roomCard)
-			{
-				short sn = 0;
-				short num = 1;
-				if (id != 50 && id != 37)
+				short itemCatId = category.Key;
+				if (!excludedKeys.Contains(itemCatId))
 				{
-					List<short> add = new List<short> { id, sn, num };
-					item.Add(add);
+					List<List<short>> items = new List<List<short>>();
+					foreach (var item in category.Value)
+					{
+						short sn = 0;
+						short num = SetRider.SlotChanger;
+						short id = item.Key;
+						if (itemCatId == 14)
+						{
+							if (id == 22 || id == 23 || id == 31 || id == 37 || id == 53 || id == 57 || id == 99)
+							{
+								List<short> add = new List<short> { id, sn, num };
+								items.Add(add);
+							}
+						}
+						else if(itemCatId == 23)
+						{
+							if (id == 1 || id == 3 || id == 89 || id == 97 || id == 98 || id == 99 || id == 100 || id == 106)
+							{
+								List<short> add = new List<short> { id, sn, num };
+								items.Add(add);
+							}
+						}
+						else if (itemCatId == 28)
+						{
+							if (id != 50 && id != 37)
+							{
+								List<short> add = new List<short> { id, sn, num };
+								items.Add(add);
+							}
+						}
+						else
+						{
+							List<short> add = new List<short> { id, sn, num };
+							items.Add(add);
+						}
+					}
+					LoRpGetRiderItemPacket(itemCatId, items);
 				}
 			}
-			LoRpGetRiderItemPacket(28, item);
-		}
-
-		public static void ridColor()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.ridColor)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(31, item);
-		}
-
-		public static void rpLucciBonus()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.rpLucciBonus)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(32, item);
-		}
-
-		public static void slotChanger()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.slotChanger)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(7, item);
-		}
-
-		public static void slotBg()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.slotBg)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(71, item);
-		}
-
-		public static void decal()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.decal)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(20, item);
-		}
-
-		public static void card()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.card)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				if (id == 1 || id == 3 || id == 89 || id == 97 || id == 98 || id == 99 || id == 100 || id == 106)
-				{
-					List<short> add = new List<short> { id, sn, num };
-					item.Add(add);
-				}
-			}
-			LoRpGetRiderItemPacket(23, item);
-		}
-
-		public static void ticket()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.ticket)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(13, item);
-		}
-
-		public static void tachometer()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tachometer)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(61, item);
-		}
-
-		public static void tuneEnginePatch()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tuneEnginePatch)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(43, item);
-		}
-
-		public static void tuneHandle()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tuneHandle)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(44, item);
-		}
-
-		public static void tuneWheel()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tuneWheel)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(45, item);
-		}
-
-		public static void tuneSupportKit()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tuneSupportKit)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(46, item);
-		}
-
-		public static void enchantProtect()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.enchantProtect)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(49, item);
-		}
-
-		public static void socket()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.socket)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(37, item);
-		}
-
-		public static void tune()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.tune)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(38, item);
-		}
-
-		public static void resetSocket()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.resetSocket)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(39, item);
-		}
-
-		public static void upgradeKit()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.upgradeKit)
-			{
-				short sn = 0;
-				short num = 1;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(14, item);
-		}
-
-		public static void partsPiece()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsPiece)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(67, item);
-		}
-
-		public static void partsCoating()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsCoating)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(68, item);
-		}
-
-		public static void partsTailLamp()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsTailLamp)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(69, item);
 		}
 
 		public static void partsEngine12()
 		{
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+			if (KartExcData.items.TryGetValue(72, out Dictionary<short, string> resultDict))
 			{
-				int count = KartExcData.partsEngine12.Count;
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(count);
-				for (int i = 0; i < count; i++)
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 				{
-					short id = KartExcData.partsEngine12[i];
-					oPacket.WriteShort(72);
-					oPacket.WriteShort(id);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(SetRider.SlotChanger);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteShort(-1);
-					oPacket.WriteShort(-1);
-					oPacket.WriteByte(1);
-					if (id < 11)
+					int count = resultDict.Count;
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(count);
+					foreach (var kvp in resultDict)
 					{
-						oPacket.WriteByte(4);
-					}
-					else if (id < 21)
-					{
-						oPacket.WriteByte(3);
-					}
-					else if (id < 31)
-					{
-						oPacket.WriteByte(2);
-					}
-					else if (id < 41)
-					{
+						short id = kvp.Key;
+						oPacket.WriteShort(72);
+						oPacket.WriteShort(id);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(SetRider.SlotChanger);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(-1);
 						oPacket.WriteByte(1);
+						if (id < 11)
+						{
+							oPacket.WriteByte(4);
+						}
+						else if (id < 21)
+						{
+							oPacket.WriteByte(3);
+						}
+						else if (id < 31)
+						{
+							oPacket.WriteByte(2);
+						}
+						else if (id < 41)
+						{
+							oPacket.WriteByte(1);
+						}
+						oPacket.WriteShort(V2Spec.Get12Parts(id));
 					}
-					oPacket.WriteShort(V2Spec.Get12Parts(id));
+					RouterListener.MySession.Client.Send(oPacket);
 				}
-				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
 
 		public static void partsHandle12()
 		{
-			int count = KartExcData.partsHandle12.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+			if (KartExcData.items.TryGetValue(73, out Dictionary<short, string> resultDict))
 			{
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(count);
-				for (int i = 0; i < count; i++)
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 				{
-					short id = KartExcData.partsHandle12[i];
-					oPacket.WriteShort(73);
-					oPacket.WriteShort(id);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(SetRider.SlotChanger);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteShort(-1);
-					oPacket.WriteShort(-1);
-					oPacket.WriteByte(1);
-					if (id < 11)
+					int count = resultDict.Count;
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(count);
+					foreach (var kvp in resultDict)
 					{
-						oPacket.WriteByte(4);
-					}
-					else if (id < 21)
-					{
-						oPacket.WriteByte(3);
-					}
-					else if (id < 31)
-					{
-						oPacket.WriteByte(2);
-					}
-					else if (id < 41)
-					{
+						short id = kvp.Key;
+						oPacket.WriteShort(73);
+						oPacket.WriteShort(id);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(SetRider.SlotChanger);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(-1);
 						oPacket.WriteByte(1);
+						if (id < 11)
+						{
+							oPacket.WriteByte(4);
+						}
+						else if (id < 21)
+						{
+							oPacket.WriteByte(3);
+						}
+						else if (id < 31)
+						{
+							oPacket.WriteByte(2);
+						}
+						else if (id < 41)
+						{
+							oPacket.WriteByte(1);
+						}
+						oPacket.WriteShort(V2Spec.Get12Parts(id));
 					}
-					oPacket.WriteShort(V2Spec.Get12Parts(id));
+					RouterListener.MySession.Client.Send(oPacket);
 				}
-				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
 
 		public static void partsWheel12()
 		{
-			int count = KartExcData.partsWheel12.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+			if (KartExcData.items.TryGetValue(74, out Dictionary<short, string> resultDict))
 			{
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(count);
-				for (int i = 0; i < count; i++)
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 				{
-					short id = KartExcData.partsWheel12[i];
-					oPacket.WriteShort(74);
-					oPacket.WriteShort(id);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(SetRider.SlotChanger);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteShort(-1);
-					oPacket.WriteShort(-1);
-					oPacket.WriteByte(1);
-					if (id < 11)
+					int count = resultDict.Count;
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(count);
+					foreach (var kvp in resultDict)
 					{
-						oPacket.WriteByte(4);
-					}
-					else if (id < 21)
-					{
-						oPacket.WriteByte(3);
-					}
-					else if (id < 31)
-					{
-						oPacket.WriteByte(2);
-					}
-					else if (id < 41)
-					{
+						short id = kvp.Key;
+						oPacket.WriteShort(74);
+						oPacket.WriteShort(id);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(SetRider.SlotChanger);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(-1);
 						oPacket.WriteByte(1);
+						if (id < 11)
+						{
+							oPacket.WriteByte(4);
+						}
+						else if (id < 21)
+						{
+							oPacket.WriteByte(3);
+						}
+						else if (id < 31)
+						{
+							oPacket.WriteByte(2);
+						}
+						else if (id < 41)
+						{
+							oPacket.WriteByte(1);
+						}
+						oPacket.WriteShort(V2Spec.Get12Parts(id));
 					}
-					oPacket.WriteShort(V2Spec.Get12Parts(id));
+					RouterListener.MySession.Client.Send(oPacket);
 				}
-				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
 
 		public static void partsBooster12()
 		{
-			int count = KartExcData.partsBooster12.Count;
-			using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+			if (KartExcData.items.TryGetValue(75, out Dictionary<short, string> resultDict))
 			{
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(1);
-				oPacket.WriteInt(count);
-				for (int i = 0; i < count; i++)
+				using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
 				{
-					short id = KartExcData.partsBooster12[i];
-					oPacket.WriteShort(75);
-					oPacket.WriteShort(id);
-					oPacket.WriteShort(0);
-					oPacket.WriteShort(SetRider.SlotChanger);
-					oPacket.WriteByte(0);
-					oPacket.WriteByte(0);
-					oPacket.WriteShort(-1);
-					oPacket.WriteShort(-1);
-					oPacket.WriteByte(1);
-					if (id < 11)
+					int count = resultDict.Count;
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(1);
+					oPacket.WriteInt(count);
+					foreach (var kvp in resultDict)
 					{
-						oPacket.WriteByte(4);
-					}
-					else if (id < 21)
-					{
-						oPacket.WriteByte(3);
-					}
-					else if (id < 31)
-					{
-						oPacket.WriteByte(2);
-					}
-					else if (id < 41)
-					{
+						short id = kvp.Key;
+						oPacket.WriteShort(75);
+						oPacket.WriteShort(id);
+						oPacket.WriteShort(0);
+						oPacket.WriteShort(SetRider.SlotChanger);
+						oPacket.WriteByte(0);
+						oPacket.WriteByte(0);
+						oPacket.WriteShort(-1);
+						oPacket.WriteShort(-1);
 						oPacket.WriteByte(1);
+						if (id < 11)
+						{
+							oPacket.WriteByte(4);
+						}
+						else if (id < 21)
+						{
+							oPacket.WriteByte(3);
+						}
+						else if (id < 31)
+						{
+							oPacket.WriteByte(2);
+						}
+						else if (id < 41)
+						{
+							oPacket.WriteByte(1);
+						}
+						oPacket.WriteShort(V2Spec.Get12Parts(id));
 					}
-					oPacket.WriteShort(V2Spec.Get12Parts(id));
+					RouterListener.MySession.Client.Send(oPacket);
 				}
-				RouterListener.MySession.Client.Send(oPacket);
 			}
-		}
-
-		public static void partsCoating12()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsCoating12)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(76, item);
-		}
-
-		public static void partsTailLamp12()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsTailLamp12)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(77, item);
-		}
-
-		public static void partsBoosterEffect12()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.partsBoosterEffect12)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(78, item);
-		}
-
-		public static void ethisItem()
-		{
-			List<List<short>> item = new List<List<short>>();
-			foreach (var id in KartExcData.ethisItem)
-			{
-				short sn = 0;
-				short num = SetRider.SlotChanger;
-				List<short> add = new List<short> { id, sn, num };
-				item.Add(add);
-			}
-			LoRpGetRiderItemPacket(79, item);
 		}
 
 		public static void XUniquePartsData()
