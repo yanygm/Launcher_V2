@@ -39,6 +39,8 @@ namespace KartRider
         [STAThread]
         private static async Task Main(string[] args)
         {
+            Console.WriteLine("Chinese KartRider Offline Server Start");
+            Console.WriteLine("--------------------------------------------------");
             string input;
             string output;
             string Update_File = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";

@@ -9,11 +9,11 @@ namespace Set_Data
 		public static int ClubCode = 10000;
 		public static int ClubMark_LOGO = 0;//343 베로
 		public static int ClubMark_LINE = 0;
-		public static string ClubName = "KartRider";
+		public static string ClubName = "Github-KartRider";
 		public static string UserID = "Yany";
 		public static uint UserNO = 1982596588;
 		public static string Nickname = "Yany";
-		public static string RiderIntro = "";
+		public static string RiderIntro = "单机玩家";
 		public static string Card = "";
 		public static short Emblem1 = 0;
 		public static short Emblem2 = 0;

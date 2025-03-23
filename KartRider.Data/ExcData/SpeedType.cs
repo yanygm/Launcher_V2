@@ -105,7 +105,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
 				Console.WriteLine("SpeedType:S3");
 			}
-			else if (StartGameData.StartTimeAttack_SpeedType == 4 || StartGameData.StartTimeAttack_SpeedType == 6 || StartGameData.StartTimeAttack_SpeedType == 7)//무부, 통합
+			else if (StartGameData.StartTimeAttack_SpeedType == 4 || StartGameData.StartTimeAttack_SpeedType == 6 || StartGameData.StartTimeAttack_SpeedType == 7)//무부, 통합 S1.5
 			{
 				SpeedType.AddSpec_SteerConstraint = 1.95f;
 				SpeedType.AddSpec_DriftEscapeForce = 400f;
@@ -123,7 +123,7 @@ namespace ExcData
 				SpeedType.BoostAccelFactor = 0f;
 				SpeedType.StartForwardAccelForceItem = 0f;
 				SpeedType.StartForwardAccelForceSpeed = 0f;
-				Console.WriteLine("SpeedType:Integration");
+				Console.WriteLine("SpeedType:统合 S1.5");
 			}
 			else
 			{
