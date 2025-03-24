@@ -142,7 +142,7 @@ namespace ExcData
 				{
 					Parts_SteerConstraint = existingParts[7];
 				}
-				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.308M) / 3M);
+				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.33M) / 3M);
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
 
 				short Parts_DriftEscapeForce;
@@ -183,14 +183,14 @@ namespace ExcData
 						Skill.Add(new List<short> { existingLevel[7], existingLevel[8] });
 					Console.WriteLine("-------------------------------------------------------------");
 					float[] ForwardAccelForce = { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f };
-					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f };
-					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };
-					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 150f };
-					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 150f, 200f };
-					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 700f };
-					float[] TransAccelFactor = { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f };
-					float[] DriftEscapeForce = { 0f, 35f, 50f, 65f, 90f, 105f };
-					float[] DriftMaxGauge = { 0f, -50f, -60f, -70f, -90f, -120f };
+					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0012f, 0.0015f, 0.0018f, 0.002f };
+					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };//-0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f
+					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 190f };//50f, 70f, 90f, 120f, 150f
+					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 180f, 250f };//100f, 110f, 130f, 150f, 200f
+					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 800f };//150f, 200f, 300f, 450f, 700f
+					float[] TransAccelFactor = { 0f, 0.004f, 0.005f, 0.006f, 0.01f, 0.018f };//0.003f, 0.004f, 0.005f, 0.007f, 0.01f
+					float[] DriftEscapeForce = { 0f, 50f, 65f, 90f, 105f, 130f };//35f, 50f, 65f, 90f, 105f
+					float[] DriftMaxGauge = { 0f, -60f, -70f, -90f, -140f, -200f };//-50f, -60f, -70f, -90f, -120f
 					foreach (var skill in Skill)
 					{
 						if (skill[0] == 1)
@@ -344,7 +344,7 @@ namespace ExcData
 				if (Kart.defaultExceedType == 5)//?
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
-					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByGrip = 0.06f;
 					Kart.chargeInstAccelGaugeByWall = 0.15f;
 					Kart.instAccelFactor = 1.3f;
 					Kart.instAccelGaugeCooldownTime = 3000;
@@ -352,19 +352,19 @@ namespace ExcData
 					Kart.instAccelGaugeMinUsable = 300f;
 					Kart.instAccelGaugeMinVelBound = 0f;
 					Kart.instAccelGaugeMinVelLoss = 50f;
-					Kart.useExtendedAfterBoosterMore = 1;
+					Kart.useExtendedAfterBoosterMore = 0;
 					Kart.wallCollGaugeCooldownTime = 3000;
 					Kart.wallCollGaugeMaxVelLoss = 200f;
-					Kart.wallCollGaugeMinVelBound = 160f;
+					Kart.wallCollGaugeMinVelBound = 200;
 					Kart.wallCollGaugeMinVelLoss = 50f;
 
-					Kart.chargeAntiCollideBalance = 0.8f;
-					Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
-					Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
-					Kart.chargerSystemboosterUseCount = 4;
-					Kart.chargerSystemUseTime = 3000;
-					Kart.chargeBoostBySpeedAdded = 350.0f;
-					Kart.driftGaugeFactor = 2.0f;
+					Kart.chargeAntiCollideBalance = 0f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0f;
+					Kart.chargerSystemboosterUseCount = 0;
+					Kart.chargerSystemUseTime = 0;
+					Kart.chargeBoostBySpeedAdded = 0f;
+					Kart.driftGaugeFactor = 0f;
 				}
 				if (Kart.defaultExceedType == 6)//L+
 				{
