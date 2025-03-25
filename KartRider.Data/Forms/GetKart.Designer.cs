@@ -103,7 +103,6 @@ namespace KartRider
             Text = "添加道具";
             ResumeLayout(false);
             PerformLayout();
-
         }
 
         #endregion
