@@ -144,7 +144,7 @@ namespace ExcData
 					Kart.HandleType = (byte)existingParts[5];
 					Parts_SteerConstraint = existingParts[7];
 				}
-				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.33M) / 3M);
+				V2Parts_SteerConstraint = (float)((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.268M);
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
 
 				short Parts_DriftEscapeForce;
