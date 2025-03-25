@@ -150,7 +150,7 @@ namespace ExcData
 				else
 				{
 					Kart.EngineType = (byte)existingParts[2];
-					Parts_TransAccelFactor = (short)(Get12Parts((short)Kart.defaultEngineType) + existingParts[4]);
+					Parts_TransAccelFactor = existingParts[4];
 				}
 				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
 				Console.WriteLine("V2Parts_TransAccelFactor: " + V2Parts_TransAccelFactor);
@@ -163,7 +163,7 @@ namespace ExcData
 				else
 				{
 					Kart.HandleType = (byte)existingParts[5];
-					Parts_SteerConstraint = (short)(Get12Parts((short)Kart.defaultHandleType) + existingParts[7]);
+					Parts_SteerConstraint = existingParts[7];
 				}
 				V2Parts_SteerConstraint = (float)((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 2.7M);
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
@@ -176,7 +176,7 @@ namespace ExcData
 				else
 				{
 					Kart.WheelType = (byte)existingParts[8];
-					Parts_DriftEscapeForce = (short)(Get12Parts((short)Kart.defaultWheelType) + existingParts[10]);
+					Parts_DriftEscapeForce = existingParts[10];
 				}
 				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
 				Console.WriteLine("V2Parts_DriftEscapeForce: " + V2Parts_DriftEscapeForce);
@@ -189,7 +189,7 @@ namespace ExcData
 				else
 				{
 					Kart.BoosterType = (byte)existingParts[11];
-					Parts_NormalBoosterTime = (short)(Get12Parts((short)Kart.defaultBoosterType) + existingParts[13]);
+					Parts_NormalBoosterTime = existingParts[13];
 				}
 				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
 				Console.WriteLine("V2Parts_NormalBoosterTime: " + V2Parts_NormalBoosterTime);
