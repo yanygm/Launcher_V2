@@ -174,6 +174,7 @@ namespace KartRider
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Name = "Launcher";
+            Icon = Resources.icon;
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Launcher";
             FormClosing += OnFormClosing;
