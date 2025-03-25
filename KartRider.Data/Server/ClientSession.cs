@@ -2695,7 +2695,10 @@ namespace KartRider
 								Item_Cat_Id = 75;
 								break;
 						}
-						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 0, 0, 0);
+						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
+						{
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 0, 0, 0);
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartExceedTypeChange", 0))
