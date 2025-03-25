@@ -2641,7 +2641,9 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelUp"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteHexString("80841E000000");
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						short Item_Cat_Id = 0;
@@ -2672,7 +2674,9 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelReset"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteHexString("55C100000000");
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						short Item_Cat_Id = 0;
@@ -2691,7 +2695,7 @@ namespace KartRider
 								Item_Cat_Id = 75;
 								break;
 						}
-						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 0, 0);
+						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 0, 0, 0);
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartExceedTypeChange", 0))
