@@ -230,10 +230,10 @@ namespace KartRider
 			Kart.modelMaxX = float.Parse(AddList[70]);
 			Kart.modelMaxY = float.Parse(AddList[71]);
 			Kart.defaultExceedType = int.Parse(AddList[72]);
-			Kart.defaultEngineType = short.Parse(AddList[73]);
-			Kart.defaultHandleType = short.Parse(AddList[74]);
-			Kart.defaultWheelType = short.Parse(AddList[75]);
-			Kart.defaultBoosterType = short.Parse(AddList[76]);
+			Kart.defaultEngineType = byte.Parse(AddList[73]);
+			Kart.defaultHandleType = byte.Parse(AddList[74]);
+			Kart.defaultWheelType = byte.Parse(AddList[75]);
+			Kart.defaultBoosterType = byte.Parse(AddList[76]);
 			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[77]);
 			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[78]);
 			Kart.chargerSystemboosterUseCount = int.Parse(AddList[79]);
