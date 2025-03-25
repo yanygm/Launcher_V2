@@ -2664,7 +2664,7 @@ namespace KartRider
 						}
 						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
 						{
-							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)leve, V2Spec.GetGrade(leve), V2Spec.Get12Parts((short)leve));
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)(old + 1), V2Spec.GetGrade((byte)(old + 1)), V2Spec.Get12Parts((short)(old + 1)));
 						}
 						return;
 					}
