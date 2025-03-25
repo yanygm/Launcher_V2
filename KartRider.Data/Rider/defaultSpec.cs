@@ -82,9 +82,13 @@ namespace RiderData
 			Kart.modelMaxY = 0;
 			Kart.defaultExceedType = 0;
 			Kart.defaultEngineType = 1;
+			Kart.EngineType = 0;
 			Kart.defaultHandleType = 1;
+			Kart.HandleType = 0;
 			Kart.defaultWheelType = 1;
+			Kart.WheelType = 0;
 			Kart.defaultBoosterType = 1;
+			Kart.BoosterType = 0;
 			Kart.chargeInstAccelGaugeByWallAdded = 0f;
 			Kart.chargeInstAccelGaugeByBoostAdded = 0f;
 			Kart.chargerSystemboosterUseCount = 0;
