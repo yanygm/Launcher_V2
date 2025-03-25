@@ -2641,40 +2641,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelUp"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							outPacket.WriteShort(0);
-							this.Parent.Client.Send(outPacket);
-						}
-						short Item_Cat_Id = 0;
-						switch (parts)
-						{
-							case 0:
-								Item_Cat_Id = 72;
-								break;
-							case 1:
-								Item_Cat_Id = 73;
-								break;
-							case 2:
-								Item_Cat_Id = 74;
-								break;
-							case 3:
-								Item_Cat_Id = 75;
-								break;
-						}
-						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, leve, 0, 0);
-						return;
-					}
-					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelReset", 0))
-					{
-						short kart = iPacket.ReadShort();
-						short sn = iPacket.ReadShort();
-						iPacket.ReadShort();
-						byte parts = iPacket.ReadByte();
-						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelReset"))
-						{
-							outPacket.WriteInt(1);
-							outPacket.WriteShort(0);
+							outPacket.WriteUInt(SetRider.Lucci);
 							outPacket.WriteShort(0);
 							outPacket.WriteShort(0);
 							this.Parent.Client.Send(outPacket);
@@ -2697,7 +2664,43 @@ namespace KartRider
 						}
 						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
 						{
-							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 0, 0, 0);
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)leve, V2Spec.GetGrade(leve), V2Spec.Get12Parts((short)leve));
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelReset", 0))
+					{
+						short kart = iPacket.ReadShort();
+						short sn = iPacket.ReadShort();
+						iPacket.ReadShort();
+						byte parts = iPacket.ReadByte();
+						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelReset"))
+						{
+							outPacket.WriteInt(1);
+							outPacket.WriteUInt(SetRider.Lucci);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						short Item_Cat_Id = 0;
+						switch (parts)
+						{
+							case 0:
+								Item_Cat_Id = 72;
+								break;
+							case 1:
+								Item_Cat_Id = 73;
+								break;
+							case 2:
+								Item_Cat_Id = 74;
+								break;
+							case 3:
+								Item_Cat_Id = 75;
+								break;
+						}
+						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
+						{
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 4, 201);
 						}
 						return;
 					}
