@@ -128,6 +128,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.EngineType = (byte)existingParts[2];
 					Parts_TransAccelFactor = existingParts[4];
 				}
 				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
@@ -140,6 +141,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.HandleType = (byte)existingParts[5];
 					Parts_SteerConstraint = existingParts[7];
 				}
 				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.33M) / 3M);
@@ -152,6 +154,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.WheelType = (byte)existingParts[8];
 					Parts_DriftEscapeForce = existingParts[10];
 				}
 				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
@@ -164,6 +167,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.BoosterType = (byte)existingParts[11];
 					Parts_NormalBoosterTime = existingParts[13];
 				}
 				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
