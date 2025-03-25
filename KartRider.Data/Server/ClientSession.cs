@@ -489,10 +489,6 @@ namespace KartRider
 						StartGameData.Kart_id = iPacket.ReadShort();
 						StartGameData.FlyingPet_id = iPacket.ReadShort();
 						GameType.StartType = 1;
-						if (config.SpeedType != 7)
-						{
-							StartGameData.StartTimeAttack_SpeedType = config.SpeedType;
-						}
 						SpeedType.SpeedTypeData();
 						StartGameData.Start_KartSpac();
 						return;
@@ -553,10 +549,6 @@ namespace KartRider
 						StartGameData.Kart_id = iPacket.ReadShort();
 						StartGameData.FlyingPet_id = iPacket.ReadShort();
 						GameType.StartType = 2;
-						if (config.SpeedType != 7)
-						{
-							StartGameData.StartTimeAttack_SpeedType = config.SpeedType;
-						}
 						SpeedType.SpeedTypeData();
 						StartGameData.Start_KartSpac();
 						return;

@@ -50,7 +50,7 @@ namespace KartRider
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new System.Drawing.Point(10, 15);
+            label1.Location = new System.Drawing.Point(10, 16);
             label1.Name = "label1";
             label1.Size = new System.Drawing.Size(35, 12);
             label1.TabIndex = 362;
@@ -59,7 +59,7 @@ namespace KartRider
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new System.Drawing.Point(10, 54);
+            label2.Location = new System.Drawing.Point(10, 55);
             label2.Name = "label2";
             label2.Size = new System.Drawing.Size(35, 12);
             label2.TabIndex = 363;

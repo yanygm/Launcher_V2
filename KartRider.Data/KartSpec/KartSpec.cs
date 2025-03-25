@@ -15,7 +15,7 @@ namespace KartRider
 		{
 			if (StartGameData.Kart_id == 0)
 			{
-				defaultSpec.DefaultSpec();
+				SchoolSpec.DefaultSpec();
 				//StartGameData.Start_KartSpac();
 			}
 			else
@@ -31,13 +31,13 @@ namespace KartRider
 					}
 					else
 					{
-						defaultSpec.DefaultSpec();
+						SchoolSpec.DefaultSpec();
 						//StartGameData.Start_KartSpac();
 					}
 				}
 				else
 				{
-					defaultSpec.DefaultSpec();
+					SchoolSpec.DefaultSpec();
 					//StartGameData.Start_KartSpac();
 				}
 			}
@@ -57,8 +57,8 @@ namespace KartRider
 			}
 			else
 			{
-				defaultSpec.DefaultSpec();
-				StartGameData.Start_KartSpac();
+				SchoolSpec.DefaultSpec();
+				//StartGameData.Start_KartSpac();
 			}
 		}
 
