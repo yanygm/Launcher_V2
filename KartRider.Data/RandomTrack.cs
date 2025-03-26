@@ -305,10 +305,6 @@ namespace KartRider
 				StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
 				Console.WriteLine("RandomTrack: {0} / {1} / {2}", RandomTrack.GameType, RandomTrack.SetRandomTrack, RandomTrack.GameTrack);
 			}
-			if (config.SpeedType != 7)
-			{
-				StartGameData.StartTimeAttack_SpeedType = config.SpeedType;
-			}
 			SpeedType.SpeedTypeData();
 		}
 	}

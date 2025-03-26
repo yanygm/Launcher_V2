@@ -1,5 +1,6 @@
 ﻿using System;
 using KartRider;
+using Set_Data;
 
 namespace ExcData
 {
@@ -25,7 +26,7 @@ namespace ExcData
 
 		public static void SpeedTypeData()
 		{
-			if (StartGameData.StartTimeAttack_SpeedType == 3)//S0 보통
+			if (config.SpeedType == 3)//S0 보통
 			{
 				SpeedType.AddSpec_SteerConstraint = -0.3f;
 				SpeedType.AddSpec_DriftEscapeForce = -350f;
@@ -45,7 +46,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = -950f;
 				Console.WriteLine("SpeedType:S0");
 			}
-			else if (StartGameData.StartTimeAttack_SpeedType == 0)//S1 빠름
+			else if (config.SpeedType == 0)//S1 빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 1.7f;
 				SpeedType.AddSpec_DriftEscapeForce = 150f;
@@ -65,7 +66,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = -360f;
 				Console.WriteLine("SpeedType:S1");
 			}
-			else if (StartGameData.StartTimeAttack_SpeedType == 1)//S2 매우빠름
+			else if (config.SpeedType == 1)//S2 매우빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 2.2f;
 				SpeedType.AddSpec_DriftEscapeForce = 1100f;
@@ -85,7 +86,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 360f;
 				Console.WriteLine("SpeedType:S2");
 			}
-			else if (StartGameData.StartTimeAttack_SpeedType == 2)//S3 가장빠름
+			else if (config.SpeedType == 2)//S3 가장빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 2.7f;
 				SpeedType.AddSpec_DriftEscapeForce = 1500f;
@@ -105,7 +106,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
 				Console.WriteLine("SpeedType:S3");
 			}
-			else if (StartGameData.StartTimeAttack_SpeedType == 4 || StartGameData.StartTimeAttack_SpeedType == 6 || StartGameData.StartTimeAttack_SpeedType == 7)//무부, 통합 S1.5
+			else if (config.SpeedType == 4 || config.SpeedType == 6 || config.SpeedType == 7)//무부, 통합 S1.5
 			{
 				SpeedType.AddSpec_SteerConstraint = 1.95f;
 				SpeedType.AddSpec_DriftEscapeForce = 400f;

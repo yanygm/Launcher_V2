@@ -25,6 +25,27 @@ namespace ExcData
 		public static float V2Level_DriftEscapeForce = 0f;
 		public static float V2Level_DriftMaxGauge = 0f;
 
+		public static byte GetGrade(byte leve)
+		{
+			if (leve > 40)
+			{
+				return 1;
+			}
+			else if (leve > 30)
+			{
+				return 2;
+			}
+			else if (leve > 20)
+			{
+				return 3;
+			}
+			else if (leve > 1)
+			{
+				return 4;
+			}
+			return 0;
+		}
+
 		public static short Get12Parts(short input)
 		{
 			if (input < 11)
@@ -128,6 +149,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.EngineType = (byte)existingParts[2];
 					Parts_TransAccelFactor = existingParts[4];
 				}
 				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
@@ -140,9 +162,10 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.HandleType = (byte)existingParts[5];
 					Parts_SteerConstraint = existingParts[7];
 				}
-				V2Parts_SteerConstraint = (float)(((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 3.33M) / 3M);
+				V2Parts_SteerConstraint = (float)((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 2.7M);
 				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
 
 				short Parts_DriftEscapeForce;
@@ -152,6 +175,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.WheelType = (byte)existingParts[8];
 					Parts_DriftEscapeForce = existingParts[10];
 				}
 				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
@@ -164,6 +188,7 @@ namespace ExcData
 				}
 				else
 				{
+					Kart.BoosterType = (byte)existingParts[11];
 					Parts_NormalBoosterTime = existingParts[13];
 				}
 				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
@@ -183,14 +208,14 @@ namespace ExcData
 						Skill.Add(new List<short> { existingLevel[7], existingLevel[8] });
 					Console.WriteLine("-------------------------------------------------------------");
 					float[] ForwardAccelForce = { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f };
-					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0012f, 0.0015f, 0.0018f, 0.002f };
-					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };//-0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f
-					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 190f };//50f, 70f, 90f, 120f, 150f
-					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 180f, 250f };//100f, 110f, 130f, 150f, 200f
-					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 800f };//150f, 200f, 300f, 450f, 700f
-					float[] TransAccelFactor = { 0f, 0.004f, 0.005f, 0.006f, 0.01f, 0.018f };//0.003f, 0.004f, 0.005f, 0.007f, 0.01f
-					float[] DriftEscapeForce = { 0f, 50f, 65f, 90f, 105f, 130f };//35f, 50f, 65f, 90f, 105f
-					float[] DriftMaxGauge = { 0f, -60f, -70f, -90f, -140f, -200f };//-50f, -60f, -70f, -90f, -120f
+					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f };
+					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };
+					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 150f };
+					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 150f, 200f };
+					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 700f };
+					float[] TransAccelFactor = { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f };
+					float[] DriftEscapeForce = { 0f, 35f, 50f, 65f, 90f, 105f };
+					float[] DriftMaxGauge = { 0f, -50f, -60f, -70f, -90f, -120f };
 					foreach (var skill in Skill)
 					{
 						if (skill[0] == 1)

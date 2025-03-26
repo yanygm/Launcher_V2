@@ -4,7 +4,7 @@ using ExcData;
 
 namespace RiderData
 {
-	public class defaultSpec
+	public class SchoolSpec
 	{
 		public static void DefaultSpec()
 		{
@@ -21,8 +21,8 @@ namespace RiderData
 			Kart.BikeRearWheel = (byte)(true ? 1 : 0);
 			Kart.Mass = 100f;
 			Kart.AirFriction = 3f;
-			Kart.DragFactor = 0.667f + SpeedPatch.DragFactor;
-			Kart.ForwardAccelForce = 2304f + SpeedPatch.ForwardAccelForce;
+			Kart.DragFactor = 0.667f;
+			Kart.ForwardAccelForce = 2304f;
 			Kart.BackwardAccelForce = 1825f;
 			Kart.GripBrakeForce = 2070f;
 			Kart.SlipBrakeForce = 1415f;
@@ -33,22 +33,22 @@ namespace RiderData
 			Kart.DriftTriggerFactor = 0.2f;
 			Kart.DriftTriggerTime = 0.2f;
 			Kart.DriftSlipFactor = 0.2f;
-			Kart.DriftEscapeForce = 4200f + SpeedPatch.DriftEscapeForce;
-			Kart.CornerDrawFactor = 0.254f + SpeedPatch.CornerDrawFactor;
+			Kart.DriftEscapeForce = 4200f;
+			Kart.CornerDrawFactor = 0.254f;
 			Kart.DriftLeanFactor = 0.06f;
 			Kart.SteerLeanFactor = 0.01f;
-			Kart.DriftMaxGauge = 3860f + SpeedPatch.DriftMaxGauge;
+			Kart.DriftMaxGauge = 3860f;
 			Kart.NormalBoosterTime = 2900f;
 			Kart.ItemBoosterTime = 3000f;
 			Kart.TeamBoosterTime = 4350f;
 			Kart.AnimalBoosterTime = 4000f;
 			Kart.SuperBoosterTime = 3500f;
-			Kart.TransAccelFactor = 1.8495f + SpeedPatch.TransAccelFactor;
-			Kart.BoostAccelFactor = 1.494f + SpeedPatch.BoostAccelFactor;
+			Kart.TransAccelFactor = 1.8495f;
+			Kart.BoostAccelFactor = 1.494f;
 			Kart.StartBoosterTimeItem = 1000f;
 			Kart.StartBoosterTimeSpeed = 1500f;
-			Kart.StartForwardAccelForceItem = 2304f + SpeedPatch.StartForwardAccelForceItem;
-			Kart.StartForwardAccelForceSpeed = 3745.588f + SpeedPatch.StartForwardAccelForceSpeed;
+			Kart.StartForwardAccelForceItem = 2304f;
+			Kart.StartForwardAccelForceSpeed = 3745.588f;
 			Kart.DriftGaguePreservePercent = 0.5f;
 			Kart.UseExtendedAfterBooster = (byte)(false ? 1 : 0);
 			Kart.BoostAccelFactorOnlyItem = 1.5f;
@@ -81,10 +81,14 @@ namespace RiderData
 			Kart.modelMaxX = 0;
 			Kart.modelMaxY = 0;
 			Kart.defaultExceedType = 0;
-			Kart.defaultEngineType = 1;
-			Kart.defaultHandleType = 1;
-			Kart.defaultWheelType = 1;
-			Kart.defaultBoosterType = 1;
+			Kart.defaultEngineType = 0;
+			Kart.EngineType = 1;
+			Kart.defaultHandleType = 0;
+			Kart.HandleType = 1;
+			Kart.defaultWheelType = 0;
+			Kart.WheelType = 1;
+			Kart.defaultBoosterType = 0;
+			Kart.BoosterType = 1;
 			Kart.chargeInstAccelGaugeByWallAdded = 0f;
 			Kart.chargeInstAccelGaugeByBoostAdded = 0f;
 			Kart.chargerSystemboosterUseCount = 0;

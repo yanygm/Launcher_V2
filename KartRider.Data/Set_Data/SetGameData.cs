@@ -44,7 +44,7 @@ namespace Set_Data
 			}
 			using (StreamWriter streamWriter = new StreamWriter("TimeAttack.log", true))
 			{
-				streamWriter.WriteLine("[{0}] SpeedType:{1}, GameType:{2}, Kart:{3}, FlyingPet:{4}, ResultType:{5}, RP:{6}, Lucci:{7}, Track:{8}, Record:{9}:{10}:{11}", DateTime.Now, StartGameData.StartTimeAttack_SpeedType, StartGameData.StartTimeAttack_GameType, StartGameData.Kart_id, StartGameData.FlyingPet_id, GameType.RewardType, GameType.TimeAttack_RP, GameType.TimeAttack_Lucci, trackName, GameType.min, GameType.sec, GameType.mil);
+				streamWriter.WriteLine("[{0}] SpeedType:{1}, Infinite:{2}, GameType:{3}, Kart:{4}, FlyingPet:{5}, ResultType:{6}, RP:{7}, Lucci:{8}, Track:{9}, Record:{10}:{11}:{12}", DateTime.Now, config.SpeedType, StartGameData.StartTimeAttack_SpeedType == 4 ? 1 : 0, StartGameData.StartTimeAttack_GameType, StartGameData.Kart_id, StartGameData.FlyingPet_id, GameType.RewardType, GameType.TimeAttack_RP, GameType.TimeAttack_Lucci, trackName, GameType.min, GameType.sec, GameType.mil);
 			}
 		}
 

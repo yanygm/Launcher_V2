@@ -489,10 +489,6 @@ namespace KartRider
 						StartGameData.Kart_id = iPacket.ReadShort();
 						StartGameData.FlyingPet_id = iPacket.ReadShort();
 						GameType.StartType = 1;
-						if (config.SpeedType != 7)
-						{
-							StartGameData.StartTimeAttack_SpeedType = config.SpeedType;
-						}
 						SpeedType.SpeedTypeData();
 						StartGameData.Start_KartSpac();
 						return;
@@ -553,10 +549,6 @@ namespace KartRider
 						StartGameData.Kart_id = iPacket.ReadShort();
 						StartGameData.FlyingPet_id = iPacket.ReadShort();
 						GameType.StartType = 2;
-						if (config.SpeedType != 7)
-						{
-							StartGameData.StartTimeAttack_SpeedType = config.SpeedType;
-						}
 						SpeedType.SpeedTypeData();
 						StartGameData.Start_KartSpac();
 						return;
@@ -2641,7 +2633,9 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelUp"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteHexString("80841E000000");
+							outPacket.WriteUInt(SetRider.Lucci);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						short Item_Cat_Id = 0;
@@ -2660,7 +2654,10 @@ namespace KartRider
 								Item_Cat_Id = 75;
 								break;
 						}
-						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, leve, 0, 0);
+						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
+						{
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)(old + 1), V2Spec.GetGrade((byte)(old + 1)), V2Spec.Get12Parts((short)(old + 1)));
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelReset", 0))
@@ -2672,7 +2669,9 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrKart12PartsLevelReset"))
 						{
 							outPacket.WriteInt(1);
-							outPacket.WriteHexString("55C100000000");
+							outPacket.WriteUInt(SetRider.Lucci);
+							outPacket.WriteShort(0);
+							outPacket.WriteShort(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						short Item_Cat_Id = 0;
@@ -2691,7 +2690,10 @@ namespace KartRider
 								Item_Cat_Id = 75;
 								break;
 						}
-						KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 0, 0);
+						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
+						{
+							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 4, 201);
+						}
 						return;
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartExceedTypeChange", 0))

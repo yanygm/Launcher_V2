@@ -15,7 +15,7 @@ namespace KartRider
 		{
 			if (StartGameData.Kart_id == 0)
 			{
-				defaultSpec.DefaultSpec();
+				SchoolSpec.DefaultSpec();
 				//StartGameData.Start_KartSpac();
 			}
 			else
@@ -31,13 +31,13 @@ namespace KartRider
 					}
 					else
 					{
-						defaultSpec.DefaultSpec();
+						SchoolSpec.DefaultSpec();
 						//StartGameData.Start_KartSpac();
 					}
 				}
 				else
 				{
-					defaultSpec.DefaultSpec();
+					SchoolSpec.DefaultSpec();
 					//StartGameData.Start_KartSpac();
 				}
 			}
@@ -57,8 +57,8 @@ namespace KartRider
 			}
 			else
 			{
-				defaultSpec.DefaultSpec();
-				StartGameData.Start_KartSpac();
+				SchoolSpec.DefaultSpec();
+				//StartGameData.Start_KartSpac();
 			}
 		}
 
@@ -139,10 +139,10 @@ namespace KartRider
 		("modelMaxX", 0M, 0M, 1M),
 		("modelMaxY", 0M, 0M, 1M),
 		("defaultExceedType", 0M, 0M, 1M),
-		("defaultEngineType", 0M, 1M, 1M),
-		("defaultHandleType", 0M, 1M, 1M),
-		("defaultWheelType", 0M, 1M, 1M),
-		("defaultBoosterType", 0M, 1M, 1M),
+		("defaultEngineType", 0M, 0M, 1M),
+		("defaultHandleType", 0M, 0M, 1M),
+		("defaultWheelType", 0M, 0M, 1M),
+		("defaultBoosterType", 0M, 0M, 1M),
 		("chargeInstAccelGaugeByWallAdded", 0M, 0M, 1M),
 		("chargeInstAccelGaugeByBoostAdded", 0M, 0M, 1M),
 		("chargerSystemboosterUseCount", 0M, 0M, 1M),
@@ -230,10 +230,14 @@ namespace KartRider
 			Kart.modelMaxX = float.Parse(AddList[70]);
 			Kart.modelMaxY = float.Parse(AddList[71]);
 			Kart.defaultExceedType = int.Parse(AddList[72]);
-			Kart.defaultEngineType = short.Parse(AddList[73]);
-			Kart.defaultHandleType = short.Parse(AddList[74]);
-			Kart.defaultWheelType = short.Parse(AddList[75]);
-			Kart.defaultBoosterType = short.Parse(AddList[76]);
+			Kart.defaultEngineType = byte.Parse(AddList[73]);
+			Kart.EngineType = 1;
+			Kart.defaultHandleType = byte.Parse(AddList[74]);
+			Kart.HandleType = 1;
+			Kart.defaultWheelType = byte.Parse(AddList[75]);
+			Kart.WheelType = 1;
+			Kart.defaultBoosterType = byte.Parse(AddList[76]);
+			Kart.BoosterType = 1;
 			Kart.chargeInstAccelGaugeByWallAdded = float.Parse(AddList[77]);
 			Kart.chargeInstAccelGaugeByBoostAdded = float.Parse(AddList[78]);
 			Kart.chargerSystemboosterUseCount = int.Parse(AddList[79]);

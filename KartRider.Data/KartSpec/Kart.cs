@@ -318,22 +318,30 @@ namespace KartRider
 		/// <summary>
 		/// 預設引擎零件類型
 		/// </summary>
-		public static short defaultEngineType;
+		public static byte defaultEngineType;
+
+		public static byte EngineType;
 
 		/// <summary>
 		/// 預設方向盤零件類型
 		/// </summary>
-		public static short defaultHandleType;
+		public static byte defaultHandleType;
+
+		public static byte HandleType;
 
 		/// <summary>
 		/// 預設輪胎零件類型
 		/// </summary>
-		public static short defaultWheelType;
+		public static byte defaultWheelType;
+
+		public static byte WheelType;
 
 		/// <summary>
 		/// 預設加速器零件類型
 		/// </summary>
-		public static short defaultBoosterType;
+		public static byte defaultBoosterType;
+
+		public static byte BoosterType;
 
 		/// <summary>
 		/// 賦能：增加超越能量累積 - 碰撞

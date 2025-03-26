@@ -20,8 +20,15 @@ namespace KartRider
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
+            Console.WriteLine($"当前版本为: {formattedDate}");
             if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
+                Console.WriteLine($"发现新版本: {tag_name}, 请问是否需要更新? (Y/n)");
+                string input = Console.ReadLine();
+                if (input.ToLower() == "n")
+                {
+                    return false;
+                }
                 try
                 {
                     string country = await GetCountryAsync();
