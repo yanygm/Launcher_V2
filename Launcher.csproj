@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<AssemblyName>Launcher</AssemblyName>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<SelfContained>false</SelfContained>
 		<PublishSingleFile>true</PublishSingleFile>
@@ -23,8 +23,8 @@
 		<SignAssembly>False</SignAssembly>
 		<BaseOutputPath></BaseOutputPath>
 		<OutputType>Exe</OutputType>
-		<ApplicationIcon>Properties\favicon.ico</ApplicationIcon>
 		<NuGetAuditLevel>low</NuGetAuditLevel>
+		<ApplicationIcon>Properties\favicon.ico</ApplicationIcon>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<WarningLevel>0</WarningLevel>
