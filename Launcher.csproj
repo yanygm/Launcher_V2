@@ -16,7 +16,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <RootNamespace>Launcher</RootNamespace>
-    <ApplicationIcon>Properties\1.ico</ApplicationIcon>
+    <ApplicationIcon>Properties\favicon.ico</ApplicationIcon>
     <SignAssembly>False</SignAssembly>
     <BaseOutputPath></BaseOutputPath>
   </PropertyGroup>
