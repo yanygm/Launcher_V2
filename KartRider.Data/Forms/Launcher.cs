@@ -100,7 +100,7 @@ namespace KartRider
             // comboBox1
             // 
             comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "统合 S1.5", "S0", "S1", "S2", "S3" });
+            comboBox1.Items.AddRange(new object[] { "统合 S1.5", "低速 S0", "普通 S1", "快速 S2", "高速 S3" });
             comboBox1.Location = new Point(122, 12);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(123, 20);

@@ -44,7 +44,7 @@ namespace ExcData
 				SpeedType.BoostAccelFactor = 0.006f;
 				SpeedType.StartForwardAccelForceItem = -530f;
 				SpeedType.StartForwardAccelForceSpeed = -950f;
-				Console.WriteLine("SpeedType:S0");
+				Console.WriteLine("SpeedType:低速 S0");
 			}
 			else if (config.SpeedType == 0)//S1 빠름
 			{
@@ -64,7 +64,7 @@ namespace ExcData
 				SpeedType.BoostAccelFactor = 0.006f;
 				SpeedType.StartForwardAccelForceItem = -200f;
 				SpeedType.StartForwardAccelForceSpeed = -360f;
-				Console.WriteLine("SpeedType:S1");
+				Console.WriteLine("SpeedType:普通 S1");
 			}
 			else if (config.SpeedType == 1)//S2 매우빠름
 			{
@@ -84,7 +84,7 @@ namespace ExcData
 				SpeedType.BoostAccelFactor = 0.006f;
 				SpeedType.StartForwardAccelForceItem = 200f;
 				SpeedType.StartForwardAccelForceSpeed = 360f;
-				Console.WriteLine("SpeedType:S2");
+				Console.WriteLine("SpeedType:快速 S2");
 			}
 			else if (config.SpeedType == 2)//S3 가장빠름
 			{
@@ -104,7 +104,7 @@ namespace ExcData
 				SpeedType.BoostAccelFactor = 0.006f;
 				SpeedType.StartForwardAccelForceItem = 750f;
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
-				Console.WriteLine("SpeedType:S3");
+				Console.WriteLine("SpeedType:高速 S3");
 			}
 			else if (config.SpeedType == 4 || config.SpeedType == 6 || config.SpeedType == 7)//무부, 통합 S1.5
 			{
