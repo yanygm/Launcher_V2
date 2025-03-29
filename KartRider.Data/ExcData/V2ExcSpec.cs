@@ -146,7 +146,6 @@ namespace ExcData
 					else
 					{
 						existingParts[17] = (short)Kart.defaultExceedType;
-						KartExcData.SaveParts12List(KartExcData.Parts12List);
 					}
 				}
 				Console.WriteLine("-------------------------------------------------------------");
@@ -154,10 +153,15 @@ namespace ExcData
 				if (existingParts == null || existingParts[4] < 1)
 				{
 					Parts_TransAccelFactor = Get12Parts((short)Kart.defaultEngineType);
+					if (existingParts != null)
+					{
+						existingParts[3] = (short)Kart.defaultEngineType;
+					}
 				}
 				else
 				{
 					Kart.EngineType = (byte)existingParts[2];
+					existingParts[3] = (short)Kart.defaultEngineType;
 					Parts_TransAccelFactor = existingParts[4];
 				}
 				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
@@ -167,10 +171,15 @@ namespace ExcData
 				if (existingParts == null || existingParts[7] < 1)
 				{
 					Parts_SteerConstraint = Get12Parts((short)Kart.defaultHandleType);
+					if (existingParts != null)
+					{
+						existingParts[6] = (short)Kart.defaultHandleType;
+					}
 				}
 				else
 				{
 					Kart.HandleType = (byte)existingParts[5];
+					existingParts[6] = (short)Kart.defaultHandleType;
 					Parts_SteerConstraint = existingParts[7];
 				}
 				V2Parts_SteerConstraint = (float)((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 2.7M);
@@ -180,10 +189,15 @@ namespace ExcData
 				if (existingParts == null || existingParts[10] < 1)
 				{
 					Parts_DriftEscapeForce = Get12Parts((short)Kart.defaultWheelType);
+					if (existingParts != null)
+					{
+						existingParts[9] = (short)Kart.defaultWheelType;
+					}
 				}
 				else
 				{
 					Kart.WheelType = (byte)existingParts[8];
+					existingParts[9] = (short)Kart.defaultWheelType;
 					Parts_DriftEscapeForce = existingParts[10];
 				}
 				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
@@ -193,15 +207,21 @@ namespace ExcData
 				if (existingParts == null || existingParts[13] < 1)
 				{
 					Parts_NormalBoosterTime = Get12Parts((short)Kart.defaultBoosterType);
+					if (existingParts != null)
+					{
+						existingParts[12] = (short)Kart.defaultBoosterType;
+					}
 				}
 				else
 				{
 					Kart.BoosterType = (byte)existingParts[11];
+					existingParts[12] = (short)Kart.defaultBoosterType;
 					Parts_NormalBoosterTime = existingParts[13];
 				}
 				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
 				Console.WriteLine("V2Parts_NormalBoosterTime: " + V2Parts_NormalBoosterTime);
 				Console.WriteLine("-------------------------------------------------------------");
+				KartExcData.SaveParts12List(KartExcData.Parts12List);
 
 				Reset_V2Level_SpecData();
 				var existingLevel = KartExcData.Level12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);

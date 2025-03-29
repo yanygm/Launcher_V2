@@ -37,7 +37,7 @@ namespace ExcData
 
 		public static void Tune_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = TuneList.Count / range + (TuneList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -88,7 +88,7 @@ namespace ExcData
 
 		public static void Plant_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = PlantList.Count / range + (PlantList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -138,7 +138,7 @@ namespace ExcData
 
 		public static void Level_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = LevelList.Count / range + (LevelList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -186,7 +186,7 @@ namespace ExcData
 
 		public static void Parts_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = PartsList.Count / range + (PartsList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -248,7 +248,7 @@ namespace ExcData
 
 		public static void Level12_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = Level12List.Count / range + (Level12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -301,7 +301,7 @@ namespace ExcData
 
 		public static void Parts12_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -338,13 +338,13 @@ namespace ExcData
 						oPacket.WriteShort(-1);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][2]);
-						oPacket.WriteShort((short)(5 - tempList[f][3]));
+						oPacket.WriteShort(tempList[f][3]);
 						oPacket.WriteShort(tempList[f][5]);
-						oPacket.WriteShort((short)(5 - tempList[f][6]));
+						oPacket.WriteShort(tempList[f][6]);
 						oPacket.WriteShort(tempList[f][8]);
-						oPacket.WriteShort((short)(5 - tempList[f][9]));
+						oPacket.WriteShort(tempList[f][9]);
 						oPacket.WriteShort(tempList[f][11]);
-						oPacket.WriteShort((short)(5 - tempList[f][12]));
+						oPacket.WriteShort(tempList[f][12]);
 						oPacket.WriteShort(tempList[f][14]);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][15]);
@@ -488,14 +488,14 @@ namespace ExcData
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
-				xe1.SetAttribute("item1", List[i][2].ToString());
-				xe1.SetAttribute("item_id1", List[i][3].ToString());
-				xe1.SetAttribute("item2", List[i][4].ToString());
-				xe1.SetAttribute("item_id2", List[i][5].ToString());
-				xe1.SetAttribute("item3", List[i][6].ToString());
-				xe1.SetAttribute("item_id3", List[i][7].ToString());
-				xe1.SetAttribute("item4", List[i][8].ToString());
-				xe1.SetAttribute("item_id4", List[i][9].ToString());
+				xe1.SetAttribute("Engine", List[i][2].ToString());
+				xe1.SetAttribute("Engine_id", List[i][3].ToString());
+				xe1.SetAttribute("Handle", List[i][4].ToString());
+				xe1.SetAttribute("Handle_id", List[i][5].ToString());
+				xe1.SetAttribute("Wheel", List[i][6].ToString());
+				xe1.SetAttribute("Wheel_id", List[i][7].ToString());
+				xe1.SetAttribute("Kit", List[i][8].ToString());
+				xe1.SetAttribute("Kit_id", List[i][9].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\PlantData.xml");
 			}
@@ -563,22 +563,22 @@ namespace ExcData
 					{
 						case 72:
 							newList[2] = Item_Id;
-							newList[3] = Grade;
+							newList[3] = 1;
 							newList[4] = PartsValue;
 							break;
 						case 73:
 							newList[5] = Item_Id;
-							newList[6] = Grade;
+							newList[6] = 1;
 							newList[7] = PartsValue;
 							break;
 						case 74:
 							newList[8] = Item_Id;
-							newList[9] = Grade;
+							newList[9] = 1;
 							newList[10] = PartsValue;
 							break;
 						case 75:
 							newList[11] = Item_Id;
-							newList[12] = Grade;
+							newList[12] = 1;
 							newList[13] = PartsValue;
 							break;
 						case 76:
@@ -600,22 +600,34 @@ namespace ExcData
 					{
 						case 72:
 							existing12List[2] = Item_Id;
-							existing12List[3] = Grade;
+							if (existing12List[3] == 0)
+							{
+								existing12List[3] = 1;
+							}
 							existing12List[4] = PartsValue;
 							break;
 						case 73:
 							existing12List[5] = Item_Id;
-							existing12List[6] = Grade;
+							if (existing12List[6] == 0)
+							{
+								existing12List[6] = 1;
+							}
 							existing12List[7] = PartsValue;
 							break;
 						case 74:
 							existing12List[8] = Item_Id;
-							existing12List[9] = Grade;
+							if (existing12List[9] == 0)
+							{
+								existing12List[9] = 1;
+							}
 							existing12List[10] = PartsValue;
 							break;
 						case 75:
 							existing12List[11] = Item_Id;
-							existing12List[12] = Grade;
+							if (existing12List[12] == 0)
+							{
+								existing12List[12] = 1;
+							}
 							existing12List[13] = PartsValue;
 							break;
 						case 76:
@@ -720,20 +732,20 @@ namespace ExcData
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
-				xe1.SetAttribute("Item_Id1", List[i][2].ToString());
-				xe1.SetAttribute("Grade1", List[i][3].ToString());
-				xe1.SetAttribute("PartsValue1", List[i][4].ToString());
-				xe1.SetAttribute("Item_Id2", List[i][5].ToString());
-				xe1.SetAttribute("Grade2", List[i][6].ToString());
-				xe1.SetAttribute("PartsValue2", List[i][7].ToString());
-				xe1.SetAttribute("Item_Id3", List[i][8].ToString());
-				xe1.SetAttribute("Grade3", List[i][9].ToString());
-				xe1.SetAttribute("PartsValue3", List[i][10].ToString());
-				xe1.SetAttribute("Item_Id4", List[i][11].ToString());
-				xe1.SetAttribute("Grade4", List[i][12].ToString());
-				xe1.SetAttribute("PartsValue4", List[i][13].ToString());
-				xe1.SetAttribute("partsCoating", List[i][14].ToString());
-				xe1.SetAttribute("partsTailLamp", List[i][15].ToString());
+				xe1.SetAttribute("Engine", List[i][2].ToString());
+				xe1.SetAttribute("EngineGrade", List[i][3].ToString());
+				xe1.SetAttribute("EngineValue", List[i][4].ToString());
+				xe1.SetAttribute("Handle", List[i][5].ToString());
+				xe1.SetAttribute("HandleGrade", List[i][6].ToString());
+				xe1.SetAttribute("HandleValue", List[i][7].ToString());
+				xe1.SetAttribute("Wheel", List[i][8].ToString());
+				xe1.SetAttribute("WheelGrade", List[i][9].ToString());
+				xe1.SetAttribute("WheelValue", List[i][10].ToString());
+				xe1.SetAttribute("Booster", List[i][11].ToString());
+				xe1.SetAttribute("BoosterGrade", List[i][12].ToString());
+				xe1.SetAttribute("BoosterValue", List[i][13].ToString());
+				xe1.SetAttribute("Coating", List[i][14].ToString());
+				xe1.SetAttribute("TailLamp", List[i][15].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\PartsData.xml");
 			}
@@ -756,21 +768,21 @@ namespace ExcData
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
-				xe1.SetAttribute("Item_Id1", List[i][2].ToString());
-				xe1.SetAttribute("Grade1", List[i][3].ToString());
-				xe1.SetAttribute("PartsValue1", List[i][4].ToString());
-				xe1.SetAttribute("Item_Id2", List[i][5].ToString());
-				xe1.SetAttribute("Grade2", List[i][6].ToString());
-				xe1.SetAttribute("PartsValue2", List[i][7].ToString());
-				xe1.SetAttribute("Item_Id3", List[i][8].ToString());
-				xe1.SetAttribute("Grade3", List[i][9].ToString());
-				xe1.SetAttribute("PartsValue3", List[i][10].ToString());
-				xe1.SetAttribute("Item_Id4", List[i][11].ToString());
-				xe1.SetAttribute("Grade4", List[i][12].ToString());
-				xe1.SetAttribute("PartsValue4", List[i][13].ToString());
-				xe1.SetAttribute("partsCoating", List[i][14].ToString());
-				xe1.SetAttribute("partsTailLamp", List[i][15].ToString());
-				xe1.SetAttribute("partsBoosterEffect", List[i][16].ToString());
+				xe1.SetAttribute("Engine", List[i][2].ToString());
+				xe1.SetAttribute("defaultEngine", List[i][3].ToString());
+				xe1.SetAttribute("EngineValue", List[i][4].ToString());
+				xe1.SetAttribute("Handle", List[i][5].ToString());
+				xe1.SetAttribute("defaultHandle", List[i][6].ToString());
+				xe1.SetAttribute("HandleValue", List[i][7].ToString());
+				xe1.SetAttribute("Wheel", List[i][8].ToString());
+				xe1.SetAttribute("defaultWheel", List[i][9].ToString());
+				xe1.SetAttribute("WheelValue", List[i][10].ToString());
+				xe1.SetAttribute("Booster", List[i][11].ToString());
+				xe1.SetAttribute("defaultBooster", List[i][12].ToString());
+				xe1.SetAttribute("BoosterValue", List[i][13].ToString());
+				xe1.SetAttribute("Coating", List[i][14].ToString());
+				xe1.SetAttribute("TailLamp", List[i][15].ToString());
+				xe1.SetAttribute("BoosterEffect", List[i][16].ToString());
 				xe1.SetAttribute("ExceedType", List[i][17].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\Parts12Data.xml");

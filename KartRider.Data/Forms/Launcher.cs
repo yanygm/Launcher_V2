@@ -28,15 +28,15 @@ namespace KartRider
         public string profilePath = null;
         public static string KartRider = "KartRider.exe";
         public static string pinFile = "KartRider.pin";
-        private Button Launch_Button;
-        private Button GetKart_Button;
-        private Label label_GameVersion;
-        private ComboBox speed;
-        private LinkLabel link_kartinfo;
-        private LinkLabel link_ghrepo;
-        private Label choose_speed;
-        private LinkLabel link_docs;
-        private Label label_ClientVersion;
+        private Button Button_Launch;
+        private Button Button_GetKart;
+        private Label label_DeveloperName;
+        private ComboBox comboBox_Choose_Speed;
+        private Label label_Choose_Speed;
+        private Label label_Download_Dotnet80;
+        private Label label_GitHub_Repo;
+        private Label label_KartInfo;
+        private Label label_Docs;
         private Label MinorVersion;
 
         public Launcher()
@@ -47,48 +47,50 @@ namespace KartRider
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Launcher));
-            Launch_Button = new Button();
-            GetKart_Button = new Button();
-            label_ClientVersion = new Label();
+            Button_Launch = new Button();
+            Button_GetKart = new Button();
+            label_DeveloperName = new Label();
             MinorVersion = new Label();
-            speed = new ComboBox();
-            link_kartinfo = new LinkLabel();
-            link_ghrepo = new LinkLabel();
-            choose_speed = new Label();
-            link_docs = new LinkLabel();
+            comboBox_Choose_Speed = new ComboBox();
+            label_Choose_Speed = new Label();
+            label_Download_Dotnet80 = new Label();
+            label_GitHub_Repo = new Label();
+            label_KartInfo = new Label();
+            label_Docs = new Label();
             SuspendLayout();
             // 
-            // Launch_Button
+            // Button_Launch
             // 
-            Launch_Button.Location = new Point(122, 92);
-            Launch_Button.Name = "Launch_Button";
-            Launch_Button.Size = new Size(123, 67);
-            Launch_Button.TabIndex = 364;
-            Launch_Button.Text = "启动游戏";
-            Launch_Button.UseVisualStyleBackColor = true;
-            Launch_Button.Click += Start_Button_Click;
+            Button_Launch.Location = new Point(19, 20);
+            Button_Launch.Name = "Button_Launch";
+            Button_Launch.Size = new Size(114, 23);
+            Button_Launch.TabIndex = 364;
+            Button_Launch.Text = "启动游戏";
+            Button_Launch.UseVisualStyleBackColor = true;
+            Button_Launch.Click += Start_Button_Click;
             // 
-            // GetKart_Button
+            // Button_GetKart
             // 
-            GetKart_Button.Location = new Point(122, 38);
-            GetKart_Button.Name = "GetKart_Button";
-            GetKart_Button.Size = new Size(123, 48);
-            GetKart_Button.TabIndex = 365;
-            GetKart_Button.Text = "添加道具";
-            GetKart_Button.UseVisualStyleBackColor = true;
-            GetKart_Button.Click += GetKart_Button_Click;
+            Button_GetKart.Location = new Point(19, 49);
+            Button_GetKart.Name = "Button_GetKart";
+            Button_GetKart.Size = new Size(114, 23);
+            Button_GetKart.TabIndex = 365;
+            Button_GetKart.Text = "添加道具";
+            Button_GetKart.UseVisualStyleBackColor = true;
+            Button_GetKart.Click += GetKart_Button_Click;
             // 
-            // label_ClientVersion
+            // label_DeveloperName
             // 
-            label_ClientVersion.AutoSize = true;
-            label_ClientVersion.BackColor = SystemColors.Control;
-            label_ClientVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label_ClientVersion.ForeColor = Color.Blue;
-            label_ClientVersion.Location = new Point(2, 160);
-            label_ClientVersion.Name = "label_ClientVersion";
-            label_ClientVersion.Size = new Size(95, 12);
-            label_ClientVersion.TabIndex = 367;
-            label_ClientVersion.Text = "Client Version:";
+            label_DeveloperName.AutoSize = true;
+            label_DeveloperName.BackColor = SystemColors.Control;
+            label_DeveloperName.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            label_DeveloperName.ForeColor = Color.Blue;
+            label_DeveloperName.Location = new Point(2, 160);
+            label_DeveloperName.Name = "label_DeveloperName";
+            label_DeveloperName.Size = new Size(47, 12);
+            label_DeveloperName.TabIndex = 367;
+            label_DeveloperName.Text = "Client:";
+            label_DeveloperName.Click += label_DeveloperName_Click;
             // 
             // MinorVersion
             // 
@@ -96,66 +98,76 @@ namespace KartRider
             MinorVersion.BackColor = SystemColors.Control;
             MinorVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             MinorVersion.ForeColor = Color.Red;
-            MinorVersion.Location = new Point(100, 160);
+            MinorVersion.Location = new Point(45, 160);
             MinorVersion.Name = "MinorVersion";
             MinorVersion.Size = new Size(0, 12);
             MinorVersion.TabIndex = 367;
             // 
-            // speed
+            // comboBox_Choose_Speed
             // 
-            speed.FormattingEnabled = true;
-            speed.Items.AddRange(new object[] { "统合 S1.5", "低速 S0", "普通 S1", "快速 S2", "高速 S3" });
-            speed.Location = new Point(122, 12);
-            speed.Name = "speed";
-            speed.Size = new Size(123, 20);
-            speed.TabIndex = 368;
-            speed.Text = "统合 S1.5";
-            speed.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            comboBox_Choose_Speed.ForeColor = Color.Red;
+            comboBox_Choose_Speed.FormattingEnabled = true;
+            comboBox_Choose_Speed.Items.AddRange(new object[] { "标准", "慢速", "普通", "快速", "高速" });
+            comboBox_Choose_Speed.Location = new Point(84, 78);
+            comboBox_Choose_Speed.Name = "comboBox_Choose_Speed";
+            comboBox_Choose_Speed.Size = new Size(49, 20);
+            comboBox_Choose_Speed.TabIndex = 368;
+            comboBox_Choose_Speed.Text = "标准";
+            comboBox_Choose_Speed.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
-            // link_kartinfo
+            // label_Choose_Speed
             // 
-            link_kartinfo.AutoSize = true;
-            link_kartinfo.LinkColor = Color.Gray;
-            link_kartinfo.Location = new Point(2, 124);
-            link_kartinfo.Name = "link_kartinfo";
-            link_kartinfo.Size = new Size(65, 12);
-            link_kartinfo.TabIndex = 371;
-            link_kartinfo.TabStop = true;
-            link_kartinfo.Text = "跑跑資訊站";
-            link_kartinfo.LinkClicked += linkLabel_kartinfo_LinkClicked;
+            label_Choose_Speed.AutoSize = true;
+            label_Choose_Speed.ForeColor = Color.Blue;
+            label_Choose_Speed.Location = new Point(19, 82);
+            label_Choose_Speed.Name = "label_Choose_Speed";
+            label_Choose_Speed.Size = new Size(59, 12);
+            label_Choose_Speed.TabIndex = 369;
+            label_Choose_Speed.Text = "速度选择:";
             // 
-            // link_ghrepo
+            // label_Download_Dotnet80
             // 
-            link_ghrepo.AutoSize = true;
-            link_ghrepo.LinkColor = Color.Gray;
-            link_ghrepo.Location = new Point(2, 136);
-            link_ghrepo.Name = "link_ghrepo";
-            link_ghrepo.Size = new Size(65, 12);
-            link_ghrepo.TabIndex = 372;
-            link_ghrepo.TabStop = true;
-            link_ghrepo.Text = "源代码仓库";
-            link_ghrepo.LinkClicked += linkLabel_ghrepo_LinkClicked;
+            label_Download_Dotnet80.AutoSize = true;
+            label_Download_Dotnet80.ForeColor = Color.Blue;
+            label_Download_Dotnet80.Location = new Point(207, 128);
+            label_Download_Dotnet80.Name = "label_Download_Dotnet80";
+            label_Download_Dotnet80.Size = new Size(47, 12);
+            label_Download_Dotnet80.TabIndex = 370;
+            label_Download_Dotnet80.Text = ".NET8.0";
+            label_Download_Dotnet80.Click += label2_Click;
             // 
-            // choose_speed
+            // label_GitHub_Repo
             // 
-            choose_speed.AutoSize = true;
-            choose_speed.Location = new Point(55, 15);
-            choose_speed.Name = "choose_speed";
-            choose_speed.Size = new Size(65, 12);
-            choose_speed.TabIndex = 373;
-            choose_speed.Text = "选择速度：";
+            label_GitHub_Repo.AutoSize = true;
+            label_GitHub_Repo.ForeColor = Color.Blue;
+            label_GitHub_Repo.Location = new Point(213, 144);
+            label_GitHub_Repo.Name = "label_GitHub_Repo";
+            label_GitHub_Repo.Size = new Size(41, 12);
+            label_GitHub_Repo.TabIndex = 371;
+            label_GitHub_Repo.Text = "GitHub";
+            label_GitHub_Repo.Click += label3_Click;
             // 
-            // link_docs
+            // label_KartInfo
             // 
-            link_docs.AutoSize = true;
-            link_docs.LinkColor = Color.Gray;
-            link_docs.Location = new Point(2, 112);
-            link_docs.Name = "link_docs";
-            link_docs.Size = new Size(53, 12);
-            link_docs.TabIndex = 374;
-            link_docs.TabStop = true;
-            link_docs.Text = "说明文档";
-            link_docs.LinkClicked += linkLabel1_LinkClicked;
+            label_KartInfo.AutoSize = true;
+            label_KartInfo.ForeColor = Color.Blue;
+            label_KartInfo.Location = new Point(201, 160);
+            label_KartInfo.Name = "label_KartInfo";
+            label_KartInfo.Size = new Size(53, 12);
+            label_KartInfo.TabIndex = 372;
+            label_KartInfo.Text = "KartInfo";
+            label_KartInfo.Click += label4_Click;
+            // 
+            // label_Docs
+            // 
+            label_Docs.AutoSize = true;
+            label_Docs.ForeColor = Color.Blue;
+            label_Docs.Location = new Point(225, 116);
+            label_Docs.Name = "label_Docs";
+            label_Docs.Size = new Size(29, 12);
+            label_Docs.TabIndex = 373;
+            label_Docs.Text = "Docs";
+            label_Docs.Click += label_Docs_Click;
             // 
             // Launcher
             // 
@@ -163,15 +175,16 @@ namespace KartRider
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             ClientSize = new Size(257, 180);
-            Controls.Add(link_docs);
-            Controls.Add(choose_speed);
-            Controls.Add(link_ghrepo);
-            Controls.Add(link_kartinfo);
-            Controls.Add(speed);
+            Controls.Add(label_Docs);
+            Controls.Add(label_KartInfo);
+            Controls.Add(label_GitHub_Repo);
+            Controls.Add(label_Download_Dotnet80);
+            Controls.Add(label_Choose_Speed);
+            Controls.Add(comboBox_Choose_Speed);
             Controls.Add(MinorVersion);
-            Controls.Add(label_ClientVersion);
-            Controls.Add(GetKart_Button);
-            Controls.Add(Launch_Button);
+            Controls.Add(label_DeveloperName);
+            Controls.Add(Button_GetKart);
+            Controls.Add(Button_Launch);
             Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -263,7 +276,7 @@ namespace KartRider
                         }
                     }
                     File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
-                    Launch_Button.Enabled = true;
+                    Button_Launch.Enabled = true;
                     Launcher.GetKart = false;
                     string str = this.profilePath;
                     string[] text = new string[] { "<?xml version='1.0' encoding='UTF-16'?>\r\n<profile>\r\n<username>", SetRider.UserID, "</username>\r\n</profile>" };
@@ -278,7 +291,7 @@ namespace KartRider
                     {
                         Process.Start(startInfo);
                         Thread.Sleep(1000);
-                        Launch_Button.Enabled = true;
+                        Button_Launch.Enabled = true;
                         Launcher.GetKart = true;
                     }
                     catch (System.ComponentModel.Win32Exception ex)
@@ -420,16 +433,16 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("item1"), out short item1) &&
-                    short.TryParse(xe.GetAttribute("item_id1"), out short item_id1) &&
-                    short.TryParse(xe.GetAttribute("item2"), out short item2) &&
-                    short.TryParse(xe.GetAttribute("item_id2"), out short item_id2) &&
-                    short.TryParse(xe.GetAttribute("item3"), out short item3) &&
-                    short.TryParse(xe.GetAttribute("item_id3"), out short item_id3) &&
-                    short.TryParse(xe.GetAttribute("item4"), out short item4) &&
-                    short.TryParse(xe.GetAttribute("item_id4"), out short item_id4))
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("Engine_id"), out short Engine_id) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("Handle_id"), out short Handle_id) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("Wheel_id"), out short Wheel_id) &&
+                    short.TryParse(xe.GetAttribute("Kit"), out short Kit) &&
+                    short.TryParse(xe.GetAttribute("Kit_id"), out short Kit_id))
                 {
-                    result.Add(new List<short> { id, sn, item1, item_id1, item2, item_id2, item3, item_id3, item4, item_id4 });
+                    result.Add(new List<short> { id, sn, Engine, Engine_id, Handle, Handle_id, Wheel, Wheel_id, Kit, Kit_id });
                 }
                 else
                 {
@@ -473,22 +486,22 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
-                    short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
-                    short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
-                    short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
-                    short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
-                    short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
-                    short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
-                    short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
-                    short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
-                    short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
-                    short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
-                    short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
-                    short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
-                    short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp))
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("EngineGrade"), out short EngineGrade) &&
+                    short.TryParse(xe.GetAttribute("EngineValue"), out short EngineValue) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("HandleGrade"), out short HandleGrade) &&
+                    short.TryParse(xe.GetAttribute("HandleValue"), out short HandleValue) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("WheelGrade"), out short WheelGrade) &&
+                    short.TryParse(xe.GetAttribute("WheelValue"), out short WheelValue) &&
+                    short.TryParse(xe.GetAttribute("Booster"), out short Booster) &&
+                    short.TryParse(xe.GetAttribute("BoosterGrade"), out short BoosterGrade) &&
+                    short.TryParse(xe.GetAttribute("BoosterValue"), out short BoosterValue) &&
+                    short.TryParse(xe.GetAttribute("Coating"), out short Coating) &&
+                    short.TryParse(xe.GetAttribute("TailLamp"), out short TailLamp))
                 {
-                    result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp });
+                    result.Add(new List<short> { id, sn, Engine, EngineGrade, EngineValue, Handle, HandleGrade, HandleValue, Wheel, WheelGrade, WheelValue, Booster, BoosterGrade, BoosterValue, Coating, TailLamp });
                 }
                 else
                 {
@@ -506,24 +519,24 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
-                    short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
-                    short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
-                    short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
-                    short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
-                    short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
-                    short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
-                    short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
-                    short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
-                    short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
-                    short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
-                    short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
-                    short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
-                    short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp) &&
-                    short.TryParse(xe.GetAttribute("partsBoosterEffect"), out short partsBoosterEffect) &&
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("defaultEngine"), out short defaultEngine) &&
+                    short.TryParse(xe.GetAttribute("EngineValue"), out short EngineValue) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("defaultHandle"), out short defaultHandle) &&
+                    short.TryParse(xe.GetAttribute("HandleValue"), out short HandleValue) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("defaultWheel"), out short defaultWheel) &&
+                    short.TryParse(xe.GetAttribute("WheelValue"), out short WheelValue) &&
+                    short.TryParse(xe.GetAttribute("Booster"), out short Booster) &&
+                    short.TryParse(xe.GetAttribute("defaultBooster"), out short defaultBooster) &&
+                    short.TryParse(xe.GetAttribute("BoosterValue"), out short BoosterValue) &&
+                    short.TryParse(xe.GetAttribute("Coating"), out short Coating) &&
+                    short.TryParse(xe.GetAttribute("TailLamp"), out short TailLamp) &&
+                    short.TryParse(xe.GetAttribute("BoosterEffect"), out short BoosterEffect) &&
                     short.TryParse(xe.GetAttribute("ExceedType"), out short ExceedType))
                 {
-                    result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect, ExceedType });
+                    result.Add(new List<short> { id, sn, Engine, defaultEngine, EngineValue, Handle, defaultHandle, HandleValue, Wheel, defaultWheel, WheelValue, Booster, defaultBooster, BoosterValue, Coating, TailLamp, BoosterEffect, ExceedType });
                 }
                 else
                 {
@@ -560,68 +573,102 @@ namespace KartRider
             return result;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) // choose speed type
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (speed.SelectedItem != null)
+            if (comboBox_Choose_Speed.SelectedItem != null)
             {
-                string usrChooseSpd = speed.SelectedItem.ToString();
-                Console.WriteLine(usrChooseSpd);
-                if (usrChooseSpd == "统合 S1.5" || usrChooseSpd == "S1.5" || usrChooseSpd == "统合")
+                Console.WriteLine(comboBox_Choose_Speed.SelectedItem.ToString());
+                if (comboBox_Choose_Speed.SelectedItem.ToString() == "标准")
                 {
                     config.SpeedType = 7;
                 }
-                else if (usrChooseSpd == "低速 S0" || usrChooseSpd == "S0" || usrChooseSpd == "低速")
+                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "慢速")
                 {
                     config.SpeedType = 3;
                 }
-                else if (usrChooseSpd == "普通 S1" || usrChooseSpd == "S1" || usrChooseSpd == "普通")
+                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "普通")
                 {
                     config.SpeedType = 0;
                 }
-                else if (usrChooseSpd == "快速 S2" || usrChooseSpd == "S2" || usrChooseSpd == "快速")
+                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "快速")
                 {
                     config.SpeedType = 1;
                 }
-                else if (usrChooseSpd == "高速 S3" || usrChooseSpd == "S3" || usrChooseSpd == "高速")
+                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "高速")
                 {
                     config.SpeedType = 2;
                 }
                 else
                 {
-                    Console.WriteLine("Unknown speed type, switched to default");
+                    Console.WriteLine("Error: Unknown speed type, switched to S1.5");
                     config.SpeedType = 7;
                 }
             }
         }
 
-        private void linkLabel_kartinfo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void label2_Click(object sender, EventArgs e)
         {
-            link_kartinfo.LinkVisited = true;
-            Process.Start("cmd", "/c start https://kartinfo.me/thread-9369-1-1.html");
+            string url = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.13-windows-x64-installer";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
         }
 
-        private void linkLabel_ghrepo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void label3_Click(object sender, EventArgs e)
         {
-            link_ghrepo.LinkVisited = true;
-            Process.Start("cmd", "/c start https://github.com/yanygm/Launcher_V2");
+            string url = "https://github.com/yanygm/Launcher_V2/releases";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
         }
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void label4_Click(object sender, EventArgs e)
         {
-            link_ghrepo.LinkVisited = true;
-            Process.Start("cmd", "/c start https://themagicflute.github.io/Launcher_V2");
-            /**
-             * 临时链接，因为该 PR #2 尚未被 merge ，所以说明文档为 "TheMagicFlute/patch"
-             * 下所 deploy 的版本。
-             * 
-             * Merge 提示：
-             *      1. 先 merge PR#2
-             *      2. 到 setting 的 Pages 中把 deploy 的分支设置为"gh-pages"（deploy工作流之后会自动把网页部署到该分支）
-             *      3. ok 等待即可
-             */
-            // merge 之后就可以改成下方的这行链接
-            // Process.Start("cmd", "/c start https://yanygm.github.io/Launcher_V2");
+            string url = "https://kartinfo.me/thread-9369-1-1.html";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
+        }
 
+        private void label_DeveloperName_Click(object sender, EventArgs e)
+        {
+            string url = "https://github.com/brownsugar/popkart-client-archive/releases";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
+        }
+
+        private void label_Docs_Click(object sender, EventArgs e)
+        {
+            string url = "https://themagicflute.github.io/Launcher_V2";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
         }
     }
 }
