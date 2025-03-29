@@ -2692,6 +2692,28 @@ namespace KartRider
 						}
 						if (kart != 0 && sn != 0 && Item_Cat_Id != 0)
 						{
+							var existingParts = KartExcData.Parts12List.FirstOrDefault(list => list[0] == kart && list[1] == sn);
+							if (existingParts != null)
+							{
+								short i = 0;
+								switch (Item_Cat_Id)
+								{
+									case 72:
+										i = 3;
+										break;
+									case 73:
+										i = 6;
+										break;
+									case 74:
+										i = 9;
+										break;
+									case 75:
+										i = 12;
+										break;
+								}
+								short Position = existingParts[i];
+								KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)Position, V2Spec.GetGrade((byte)Position), V2Spec.Get12Parts(Position));
+							}
 							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 4, 201);
 						}
 						return;
