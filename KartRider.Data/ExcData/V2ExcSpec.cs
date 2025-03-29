@@ -27,15 +27,15 @@ namespace ExcData
 
 		public static byte GetGrade(byte leve)
 		{
-			if (leve > 40)
+			if (leve > 30)
 			{
 				return 1;
 			}
-			else if (leve > 30)
+			else if (leve > 20)
 			{
 				return 2;
 			}
-			else if (leve > 20)
+			else if (leve > 10)
 			{
 				return 3;
 			}
