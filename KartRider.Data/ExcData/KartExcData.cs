@@ -37,7 +37,7 @@ namespace ExcData
 
 		public static void Tune_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = TuneList.Count / range + (TuneList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -88,7 +88,7 @@ namespace ExcData
 
 		public static void Plant_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = PlantList.Count / range + (PlantList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -138,7 +138,7 @@ namespace ExcData
 
 		public static void Level_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = LevelList.Count / range + (LevelList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -186,7 +186,7 @@ namespace ExcData
 
 		public static void Parts_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = PartsList.Count / range + (PartsList.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -248,7 +248,7 @@ namespace ExcData
 
 		public static void Level12_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = Level12List.Count / range + (Level12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -301,7 +301,7 @@ namespace ExcData
 
 		public static void Parts12_ExcData()
 		{
-			int range = 100;//分批次数
+			int range = 26;//分批次数
 			int times = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 			for (int i = 0; i < times; i++)
 			{
@@ -600,18 +600,34 @@ namespace ExcData
 					{
 						case 72:
 							existing12List[2] = Item_Id;
+							if (existing12List[3] == 0)
+							{
+								existing12List[3] = 1;
+							}
 							existing12List[4] = PartsValue;
 							break;
 						case 73:
 							existing12List[5] = Item_Id;
+							if (existing12List[6] == 0)
+							{
+								existing12List[6] = 1;
+							}
 							existing12List[7] = PartsValue;
 							break;
 						case 74:
 							existing12List[8] = Item_Id;
+							if (existing12List[9] == 0)
+							{
+								existing12List[9] = 1;
+							}
 							existing12List[10] = PartsValue;
 							break;
 						case 75:
 							existing12List[11] = Item_Id;
+							if (existing12List[12] == 0)
+							{
+								existing12List[12] = 1;
+							}
 							existing12List[13] = PartsValue;
 							break;
 						case 76:
