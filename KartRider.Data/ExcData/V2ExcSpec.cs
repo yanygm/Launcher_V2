@@ -27,15 +27,15 @@ namespace ExcData
 
 		public static byte GetGrade(byte leve)
 		{
-			if (leve > 40)
+			if (leve > 30)
 			{
 				return 1;
 			}
-			else if (leve > 30)
+			else if (leve > 20)
 			{
 				return 2;
 			}
-			else if (leve > 20)
+			else if (leve > 10)
 			{
 				return 3;
 			}
@@ -137,9 +137,17 @@ namespace ExcData
 			{
 				var KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
 				var existingParts = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
-				if (existingParts != null && existingParts[17] != 0)
+				if (existingParts != null)
 				{
-					Kart.defaultExceedType = (int)existingParts[17];
+					if (existingParts[17] != 0)
+					{
+						Kart.defaultExceedType = (int)existingParts[17];
+					}
+					else
+					{
+						existingParts[17] = (short)Kart.defaultExceedType;
+						KartExcData.SaveParts12List(KartExcData.Parts12List);
+					}
 				}
 				Console.WriteLine("-------------------------------------------------------------");
 				short Parts_TransAccelFactor;
