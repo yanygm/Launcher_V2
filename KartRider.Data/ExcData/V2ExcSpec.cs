@@ -25,27 +25,6 @@ namespace ExcData
 		public static float V2Level_DriftEscapeForce = 0f;
 		public static float V2Level_DriftMaxGauge = 0f;
 
-		public static byte GetGrade(byte leve)
-		{
-			if (leve > 30)
-			{
-				return 1;
-			}
-			else if (leve > 20)
-			{
-				return 2;
-			}
-			else if (leve > 10)
-			{
-				return 3;
-			}
-			else if (leve > 1)
-			{
-				return 4;
-			}
-			return 0;
-		}
-
 		public static short Get12Parts(short input)
 		{
 			if (input < 11)
