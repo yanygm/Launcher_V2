@@ -418,16 +418,16 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("item1"), out short item1) &&
-                    short.TryParse(xe.GetAttribute("item_id1"), out short item_id1) &&
-                    short.TryParse(xe.GetAttribute("item2"), out short item2) &&
-                    short.TryParse(xe.GetAttribute("item_id2"), out short item_id2) &&
-                    short.TryParse(xe.GetAttribute("item3"), out short item3) &&
-                    short.TryParse(xe.GetAttribute("item_id3"), out short item_id3) &&
-                    short.TryParse(xe.GetAttribute("item4"), out short item4) &&
-                    short.TryParse(xe.GetAttribute("item_id4"), out short item_id4))
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("Engine_id"), out short Engine_id) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("Handle_id"), out short Handle_id) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("Wheel_id"), out short Wheel_id) &&
+                    short.TryParse(xe.GetAttribute("Kit"), out short Kit) &&
+                    short.TryParse(xe.GetAttribute("Kit_id"), out short Kit_id))
                 {
-                    result.Add(new List<short> { id, sn, item1, item_id1, item2, item_id2, item3, item_id3, item4, item_id4 });
+                    result.Add(new List<short> { id, sn, Engine, Engine_id, Handle, Handle_id, Wheel, Wheel_id, Kit, Kit_id });
                 }
                 else
                 {
@@ -471,22 +471,22 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
-                    short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
-                    short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
-                    short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
-                    short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
-                    short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
-                    short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
-                    short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
-                    short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
-                    short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
-                    short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
-                    short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
-                    short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
-                    short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp))
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("EngineGrade"), out short EngineGrade) &&
+                    short.TryParse(xe.GetAttribute("EngineValue"), out short EngineValue) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("HandleGrade"), out short HandleGrade) &&
+                    short.TryParse(xe.GetAttribute("HandleValue"), out short HandleValue) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("WheelGrade"), out short WheelGrade) &&
+                    short.TryParse(xe.GetAttribute("WheelValue"), out short WheelValue) &&
+                    short.TryParse(xe.GetAttribute("Booster"), out short Booster) &&
+                    short.TryParse(xe.GetAttribute("BoosterGrade"), out short BoosterGrade) &&
+                    short.TryParse(xe.GetAttribute("BoosterValue"), out short BoosterValue) &&
+                    short.TryParse(xe.GetAttribute("Coating"), out short Coating) &&
+                    short.TryParse(xe.GetAttribute("TailLamp"), out short TailLamp))
                 {
-                    result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp });
+                    result.Add(new List<short> { id, sn, Engine, EngineGrade, EngineValue, Handle, HandleGrade, HandleValue, Wheel, WheelGrade, WheelValue, Booster, BoosterGrade, BoosterValue, Coating, TailLamp });
                 }
                 else
                 {
@@ -504,24 +504,24 @@ namespace KartRider
                 XmlElement xe = (XmlElement)xn;
                 if (short.TryParse(xe.GetAttribute("id"), out short id) &&
                     short.TryParse(xe.GetAttribute("sn"), out short sn) &&
-                    short.TryParse(xe.GetAttribute("Item_Id1"), out short Item_Id1) &&
-                    short.TryParse(xe.GetAttribute("Grade1"), out short Grade1) &&
-                    short.TryParse(xe.GetAttribute("PartsValue1"), out short PartsValue1) &&
-                    short.TryParse(xe.GetAttribute("Item_Id2"), out short Item_Id2) &&
-                    short.TryParse(xe.GetAttribute("Grade2"), out short Grade2) &&
-                    short.TryParse(xe.GetAttribute("PartsValue2"), out short PartsValue2) &&
-                    short.TryParse(xe.GetAttribute("Item_Id3"), out short Item_Id3) &&
-                    short.TryParse(xe.GetAttribute("Grade3"), out short Grade3) &&
-                    short.TryParse(xe.GetAttribute("PartsValue3"), out short PartsValue3) &&
-                    short.TryParse(xe.GetAttribute("Item_Id4"), out short Item_Id4) &&
-                    short.TryParse(xe.GetAttribute("Grade4"), out short Grade4) &&
-                    short.TryParse(xe.GetAttribute("PartsValue4"), out short PartsValue4) &&
-                    short.TryParse(xe.GetAttribute("partsCoating"), out short partsCoating) &&
-                    short.TryParse(xe.GetAttribute("partsTailLamp"), out short partsTailLamp) &&
-                    short.TryParse(xe.GetAttribute("partsBoosterEffect"), out short partsBoosterEffect) &&
+                    short.TryParse(xe.GetAttribute("Engine"), out short Engine) &&
+                    short.TryParse(xe.GetAttribute("defaultEngine"), out short defaultEngine) &&
+                    short.TryParse(xe.GetAttribute("EngineValue"), out short EngineValue) &&
+                    short.TryParse(xe.GetAttribute("Handle"), out short Handle) &&
+                    short.TryParse(xe.GetAttribute("defaultHandle"), out short defaultHandle) &&
+                    short.TryParse(xe.GetAttribute("HandleValue"), out short HandleValue) &&
+                    short.TryParse(xe.GetAttribute("Wheel"), out short Wheel) &&
+                    short.TryParse(xe.GetAttribute("defaultWheel"), out short defaultWheel) &&
+                    short.TryParse(xe.GetAttribute("WheelValue"), out short WheelValue) &&
+                    short.TryParse(xe.GetAttribute("Booster"), out short Booster) &&
+                    short.TryParse(xe.GetAttribute("defaultBooster"), out short defaultBooster) &&
+                    short.TryParse(xe.GetAttribute("BoosterValue"), out short BoosterValue) &&
+                    short.TryParse(xe.GetAttribute("Coating"), out short Coating) &&
+                    short.TryParse(xe.GetAttribute("TailLamp"), out short TailLamp) &&
+                    short.TryParse(xe.GetAttribute("BoosterEffect"), out short BoosterEffect) &&
                     short.TryParse(xe.GetAttribute("ExceedType"), out short ExceedType))
                 {
-                    result.Add(new List<short> { id, sn, Item_Id1, Grade1, PartsValue1, Item_Id2, Grade2, PartsValue2, Item_Id3, Grade3, PartsValue3, Item_Id4, Grade4, PartsValue4, partsCoating, partsTailLamp, partsBoosterEffect, ExceedType });
+                    result.Add(new List<short> { id, sn, Engine, EngineGrade, EngineValue, Handle, HandleGrade, HandleValue, Wheel, WheelGrade, WheelValue, Booster, BoosterGrade, BoosterValue, Coating, TailLamp, BoosterEffect, ExceedType });
                 }
                 else
                 {
