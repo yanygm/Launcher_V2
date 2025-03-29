@@ -521,7 +521,7 @@ namespace KartRider
                     short.TryParse(xe.GetAttribute("BoosterEffect"), out short BoosterEffect) &&
                     short.TryParse(xe.GetAttribute("ExceedType"), out short ExceedType))
                 {
-                    result.Add(new List<short> { id, sn, Engine, EngineGrade, EngineValue, Handle, HandleGrade, HandleValue, Wheel, WheelGrade, WheelValue, Booster, BoosterGrade, BoosterValue, Coating, TailLamp, BoosterEffect, ExceedType });
+                    result.Add(new List<short> { id, sn, Engine, defaultEngine, EngineValue, Handle, defaultHandle, HandleValue, Wheel, defaultWheel, WheelValue, Booster, defaultBooster, BoosterValue, Coating, TailLamp, BoosterEffect, ExceedType });
                 }
                 else
                 {
