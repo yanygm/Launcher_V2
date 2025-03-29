@@ -137,9 +137,17 @@ namespace ExcData
 			{
 				var KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
 				var existingParts = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
-				if (existingParts != null && existingParts[17] != 0)
+				if (existingParts != null)
 				{
-					Kart.defaultExceedType = (int)existingParts[17];
+					if (existingParts[17] != 0)
+					{
+						Kart.defaultExceedType = (int)existingParts[17];
+					}
+					else
+					{
+						existingParts[17] = (short)Kart.defaultExceedType;
+						KartExcData.SaveParts12List(KartExcData.Parts12List);
+					}
 				}
 				Console.WriteLine("-------------------------------------------------------------");
 				short Parts_TransAccelFactor;
