@@ -488,14 +488,14 @@ namespace ExcData
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
 				xe1.SetAttribute("sn", List[i][1].ToString());
-				xe1.SetAttribute("item1", List[i][2].ToString());
-				xe1.SetAttribute("item_id1", List[i][3].ToString());
-				xe1.SetAttribute("item2", List[i][4].ToString());
-				xe1.SetAttribute("item_id2", List[i][5].ToString());
-				xe1.SetAttribute("item3", List[i][6].ToString());
-				xe1.SetAttribute("item_id3", List[i][7].ToString());
-				xe1.SetAttribute("item4", List[i][8].ToString());
-				xe1.SetAttribute("item_id4", List[i][9].ToString());
+				xe1.SetAttribute("Engine", List[i][2].ToString());
+				xe1.SetAttribute("Engine_id", List[i][3].ToString());
+				xe1.SetAttribute("Handle", List[i][4].ToString());
+				xe1.SetAttribute("Handle_id", List[i][5].ToString());
+				xe1.SetAttribute("Wheel", List[i][6].ToString());
+				xe1.SetAttribute("Wheel_id", List[i][7].ToString());
+				xe1.SetAttribute("Kit", List[i][8].ToString());
+				xe1.SetAttribute("Kit_id", List[i][9].ToString());
 				root.AppendChild(xe1);
 				xmlDoc.Save(@"Profile\PlantData.xml");
 			}
