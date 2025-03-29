@@ -2711,8 +2711,8 @@ namespace KartRider
 										i = 12;
 										break;
 								}
-								short Position = existingParts[i];
-								KartExcData.AddPartsList(kart, sn, Item_Cat_Id, (short)Position, V2Spec.GetGrade((byte)Position), V2Spec.Get12Parts(Position));
+								short Default = existingParts[i];
+								KartExcData.AddPartsList(kart, sn, Item_Cat_Id, Default, V2Spec.GetGrade((byte)Default), V2Spec.Get12Parts(Default));
 							}
 							KartExcData.AddPartsList(kart, sn, Item_Cat_Id, 1, 4, 201);
 						}
