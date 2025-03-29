@@ -338,13 +338,13 @@ namespace ExcData
 						oPacket.WriteShort(-1);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][2]);
-						oPacket.WriteShort((short)(5 - tempList[f][3]));
+						oPacket.WriteShort(tempList[f][3]);
 						oPacket.WriteShort(tempList[f][5]);
-						oPacket.WriteShort((short)(5 - tempList[f][6]));
+						oPacket.WriteShort(tempList[f][6]);
 						oPacket.WriteShort(tempList[f][8]);
-						oPacket.WriteShort((short)(5 - tempList[f][9]));
+						oPacket.WriteShort(tempList[f][9]);
 						oPacket.WriteShort(tempList[f][11]);
-						oPacket.WriteShort((short)(5 - tempList[f][12]));
+						oPacket.WriteShort(tempList[f][12]);
 						oPacket.WriteShort(tempList[f][14]);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][15]);
