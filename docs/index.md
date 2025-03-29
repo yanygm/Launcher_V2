@@ -15,7 +15,7 @@
 [![GitHub contributors](https://img.shields.io/github/contributors/yanygm/Launcher_V2.svg)](https://github.com/yanygm/Launcher_V2/graphs/contributors)
 [![GitHub Actions - Publish](https://img.shields.io/github/actions/workflow/status/yanygm/Launcher_V2/Publish.yml?branch=main)](https://github.com/yanygm/Launcher_V2/actions/workflows/Publish.yml)
 
-[跑跑資訊站](https://kartinfo.me/thread-9369-1-1.html)
+[跑跑資訊站](https://kartinfo.me/thread-9369-1-1.html)论坛关于该启动器的链接
 
 ## 简介
 
@@ -27,6 +27,8 @@
 
 - [功能](./feature.md)
 - [安装](./installation.md)
-- [使用方法](./how_to_use.md)
+- [使用方法](./how-to-use.md)
 
-如果在使用过程中出现问题，请提交 [issue](https://github.com/yanygm/Launcher_V2/issues "issue tracker")
+如果在使用过程中出现问题，请见[常见问题及解答](./FAQ.md)。
+
+[更新日志](./changelog.md)

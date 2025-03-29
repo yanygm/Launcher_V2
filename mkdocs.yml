@@ -43,4 +43,6 @@ nav:
   - 主页: index.md
   - 功能介绍: feature.md
   - 安装: installation.md
-  - 使用: how_to_use.md
+  - 使用: how-to-use.md
+  - 常见问题及解答: FAQ.md
+  - 更新日志: changelog.md

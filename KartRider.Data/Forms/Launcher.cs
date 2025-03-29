@@ -28,13 +28,15 @@ namespace KartRider
         public string profilePath = null;
         public static string KartRider = "KartRider.exe";
         public static string pinFile = "KartRider.pin";
-        private Button Start_Button;
+        private Button Launch_Button;
         private Button GetKart_Button;
-        private Label label_DeveloperName;
-        private ComboBox comboBox1;
-        private LinkLabel linkLabel_kartinfo;
-        private LinkLabel linkLabel_ghrepo;
+        private Label label_GameVersion;
+        private ComboBox speed;
+        private LinkLabel link_kartinfo;
+        private LinkLabel link_ghrepo;
         private Label choose_speed;
+        private LinkLabel link_docs;
+        private Label label_ClientVersion;
         private Label MinorVersion;
 
         public Launcher()
@@ -44,25 +46,27 @@ namespace KartRider
 
         private void InitializeComponent()
         {
-            Start_Button = new Button();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Launcher));
+            Launch_Button = new Button();
             GetKart_Button = new Button();
-            label_DeveloperName = new Label();
+            label_ClientVersion = new Label();
             MinorVersion = new Label();
-            comboBox1 = new ComboBox();
-            linkLabel_kartinfo = new LinkLabel();
-            linkLabel_ghrepo = new LinkLabel();
+            speed = new ComboBox();
+            link_kartinfo = new LinkLabel();
+            link_ghrepo = new LinkLabel();
             choose_speed = new Label();
+            link_docs = new LinkLabel();
             SuspendLayout();
             // 
-            // Start_Button
+            // Launch_Button
             // 
-            Start_Button.Location = new Point(122, 92);
-            Start_Button.Name = "Start_Button";
-            Start_Button.Size = new Size(123, 76);
-            Start_Button.TabIndex = 364;
-            Start_Button.Text = "启动游戏";
-            Start_Button.UseVisualStyleBackColor = true;
-            Start_Button.Click += Start_Button_Click;
+            Launch_Button.Location = new Point(122, 92);
+            Launch_Button.Name = "Launch_Button";
+            Launch_Button.Size = new Size(123, 67);
+            Launch_Button.TabIndex = 364;
+            Launch_Button.Text = "启动游戏";
+            Launch_Button.UseVisualStyleBackColor = true;
+            Launch_Button.Click += Start_Button_Click;
             // 
             // GetKart_Button
             // 
@@ -74,17 +78,17 @@ namespace KartRider
             GetKart_Button.UseVisualStyleBackColor = true;
             GetKart_Button.Click += GetKart_Button_Click;
             // 
-            // label_DeveloperName
+            // label_ClientVersion
             // 
-            label_DeveloperName.AutoSize = true;
-            label_DeveloperName.BackColor = SystemColors.Control;
-            label_DeveloperName.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label_DeveloperName.ForeColor = Color.Blue;
-            label_DeveloperName.Location = new Point(2, 160);
-            label_DeveloperName.Name = "label_DeveloperName";
-            label_DeveloperName.Size = new Size(53, 12);
-            label_DeveloperName.TabIndex = 367;
-            label_DeveloperName.Text = "Version:";
+            label_ClientVersion.AutoSize = true;
+            label_ClientVersion.BackColor = SystemColors.Control;
+            label_ClientVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            label_ClientVersion.ForeColor = Color.Blue;
+            label_ClientVersion.Location = new Point(2, 160);
+            label_ClientVersion.Name = "label_ClientVersion";
+            label_ClientVersion.Size = new Size(95, 12);
+            label_ClientVersion.TabIndex = 367;
+            label_ClientVersion.Text = "Client Version:";
             // 
             // MinorVersion
             // 
@@ -92,45 +96,45 @@ namespace KartRider
             MinorVersion.BackColor = SystemColors.Control;
             MinorVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             MinorVersion.ForeColor = Color.Red;
-            MinorVersion.Location = new Point(55, 160);
+            MinorVersion.Location = new Point(100, 160);
             MinorVersion.Name = "MinorVersion";
             MinorVersion.Size = new Size(0, 12);
             MinorVersion.TabIndex = 367;
             // 
-            // comboBox1
+            // speed
             // 
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "统合 S1.5", "低速 S0", "普通 S1", "快速 S2", "高速 S3" });
-            comboBox1.Location = new Point(122, 12);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(123, 20);
-            comboBox1.TabIndex = 368;
-            comboBox1.Text = "统合 S1.5";
-            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            speed.FormattingEnabled = true;
+            speed.Items.AddRange(new object[] { "统合 S1.5", "低速 S0", "普通 S1", "快速 S2", "高速 S3" });
+            speed.Location = new Point(122, 12);
+            speed.Name = "speed";
+            speed.Size = new Size(123, 20);
+            speed.TabIndex = 368;
+            speed.Text = "统合 S1.5";
+            speed.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
-            // linkLabel_kartinfo
+            // link_kartinfo
             // 
-            linkLabel_kartinfo.AutoSize = true;
-            linkLabel_kartinfo.LinkColor = Color.Gray;
-            linkLabel_kartinfo.Location = new Point(2, 124);
-            linkLabel_kartinfo.Name = "linkLabel_kartinfo";
-            linkLabel_kartinfo.Size = new Size(65, 12);
-            linkLabel_kartinfo.TabIndex = 371;
-            linkLabel_kartinfo.TabStop = true;
-            linkLabel_kartinfo.Text = "跑跑資訊站";
-            linkLabel_kartinfo.LinkClicked += linkLabel_kartinfo_LinkClicked;
+            link_kartinfo.AutoSize = true;
+            link_kartinfo.LinkColor = Color.Gray;
+            link_kartinfo.Location = new Point(2, 124);
+            link_kartinfo.Name = "link_kartinfo";
+            link_kartinfo.Size = new Size(65, 12);
+            link_kartinfo.TabIndex = 371;
+            link_kartinfo.TabStop = true;
+            link_kartinfo.Text = "跑跑資訊站";
+            link_kartinfo.LinkClicked += linkLabel_kartinfo_LinkClicked;
             // 
-            // linkLabel_ghrepo
+            // link_ghrepo
             // 
-            linkLabel_ghrepo.AutoSize = true;
-            linkLabel_ghrepo.LinkColor = Color.Gray;
-            linkLabel_ghrepo.Location = new Point(2, 136);
-            linkLabel_ghrepo.Name = "linkLabel_ghrepo";
-            linkLabel_ghrepo.Size = new Size(65, 12);
-            linkLabel_ghrepo.TabIndex = 372;
-            linkLabel_ghrepo.TabStop = true;
-            linkLabel_ghrepo.Text = "源代码仓库";
-            linkLabel_ghrepo.LinkClicked += linkLabel_ghrepo_LinkClicked;
+            link_ghrepo.AutoSize = true;
+            link_ghrepo.LinkColor = Color.Gray;
+            link_ghrepo.Location = new Point(2, 136);
+            link_ghrepo.Name = "link_ghrepo";
+            link_ghrepo.Size = new Size(65, 12);
+            link_ghrepo.TabIndex = 372;
+            link_ghrepo.TabStop = true;
+            link_ghrepo.Text = "源代码仓库";
+            link_ghrepo.LinkClicked += linkLabel_ghrepo_LinkClicked;
             // 
             // choose_speed
             // 
@@ -140,7 +144,18 @@ namespace KartRider
             choose_speed.Size = new Size(65, 12);
             choose_speed.TabIndex = 373;
             choose_speed.Text = "选择速度：";
-            choose_speed.Click += label1_Click;
+            // 
+            // link_docs
+            // 
+            link_docs.AutoSize = true;
+            link_docs.LinkColor = Color.Gray;
+            link_docs.Location = new Point(2, 112);
+            link_docs.Name = "link_docs";
+            link_docs.Size = new Size(53, 12);
+            link_docs.TabIndex = 374;
+            link_docs.TabStop = true;
+            link_docs.Text = "说明文档";
+            link_docs.LinkClicked += linkLabel1_LinkClicked;
             // 
             // Launcher
             // 
@@ -148,18 +163,19 @@ namespace KartRider
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             ClientSize = new Size(257, 180);
+            Controls.Add(link_docs);
             Controls.Add(choose_speed);
-            Controls.Add(linkLabel_ghrepo);
-            Controls.Add(linkLabel_kartinfo);
-            Controls.Add(comboBox1);
+            Controls.Add(link_ghrepo);
+            Controls.Add(link_kartinfo);
+            Controls.Add(speed);
             Controls.Add(MinorVersion);
-            Controls.Add(label_DeveloperName);
+            Controls.Add(label_ClientVersion);
             Controls.Add(GetKart_Button);
-            Controls.Add(Start_Button);
+            Controls.Add(Launch_Button);
             Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
-			Icon = Resources.icon;
             Name = "Launcher";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Launcher";
@@ -247,7 +263,7 @@ namespace KartRider
                         }
                     }
                     File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
-                    Start_Button.Enabled = true;
+                    Launch_Button.Enabled = true;
                     Launcher.GetKart = false;
                     string str = this.profilePath;
                     string[] text = new string[] { "<?xml version='1.0' encoding='UTF-16'?>\r\n<profile>\r\n<username>", SetRider.UserID, "</username>\r\n</profile>" };
@@ -262,7 +278,7 @@ namespace KartRider
                     {
                         Process.Start(startInfo);
                         Thread.Sleep(1000);
-                        Start_Button.Enabled = true;
+                        Launch_Button.Enabled = true;
                         Launcher.GetKart = true;
                     }
                     catch (System.ComponentModel.Win32Exception ex)
@@ -544,48 +560,67 @@ namespace KartRider
             return result;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) // choose speed type
         {
-            if (comboBox1.SelectedItem != null)
+            if (speed.SelectedItem != null)
             {
-                Console.WriteLine(comboBox1.SelectedItem.ToString());
-                if (comboBox1.SelectedItem.ToString() == "统合 S1.5")
+                string usrChooseSpd = speed.SelectedItem.ToString();
+                Console.WriteLine(usrChooseSpd);
+                if (usrChooseSpd == "统合 S1.5" || usrChooseSpd == "S1.5" || usrChooseSpd == "统合")
                 {
                     config.SpeedType = 7;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "S0")
+                else if (usrChooseSpd == "低速 S0" || usrChooseSpd == "S0" || usrChooseSpd == "低速")
                 {
                     config.SpeedType = 3;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "S1")
+                else if (usrChooseSpd == "普通 S1" || usrChooseSpd == "S1" || usrChooseSpd == "普通")
                 {
                     config.SpeedType = 0;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "S2")
+                else if (usrChooseSpd == "快速 S2" || usrChooseSpd == "S2" || usrChooseSpd == "快速")
                 {
                     config.SpeedType = 1;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "S3")
+                else if (usrChooseSpd == "高速 S3" || usrChooseSpd == "S3" || usrChooseSpd == "高速")
                 {
                     config.SpeedType = 2;
+                }
+                else
+                {
+                    Console.WriteLine("Unknown speed type, switched to default");
+                    config.SpeedType = 7;
                 }
             }
         }
 
         private void linkLabel_kartinfo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            linkLabel_kartinfo.LinkVisited = true;
+            link_kartinfo.LinkVisited = true;
             Process.Start("cmd", "/c start https://kartinfo.me/thread-9369-1-1.html");
         }
 
         private void linkLabel_ghrepo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            linkLabel_ghrepo.LinkVisited = true;
+            link_ghrepo.LinkVisited = true;
             Process.Start("cmd", "/c start https://github.com/yanygm/Launcher_V2");
         }
 
-        private void label1_Click(object sender, EventArgs e)
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            link_ghrepo.LinkVisited = true;
+            Process.Start("cmd", "/c start https://themagicflute.github.io/Launcher_V2");
+            /**
+             * 临时链接，因为该 PR #2 尚未被 merge ，所以说明文档为 "TheMagicFlute/patch"
+             * 下所 deploy 的版本。
+             * 
+             * Merge 提示：
+             *      1. 先 merge PR#2
+             *      2. 到 setting 的 Pages 中把 deploy 的分支设置为"gh-pages"（deploy工作流之后会自动把网页部署到该分支）
+             *      3. ok 等待即可
+             */
+            // merge 之后就可以改成下方的这行链接
+            // Process.Start("cmd", "/c start https://yanygm.github.io/Launcher_V2");
 
         }
     }
