@@ -335,7 +335,7 @@ namespace KartRider
                         listCount = lis.Count;
                     }
                     oPacket.WriteInt(listCount); //AI count
-                    XmlNodeList Data = doc.GetElementsByTagName("AiData");
+                    XmlNodeList Data = doc.SelectNodes("//*[starts-with(name(), 'Ai') and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') and not(contains(name(), 'data'))]");
                     if (Data.Count > 0)
                     {
                         for (int i = 0; i < listCount; i++)
@@ -419,7 +419,7 @@ namespace KartRider
                     }
                     XmlElement element = xmlDoc.CreateElement("Ai" + unk1.ToString());
                     element.SetAttribute("character", "1");
-                    element.SetAttribute("rid", "0");
+                    element.SetAttribute("rid", unk1.ToString());
                     element.SetAttribute("kart", "1508");
                     element.SetAttribute("balloon", "0");
                     element.SetAttribute("headBand", "0");
