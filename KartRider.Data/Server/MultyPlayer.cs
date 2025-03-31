@@ -537,42 +537,10 @@ namespace KartRider
             XmlNode ai5 = doc.SelectSingleNode("//Ai5");
             XmlNode ai6 = doc.SelectSingleNode("//Ai6");
             XmlNode ai7 = doc.SelectSingleNode("//Ai7");
-            if (ai4 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai4;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
             if (ai1 != null)
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai1;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai5 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai5;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
@@ -601,10 +569,10 @@ namespace KartRider
             {
                 outPacket.WriteInt(0);
             }
-            if (ai6 != null)
+            if (ai3 != null)
             {
                 outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai6;
+                XmlElement xe = (XmlElement)ai3;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
@@ -617,10 +585,42 @@ namespace KartRider
             {
                 outPacket.WriteInt(0);
             }
-            if (ai3 != null)
+            if (ai4 != null)
             {
                 outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai3;
+                XmlElement xe = (XmlElement)ai4;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai5 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai5;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai6 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai6;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
