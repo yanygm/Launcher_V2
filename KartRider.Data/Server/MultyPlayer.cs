@@ -416,7 +416,7 @@ namespace KartRider
                         oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                         RouterListener.MySession.Client.Send(oPacket);
                     }
-                    XmlElement element = xmlDoc.CreateElement("//Ai" + unk1.ToString());
+                    XmlElement element = xmlDoc.CreateElement("Ai" + unk1.ToString());
                     element.SetAttribute("character", "1");
                     element.SetAttribute("rid", "0");
                     element.SetAttribute("kart", "1508");
