@@ -528,6 +528,7 @@ namespace KartRider
 
             // AI Data
             XmlDocument doc = new XmlDocument();
+            outPacket.WriteShort(0);
             doc.Load(@"Profile\AI.xml");
             XmlNode ai1 = doc.SelectSingleNode("//Ai1");
             XmlNode ai2 = doc.SelectSingleNode("//Ai2");
@@ -538,7 +539,6 @@ namespace KartRider
             XmlNode ai7 = doc.SelectSingleNode("//Ai7");
             if (ai4 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai4;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -547,7 +547,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -556,7 +555,6 @@ namespace KartRider
             }
             if (ai1 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai1;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -565,7 +563,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -574,7 +571,6 @@ namespace KartRider
             }
             if (ai5 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai5;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -583,7 +579,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -592,7 +587,6 @@ namespace KartRider
             }
             if (ai2 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai2;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -601,7 +595,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -610,7 +603,6 @@ namespace KartRider
             }
             if (ai6 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai6;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -619,7 +611,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -628,7 +619,6 @@ namespace KartRider
             }
             if (ai3 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai3;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -637,7 +627,6 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
@@ -646,7 +635,6 @@ namespace KartRider
             }
             if (ai7 != null)
             {
-                outPacket.WriteShort(0);
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai7;
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
@@ -655,14 +643,13 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteShort(0);
                 outPacket.WriteByte(0);
             }
             else
             {
                 outPacket.WriteInt(0);
             }
-            outPacket.WriteBytes(new byte[38]);
+            outPacket.WriteBytes(new byte[36]);
             if (ai4 != null)
             {
                 outPacket.WriteInt(4);
