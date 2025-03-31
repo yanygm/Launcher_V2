@@ -649,7 +649,7 @@ namespace KartRider
             {
                 outPacket.WriteInt(0);
             }
-            outPacket.WriteBytes(new byte[32]);
+            outPacket.WriteBytes(new byte[36]);
             if (ai1 != null)
             {
                 outPacket.WriteInt(1);
