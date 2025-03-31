@@ -21,7 +21,7 @@ namespace KartRider
         static byte[] RoomUnkBytes;
         static uint ArrivalTicks, EndTicks, SettleTicks;
         static int channeldata2 = 0;
-        static uint track = 0;
+        static uint track = Adler32Helper.GenerateAdler32_UNICODE("village_R01", 0);
         public static uint BootTicksPrev, BootTicksNow;
         public static uint StartTicks = 0;
         static uint FinishTime;
