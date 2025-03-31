@@ -396,6 +396,7 @@ namespace KartRider
                     {
                         parentNode.RemoveChild(ai);
                     }
+                    xmlDoc.Save(@"Profile\AI.xml");
                 }
                 else
                 {
@@ -428,6 +429,7 @@ namespace KartRider
                     {
                         rootNode.AppendChild(element);
                     }
+                    xmlDoc.Save(@"Profile\AI.xml");
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
                 {
