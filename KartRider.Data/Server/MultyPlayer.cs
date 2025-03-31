@@ -329,13 +329,13 @@ namespace KartRider
                     XmlDocument doc = new XmlDocument();
                     doc.Load(@"Profile\AI.xml");
                     int listCount = 0;
-                    XmlNodeList lis = doc.GetElementsByTagName("AiList");
+                    XmlNodeList lis = doc.SelectNodes("//*[starts-with(name(), 'Ai') and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') and not(contains(name(), 'data'))]");
                     if (lis.Count > 0)
                     {
                         listCount = lis.Count;
                     }
                     oPacket.WriteInt(listCount); //AI count
-                    XmlNodeList Data = doc.SelectNodes("//*[starts-with(name(), 'Ai') and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') and not(contains(name(), 'data'))]");
+                    XmlNodeList Data = doc.GetElementsByTagName("AiData");
                     if (Data.Count > 0)
                     {
                         for (int i = 0; i < listCount; i++)
