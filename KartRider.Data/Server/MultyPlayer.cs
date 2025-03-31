@@ -329,7 +329,7 @@ namespace KartRider
                     XmlDocument doc = new XmlDocument();
                     doc.Load(@"Profile\AI.xml");
                     int listCount = 0;
-                    XmlNodeList lis = doc.GetElementsByTagName("AiList");
+                    XmlNodeList lis = doc.SelectNodes("//*[starts-with(name(), 'Ai') and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') and not(contains(name(), 'data'))]");
                     if (lis.Count > 0)
                     {
                         listCount = lis.Count;
@@ -378,22 +378,58 @@ namespace KartRider
             {
                 int unk1 = iPacket.ReadInt();
                 Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
-                using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(@"Profile\AI.xml");
+                XmlNode ai = xmlDoc.SelectSingleNode("//Ai" + unk1.ToString());
+                if (ai != null)
                 {
-                    oPacket.WriteInt(0);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteInt(unk1);
-                    oPacket.WriteShort(1);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteShort(1508);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteShort(0);
-                    oPacket.WriteByte(0);
-                    oPacket.WriteHexString("FFFFFFFF01000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                    RouterListener.MySession.Client.Send(oPacket);
+                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    {
+                        oPacket.WriteInt(1);
+                        oPacket.WriteByte(1);
+                        oPacket.WriteInt(unk1);
+                        oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    XmlNode parentNode = ai.ParentNode;
+                    if (parentNode != null)
+                    {
+                        parentNode.RemoveChild(ai);
+                    }
+                    xmlDoc.Save(@"Profile\AI.xml");
+                }
+                else
+                {
+                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteByte(1);
+                        oPacket.WriteInt(unk1);
+                        oPacket.WriteShort(1);
+                        oPacket.WriteShort((short)unk1);
+                        oPacket.WriteShort(1508);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    XmlElement element = xmlDoc.CreateElement("Ai" + unk1.ToString());
+                    element.SetAttribute("character", "1");
+                    element.SetAttribute("rid", unk1.ToString());
+                    element.SetAttribute("kart", "1508");
+                    element.SetAttribute("balloon", "0");
+                    element.SetAttribute("headBand", "0");
+                    element.SetAttribute("goggle", "0");
+                    XmlNode rootNode = xmlDoc.DocumentElement;
+                    if (rootNode != null)
+                    {
+                        rootNode.AppendChild(element);
+                    }
+                    xmlDoc.Save(@"Profile\AI.xml");
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
                 {
@@ -492,48 +528,181 @@ namespace KartRider
 
             // AI Data
             XmlDocument doc = new XmlDocument();
+            outPacket.WriteShort(0);
             doc.Load(@"Profile\AI.xml");
-            int listCount = 7;
-            XmlNodeList lis = doc.GetElementsByTagName("AiList");
-            if (lis.Count > 0)
+            XmlNode ai1 = doc.SelectSingleNode("//Ai1");
+            XmlNode ai2 = doc.SelectSingleNode("//Ai2");
+            XmlNode ai3 = doc.SelectSingleNode("//Ai3");
+            XmlNode ai4 = doc.SelectSingleNode("//Ai4");
+            XmlNode ai5 = doc.SelectSingleNode("//Ai5");
+            XmlNode ai6 = doc.SelectSingleNode("//Ai6");
+            XmlNode ai7 = doc.SelectSingleNode("//Ai7");
+            if (ai4 != null)
             {
-                listCount = listCount - lis.Count;
-                foreach (XmlNode xn in lis)
-                {
-                    outPacket.WriteShort(0);
-                    outPacket.WriteInt(7);
-                    XmlElement xe = (XmlElement)xn;
-                    outPacket.WriteShort(short.Parse(xe.GetAttribute("a")));
-                    outPacket.WriteShort(short.Parse(xe.GetAttribute("b")));
-                    outPacket.WriteShort(short.Parse(xe.GetAttribute("c")));
-                    outPacket.WriteShort(short.Parse(xe.GetAttribute("d")));
-                    outPacket.WriteShort(short.Parse(xe.GetAttribute("e")));
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("f")));
-                }
-                if (listCount > 0)
-                {
-                    for (int i = 0; i < listCount; i++)
-                    {
-                        outPacket.WriteInt(0);
-                    }
-                }
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai4;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
             }
             else
             {
-                for (int i = 0; i < listCount; i++)
-                {
-                    outPacket.WriteInt(0);
-                }
+                outPacket.WriteInt(0);
             }
-            outPacket.WriteBytes(new byte[38]);
-            if ((7 - listCount) > 0)
+            if (ai1 != null)
             {
-                for (uint i = 0; i < (7 - listCount); i++)
-                {
-                    outPacket.WriteUInt(i + 1);
-                }
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai1;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
             }
-            for (int i = 0; i < listCount; i++)
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai5 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai5;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai2 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai2;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai6 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai6;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai3 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai3;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            if (ai7 != null)
+            {
+                outPacket.WriteInt(7);
+                XmlElement xe = (XmlElement)ai7;
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteByte(0);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
+            outPacket.WriteBytes(new byte[36]);
+            if (ai4 != null)
+            {
+                outPacket.WriteInt(4);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai1 != null)
+            {
+                outPacket.WriteInt(1);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai5 != null)
+            {
+                outPacket.WriteInt(5);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai2 != null)
+            {
+                outPacket.WriteInt(2);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai6 != null)
+            {
+                outPacket.WriteInt(6);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai3 != null)
+            {
+                outPacket.WriteInt(3);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai7 != null)
+            {
+                outPacket.WriteInt(7);
+            }
+            else
             {
                 outPacket.WriteHexString("FFFFFFFF");
             }
