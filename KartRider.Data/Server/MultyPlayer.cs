@@ -429,7 +429,7 @@ namespace KartRider
                     XmlNode rootNode = xmlDoc.DocumentElement;
                     if (rootNode != null)
                     {
-                        rootNode.AppendChild(ai8Element);
+                        rootNode.AppendChild(element);
                     }
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
