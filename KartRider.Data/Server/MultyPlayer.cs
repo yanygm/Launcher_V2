@@ -381,7 +381,7 @@ namespace KartRider
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(@"Profile\AI.xml");
                 XmlNode ai = xmlDoc.SelectSingleNode("//Ai" + unk1.ToString());
-                if (ai.Count > 0)
+                if (ai != null)
                 {
                     using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
                     {
@@ -391,13 +391,10 @@ namespace KartRider
                         oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                         RouterListener.MySession.Client.Send(oPacket);
                     }
-                    if (ai != null)
+                    XmlNode parentNode = ai.ParentNode;
+                    if (parentNode != null)
                     {
-                        XmlNode parentNode = ai.ParentNode;
-                        if (parentNode != null)
-                        {
-                            parentNode.RemoveChild(ai);
-                        }
+                        parentNode.RemoveChild(ai);
                     }
                 }
                 else
