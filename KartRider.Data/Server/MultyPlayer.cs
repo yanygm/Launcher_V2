@@ -649,26 +649,10 @@ namespace KartRider
             {
                 outPacket.WriteInt(0);
             }
-            outPacket.WriteBytes(new byte[36]);
-            if (ai4 != null)
-            {
-                outPacket.WriteInt(4);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
+            outPacket.WriteBytes(new byte[32]);
             if (ai1 != null)
             {
                 outPacket.WriteInt(1);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai5 != null)
-            {
-                outPacket.WriteInt(5);
             }
             else
             {
@@ -682,17 +666,33 @@ namespace KartRider
             {
                 outPacket.WriteHexString("FFFFFFFF");
             }
-            if (ai6 != null)
+            if (ai3 != null)
             {
-                outPacket.WriteInt(6);
+                outPacket.WriteInt(3);
             }
             else
             {
                 outPacket.WriteHexString("FFFFFFFF");
             }
-            if (ai3 != null)
+            if (ai4 != null)
             {
-                outPacket.WriteInt(3);
+                outPacket.WriteInt(4);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai5 != null)
+            {
+                outPacket.WriteInt(5);
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
+            }
+            if (ai6 != null)
+            {
+                outPacket.WriteInt(6);
             }
             else
             {
