@@ -26,10 +26,8 @@ namespace KartRider
 
 		static RouterListener()
 		{
-			string str = "0.0.0.0";
-			RouterListener.sIP = str;
-			int str1 = 39312;
-			RouterListener.port = str1;
+			RouterListener.sIP = "0.0.0.0";
+			RouterListener.port = 39312;
 		}
 
 		public static int[] DataTime()
