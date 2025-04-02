@@ -207,7 +207,7 @@ namespace KartRider
                     oPacket.WriteInt(0);
                     //oPacket.WriteInt(channeldata1);
                     oPacket.WriteInt(4);
-                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), 39312);
+                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.port);
                     RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
                     RouterListener.MySession.Client.Send(oPacket);
                 }
@@ -220,8 +220,8 @@ namespace KartRider
                 {
                     //oPacket.WriteHexString("01 3d a4 3d 49 8f 99 3d a4 3d 49 90 99");
                     oPacket.WriteByte(1);
-                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
-                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39312);
+                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39311);
+                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39312);
                     RouterListener.MySession.Client.Send(oPacket);
                 }
                 return;
