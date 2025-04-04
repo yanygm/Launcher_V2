@@ -2260,11 +2260,13 @@ namespace KartRider
 							outPacket.WriteInt(5);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);
-							outPacket.WriteInt(2);
+							outPacket.WriteInt(3);
 							outPacket.WriteString("name");
 							outPacket.WriteString("dynamicPpl");
 							outPacket.WriteString("enable");
-							outPacket.WriteString("false");
+							outPacket.WriteString("true");
+							outPacket.WriteString("visible");
+							outPacket.WriteString("true");
 							outPacket.WriteInt(1);
 							outPacket.WriteString("region");
 							outPacket.WriteInt(0);
