@@ -1903,13 +1903,13 @@ namespace KartRider
 						if (ItemType == 3)
 						{
 							XmlDocument doc = new XmlDocument();
-							doc.Load(@"Profile\NewKart.xml");
+							doc.Load(GetKart.NewKart_LoadFile);
 							XmlElement elementToRemove = doc.SelectSingleNode("//Kart[@id='" + ItemID + "' and @sn='" + SN + "']") as XmlElement;
 							if (elementToRemove != null)
 							{
 								elementToRemove.ParentNode.RemoveChild(elementToRemove);
 							}
-							doc.Save(@"Profile\NewKart.xml");
+							doc.Save(GetKart.NewKart_LoadFile);
 						}
 						return;
 					}

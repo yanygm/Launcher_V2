@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using ExcData;
@@ -227,8 +228,13 @@ namespace KartRider
 			Kart.wallCollGaugeMaxVelLoss = float.Parse(AddList[67]);
 			Kart.wallCollGaugeMinVelBound = float.Parse(AddList[68]);
 			Kart.wallCollGaugeMinVelLoss = float.Parse(AddList[69]);
-			Kart.modelMaxX = float.Parse(AddList[70]);
-			Kart.modelMaxY = float.Parse(AddList[71]);
+			XDocument xdoc = XDocument.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml");
+			var bodyParams = xdoc.Descendants("id" + id.ToString());
+			foreach (var item in bodyParams)
+			{
+				Kart.modelMaxX = item.Attribute("modelMaxX") != null ? float.Parse(item.Attribute("modelMaxX").Value) : float.Parse(AddList[70]);
+				Kart.modelMaxY = item.Attribute("modelMaxY") != null ? float.Parse(item.Attribute("modelMaxY").Value) : float.Parse(AddList[71]);
+			}
 			Kart.defaultExceedType = int.Parse(AddList[72]);
 			Kart.defaultEngineType = byte.Parse(AddList[73]);
 			Kart.EngineType = 1;

@@ -12,6 +12,12 @@ namespace ExcData
 {
 	public static class KartExcData
 	{
+		public static string TuneData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml";
+		public static string PlantData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml";
+		public static string LevelData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml";
+		public static string PartsData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\PartsData.xml";
+		public static string Parts12Data_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Parts12Data.xml";
+		public static string Level12Data_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Level12Data.xml";
 		public static List<List<short>> TuneList = new List<List<short>>();
 		public static List<List<short>> PlantList = new List<List<short>>();
 		public static List<List<short>> LevelList = new List<List<short>>();
@@ -391,8 +397,8 @@ namespace ExcData
 
 		public static void SaveTuneList(List<List<short>> List)
 		{
-			File.Delete(@"Profile\TuneData.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\TuneData.xml", System.Text.Encoding.UTF8);
+			File.Delete(TuneData_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(TuneData_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("TuneData");
@@ -401,7 +407,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\TuneData.xml");
+				xmlDoc.Load(TuneData_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("TuneData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -414,7 +420,7 @@ namespace ExcData
 				xe1.SetAttribute("slot2", List[i][7].ToString());
 				xe1.SetAttribute("count2", List[i][8].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\TuneData.xml");
+				xmlDoc.Save(TuneData_LoadFile);
 			}
 		}
 
@@ -473,8 +479,8 @@ namespace ExcData
 
 		public static void SavePlantList(List<List<short>> List)
 		{
-			File.Delete(@"Profile\PlantData.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\PlantData.xml", System.Text.Encoding.UTF8);
+			File.Delete(PlantData_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(PlantData_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("PlantData");
@@ -483,7 +489,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\PlantData.xml");
+				xmlDoc.Load(PlantData_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("PlantData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -497,7 +503,7 @@ namespace ExcData
 				xe1.SetAttribute("Kit", List[i][8].ToString());
 				xe1.SetAttribute("Kit_id", List[i][9].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\PlantData.xml");
+				xmlDoc.Save(PlantData_LoadFile);
 			}
 		}
 
@@ -524,8 +530,8 @@ namespace ExcData
 
 		public static void SaveLevelList(List<List<short>> List)
 		{
-			File.Delete(@"Profile\LevelData.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\LevelData.xml", System.Text.Encoding.UTF8);
+			File.Delete(LevelData_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(LevelData_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("LevelData");
@@ -534,7 +540,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\LevelData.xml");
+				xmlDoc.Load(LevelData_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("LevelData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -547,7 +553,7 @@ namespace ExcData
 				xe1.SetAttribute("v4", List[i][7].ToString());
 				xe1.SetAttribute("Effect", List[i][8].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\LevelData.xml");
+				xmlDoc.Save(LevelData_LoadFile);
 			}
 		}
 
@@ -717,8 +723,8 @@ namespace ExcData
 
 		public static void SavePartsList(List<List<short>> List)
 		{
-			File.Delete(@"Profile\PartsData.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\PartsData.xml", System.Text.Encoding.UTF8);
+			File.Delete(PartsData_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(PartsData_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("PartsData");
@@ -727,7 +733,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\PartsData.xml");
+				xmlDoc.Load(PartsData_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("PartsData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -747,14 +753,14 @@ namespace ExcData
 				xe1.SetAttribute("Coating", List[i][14].ToString());
 				xe1.SetAttribute("TailLamp", List[i][15].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\PartsData.xml");
+				xmlDoc.Save(PartsData_LoadFile);
 			}
 		}
 
 		public static void SaveParts12List(List<List<short>> List)
 		{
-			File.Delete(@"Profile\Parts12Data.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\Parts12Data.xml", System.Text.Encoding.UTF8);
+			File.Delete(Parts12Data_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(Parts12Data_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("PartsData");
@@ -763,7 +769,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\Parts12Data.xml");
+				xmlDoc.Load(Parts12Data_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("PartsData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -785,7 +791,7 @@ namespace ExcData
 				xe1.SetAttribute("BoosterEffect", List[i][16].ToString());
 				xe1.SetAttribute("ExceedType", List[i][17].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\Parts12Data.xml");
+				xmlDoc.Save(Parts12Data_LoadFile);
 			}
 		}
 
@@ -846,8 +852,8 @@ namespace ExcData
 
 		public static void SaveTuning12List(List<List<short>> List)
 		{
-			File.Delete(@"Profile\Level12Data.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\Level12Data.xml", System.Text.Encoding.UTF8);
+			File.Delete(Level12Data_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(Level12Data_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("LevelData");
@@ -856,7 +862,7 @@ namespace ExcData
 			for (var i = 0; i < List.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\Level12Data.xml");
+				xmlDoc.Load(Level12Data_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("LevelData");
 				XmlElement xe1 = xmlDoc.CreateElement("Kart");
 				xe1.SetAttribute("id", List[i][0].ToString());
@@ -870,7 +876,7 @@ namespace ExcData
 				xe1.SetAttribute("SkillLevel3", List[i][8].ToString());
 				xe1.SetAttribute("Point", List[i][9].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\Level12Data.xml");
+				xmlDoc.Save(Level12Data_LoadFile);
 			}
 		}
 	}

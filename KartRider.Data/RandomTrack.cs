@@ -12,7 +12,7 @@ namespace KartRider
 	{
 		public static string GameType = "item";
 		public static string SetRandomTrack = "allRandom";
-		public static string GameTrack = "forest_I01";
+		public static string GameTrack = "village_R01";
 
 		public static string GetTrackName(uint trackId)
 		{
