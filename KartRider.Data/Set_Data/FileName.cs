@@ -6,11 +6,11 @@ namespace Set_Data
 	{
 		public static string Extension = ".ini";
 
-		public static string SetRider_LoadFile = @"Profile\Launcher\SetRider\";
-		public static string SetRiderItem_LoadFile = @"Profile\Launcher\SetRider\SetRiderItem\";
-		public static string SetMyRoom_LoadFile = @"Profile\Launcher\MyRoom\";
-		public static string SetGameOption_LoadFile = @"Profile\Launcher\GameOption\";
-		public static string config_LoadFile = @"Profile\Launcher\config\";
+		public static string SetRider_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\SetRider\";
+		public static string SetRiderItem_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\SetRider\SetRiderItem\";
+		public static string SetMyRoom_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\MyRoom\";
+		public static string SetGameOption_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\GameOption\";
+		public static string config_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\config\";
 
 		public static string SetRider_Nickname = "Set_Nickname";
 		public static string SetRider_RiderIntro = "Set_RiderIntro";

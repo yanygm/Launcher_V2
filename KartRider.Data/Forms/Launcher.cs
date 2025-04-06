@@ -25,18 +25,16 @@ namespace KartRider
         public static bool GetKart = true;
         public static short KartSN = 0;
         public string kartRiderDirectory = null;
-        public string profilePath = null;
         public static string KartRider = "KartRider.exe";
         public static string pinFile = "KartRider.pin";
-        private Button Button_Launch;
-        private Button Button_GetKart;
+        private Button Start_Button;
+        private Button GetKart_Button;
         private Label label_DeveloperName;
-        private ComboBox comboBox_Choose_Speed;
-        private Label label_Choose_Speed;
-        private Label label_Download_Dotnet80;
-        private Label label_GitHub_Repo;
-        private Label label_KartInfo;
-        private Label label_Docs;
+        private ComboBox comboBox1;
+        private Label label1;
+        private Label label2;
+        private Label label3;
+        private Label label4;
         private Label MinorVersion;
 
         public Launcher()
@@ -47,37 +45,36 @@ namespace KartRider
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Launcher));
-            Button_Launch = new Button();
-            Button_GetKart = new Button();
+            Start_Button = new Button();
+            GetKart_Button = new Button();
             label_DeveloperName = new Label();
             MinorVersion = new Label();
-            comboBox_Choose_Speed = new ComboBox();
-            label_Choose_Speed = new Label();
-            label_Download_Dotnet80 = new Label();
-            label_GitHub_Repo = new Label();
-            label_KartInfo = new Label();
-            label_Docs = new Label();
+            comboBox1 = new ComboBox();
+            label1 = new Label();
+            label2 = new Label();
+            label3 = new Label();
+            label4 = new Label();
             SuspendLayout();
             // 
-            // Button_Launch
+            // Start_Button
             // 
-            Button_Launch.Location = new Point(19, 20);
-            Button_Launch.Name = "Button_Launch";
-            Button_Launch.Size = new Size(114, 23);
-            Button_Launch.TabIndex = 364;
-            Button_Launch.Text = "启动游戏";
-            Button_Launch.UseVisualStyleBackColor = true;
-            Button_Launch.Click += Start_Button_Click;
+            Start_Button.Location = new Point(19, 20);
+            Start_Button.Name = "Start_Button";
+            Start_Button.Size = new Size(114, 23);
+            Start_Button.TabIndex = 364;
+            Start_Button.Text = "启动游戏";
+            Start_Button.UseVisualStyleBackColor = true;
+            Start_Button.Click += Start_Button_Click;
             // 
-            // Button_GetKart
+            // GetKart_Button
             // 
-            Button_GetKart.Location = new Point(19, 49);
-            Button_GetKart.Name = "Button_GetKart";
-            Button_GetKart.Size = new Size(114, 23);
-            Button_GetKart.TabIndex = 365;
-            Button_GetKart.Text = "添加道具";
-            Button_GetKart.UseVisualStyleBackColor = true;
-            Button_GetKart.Click += GetKart_Button_Click;
+            GetKart_Button.Location = new Point(19, 49);
+            GetKart_Button.Name = "GetKart_Button";
+            GetKart_Button.Size = new Size(114, 23);
+            GetKart_Button.TabIndex = 365;
+            GetKart_Button.Text = "添加道具";
+            GetKart_Button.UseVisualStyleBackColor = true;
+            GetKart_Button.Click += GetKart_Button_Click;
             // 
             // label_DeveloperName
             // 
@@ -103,71 +100,60 @@ namespace KartRider
             MinorVersion.Size = new Size(0, 12);
             MinorVersion.TabIndex = 367;
             // 
-            // comboBox_Choose_Speed
+            // comboBox1
             // 
-            comboBox_Choose_Speed.ForeColor = Color.Red;
-            comboBox_Choose_Speed.FormattingEnabled = true;
-            comboBox_Choose_Speed.Items.AddRange(new object[] { "标准", "慢速", "普通", "快速", "高速" });
-            comboBox_Choose_Speed.Location = new Point(84, 78);
-            comboBox_Choose_Speed.Name = "comboBox_Choose_Speed";
-            comboBox_Choose_Speed.Size = new Size(49, 20);
-            comboBox_Choose_Speed.TabIndex = 368;
-            comboBox_Choose_Speed.Text = "标准";
-            comboBox_Choose_Speed.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            comboBox1.ForeColor = Color.Red;
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Items.AddRange(new object[] { "标准", "慢速", "普通", "快速", "高速" });
+            comboBox1.Location = new Point(84, 78);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(49, 20);
+            comboBox1.TabIndex = 368;
+            comboBox1.Text = "标准";
+            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
-            // label_Choose_Speed
+            // label1
             // 
-            label_Choose_Speed.AutoSize = true;
-            label_Choose_Speed.ForeColor = Color.Blue;
-            label_Choose_Speed.Location = new Point(19, 82);
-            label_Choose_Speed.Name = "label_Choose_Speed";
-            label_Choose_Speed.Size = new Size(59, 12);
-            label_Choose_Speed.TabIndex = 369;
-            label_Choose_Speed.Text = "速度选择:";
+            label1.AutoSize = true;
+            label1.ForeColor = Color.Blue;
+            label1.Location = new Point(19, 82);
+            label1.Name = "label1";
+            label1.Size = new Size(59, 12);
+            label1.TabIndex = 369;
+            label1.Text = "速度选择:";
             // 
-            // label_Download_Dotnet80
+            // label2
             // 
-            label_Download_Dotnet80.AutoSize = true;
-            label_Download_Dotnet80.ForeColor = Color.Blue;
-            label_Download_Dotnet80.Location = new Point(207, 128);
-            label_Download_Dotnet80.Name = "label_Download_Dotnet80";
-            label_Download_Dotnet80.Size = new Size(47, 12);
-            label_Download_Dotnet80.TabIndex = 370;
-            label_Download_Dotnet80.Text = ".NET8.0";
-            label_Download_Dotnet80.Click += label2_Click;
+            label2.AutoSize = true;
+            label2.ForeColor = Color.Blue;
+            label2.Location = new Point(225, 132);
+            label2.Name = "label2";
+            label2.Size = new Size(29, 12);
+            label2.TabIndex = 370;
+            label2.Text = "Docs";
+            label2.Click += label2_Click;
             // 
-            // label_GitHub_Repo
+            // label3
             // 
-            label_GitHub_Repo.AutoSize = true;
-            label_GitHub_Repo.ForeColor = Color.Blue;
-            label_GitHub_Repo.Location = new Point(213, 144);
-            label_GitHub_Repo.Name = "label_GitHub_Repo";
-            label_GitHub_Repo.Size = new Size(41, 12);
-            label_GitHub_Repo.TabIndex = 371;
-            label_GitHub_Repo.Text = "GitHub";
-            label_GitHub_Repo.Click += label3_Click;
+            label3.AutoSize = true;
+            label3.ForeColor = Color.Blue;
+            label3.Location = new Point(213, 144);
+            label3.Name = "label3";
+            label3.Size = new Size(41, 12);
+            label3.TabIndex = 371;
+            label3.Text = "GitHub";
+            label3.Click += label3_Click;
             // 
-            // label_KartInfo
+            // label4
             // 
-            label_KartInfo.AutoSize = true;
-            label_KartInfo.ForeColor = Color.Blue;
-            label_KartInfo.Location = new Point(201, 160);
-            label_KartInfo.Name = "label_KartInfo";
-            label_KartInfo.Size = new Size(53, 12);
-            label_KartInfo.TabIndex = 372;
-            label_KartInfo.Text = "KartInfo";
-            label_KartInfo.Click += label4_Click;
-            // 
-            // label_Docs
-            // 
-            label_Docs.AutoSize = true;
-            label_Docs.ForeColor = Color.Blue;
-            label_Docs.Location = new Point(225, 116);
-            label_Docs.Name = "label_Docs";
-            label_Docs.Size = new Size(29, 12);
-            label_Docs.TabIndex = 373;
-            label_Docs.Text = "Docs";
-            label_Docs.Click += label_Docs_Click;
+            label4.AutoSize = true;
+            label4.ForeColor = Color.Blue;
+            label4.Location = new Point(201, 160);
+            label4.Name = "label4";
+            label4.Size = new Size(53, 12);
+            label4.TabIndex = 372;
+            label4.Text = "KartInfo";
+            label4.Click += label4_Click;
             // 
             // Launcher
             // 
@@ -175,16 +161,15 @@ namespace KartRider
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             ClientSize = new Size(257, 180);
-            Controls.Add(label_Docs);
-            Controls.Add(label_KartInfo);
-            Controls.Add(label_GitHub_Repo);
-            Controls.Add(label_Download_Dotnet80);
-            Controls.Add(label_Choose_Speed);
-            Controls.Add(comboBox_Choose_Speed);
+            Controls.Add(label4);
+            Controls.Add(label3);
+            Controls.Add(label2);
+            Controls.Add(label1);
+            Controls.Add(comboBox1);
             Controls.Add(MinorVersion);
             Controls.Add(label_DeveloperName);
-            Controls.Add(Button_GetKart);
-            Controls.Add(Button_Launch);
+            Controls.Add(GetKart_Button);
+            Controls.Add(Start_Button);
             Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -214,20 +199,13 @@ namespace KartRider
 
         private void OnLoad(object sender, EventArgs e)
         {
-            string str = Path.Combine(Environment.CurrentDirectory, "Profile", SessionGroup.Service);
-            if (!Directory.Exists(str))
-            {
-                Directory.CreateDirectory(str);
-            }
             Load_KartExcData();
             StartingLoad_ALL.StartingLoad();
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
             SetGameOption.Version = val.Header.MinorVersion;
             SetGameOption.Save_SetGameOption();
             MinorVersion.Text = SetGameOption.Version.ToString();
-            this.profilePath = Path.Combine(str, "launcher.xml");
             Console.WriteLine("Process: {0}", this.kartRiderDirectory + Launcher.KartRider);
-            Console.WriteLine("Profile: {0}", this.profilePath);
             RouterListener.Start();
         }
 
@@ -276,12 +254,9 @@ namespace KartRider
                         }
                     }
                     File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
-                    Button_Launch.Enabled = true;
+                    Start_Button.Enabled = true;
                     Launcher.GetKart = false;
-                    string str = this.profilePath;
-                    string[] text = new string[] { "<?xml version='1.0' encoding='UTF-16'?>\r\n<profile>\r\n<username>", SetRider.UserID, "</username>\r\n</profile>" };
-                    File.WriteAllText(str, string.Concat(text));
-                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:556O5Yeg5oqK55yL5ZWl")
+                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
                     {
                         WorkingDirectory = this.kartRiderDirectory,
                         UseShellExecute = true,
@@ -291,7 +266,7 @@ namespace KartRider
                     {
                         Process.Start(startInfo);
                         Thread.Sleep(1000);
-                        Button_Launch.Enabled = true;
+                        Start_Button.Enabled = true;
                         Launcher.GetKart = true;
                     }
                     catch (System.ComponentModel.Win32Exception ex)
@@ -316,15 +291,23 @@ namespace KartRider
 
         public void Load_KartExcData()
         {
-            EnsureDefaultDataFileExists(@"Profile\AI.xml", CreateAIDefaultData);
+            if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml"))
+			{
+				string ModelMax = Resources.ModelMax;
+				using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml", false))
+				{
+					streamWriter.Write(ModelMax);
+				}
+			}
+            EnsureDefaultDataFileExists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(@"Profile\NewKart.xml", LoadNewKart);
-            KartExcData.TuneList = LoadKartData(@"Profile\TuneData.xml", LoadTuneData);
-            KartExcData.PlantList = LoadKartData(@"Profile\PlantData.xml", LoadPlantData);
-            KartExcData.LevelList = LoadKartData(@"Profile\LevelData.xml", LoadLevelData);
-            KartExcData.PartsList = LoadKartData(@"Profile\PartsData.xml", LoadPartsData);
-            KartExcData.Parts12List = LoadKartData(@"Profile\Parts12Data.xml", LoadParts12Data);
-            KartExcData.Level12List = LoadKartData(@"Profile\Level12Data.xml", LoadLevel12Data);
+            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory+ @"Profile\NewKart.xml", LoadNewKart);
+            KartExcData.TuneList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml", LoadTuneData);
+            KartExcData.PlantList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml", LoadPlantData);
+            KartExcData.LevelList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml", LoadLevelData);
+            KartExcData.PartsList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PartsData.xml", LoadPartsData);
+            KartExcData.Parts12List = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\Parts12Data.xml", LoadParts12Data);
+            KartExcData.Level12List = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\Level12Data.xml", LoadLevel12Data);
         }
 
         private void EnsureDefaultDataFileExists(string filePath, Action createDefaultData)
@@ -337,7 +320,7 @@ namespace KartRider
 
         private void CreateAIDefaultData()
         {
-            using (XmlTextWriter writer = new XmlTextWriter(@"Profile\AI.xml", System.Text.Encoding.UTF8))
+            using (XmlTextWriter writer = new XmlTextWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", System.Text.Encoding.UTF8))
             {
                 writer.Formatting = Formatting.Indented;
                 writer.WriteStartDocument();
@@ -346,7 +329,7 @@ namespace KartRider
             }
 
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(@"Profile\AI.xml");
+            xmlDoc.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
             XmlNode root = xmlDoc.SelectSingleNode("AI");
             XmlElement xe2 = xmlDoc.CreateElement("AiData");
             xe2.SetAttribute("a", "1");
@@ -356,7 +339,7 @@ namespace KartRider
             xe2.SetAttribute("e", "1000");
             xe2.SetAttribute("f", "1500");
             root.AppendChild(xe2);
-            xmlDoc.Save(@"Profile\AI.xml");
+            xmlDoc.Save(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
         }
 
         private List<List<short>> LoadKartData(string filePath, Func<XmlNodeList, List<List<short>>> parseDataFunction)
@@ -564,40 +547,35 @@ namespace KartRider
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (comboBox_Choose_Speed.SelectedItem != null)
+            if (comboBox1.SelectedItem != null)
             {
-                Console.WriteLine(comboBox_Choose_Speed.SelectedItem.ToString());
-                if (comboBox_Choose_Speed.SelectedItem.ToString() == "标准")
+                Console.WriteLine(comboBox1.SelectedItem.ToString());
+                if (comboBox1.SelectedItem.ToString() == "标准")
                 {
                     config.SpeedType = 7;
                 }
-                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "慢速")
+                else if (comboBox1.SelectedItem.ToString() == "慢速")
                 {
                     config.SpeedType = 3;
                 }
-                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "普通")
+                else if (comboBox1.SelectedItem.ToString() == "普通")
                 {
                     config.SpeedType = 0;
                 }
-                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "快速")
+                else if (comboBox1.SelectedItem.ToString() == "快速")
                 {
                     config.SpeedType = 1;
                 }
-                else if (comboBox_Choose_Speed.SelectedItem.ToString() == "高速")
+                else if (comboBox1.SelectedItem.ToString() == "高速")
                 {
                     config.SpeedType = 2;
-                }
-                else
-                {
-                    Console.WriteLine("Error: Unknown speed type, switched to S1.5");
-                    config.SpeedType = 7;
                 }
             }
         }
 
         private void label2_Click(object sender, EventArgs e)
         {
-            string url = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.13-windows-x64-installer";
+            string url = "https://themagicflute.github.io/Launcher_V2";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
@@ -637,19 +615,6 @@ namespace KartRider
         private void label_DeveloperName_Click(object sender, EventArgs e)
         {
             string url = "https://github.com/brownsugar/popkart-client-archive/releases";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"错误: {ex.Message}");
-            }
-        }
-
-        private void label_Docs_Click(object sender, EventArgs e)
-        {
-            string url = "https://themagicflute.github.io/Launcher_V2";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

@@ -12,15 +12,17 @@ namespace RiderData
 	{
 		public static List<List<short>> FavoriteItemList = new List<List<short>>();
 		public static List<List<string>> FavoriteTrackList = new List<List<string>>();
+		public static string Favorite_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Favorite.xml";
+		public static string FavoriteTrack_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\FavoriteTrack.xml";
 
 		public static void Favorite_Item()
 		{
 			using (OutPacket outPacket = new OutPacket("PrFavoriteItemGet"))
 			{
-				if (File.Exists(@"Profile\Favorite.xml"))
+				if (File.Exists(Favorite_LoadFile))
 				{
 					XmlDocument doc = new XmlDocument();
-					doc.Load(@"Profile\Favorite.xml");
+					doc.Load(Favorite_LoadFile);
 					FavoriteItemList = new List<List<short>>();
 					XmlNodeList lis = doc.GetElementsByTagName("Title");
 					if (lis.Count > 0)
@@ -79,8 +81,8 @@ namespace RiderData
 
 		public static void Save_ItemList(List<List<short>> SaveFavorite)
 		{
-			File.Delete(@"Profile\Favorite.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\Favorite.xml", System.Text.Encoding.UTF8);
+			File.Delete(Favorite_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(Favorite_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("Favorite");
@@ -89,23 +91,23 @@ namespace RiderData
 			for (var i = 0; i < SaveFavorite.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\Favorite.xml");
+				xmlDoc.Load(Favorite_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("Favorite");
 				XmlElement xe1 = xmlDoc.CreateElement("Title");
 				xe1.SetAttribute("item", SaveFavorite[i][0].ToString());
 				xe1.SetAttribute("id", SaveFavorite[i][1].ToString());
 				xe1.SetAttribute("sn", SaveFavorite[i][2].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\Favorite.xml");
+				xmlDoc.Save(Favorite_LoadFile);
 			}
 		}
 
 		public static void Favorite_Track()
 		{
-			if (File.Exists(@"Profile\FavoriteTrack.xml"))
+			if (File.Exists(FavoriteTrack_LoadFile))
 			{
 				XmlDocument doc = new XmlDocument();
-				doc.Load(@"Profile\FavoriteTrack.xml");
+				doc.Load(FavoriteTrack_LoadFile);
 				if (!(doc.DocumentElement == null))
 				{
 					XmlNode rootNode = doc.DocumentElement;
@@ -197,8 +199,8 @@ namespace RiderData
 
 		public static void Save_TrackList(List<List<string>> SaveFavorite)
 		{
-			File.Delete(@"Profile\FavoriteTrack.xml");
-			XmlTextWriter writer = new XmlTextWriter(@"Profile\FavoriteTrack.xml", System.Text.Encoding.UTF8);
+			File.Delete(FavoriteTrack_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(FavoriteTrack_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("FavoriteTrack");
@@ -207,12 +209,12 @@ namespace RiderData
 			for (var i = 0; i < SaveFavorite.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(@"Profile\FavoriteTrack.xml");
+				xmlDoc.Load(FavoriteTrack_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("FavoriteTrack");
 				XmlElement xe1 = xmlDoc.CreateElement(SaveFavorite[i][0]);
 				xe1.SetAttribute("track", SaveFavorite[i][1]);
 				root.AppendChild(xe1);
-				xmlDoc.Save(@"Profile\FavoriteTrack.xml");
+				xmlDoc.Save(FavoriteTrack_LoadFile);
 			}
 		}
 	}

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ExcData
 {
-	public static class V2Spec
+	public class V2Spec
 	{
 		public static float V2Parts_TransAccelFactor = 0f;
 		public static float V2Parts_SteerConstraint = 0f;
@@ -25,89 +25,32 @@ namespace ExcData
 		public static float V2Level_DriftEscapeForce = 0f;
 		public static float V2Level_DriftMaxGauge = 0f;
 
-		public static byte GetGrade(byte leve)
+		public static byte GetGrade(byte level)
 		{
-			if (leve > 30)
-			{
-				return 1;
-			}
-			else if (leve > 20)
-			{
-				return 2;
-			}
-			else if (leve > 10)
-			{
-				return 3;
-			}
-			else if (leve > 1)
-			{
-				return 4;
-			}
+			if (level > 30) return 1;
+			if (level > 20) return 2;
+			if (level > 10) return 3;
+			if (level > 1) return 4;
 			return 0;
 		}
 
 		public static short Get12Parts(short input)
 		{
-			if (input < 11)
+			int fullCycles = (input - 1) / 10;
+			int positionInCycle = (input - 1) % 10;
+			int current = 201 + fullCycles * 23; // Each full cycle adds net +23 (30 -7)
+			for (int i = 1; i <= positionInCycle; i++)
 			{
-				int increment = 2;
-				int result = 0;
-				for (int i = 1; i <= (int)input; i++)
-				{
-					if (i % 3 == 1)
-					{
-						increment++;
-					}
-					result += increment;
-				}
-				return (short)(result + 199 - (int)input);
+				if (i <= 2)
+					current += 2;
+				else if (i <= 5)
+					current += 3;
+				else if (i <= 8)
+					current += 4;
+				else if (i == 9)
+					current += 5;
 			}
-			else if (input < 21)
-			{
-				int increment = 2;
-				int result = 0;
-				for (int i = 1; i <= (int)input - 10; i++)
-				{
-					if (i % 3 == 1)
-					{
-						increment++;
-					}
-					result += increment;
-				}
-				return (short)(result + 232 - (int)input);
-			}
-			else if (input < 31)
-			{
-				int increment = 2;
-				int result = 0;
-				for (int i = 1; i <= (int)input - 20; i++)
-				{
-					if (i % 3 == 1)
-					{
-						increment++;
-					}
-					result += increment;
-				}
-				return (short)(result + 265 - (int)input);
-			}
-			else if (input < 41)
-			{
-				int increment = 2;
-				int result = 0;
-				for (int i = 1; i <= (int)input - 30; i++)
-				{
-					if (i % 3 == 1)
-					{
-						increment++;
-					}
-					result += increment;
-				}
-				return (short)(result + 298 - (int)input);
-			}
-			else
-			{
-				return (short)(201);
-			}
+			return (short)current;
 		}
 
 		public static void Reset_V2Level_SpecData()
@@ -131,95 +74,66 @@ namespace ExcData
 			V2Parts_NormalBoosterTime = 0f;
 		}
 
-		public static void ExceedSpec()
+		public void ExceedSpec()
 		{
 			if (Kart.defaultExceedType > 0)
 			{
 				var KartAndSN = new { Kart = SetRiderItem.Set_Kart, SN = SetRiderItem.Set_KartSN };
 				var existingParts = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
+
+				// Handle exceed type
 				if (existingParts != null)
 				{
 					if (existingParts[17] != 0)
 					{
-						Kart.defaultExceedType = (int)existingParts[17];
+						Kart.defaultExceedType = existingParts[17];
 					}
 					else
 					{
 						existingParts[17] = (short)Kart.defaultExceedType;
 					}
 				}
+
 				Console.WriteLine("-------------------------------------------------------------");
-				short Parts_TransAccelFactor;
-				if (existingParts == null || existingParts[4] < 1)
+
+				// Helper function to process parts
+				short ProcessPart(Func<short> getDefaultValue, int typeIndex, int valueIndex, ref byte kartType, byte defaultKartType)
 				{
-					Parts_TransAccelFactor = Get12Parts((short)Kart.defaultEngineType);
-					if (existingParts != null)
+					short value;
+					if (existingParts == null || existingParts[valueIndex] < 1)
 					{
-						existingParts[3] = (short)Kart.defaultEngineType;
+						value = getDefaultValue();
+						if (existingParts != null)
+						{
+							existingParts[typeIndex] = (short)defaultKartType;
+						}
 					}
+					else
+					{
+						kartType = (byte)existingParts[typeIndex - 1];
+						existingParts[typeIndex] = (short)defaultKartType;
+						value = existingParts[valueIndex];
+					}
+					return value;
 				}
-				else
-				{
-					Kart.EngineType = (byte)existingParts[2];
-					existingParts[3] = (short)Kart.defaultEngineType;
-					Parts_TransAccelFactor = existingParts[4];
-				}
+
+				// Process each part
+				var Parts_TransAccelFactor = ProcessPart(() => Get12Parts((short)Kart.defaultEngineType), 3, 4, ref Kart.EngineType, Kart.defaultEngineType);
 				V2Parts_TransAccelFactor = (float)((Parts_TransAccelFactor * 1.0M - 800M) / 25000.0M + 0.4765M);
-				Console.WriteLine("V2Parts_TransAccelFactor: " + V2Parts_TransAccelFactor);
+				Console.WriteLine($"V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
 
-				short Parts_SteerConstraint;
-				if (existingParts == null || existingParts[7] < 1)
-				{
-					Parts_SteerConstraint = Get12Parts((short)Kart.defaultHandleType);
-					if (existingParts != null)
-					{
-						existingParts[6] = (short)Kart.defaultHandleType;
-					}
-				}
-				else
-				{
-					Kart.HandleType = (byte)existingParts[5];
-					existingParts[6] = (short)Kart.defaultHandleType;
-					Parts_SteerConstraint = existingParts[7];
-				}
+				var Parts_SteerConstraint = ProcessPart(() => Get12Parts((short)Kart.defaultHandleType), 6, 7, ref Kart.HandleType, Kart.defaultHandleType);
 				V2Parts_SteerConstraint = (float)((Parts_SteerConstraint * 1.0M - 800M) / 250.0M + 2.7M);
-				Console.WriteLine("V2Parts_SteerConstraint: " + V2Parts_SteerConstraint);
+				Console.WriteLine($"V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
 
-				short Parts_DriftEscapeForce;
-				if (existingParts == null || existingParts[10] < 1)
-				{
-					Parts_DriftEscapeForce = Get12Parts((short)Kart.defaultWheelType);
-					if (existingParts != null)
-					{
-						existingParts[9] = (short)Kart.defaultWheelType;
-					}
-				}
-				else
-				{
-					Kart.WheelType = (byte)existingParts[8];
-					existingParts[9] = (short)Kart.defaultWheelType;
-					Parts_DriftEscapeForce = existingParts[10];
-				}
+				var Parts_DriftEscapeForce = ProcessPart(() => Get12Parts((short)Kart.defaultWheelType), 9, 10, ref Kart.WheelType, Kart.defaultWheelType);
 				V2Parts_DriftEscapeForce = (float)(Parts_DriftEscapeForce * 2.0M);
-				Console.WriteLine("V2Parts_DriftEscapeForce: " + V2Parts_DriftEscapeForce);
+				Console.WriteLine($"V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
 
-				short Parts_NormalBoosterTime;
-				if (existingParts == null || existingParts[13] < 1)
-				{
-					Parts_NormalBoosterTime = Get12Parts((short)Kart.defaultBoosterType);
-					if (existingParts != null)
-					{
-						existingParts[12] = (short)Kart.defaultBoosterType;
-					}
-				}
-				else
-				{
-					Kart.BoosterType = (byte)existingParts[11];
-					existingParts[12] = (short)Kart.defaultBoosterType;
-					Parts_NormalBoosterTime = existingParts[13];
-				}
+				var Parts_NormalBoosterTime = ProcessPart(() => Get12Parts((short)Kart.defaultBoosterType), 12, 13, ref Kart.BoosterType, Kart.defaultBoosterType);
 				V2Parts_NormalBoosterTime = (float)(Parts_NormalBoosterTime * 1.0M - 260M);
-				Console.WriteLine("V2Parts_NormalBoosterTime: " + V2Parts_NormalBoosterTime);
+				Console.WriteLine($"V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
+
 				Console.WriteLine("-------------------------------------------------------------");
 				KartExcData.SaveParts12List(KartExcData.Parts12List);
 
@@ -227,72 +141,46 @@ namespace ExcData
 				var existingLevel = KartExcData.Level12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
 				if (existingLevel != null)
 				{
-					List<List<short>> Skill = new List<List<short>>();
-					if (existingLevel[3] != 0)
-						Skill.Add(new List<short> { existingLevel[3], existingLevel[4] });
-					if (existingLevel[5] != 0)
-						Skill.Add(new List<short> { existingLevel[5], existingLevel[6] });
-					if (existingLevel[7] != 0)
-						Skill.Add(new List<short> { existingLevel[7], existingLevel[8] });
-					Console.WriteLine("-------------------------------------------------------------");
-					float[] ForwardAccelForce = { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f };
-					float[] CornerDrawFactor = { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f };
-					float[] DragFactor = { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f };
-					float[] NormalBoosterTime = { 0f, 50f, 70f, 90f, 120f, 150f };
-					float[] TeamBoosterTime = { 0f, 100f, 110f, 130f, 150f, 200f };
-					float[] StartBoosterTimeSpeed = { 0f, 150f, 200f, 300f, 450f, 700f };
-					float[] TransAccelFactor = { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f };
-					float[] DriftEscapeForce = { 0f, 35f, 50f, 65f, 90f, 105f };
-					float[] DriftMaxGauge = { 0f, -50f, -60f, -70f, -90f, -120f };
-					foreach (var skill in Skill)
+					// Create skill pairs (ID, Level) from non-zero entries
+					var skills = Enumerable.Range(0, 3)
+						.Select(i => new { Index = 3 + i * 2, ID = existingLevel[3 + i * 2], Level = existingLevel[4 + i * 2] })
+						.Where(s => s.ID != 0)
+						.Select(s => new { s.ID, s.Level })
+						.ToList();
+
+					if (skills.Count > 0)
 					{
-						if (skill[0] == 1)
+						Console.WriteLine("-------------------------------------------------------------");
+
+						// Define all skill data in a dictionary
+						var skillData = new Dictionary<int, (string Name, float[] Values)>
 						{
-							V2Level_ForwardAccelForce = ForwardAccelForce[(int)skill[1]];
-							Console.WriteLine("V2Level_ForwardAccelForce: " + V2Level_ForwardAccelForce);
-						}
-						if (skill[0] == 2)
+							{ 1, ("ForwardAccelForce", new[] { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f }) },
+							{ 2, ("CornerDrawFactor", new[] { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f }) },
+							{ 3, ("DragFactor", new[] { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f }) },
+							{ 4, ("NormalBoosterTime", new[] { 0f, 50f, 70f, 90f, 120f, 150f }) },
+							{ 5, ("TeamBoosterTime", new[] { 0f, 100f, 110f, 130f, 150f, 200f }) },
+							{ 6, ("StartBoosterTimeSpeed", new[] { 0f, 150f, 200f, 300f, 450f, 700f }) },
+							{ 7, ("TransAccelFactor", new[] { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f }) },
+							{ 8, ("DriftEscapeForce", new[] { 0f, 35f, 50f, 65f, 90f, 105f }) },
+							{ 9, ("DriftMaxGauge", new[] { 0f, -50f, -60f, -70f, -90f, -120f }) }
+						};
+
+						// Process each skill
+						foreach (var skill in skills)
 						{
-							V2Level_CornerDrawFactor = CornerDrawFactor[(int)skill[1]];
-							Console.WriteLine("V2Level_CornerDrawFactor: " + V2Level_CornerDrawFactor);
+							if (skillData.TryGetValue(skill.ID, out var data))
+							{
+								// Set the value using reflection (alternative would be a switch statement)
+								typeof(V2Spec).GetField($"V2Level_{data.Name}")?
+									.SetValue(this, data.Values[skill.Level]);
+
+								Console.WriteLine($"V2Level_{data.Name}: {data.Values[skill.Level]}");
+							}
 						}
-						if (skill[0] == 3)
-						{
-							V2Level_DragFactor = DragFactor[(int)skill[1]];
-							Console.WriteLine("V2Level_DragFactor: " + V2Level_DragFactor);
-						}
-						if (skill[0] == 4)
-						{
-							V2Level_NormalBoosterTime = NormalBoosterTime[(int)skill[1]];
-							Console.WriteLine("V2Level_NormalBoosterTime: " + V2Level_NormalBoosterTime);
-						}
-						if (skill[0] == 5)
-						{
-							V2Level_TeamBoosterTime = TeamBoosterTime[(int)skill[1]];
-							Console.WriteLine("V2Level_TeamBoosterTime: " + V2Level_TeamBoosterTime);
-						}
-						if (skill[0] == 6)
-						{
-							V2Level_StartBoosterTimeSpeed = StartBoosterTimeSpeed[(int)skill[1]];
-							Console.WriteLine("V2Level_StartBoosterTimeSpeed: " + V2Level_StartBoosterTimeSpeed);
-						}
-						if (skill[0] == 7)
-						{
-							V2Level_TransAccelFactor = TransAccelFactor[(int)skill[1]];
-							Console.WriteLine("V2Level_TransAccelFactor: " + V2Level_TransAccelFactor);
-						}
-						if (skill[0] == 8)
-						{
-							V2Level_DriftEscapeForce = DriftEscapeForce[(int)skill[1]];
-							Console.WriteLine("V2Level_DriftEscapeForce: " + V2Level_DriftEscapeForce);
-						}
-						if (skill[0] == 9)
-						{
-							V2Level_DriftMaxGauge = DriftMaxGauge[(int)skill[1]];
-							Console.WriteLine("V2Level_DriftMaxGauge: " + V2Level_DriftMaxGauge);
-						}
+
+						Console.WriteLine("-------------------------------------------------------------");
 					}
-					Console.WriteLine("-------------------------------------------------------------");
 				}
 				if (Kart.defaultExceedType == 1)//item S
 				{

@@ -10,7 +10,7 @@ namespace KartRider
 		{
 			RandomTrack.GameType = "item";
 			RandomTrack.SetRandomTrack = "allRandom";
-			RandomTrack.GameTrack = "forest_I01";
+			RandomTrack.GameTrack = "village_R01";
 		}
 
 		public static void GameType_DataReset()

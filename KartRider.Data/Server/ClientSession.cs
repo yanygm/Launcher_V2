@@ -1903,13 +1903,13 @@ namespace KartRider
 						if (ItemType == 3)
 						{
 							XmlDocument doc = new XmlDocument();
-							doc.Load(@"Profile\NewKart.xml");
+							doc.Load(GetKart.NewKart_LoadFile);
 							XmlElement elementToRemove = doc.SelectSingleNode("//Kart[@id='" + ItemID + "' and @sn='" + SN + "']") as XmlElement;
 							if (elementToRemove != null)
 							{
 								elementToRemove.ParentNode.RemoveChild(elementToRemove);
 							}
-							doc.Save(@"Profile\NewKart.xml");
+							doc.Save(GetKart.NewKart_LoadFile);
 						}
 						return;
 					}
@@ -2257,7 +2257,7 @@ namespace KartRider
 							outPacket.WriteInt(1);
 							outPacket.WriteString("cc");
 							outPacket.WriteString(SessionGroup.Service);
-							outPacket.WriteInt(5);
+							outPacket.WriteInt(6);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(2);
@@ -2276,11 +2276,21 @@ namespace KartRider
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(3);
 							outPacket.WriteString("name");
+							outPacket.WriteString("grandprix");
+							outPacket.WriteString("enable");
+							outPacket.WriteString("true");
+							outPacket.WriteString("visible");
+							outPacket.WriteString("true");
+							outPacket.WriteInt(0);
+							outPacket.WriteString("content");
+							outPacket.WriteInt(0);
+							outPacket.WriteInt(3);
+							outPacket.WriteString("name");
 							outPacket.WriteString("endingBanner");
 							outPacket.WriteString("enable");
 							outPacket.WriteString("false");
 							outPacket.WriteString("value");
-							outPacket.WriteString("http://popkart.tiancity.com/homepage/endbanner.html");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							outPacket.WriteInt(0);
 							outPacket.WriteString("content");
 							outPacket.WriteInt(0);

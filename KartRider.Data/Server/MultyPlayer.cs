@@ -379,7 +379,7 @@ namespace KartRider
                 int unk1 = iPacket.ReadInt();
                 Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(@"Profile\AI.xml");
+                xmlDoc.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
                 XmlNode ai = xmlDoc.SelectSingleNode("//Ai" + unk1.ToString());
                 if (ai != null)
                 {
@@ -396,7 +396,7 @@ namespace KartRider
                     {
                         parentNode.RemoveChild(ai);
                     }
-                    xmlDoc.Save(@"Profile\AI.xml");
+                    xmlDoc.Save(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
                 }
                 else
                 {
@@ -429,7 +429,7 @@ namespace KartRider
                     {
                         rootNode.AppendChild(element);
                     }
-                    xmlDoc.Save(@"Profile\AI.xml");
+                    xmlDoc.Save(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
                 {
@@ -529,7 +529,7 @@ namespace KartRider
             // AI Data
             XmlDocument doc = new XmlDocument();
             outPacket.WriteShort(0);
-            doc.Load(@"Profile\AI.xml");
+            doc.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
             XmlNode ai1 = doc.SelectSingleNode("//Ai1");
             XmlNode ai2 = doc.SelectSingleNode("//Ai2");
             XmlNode ai3 = doc.SelectSingleNode("//Ai3");

@@ -64,5 +64,11 @@ namespace Launcher.Properties {
 				return ResourceManager.GetObject("$this.Icon", resourceCulture) as System.Drawing.Icon;
 			}
 		}
+
+		public static string ModelMax {
+            get {
+                return ResourceManager.GetString("ModelMax", resourceCulture);
+            }
+        }
 	}
 }
