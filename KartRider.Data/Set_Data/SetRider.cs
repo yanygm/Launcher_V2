@@ -222,7 +222,7 @@ namespace Set_Data
 			if (File.Exists(Load_SlotChanger))
 			{
 				string textValue = System.IO.File.ReadAllText(Load_SlotChanger);
-				SetRider.SlotChanger = short.Parse(textValue);
+				SetRider.SlotChanger = ushort.Parse(textValue);
 			}
 			else
 			{
