@@ -22,7 +22,7 @@ namespace Set_Data
 		public static uint Koin = 10000;
 		public static int Premium = 5;//100
 		public static byte Ranker = 0;
-		public static short SlotChanger = 30000;
+		public static ushort SlotChanger = 65535;
 		public static uint pmap = 0;//3130 //1068 //2520
 		public static byte IdentificationType = 1;
 
