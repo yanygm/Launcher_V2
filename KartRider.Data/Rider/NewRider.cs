@@ -136,13 +136,17 @@ namespace RiderData
 					foreach (var item in category.Value)
 					{
 						short sn = 0;
-						short num = SetRider.SlotChanger;
+						short num = 1;
 						short id = item.Key;
+						if (itemCatId == 22 || itemCatId == 37 || itemCatId == 38 || itemCatId == 39 || itemCatId == 43 || itemCatId == 44 || itemCatId == 45 || itemCatId == 46 || itemCatId == 49 || itemCatId == 53 || itemCatId == 67 || itemCatId == 68 || itemCatId == 69 || itemCatId == 76 || itemCatId == 77 || itemCatId == 78 || itemCatId == 79)
+						{
+							num = SetRider.SlotChanger;
+						}
 						if (itemCatId == 14)
 						{
 							if (id == 22 || id == 23 || id == 31 || id == 37 || id == 53 || id == 57 || id == 99)
 							{
-								List<short> add = new List<short> { id, sn, num };
+								List<short> add = new List<short> { id, sn, SetRider.SlotChanger };
 								items.Add(add);
 							}
 						}
@@ -150,7 +154,7 @@ namespace RiderData
 						{
 							if (id == 1 || id == 3 || id == 89 || id == 97 || id == 98 || id == 99 || id == 100 || id == 106)
 							{
-								List<short> add = new List<short> { id, sn, num };
+								List<short> add = new List<short> { id, sn, SetRider.SlotChanger };
 								items.Add(add);
 							}
 						}
