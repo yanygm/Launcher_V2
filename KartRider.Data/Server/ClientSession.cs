@@ -1313,7 +1313,7 @@ namespace KartRider
 					{
 						short ItemType = iPacket.ReadShort();
 						short Type = iPacket.ReadShort();
-						SetRider.SlotChanger = iPacket.ReadShort();
+						SetRider.SlotChanger = iPacket.ReadUShort();
 						if (Type == 1)
 						{
 							SetGameData.Save_SlotChanger();
