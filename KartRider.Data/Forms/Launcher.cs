@@ -29,13 +29,15 @@ namespace KartRider
         public static string pinFile = "KartRider.pin";
         private Button Start_Button;
         private Button GetKart_Button;
-        private Label label_DeveloperName;
-        private ComboBox comboBox1;
-        private Label label1;
-        private Label label2;
-        private Label label3;
-        private Label label4;
-        private Label MinorVersion;
+        private Label label_Client;
+        private ComboBox Speed_comboBox;
+        private Label Speed_label;
+        private Label NET8;
+        private Label GitHub;
+        private Label KartInfo;
+        private Label Launcher_label;
+        private Label ClientVersion;
+        private Label VersionLabel;
 
         public Launcher()
         {
@@ -46,13 +48,15 @@ namespace KartRider
         {
             Start_Button = new Button();
             GetKart_Button = new Button();
-            label_DeveloperName = new Label();
-            MinorVersion = new Label();
-            comboBox1 = new ComboBox();
-            label1 = new Label();
-            label2 = new Label();
-            label3 = new Label();
-            label4 = new Label();
+            label_Client = new Label();
+            ClientVersion = new Label();
+            VersionLabel = new Label();
+            Speed_comboBox = new ComboBox();
+            Speed_label = new Label();
+            NET8 = new Label();
+            GitHub = new Label();
+            KartInfo = new Label();
+            Launcher_label = new Label();
             SuspendLayout();
             // 
             // Start_Button
@@ -75,84 +79,108 @@ namespace KartRider
             GetKart_Button.UseVisualStyleBackColor = true;
             GetKart_Button.Click += GetKart_Button_Click;
             // 
-            // label_DeveloperName
+            // label_Client
             // 
-            label_DeveloperName.AutoSize = true;
-            label_DeveloperName.BackColor = System.Drawing.SystemColors.Control;
-            label_DeveloperName.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            label_DeveloperName.ForeColor = System.Drawing.Color.Blue;
-            label_DeveloperName.Location = new System.Drawing.Point(2, 160);
-            label_DeveloperName.Name = "label_DeveloperName";
-            label_DeveloperName.Size = new System.Drawing.Size(47, 12);
-            label_DeveloperName.TabIndex = 367;
-            label_DeveloperName.Text = "Client:";
-            label_DeveloperName.Click += label_DeveloperName_Click;
+            label_Client.AutoSize = true;
+            label_Client.BackColor = System.Drawing.SystemColors.Control;
+            label_Client.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            label_Client.ForeColor = System.Drawing.Color.Blue;
+            label_Client.Location = new System.Drawing.Point(2, 144);
+            label_Client.Name = "label_Client";
+            label_Client.Size = new System.Drawing.Size(47, 12);
+            label_Client.TabIndex = 367;
+            label_Client.Text = "Client:";
+            label_Client.Click += label_Client_Click;
             // 
-            // MinorVersion
+            // ClientVersion
             // 
-            MinorVersion.AutoSize = true;
-            MinorVersion.BackColor = System.Drawing.SystemColors.Control;
-            MinorVersion.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            MinorVersion.ForeColor = System.Drawing.Color.Red;
-            MinorVersion.Location = new System.Drawing.Point(45, 160);
-            MinorVersion.Name = "MinorVersion";
-            MinorVersion.Size = new System.Drawing.Size(0, 12);
-            MinorVersion.TabIndex = 367;
+            ClientVersion.AutoSize = true;
+            ClientVersion.BackColor = System.Drawing.SystemColors.Control;
+            ClientVersion.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            ClientVersion.ForeColor = System.Drawing.Color.Red;
+            ClientVersion.Location = new System.Drawing.Point(45, 144);
+            ClientVersion.Name = "ClientVersion";
+            ClientVersion.Size = new System.Drawing.Size(0, 12);
+            ClientVersion.TabIndex = 367;
+            ClientVersion.Click += label_Client_Click;
+            //
+            // VersionLabel
+            //
+            VersionLabel.AutoSize = true;
+            VersionLabel.BackColor = System.Drawing.SystemColors.Control;
+            VersionLabel.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            VersionLabel.ForeColor = System.Drawing.Color.Red;
+            VersionLabel.Location = new System.Drawing.Point(57, 160);
+            VersionLabel.Name = "VersionLabel";
+            VersionLabel.Size = new System.Drawing.Size(0, 12);
+            VersionLabel.TabIndex = 373;
+            VersionLabel.Click += GitHub_Click;
             // 
-            // comboBox1
+            // Speed_comboBox
             // 
-            comboBox1.ForeColor = System.Drawing.Color.Red;
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "标准", "慢速", "普通", "快速", "高速" });
-            comboBox1.Location = new System.Drawing.Point(84, 78);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new System.Drawing.Size(49, 20);
-            comboBox1.TabIndex = 368;
-            comboBox1.Text = "标准";
-            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            Speed_comboBox.ForeColor = System.Drawing.Color.Red;
+            Speed_comboBox.FormattingEnabled = true;
+            Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3" });
+            Speed_comboBox.Location = new System.Drawing.Point(74, 78);
+            Speed_comboBox.Name = "Speed_comboBox";
+            Speed_comboBox.Size = new System.Drawing.Size(58, 20);
+            Speed_comboBox.TabIndex = 368;
+            Speed_comboBox.Text = "标准";
+            Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
             // 
-            // label1
+            // Speed_label
             // 
-            label1.AutoSize = true;
-            label1.ForeColor = System.Drawing.Color.Blue;
-            label1.Location = new System.Drawing.Point(19, 82);
-            label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(59, 12);
-            label1.TabIndex = 369;
-            label1.Text = "速度选择:";
+            Speed_label.AutoSize = true;
+            Speed_label.ForeColor = System.Drawing.Color.Blue;
+            Speed_label.Location = new System.Drawing.Point(19, 82);
+            Speed_label.Name = "Speed_label";
+            Speed_label.Size = new System.Drawing.Size(59, 12);
+            Speed_label.TabIndex = 369;
+            Speed_label.Text = "速度选择:";
             // 
-            // label2
+            // NET8
             // 
-            label2.AutoSize = true;
-            label2.ForeColor = System.Drawing.Color.Blue;
-            label2.Location = new System.Drawing.Point(207, 128);
-            label2.Name = "label2";
-            label2.Size = new System.Drawing.Size(47, 12);
-            label2.TabIndex = 370;
-            label2.Text = ".NET8.0";
-            label2.Click += label2_Click;
+            NET8.AutoSize = true;
+            NET8.ForeColor = System.Drawing.Color.Blue;
+            NET8.Location = new System.Drawing.Point(207, 128);
+            NET8.Name = "NET8";
+            NET8.Size = new System.Drawing.Size(47, 12);
+            NET8.TabIndex = 370;
+            NET8.Text = ".NET8.0";
+            NET8.Click += NET8_Click;
             // 
-            // label3
+            // GitHub
             // 
-            label3.AutoSize = true;
-            label3.ForeColor = System.Drawing.Color.Blue;
-            label3.Location = new System.Drawing.Point(213, 144);
-            label3.Name = "label3";
-            label3.Size = new System.Drawing.Size(41, 12);
-            label3.TabIndex = 371;
-            label3.Text = "GitHub";
-            label3.Click += label3_Click;
+            GitHub.AutoSize = true;
+            GitHub.ForeColor = System.Drawing.Color.Blue;
+            GitHub.Location = new System.Drawing.Point(213, 144);
+            GitHub.Name = "GitHub";
+            GitHub.Size = new System.Drawing.Size(41, 12);
+            GitHub.TabIndex = 371;
+            GitHub.Text = "GitHub";
+            GitHub.Click += GitHub_Click;
             // 
-            // label4
+            // KartInfo
             // 
-            label4.AutoSize = true;
-            label4.ForeColor = System.Drawing.Color.Blue;
-            label4.Location = new System.Drawing.Point(201, 160);
-            label4.Name = "label4";
-            label4.Size = new System.Drawing.Size(53, 12);
-            label4.TabIndex = 372;
-            label4.Text = "KartInfo";
-            label4.Click += label4_Click;
+            KartInfo.AutoSize = true;
+            KartInfo.ForeColor = System.Drawing.Color.Blue;
+            KartInfo.Location = new System.Drawing.Point(201, 160);
+            KartInfo.Name = "KartInfo";
+            KartInfo.Size = new System.Drawing.Size(53, 12);
+            KartInfo.TabIndex = 372;
+            KartInfo.Text = "KartInfo";
+            KartInfo.Click += KartInfo_Click;
+            //
+            // Launcher_label
+            //
+            Launcher_label.AutoSize = true;
+            Launcher_label.ForeColor = System.Drawing.Color.Blue;
+            Launcher_label.Location = new System.Drawing.Point(2, 160);
+            Launcher_label.Name = "Launcher_label";
+            Launcher_label.Size = new System.Drawing.Size(47, 12);
+            Launcher_label.TabIndex = 373;
+            Launcher_label.Text = "Launcher:";
+            Launcher_label.Click += GitHub_Click;
             // 
             // Launcher
             // 
@@ -160,13 +188,15 @@ namespace KartRider
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = System.Drawing.SystemColors.Control;
             ClientSize = new System.Drawing.Size(257, 180);
-            Controls.Add(label4);
-            Controls.Add(label3);
-            Controls.Add(label2);
-            Controls.Add(label1);
-            Controls.Add(comboBox1);
-            Controls.Add(MinorVersion);
-            Controls.Add(label_DeveloperName);
+            Controls.Add(VersionLabel);
+            Controls.Add(Launcher_label);
+            Controls.Add(KartInfo);
+            Controls.Add(GitHub);
+            Controls.Add(NET8);
+            Controls.Add(Speed_comboBox);
+            Controls.Add(Speed_label);
+            Controls.Add(ClientVersion);
+            Controls.Add(label_Client);
             Controls.Add(GetKart_Button);
             Controls.Add(Start_Button);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
@@ -203,7 +233,10 @@ namespace KartRider
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
             SetGameOption.Version = val.Header.MinorVersion;
             SetGameOption.Save_SetGameOption();
-            MinorVersion.Text = SetGameOption.Version.ToString();
+            ClientVersion.Text = SetGameOption.Version.ToString();
+            DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
+            string formattedDate = compilationDate.ToString("yyMMdd");
+            VersionLabel.Text = formattedDate;
             Console.WriteLine("Process: {0}", this.kartRiderDirectory + Launcher.KartRider);
             RouterListener.Start();
         }
@@ -544,35 +577,47 @@ namespace KartRider
             return result;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void Speed_comboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (comboBox1.SelectedItem != null)
+            if (Speed_comboBox.SelectedItem != null)
             {
-                Console.WriteLine(comboBox1.SelectedItem.ToString());
-                if (comboBox1.SelectedItem.ToString() == "标准")
+                Console.WriteLine(Speed_comboBox.SelectedItem.ToString());
+                if (Speed_comboBox.SelectedItem.ToString() == "标准")
                 {
                     config.SpeedType = 7;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "慢速")
+                else if (Speed_comboBox.SelectedItem.ToString() == "慢速S0")
                 {
                     config.SpeedType = 3;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "普通")
+                else if (Speed_comboBox.SelectedItem.ToString() == "普通S1")
                 {
                     config.SpeedType = 0;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "快速")
+                else if (Speed_comboBox.SelectedItem.ToString() == "快速S2")
                 {
                     config.SpeedType = 1;
                 }
-                else if (comboBox1.SelectedItem.ToString() == "高速")
+                else if (Speed_comboBox.SelectedItem.ToString() == "高速S3")
                 {
                     config.SpeedType = 2;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S1")
+                {
+                    config.SpeedType = 10;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S2")
+                {
+                    config.SpeedType = 11;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S3")
+                {
+                    config.SpeedType = 12;
                 }
             }
         }
 
-        private void label2_Click(object sender, EventArgs e)
+        private void NET8_Click(object sender, EventArgs e)
         {
             string url = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.13-windows-x64-installer";
             try
@@ -585,7 +630,7 @@ namespace KartRider
             }
         }
 
-        private void label3_Click(object sender, EventArgs e)
+        private void GitHub_Click(object sender, EventArgs e)
         {
             string url = "https://github.com/yanygm/Launcher_V2/releases";
             try
@@ -598,7 +643,7 @@ namespace KartRider
             }
         }
 
-        private void label4_Click(object sender, EventArgs e)
+        private void KartInfo_Click(object sender, EventArgs e)
         {
             string url = "https://kartinfo.me/thread-9369-1-1.html";
             try
@@ -611,7 +656,7 @@ namespace KartRider
             }
         }
 
-        private void label_DeveloperName_Click(object sender, EventArgs e)
+        private void label_Client_Click(object sender, EventArgs e)
         {
             string url = "https://github.com/brownsugar/popkart-client-archive/releases";
             try
