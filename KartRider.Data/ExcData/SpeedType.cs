@@ -126,6 +126,54 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 0f;
 				Console.WriteLine("SpeedType:统合 S1.5");
 			}
+			else if (config.SpeedType == 10)//old S1
+			{
+				SpeedType.DragFactor = -0.01f;
+				SpeedType.ForwardAccelForce = -150f;
+				SpeedType.BackwardAccelForce = -225f;
+				SpeedType.GripBrakeForce = -270f;
+				SpeedType.SlipBrakeForce = -215f;
+				SpeedType.SteerConstraint = -0.25f;
+				SpeedType.DriftEscapeForce = -100f;
+				SpeedType.CornerDrawFactor = 0.02f;
+				SpeedType.DriftMaxGauge = -300f;
+				SpeedType.TransAccelFactor = 0.0045f;
+				SpeedType.BoostAccelFactor = 0.006f;
+				SpeedType.StartForwardAccelForceItem = -270f;
+				SpeedType.StartForwardAccelForceSpeed = -270f;
+			}
+			else if (config.SpeedType == 11)//old S2
+			{
+				SpeedType.DragFactor = 0.013f;
+				SpeedType.ForwardAccelForce = 250f;
+				SpeedType.BackwardAccelForce = 225f;
+				SpeedType.GripBrakeForce = 270f;
+				SpeedType.SlipBrakeForce = 145f;
+				SpeedType.SteerConstraint = 0.55f;
+				SpeedType.DriftEscapeForce = 700f;
+				SpeedType.CornerDrawFactor = 0.02f;
+				SpeedType.DriftMaxGauge = 700f;
+				SpeedType.TransAccelFactor = 0.0045f;
+				SpeedType.BoostAccelFactor = 0.006f;
+				SpeedType.StartForwardAccelForceItem = 450f;
+				SpeedType.StartForwardAccelForceSpeed = 450f;
+			}
+			else if (config.SpeedType == 12)//old S3
+			{
+				SpeedType.DragFactor = 0.051f;
+				SpeedType.ForwardAccelForce = 750f;
+				SpeedType.BackwardAccelForce = 450f;
+				SpeedType.GripBrakeForce = 540f;
+				SpeedType.SlipBrakeForce = 325f;
+				SpeedType.SteerConstraint = 0.75f;
+				SpeedType.DriftEscapeForce = 1100f;
+				SpeedType.CornerDrawFactor = 0.02f;
+				SpeedType.DriftMaxGauge = 1700f;
+				SpeedType.TransAccelFactor = 0.0045f;
+				SpeedType.BoostAccelFactor = 0.006f;
+				SpeedType.StartForwardAccelForceItem = 1350f;
+				SpeedType.StartForwardAccelForceSpeed = 1350f;
+			}
 			else
 			{
 				GameSupport.OnDisconnect();
