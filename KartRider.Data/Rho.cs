@@ -314,6 +314,21 @@ namespace RHOParser
                             }
                         }
                     }
+                    if (fullName == "zeta/" + regionCode + "/quest/kartPassQuestAutomation.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            XElement questInfo = doc.Descendants("kartPassQuestInfo").First();
+                            KartExcData.seasonId = int.Parse(questInfo.Attribute("seasonId").Value);
+                        }
+                    }
                     if (fullName == "zeta/" + regionCode + "/scenario/scenario.bml")
                     {
                         Console.WriteLine(fullName);
