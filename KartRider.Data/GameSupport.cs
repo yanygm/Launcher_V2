@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
@@ -192,7 +192,7 @@ namespace KartRider
 
 		public static void PrQuestUX2ndPacket()
 		{
-			ushort[] kartPassQuestList = { 61577, 61578, 61579, 61677, 61678, 61679, 61777, 61778, 61779, 61877, 61878, 61879, 61977, 61978, 61979, 62077, 62078, 62079, 62177, 62178, 62179 };
+			ushort[] kartPassQuestList = GetkartPassQuestList();
 			int All_Quest = KartExcData.quest.Count + kartPassQuestList.Length;
 			using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
 			{
@@ -229,6 +229,22 @@ namespace KartRider
 				}
 				RouterListener.MySession.Client.Send(outPacket);
 			}
+		}
+
+		public static ushort[] GetkartPassQuestList()
+		{
+			int seasonId = KartExcData.seasonId;
+			int startBase = seasonId * 7 + 377;
+			ushort[] result = new ushort[7 * 3];
+
+			for (int i = 0; i < 7; i++)
+			{
+				int baseNumber = startBase + i;
+				result[i * 3] = (ushort)(baseNumber * 100 + 77);
+				result[i * 3 + 1] = (ushort)(baseNumber * 100 + 78);
+				result[i * 3 + 2] = (ushort)(baseNumber * 100 + 79);
+			}
+			return result;
 		}
 
 		public static void GetRider(OutPacket outPacket)
