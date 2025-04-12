@@ -38,6 +38,7 @@ namespace ExcData
 		public static Dictionary<uint, string> track = new Dictionary<uint, string>();
 		public static List<int> scenario = new List<int>();
 		public static List<int> quest = new List<int>();
+		public static int seasonId = 0;
 
 		public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
 
