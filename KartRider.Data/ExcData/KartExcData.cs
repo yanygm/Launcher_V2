@@ -366,8 +366,8 @@ namespace ExcData
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][17]);
+						oPacket.WriteShort(0);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
 				}
