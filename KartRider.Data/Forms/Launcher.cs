@@ -32,7 +32,7 @@ namespace KartRider
         private Label label_Client;
         private ComboBox Speed_comboBox;
         private Label Speed_label;
-        private Label NET8;
+        private Label Docs;
         private Label GitHub;
         private Label KartInfo;
         private Label Launcher_label;
@@ -46,6 +46,7 @@ namespace KartRider
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Launcher));
             Start_Button = new Button();
             GetKart_Button = new Button();
             label_Client = new Label();
@@ -53,7 +54,7 @@ namespace KartRider
             VersionLabel = new Label();
             Speed_comboBox = new ComboBox();
             Speed_label = new Label();
-            NET8 = new Label();
+            Docs = new Label();
             GitHub = new Label();
             KartInfo = new Label();
             Launcher_label = new Label();
@@ -61,9 +62,9 @@ namespace KartRider
             // 
             // Start_Button
             // 
-            Start_Button.Location = new System.Drawing.Point(19, 20);
+            Start_Button.Location = new Point(19, 20);
             Start_Button.Name = "Start_Button";
-            Start_Button.Size = new System.Drawing.Size(114, 23);
+            Start_Button.Size = new Size(114, 23);
             Start_Button.TabIndex = 364;
             Start_Button.Text = "启动游戏";
             Start_Button.UseVisualStyleBackColor = true;
@@ -71,9 +72,9 @@ namespace KartRider
             // 
             // GetKart_Button
             // 
-            GetKart_Button.Location = new System.Drawing.Point(19, 49);
+            GetKart_Button.Location = new Point(19, 49);
             GetKart_Button.Name = "GetKart_Button";
-            GetKart_Button.Size = new System.Drawing.Size(114, 23);
+            GetKart_Button.Size = new Size(114, 23);
             GetKart_Button.TabIndex = 365;
             GetKart_Button.Text = "添加道具";
             GetKart_Button.UseVisualStyleBackColor = true;
@@ -82,12 +83,12 @@ namespace KartRider
             // label_Client
             // 
             label_Client.AutoSize = true;
-            label_Client.BackColor = System.Drawing.SystemColors.Control;
-            label_Client.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            label_Client.ForeColor = System.Drawing.Color.Blue;
-            label_Client.Location = new System.Drawing.Point(2, 144);
+            label_Client.BackColor = SystemColors.Control;
+            label_Client.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            label_Client.ForeColor = Color.Blue;
+            label_Client.Location = new Point(2, 144);
             label_Client.Name = "label_Client";
-            label_Client.Size = new System.Drawing.Size(47, 12);
+            label_Client.Size = new Size(47, 12);
             label_Client.TabIndex = 367;
             label_Client.Text = "Client:";
             label_Client.Click += label_Client_Click;
@@ -95,35 +96,35 @@ namespace KartRider
             // ClientVersion
             // 
             ClientVersion.AutoSize = true;
-            ClientVersion.BackColor = System.Drawing.SystemColors.Control;
-            ClientVersion.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            ClientVersion.ForeColor = System.Drawing.Color.Red;
-            ClientVersion.Location = new System.Drawing.Point(45, 144);
+            ClientVersion.BackColor = SystemColors.Control;
+            ClientVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            ClientVersion.ForeColor = Color.Red;
+            ClientVersion.Location = new Point(45, 144);
             ClientVersion.Name = "ClientVersion";
-            ClientVersion.Size = new System.Drawing.Size(0, 12);
+            ClientVersion.Size = new Size(0, 12);
             ClientVersion.TabIndex = 367;
             ClientVersion.Click += label_Client_Click;
-            //
+            // 
             // VersionLabel
-            //
+            // 
             VersionLabel.AutoSize = true;
-            VersionLabel.BackColor = System.Drawing.SystemColors.Control;
-            VersionLabel.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            VersionLabel.ForeColor = System.Drawing.Color.Red;
-            VersionLabel.Location = new System.Drawing.Point(57, 160);
+            VersionLabel.BackColor = SystemColors.Control;
+            VersionLabel.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            VersionLabel.ForeColor = Color.Red;
+            VersionLabel.Location = new Point(57, 160);
             VersionLabel.Name = "VersionLabel";
-            VersionLabel.Size = new System.Drawing.Size(0, 12);
+            VersionLabel.Size = new Size(0, 12);
             VersionLabel.TabIndex = 373;
             VersionLabel.Click += GitHub_Click;
             // 
             // Speed_comboBox
             // 
-            Speed_comboBox.ForeColor = System.Drawing.Color.Red;
+            Speed_comboBox.ForeColor = Color.Red;
             Speed_comboBox.FormattingEnabled = true;
             Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3" });
-            Speed_comboBox.Location = new System.Drawing.Point(74, 78);
+            Speed_comboBox.Location = new Point(74, 78);
             Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new System.Drawing.Size(58, 20);
+            Speed_comboBox.Size = new Size(58, 20);
             Speed_comboBox.TabIndex = 368;
             Speed_comboBox.Text = "标准";
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
@@ -131,31 +132,31 @@ namespace KartRider
             // Speed_label
             // 
             Speed_label.AutoSize = true;
-            Speed_label.ForeColor = System.Drawing.Color.Blue;
-            Speed_label.Location = new System.Drawing.Point(19, 82);
+            Speed_label.ForeColor = Color.Blue;
+            Speed_label.Location = new Point(19, 82);
             Speed_label.Name = "Speed_label";
-            Speed_label.Size = new System.Drawing.Size(59, 12);
+            Speed_label.Size = new Size(59, 12);
             Speed_label.TabIndex = 369;
             Speed_label.Text = "速度选择:";
             // 
-            // NET8
+            // Docs
             // 
-            NET8.AutoSize = true;
-            NET8.ForeColor = System.Drawing.Color.Blue;
-            NET8.Location = new System.Drawing.Point(207, 128);
-            NET8.Name = "NET8";
-            NET8.Size = new System.Drawing.Size(47, 12);
-            NET8.TabIndex = 370;
-            NET8.Text = ".NET8.0";
-            NET8.Click += NET8_Click;
+            Docs.AutoSize = true;
+            Docs.ForeColor = Color.Blue;
+            Docs.Location = new Point(225, 132);
+            Docs.Name = "Docs";
+            Docs.Size = new Size(29, 12);
+            Docs.TabIndex = 370;
+            Docs.Text = "Docs";
+            Docs.Click += NET8_Click;
             // 
             // GitHub
             // 
             GitHub.AutoSize = true;
-            GitHub.ForeColor = System.Drawing.Color.Blue;
-            GitHub.Location = new System.Drawing.Point(213, 144);
+            GitHub.ForeColor = Color.Blue;
+            GitHub.Location = new Point(213, 144);
             GitHub.Name = "GitHub";
-            GitHub.Size = new System.Drawing.Size(41, 12);
+            GitHub.Size = new Size(41, 12);
             GitHub.TabIndex = 371;
             GitHub.Text = "GitHub";
             GitHub.Click += GitHub_Click;
@@ -163,47 +164,47 @@ namespace KartRider
             // KartInfo
             // 
             KartInfo.AutoSize = true;
-            KartInfo.ForeColor = System.Drawing.Color.Blue;
-            KartInfo.Location = new System.Drawing.Point(201, 160);
+            KartInfo.ForeColor = Color.Blue;
+            KartInfo.Location = new Point(201, 160);
             KartInfo.Name = "KartInfo";
-            KartInfo.Size = new System.Drawing.Size(53, 12);
+            KartInfo.Size = new Size(53, 12);
             KartInfo.TabIndex = 372;
             KartInfo.Text = "KartInfo";
             KartInfo.Click += KartInfo_Click;
-            //
+            // 
             // Launcher_label
-            //
+            // 
             Launcher_label.AutoSize = true;
-            Launcher_label.ForeColor = System.Drawing.Color.Blue;
-            Launcher_label.Location = new System.Drawing.Point(2, 160);
+            Launcher_label.ForeColor = Color.Blue;
+            Launcher_label.Location = new Point(2, 160);
             Launcher_label.Name = "Launcher_label";
-            Launcher_label.Size = new System.Drawing.Size(47, 12);
+            Launcher_label.Size = new Size(59, 12);
             Launcher_label.TabIndex = 373;
             Launcher_label.Text = "Launcher:";
             Launcher_label.Click += GitHub_Click;
             // 
             // Launcher
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            AutoScaleDimensions = new SizeF(6F, 12F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = System.Drawing.SystemColors.Control;
-            ClientSize = new System.Drawing.Size(257, 180);
+            BackColor = SystemColors.Control;
+            ClientSize = new Size(257, 180);
             Controls.Add(VersionLabel);
             Controls.Add(Launcher_label);
             Controls.Add(KartInfo);
             Controls.Add(GitHub);
-            Controls.Add(NET8);
+            Controls.Add(Docs);
             Controls.Add(Speed_comboBox);
             Controls.Add(Speed_label);
             Controls.Add(ClientVersion);
             Controls.Add(label_Client);
             Controls.Add(GetKart_Button);
             Controls.Add(Start_Button);
-            Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
             Name = "Launcher";
-            Icon = Resources.icon;
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Launcher";
             FormClosing += OnFormClosing;
@@ -619,7 +620,7 @@ namespace KartRider
 
         private void NET8_Click(object sender, EventArgs e)
         {
-            string url = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.13-windows-x64-installer";
+            string url = "https://themagicflute.github.io/Launcher_V2";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
