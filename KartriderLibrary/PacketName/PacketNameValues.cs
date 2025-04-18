@@ -1585,5 +1585,15 @@ namespace KartRider_PacketName
 		PrKartExceedTypeChange = 1632831626,
 		PqGetlotteryMileageMultiInfoPacket = 3991932311,
 		PrGetlotteryMileageMultiInfoPacket = 3994095000,
+		PqGetMyMsgrInfoPacket = 1474693156,
+		PrGetMyMsgrInfoPacket = 1476003877,
+		PqGetMsgrFriendList = 1217529710,
+		PrGetMsgrFriendList = 1218709359,
+		PqMissionAttendUserStatePacket = 3103132667,
+		PrMissionAttendUserStatePacket = 3105033212,
+		PqMissionAttendNRUserStatePacket = 3477736603,
+		PrMissionAttendNRUserStatePacket = 3479768220,
+		PqMsgrReceiveSendInfo = 1500973107,
+		PrMsgrReceiveSendInfo = 1502283828,
 	}
 }
