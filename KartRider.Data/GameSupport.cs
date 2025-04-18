@@ -1,4 +1,4 @@
-using System;
+Zusing System;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
@@ -192,8 +192,7 @@ namespace KartRider
 
 		public static void PrQuestUX2ndPacket()
 		{
-			ushort[] kartPassQuestList = GetkartPassQuestList();
-			int All_Quest = KartExcData.quest.Count + kartPassQuestList.Length;
+			int All_Quest = KartExcData.quest.Count;
 			using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
 			{
 				outPacket.WriteInt(1);
@@ -212,39 +211,8 @@ namespace KartRider
 					outPacket.WriteInt(0);
 					outPacket.WriteByte(0);
 				}
-				foreach (var item in kartPassQuestList)
-				{
-					outPacket.WriteUShort(item);
-					outPacket.WriteUShort(2059);
-					outPacket.WriteUShort(item);
-					outPacket.WriteUShort(2059);
-					outPacket.WriteInt(0);
-					outPacket.WriteShort(-1);
-					outPacket.WriteShort(0);
-					outPacket.WriteInt(0);
-					outPacket.WriteInt(0);
-					outPacket.WriteInt(1);
-					outPacket.WriteInt(0);
-					outPacket.WriteByte(0);
-				}
 				RouterListener.MySession.Client.Send(outPacket);
 			}
-		}
-
-		public static ushort[] GetkartPassQuestList()
-		{
-			int seasonId = KartExcData.seasonId;
-			int startBase = seasonId * 7 + 377;
-			ushort[] result = new ushort[7 * 3];
-
-			for (int i = 0; i < 7; i++)
-			{
-				int baseNumber = startBase + i;
-				result[i * 3] = (ushort)(baseNumber * 100 + 77);
-				result[i * 3 + 1] = (ushort)(baseNumber * 100 + 78);
-				result[i * 3 + 2] = (ushort)(baseNumber * 100 + 79);
-			}
-			return result;
 		}
 
 		public static void GetRider(OutPacket outPacket)
