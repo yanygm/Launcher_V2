@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
@@ -192,8 +192,7 @@ namespace KartRider
 
 		public static void PrQuestUX2ndPacket()
 		{
-			ushort[] kartPassQuestList = { 61577, 61578, 61579, 61677, 61678, 61679, 61777, 61778, 61779, 61877, 61878, 61879, 61977, 61978, 61979, 62077, 62078, 62079, 62177, 62178, 62179 };
-			int All_Quest = KartExcData.quest.Count + kartPassQuestList.Length;
+			int All_Quest = KartExcData.quest.Count;
 			using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
 			{
 				outPacket.WriteInt(1);
@@ -203,21 +202,6 @@ namespace KartRider
 				{
 					outPacket.WriteInt(item);
 					outPacket.WriteInt(item);
-					outPacket.WriteInt(0);
-					outPacket.WriteShort(-1);
-					outPacket.WriteShort(0);
-					outPacket.WriteInt(0);
-					outPacket.WriteInt(0);
-					outPacket.WriteInt(1);
-					outPacket.WriteInt(0);
-					outPacket.WriteByte(0);
-				}
-				foreach (var item in kartPassQuestList)
-				{
-					outPacket.WriteUShort(item);
-					outPacket.WriteUShort(2059);
-					outPacket.WriteUShort(item);
-					outPacket.WriteUShort(2059);
 					outPacket.WriteInt(0);
 					outPacket.WriteShort(-1);
 					outPacket.WriteShort(0);

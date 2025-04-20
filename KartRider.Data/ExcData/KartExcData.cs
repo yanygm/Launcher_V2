@@ -38,6 +38,7 @@ namespace ExcData
 		public static Dictionary<uint, string> track = new Dictionary<uint, string>();
 		public static List<int> scenario = new List<int>();
 		public static List<int> quest = new List<int>();
+		public static int seasonId = 0;
 
 		public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
 
@@ -365,8 +366,8 @@ namespace ExcData
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
 						oPacket.WriteShort(0);
-						oPacket.WriteShort(0);
 						oPacket.WriteShort(tempList[f][17]);
+						oPacket.WriteShort(0);
 					}
 					RouterListener.MySession.Client.Send(oPacket);
 				}

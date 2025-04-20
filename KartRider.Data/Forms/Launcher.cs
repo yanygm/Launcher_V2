@@ -32,11 +32,11 @@ namespace KartRider
         private Label label_Client;
         private ComboBox Speed_comboBox;
         private Label Speed_label;
-        private Label Docs;
         private Label GitHub;
         private Label KartInfo;
         private Label Launcher_label;
         private Label ClientVersion;
+        private Label label_Docs;
         private Label VersionLabel;
 
         public Launcher()
@@ -54,17 +54,17 @@ namespace KartRider
             VersionLabel = new Label();
             Speed_comboBox = new ComboBox();
             Speed_label = new Label();
-            Docs = new Label();
             GitHub = new Label();
             KartInfo = new Label();
             Launcher_label = new Label();
+            label_Docs = new Label();
             SuspendLayout();
             // 
             // Start_Button
             // 
-            Start_Button.Location = new Point(19, 20);
+            Start_Button.Location = new Point(12, 76);
             Start_Button.Name = "Start_Button";
-            Start_Button.Size = new Size(114, 23);
+            Start_Button.Size = new Size(187, 53);
             Start_Button.TabIndex = 364;
             Start_Button.Text = "启动游戏";
             Start_Button.UseVisualStyleBackColor = true;
@@ -72,9 +72,9 @@ namespace KartRider
             // 
             // GetKart_Button
             // 
-            GetKart_Button.Location = new Point(19, 49);
+            GetKart_Button.Location = new Point(12, 35);
             GetKart_Button.Name = "GetKart_Button";
-            GetKart_Button.Size = new Size(114, 23);
+            GetKart_Button.Size = new Size(187, 35);
             GetKart_Button.TabIndex = 365;
             GetKart_Button.Text = "添加道具";
             GetKart_Button.UseVisualStyleBackColor = true;
@@ -121,10 +121,9 @@ namespace KartRider
             // 
             Speed_comboBox.ForeColor = Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3" });
-            Speed_comboBox.Location = new Point(74, 78);
+            Speed_comboBox.Location = new Point(87, 9);
             Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new Size(58, 20);
+            Speed_comboBox.Size = new Size(112, 20);
             Speed_comboBox.TabIndex = 368;
             Speed_comboBox.Text = "标准";
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
@@ -133,28 +132,17 @@ namespace KartRider
             // 
             Speed_label.AutoSize = true;
             Speed_label.ForeColor = Color.Blue;
-            Speed_label.Location = new Point(19, 82);
+            Speed_label.Location = new Point(46, 12);
             Speed_label.Name = "Speed_label";
-            Speed_label.Size = new Size(59, 12);
+            Speed_label.Size = new Size(35, 12);
             Speed_label.TabIndex = 369;
-            Speed_label.Text = "速度选择:";
-            // 
-            // Docs
-            // 
-            Docs.AutoSize = true;
-            Docs.ForeColor = Color.Blue;
-            Docs.Location = new Point(225, 132);
-            Docs.Name = "Docs";
-            Docs.Size = new Size(29, 12);
-            Docs.TabIndex = 370;
-            Docs.Text = "Docs";
-            Docs.Click += NET8_Click;
+            Speed_label.Text = "速度:";
             // 
             // GitHub
             // 
             GitHub.AutoSize = true;
             GitHub.ForeColor = Color.Blue;
-            GitHub.Location = new Point(213, 144);
+            GitHub.Location = new Point(158, 148);
             GitHub.Name = "GitHub";
             GitHub.Size = new Size(41, 12);
             GitHub.TabIndex = 371;
@@ -165,7 +153,7 @@ namespace KartRider
             // 
             KartInfo.AutoSize = true;
             KartInfo.ForeColor = Color.Blue;
-            KartInfo.Location = new Point(201, 160);
+            KartInfo.Location = new Point(146, 160);
             KartInfo.Name = "KartInfo";
             KartInfo.Size = new Size(53, 12);
             KartInfo.TabIndex = 372;
@@ -183,17 +171,28 @@ namespace KartRider
             Launcher_label.Text = "Launcher:";
             Launcher_label.Click += GitHub_Click;
             // 
+            // label_Docs
+            // 
+            label_Docs.AutoSize = true;
+            label_Docs.ForeColor = Color.Blue;
+            label_Docs.Location = new Point(170, 136);
+            label_Docs.Name = "label_Docs";
+            label_Docs.Size = new Size(29, 12);
+            label_Docs.TabIndex = 374;
+            label_Docs.Text = "Docs";
+            label_Docs.Click += label_Docs_Click;
+            // 
             // Launcher
             // 
             AutoScaleDimensions = new SizeF(6F, 12F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
-            ClientSize = new Size(257, 180);
+            ClientSize = new Size(211, 180);
+            Controls.Add(label_Docs);
             Controls.Add(VersionLabel);
             Controls.Add(Launcher_label);
             Controls.Add(KartInfo);
             Controls.Add(GitHub);
-            Controls.Add(Docs);
             Controls.Add(Speed_comboBox);
             Controls.Add(Speed_label);
             Controls.Add(ClientVersion);
@@ -289,7 +288,8 @@ namespace KartRider
                     File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
                     Start_Button.Enabled = true;
                     Launcher.GetKart = false;
-                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
+                    // -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==
+                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:0")
                     {
                         WorkingDirectory = this.kartRiderDirectory,
                         UseShellExecute = true,
@@ -325,16 +325,16 @@ namespace KartRider
         public void Load_KartExcData()
         {
             if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml"))
-			{
-				string ModelMax = Resources.ModelMax;
-				using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml", false))
-				{
-					streamWriter.Write(ModelMax);
-				}
-			}
+            {
+                string ModelMax = Resources.ModelMax;
+                using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml", false))
+                {
+                    streamWriter.Write(ModelMax);
+                }
+            }
             EnsureDefaultDataFileExists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory+ @"Profile\NewKart.xml", LoadNewKart);
+            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\NewKart.xml", LoadNewKart);
             KartExcData.TuneList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml", LoadTuneData);
             KartExcData.PlantList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml", LoadPlantData);
             KartExcData.LevelList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml", LoadLevelData);
@@ -582,52 +582,15 @@ namespace KartRider
         {
             if (Speed_comboBox.SelectedItem != null)
             {
-                Console.WriteLine(Speed_comboBox.SelectedItem.ToString());
-                if (Speed_comboBox.SelectedItem.ToString() == "标准")
+                if (Enum.TryParse(Speed_comboBox.SelectedItem.ToString(), out SpeedName id))
                 {
-                    config.SpeedType = 7;
+                    config.SpeedType = (byte)id;
+                    Console.WriteLine((SpeedName)config.SpeedType);
                 }
-                else if (Speed_comboBox.SelectedItem.ToString() == "慢速S0")
+                else
                 {
-                    config.SpeedType = 3;
+                    Console.WriteLine("Invalid speed type selected.");
                 }
-                else if (Speed_comboBox.SelectedItem.ToString() == "普通S1")
-                {
-                    config.SpeedType = 0;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "快速S2")
-                {
-                    config.SpeedType = 1;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "高速S3")
-                {
-                    config.SpeedType = 2;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S1")
-                {
-                    config.SpeedType = 10;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S2")
-                {
-                    config.SpeedType = 11;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S3")
-                {
-                    config.SpeedType = 12;
-                }
-            }
-        }
-
-        private void NET8_Click(object sender, EventArgs e)
-        {
-            string url = "https://themagicflute.github.io/Launcher_V2";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"错误: {ex.Message}");
             }
         }
 
@@ -660,6 +623,19 @@ namespace KartRider
         private void label_Client_Click(object sender, EventArgs e)
         {
             string url = "https://github.com/brownsugar/popkart-client-archive/releases";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误: {ex.Message}");
+            }
+        }
+
+        private void label_Docs_Click(object sender, EventArgs e)
+        {
+            string url = "https://themagicflute.github.io/Launcher_V2";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
