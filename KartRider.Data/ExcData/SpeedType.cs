@@ -4,6 +4,23 @@ using Set_Data;
 
 namespace ExcData
 {
+	public enum SpeedName : byte
+	{
+		标准 = 7,
+		慢速S0 = 3,
+		普通S1 = 0,
+		快速S2 = 1,
+		高速S3 = 2,
+		旧版S1 = 10,
+		旧版S2 = 11,
+		旧版S3 = 12,
+		复古初级 = 13,
+		复古L3 = 14,
+		复古L2 = 15,
+		复古L1 = 16,
+		复古Pro = 17,
+	}
+
 	public class SpeedType
 	{
 		public static float AddSpec_TransAccelFactor = 0f;
