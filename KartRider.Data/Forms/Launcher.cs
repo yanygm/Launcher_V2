@@ -120,7 +120,7 @@ namespace KartRider
             // 
             Speed_comboBox.ForeColor = System.Drawing.Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3" });
+            Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3", "复古初级", "复古L3", "复古L2", "复古L1", "复古Pro" });
             Speed_comboBox.Location = new System.Drawing.Point(74, 78);
             Speed_comboBox.Name = "Speed_comboBox";
             Speed_comboBox.Size = new System.Drawing.Size(58, 20);
@@ -613,6 +613,26 @@ namespace KartRider
                 else if (Speed_comboBox.SelectedItem.ToString() == "旧版S3")
                 {
                     config.SpeedType = 12;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "复古初级")
+                {
+                    config.SpeedType = 13;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "复古L3")
+                {
+                    config.SpeedType = 14;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "复古L2")
+                {
+                    config.SpeedType = 15;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "复古L1")
+                {
+                    config.SpeedType = 16;
+                }
+                else if (Speed_comboBox.SelectedItem.ToString() == "复古Pro")
+                {
+                    config.SpeedType = 17;
                 }
             }
         }
