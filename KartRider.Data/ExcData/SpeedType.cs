@@ -143,7 +143,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 0f;
 				Console.WriteLine("SpeedType:Integration");
 			}
-			else if (config.SpeedType == 10)//old S1
+			else if (config.SpeedType == 10 || config.SpeedType == 13)//old S1, Rookie
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -162,7 +162,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = -270f;
 				SpeedType.StartForwardAccelForceSpeed = -270f;
 			}
-			else if (config.SpeedType == 11)//old S2
+			else if (config.SpeedType == 11 || config.SpeedType == 14)//old S2, L3
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -181,7 +181,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 450f;
 				SpeedType.StartForwardAccelForceSpeed = 450f;
 			}
-			else if (config.SpeedType == 12)//old S3
+			else if (config.SpeedType == 12 || config.SpeedType == 16)//old S3, L1
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -200,44 +200,6 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 1350f;
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
 			}
-			else if (config.SpeedType == 13)//old Rookie
-			{
-				SpeedType.AddSpec_SteerConstraint = 0f;
-				SpeedType.AddSpec_DriftEscapeForce = 0f;
-				SpeedType.AddSpec_TransAccelFactor = 0f;
-				SpeedType.DragFactor = -0.01f;
-				SpeedType.ForwardAccelForce = -150f;
-				SpeedType.BackwardAccelForce = -225f;
-				SpeedType.GripBrakeForce = -270f;
-				SpeedType.SlipBrakeForce = -215f;
-				SpeedType.SteerConstraint = -0.25f;
-				SpeedType.DriftEscapeForce = -100f;
-				SpeedType.CornerDrawFactor = 0.02f;
-				SpeedType.DriftMaxGauge = -300f;
-				SpeedType.TransAccelFactor = 0.0045f;
-				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = -200f;
-				SpeedType.StartForwardAccelForceSpeed = 1000f;
-			}
-			else if (config.SpeedType == 14)//old L3
-			{
-				SpeedType.AddSpec_SteerConstraint = 0f;
-				SpeedType.AddSpec_DriftEscapeForce = 0f;
-				SpeedType.AddSpec_TransAccelFactor = 0f;
-				SpeedType.DragFactor = 0.013f;
-				SpeedType.ForwardAccelForce = 250f;
-				SpeedType.BackwardAccelForce = 225f;
-				SpeedType.GripBrakeForce = 270f;
-				SpeedType.SlipBrakeForce = 145f;
-				SpeedType.SteerConstraint = 0.55f;
-				SpeedType.DriftEscapeForce = 700f;
-				SpeedType.CornerDrawFactor = 0.02f;
-				SpeedType.DriftMaxGauge = 700f;
-				SpeedType.TransAccelFactor = 0.0045f;
-				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = -200f;
-				SpeedType.StartForwardAccelForceSpeed = 1400f;
-			}
 			else if (config.SpeedType == 15)//old L2
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
@@ -254,27 +216,8 @@ namespace ExcData
 				SpeedType.DriftMaxGauge = 800f;
 				SpeedType.TransAccelFactor = 0.0045f;
 				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = -200f;
-				SpeedType.StartForwardAccelForceSpeed = 1500f;
-			}
-			else if (config.SpeedType == 16)//old L1
-			{
-				SpeedType.AddSpec_SteerConstraint = 0f;
-				SpeedType.AddSpec_DriftEscapeForce = 0f;
-				SpeedType.AddSpec_TransAccelFactor = 0f;
-				SpeedType.DragFactor = 0.022f;
-				SpeedType.ForwardAccelForce = 550f;
-				SpeedType.BackwardAccelForce = 412f;
-				SpeedType.GripBrakeForce = 440f;
-				SpeedType.SlipBrakeForce = 265f;
-				SpeedType.SteerConstraint = 0.75f;
-				SpeedType.DriftEscapeForce = 950f;
-				SpeedType.CornerDrawFactor = 0.02f;
-				SpeedType.DriftMaxGauge = 1250f;
-				SpeedType.TransAccelFactor = 0.0045f;
-				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = -200f;
-				SpeedType.StartForwardAccelForceSpeed = 1700f;
+				SpeedType.StartForwardAccelForceItem = 400f;
+				SpeedType.StartForwardAccelForceSpeed = 400f;
 			}
 			else if (config.SpeedType == 17)//old Pro
 			{
@@ -292,7 +235,7 @@ namespace ExcData
 				SpeedType.DriftMaxGauge = 3700f;
 				SpeedType.TransAccelFactor = 0.0045f;
 				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = -200f;
+				SpeedType.StartForwardAccelForceItem = 1800f;
 				SpeedType.StartForwardAccelForceSpeed = 1800f;
 			}
 			else
