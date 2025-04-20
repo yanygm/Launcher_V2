@@ -17,6 +17,8 @@
 
 [跑跑資訊站](https://kartinfo.me/thread-9369-1-1.html)论坛关于该启动器的链接
 
+**新增复古频道** 初级/L1/L2/L3/Pro
+
 ## 简介
 
 这是一个基于C#的中国跑跑卡丁车游戏启动器，修改自[LAON](https://github.com/MyPuppy)制作的启动器

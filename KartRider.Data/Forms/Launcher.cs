@@ -62,9 +62,9 @@ namespace KartRider
             // 
             // Start_Button
             // 
-            Start_Button.Location = new Point(12, 76);
+            Start_Button.Location = new Point(19, 20);
             Start_Button.Name = "Start_Button";
-            Start_Button.Size = new Size(187, 53);
+            Start_Button.Size = new Size(114, 23);
             Start_Button.TabIndex = 364;
             Start_Button.Text = "启动游戏";
             Start_Button.UseVisualStyleBackColor = true;
@@ -72,9 +72,9 @@ namespace KartRider
             // 
             // GetKart_Button
             // 
-            GetKart_Button.Location = new Point(12, 35);
+            GetKart_Button.Location = new Point(19, 49);
             GetKart_Button.Name = "GetKart_Button";
-            GetKart_Button.Size = new Size(187, 35);
+            GetKart_Button.Size = new Size(114, 23);
             GetKart_Button.TabIndex = 365;
             GetKart_Button.Text = "添加道具";
             GetKart_Button.UseVisualStyleBackColor = true;
@@ -121,9 +121,10 @@ namespace KartRider
             // 
             Speed_comboBox.ForeColor = Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Location = new Point(87, 9);
+            Speed_comboBox.Items.AddRange(new object[] { "普通S1", "快速S2", "高速S3", "慢速S0", "标准", "旧版S1", "旧版S2", "旧版S3", "复古初级", "复古L3", "复古L2", "复古L1", "复古Pro" });
+            Speed_comboBox.Location = new Point(54, 78);
             Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new Size(112, 20);
+            Speed_comboBox.Size = new Size(78, 20);
             Speed_comboBox.TabIndex = 368;
             Speed_comboBox.Text = "标准";
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
@@ -132,7 +133,7 @@ namespace KartRider
             // 
             Speed_label.AutoSize = true;
             Speed_label.ForeColor = Color.Blue;
-            Speed_label.Location = new Point(46, 12);
+            Speed_label.Location = new Point(19, 82);
             Speed_label.Name = "Speed_label";
             Speed_label.Size = new Size(35, 12);
             Speed_label.TabIndex = 369;
@@ -142,7 +143,7 @@ namespace KartRider
             // 
             GitHub.AutoSize = true;
             GitHub.ForeColor = Color.Blue;
-            GitHub.Location = new Point(158, 148);
+            GitHub.Location = new Point(213, 144);
             GitHub.Name = "GitHub";
             GitHub.Size = new Size(41, 12);
             GitHub.TabIndex = 371;
@@ -153,7 +154,7 @@ namespace KartRider
             // 
             KartInfo.AutoSize = true;
             KartInfo.ForeColor = Color.Blue;
-            KartInfo.Location = new Point(146, 160);
+            KartInfo.Location = new Point(201, 160);
             KartInfo.Name = "KartInfo";
             KartInfo.Size = new Size(53, 12);
             KartInfo.TabIndex = 372;
@@ -175,7 +176,7 @@ namespace KartRider
             // 
             label_Docs.AutoSize = true;
             label_Docs.ForeColor = Color.Blue;
-            label_Docs.Location = new Point(170, 136);
+            label_Docs.Location = new Point(225, 132);
             label_Docs.Name = "label_Docs";
             label_Docs.Size = new Size(29, 12);
             label_Docs.TabIndex = 374;
@@ -187,7 +188,7 @@ namespace KartRider
             AutoScaleDimensions = new SizeF(6F, 12F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
-            ClientSize = new Size(211, 180);
+            ClientSize = new Size(257, 180);
             Controls.Add(label_Docs);
             Controls.Add(VersionLabel);
             Controls.Add(Launcher_label);
@@ -288,8 +289,7 @@ namespace KartRider
                     File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
                     Start_Button.Enabled = true;
                     Launcher.GetKart = false;
-                    // -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==
-                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:0")
+                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
                     {
                         WorkingDirectory = this.kartRiderDirectory,
                         UseShellExecute = true,
@@ -635,7 +635,7 @@ namespace KartRider
 
         private void label_Docs_Click(object sender, EventArgs e)
         {
-            string url = "https://themagicflute.github.io/Launcher_V2";
+            string url = "https://themagicflute.github.io/Launcher_V2/";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
