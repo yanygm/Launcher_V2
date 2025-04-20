@@ -32,7 +32,6 @@ namespace KartRider
         private Label label_Client;
         private ComboBox Speed_comboBox;
         private Label Speed_label;
-        private Label NET8;
         private Label GitHub;
         private Label KartInfo;
         private Label Launcher_label;
@@ -53,7 +52,6 @@ namespace KartRider
             VersionLabel = new Label();
             Speed_comboBox = new ComboBox();
             Speed_label = new Label();
-            NET8 = new Label();
             GitHub = new Label();
             KartInfo = new Label();
             Launcher_label = new Label();
@@ -120,10 +118,11 @@ namespace KartRider
             // 
             Speed_comboBox.ForeColor = System.Drawing.Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Items.AddRange(new object[] { "标准", "慢速S0", "普通S1", "快速S2", "高速S3", "旧版S1", "旧版S2", "旧版S3", "复古初级", "复古L3", "复古L2", "复古L1", "复古Pro" });
-            Speed_comboBox.Location = new System.Drawing.Point(74, 78);
+	    Speed_comboBox.Sorted = false;
+            Speed_comboBox.Items.AddRange(Enum.GetNames(typeof(SpeedName)));
+            Speed_comboBox.Location = new System.Drawing.Point(54, 78);
             Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new System.Drawing.Size(58, 20);
+            Speed_comboBox.Size = new System.Drawing.Size(78, 20);
             Speed_comboBox.TabIndex = 368;
             Speed_comboBox.Text = "标准";
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
@@ -136,18 +135,7 @@ namespace KartRider
             Speed_label.Name = "Speed_label";
             Speed_label.Size = new System.Drawing.Size(59, 12);
             Speed_label.TabIndex = 369;
-            Speed_label.Text = "速度选择:";
-            // 
-            // NET8
-            // 
-            NET8.AutoSize = true;
-            NET8.ForeColor = System.Drawing.Color.Blue;
-            NET8.Location = new System.Drawing.Point(207, 128);
-            NET8.Name = "NET8";
-            NET8.Size = new System.Drawing.Size(47, 12);
-            NET8.TabIndex = 370;
-            NET8.Text = ".NET8.0";
-            NET8.Click += NET8_Click;
+            Speed_label.Text = "速度:";
             // 
             // GitHub
             // 
@@ -192,7 +180,6 @@ namespace KartRider
             Controls.Add(Launcher_label);
             Controls.Add(KartInfo);
             Controls.Add(GitHub);
-            Controls.Add(NET8);
             Controls.Add(Speed_comboBox);
             Controls.Add(Speed_label);
             Controls.Add(ClientVersion);
@@ -581,72 +568,15 @@ namespace KartRider
         {
             if (Speed_comboBox.SelectedItem != null)
             {
-                Console.WriteLine(Speed_comboBox.SelectedItem.ToString());
-                if (Speed_comboBox.SelectedItem.ToString() == "标准")
+                if (Enum.TryParse(Speed_comboBox.SelectedItem.ToString(), out SpeedName id))
                 {
-                    config.SpeedType = 7;
+                    config.SpeedType = (byte)id;
+                    Console.WriteLine((SpeedName)config.SpeedType);
                 }
-                else if (Speed_comboBox.SelectedItem.ToString() == "慢速S0")
+                else
                 {
-                    config.SpeedType = 3;
+                    Console.WriteLine("Invalid speed type selected.");
                 }
-                else if (Speed_comboBox.SelectedItem.ToString() == "普通S1")
-                {
-                    config.SpeedType = 0;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "快速S2")
-                {
-                    config.SpeedType = 1;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "高速S3")
-                {
-                    config.SpeedType = 2;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S1")
-                {
-                    config.SpeedType = 10;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S2")
-                {
-                    config.SpeedType = 11;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "旧版S3")
-                {
-                    config.SpeedType = 12;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "复古初级")
-                {
-                    config.SpeedType = 13;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "复古L3")
-                {
-                    config.SpeedType = 14;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "复古L2")
-                {
-                    config.SpeedType = 15;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "复古L1")
-                {
-                    config.SpeedType = 16;
-                }
-                else if (Speed_comboBox.SelectedItem.ToString() == "复古Pro")
-                {
-                    config.SpeedType = 17;
-                }
-            }
-        }
-
-        private void NET8_Click(object sender, EventArgs e)
-        {
-            string url = "https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.13-windows-x64-installer";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"错误: {ex.Message}");
             }
         }
 
