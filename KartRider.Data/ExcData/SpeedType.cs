@@ -11,14 +11,11 @@ namespace ExcData
 		普通S1 = 0,
 		快速S2 = 1,
 		高速S3 = 2,
-		旧版S1 = 10,
-		旧版S2 = 11,
-		旧版S3 = 12,
-		复古初级 = 13,
-		复古L3 = 14,
-		复古L2 = 15,
-		复古L1 = 16,
-		复古Pro = 17,
+		复古初级/S1 = 10,
+		复古L3/S2 = 11,
+  		复古L2 = 12,
+		复古L1/S3 = 13,
+		复古Pro = 14,
 	}
 
 	public class SpeedType
@@ -143,7 +140,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 0f;
 				Console.WriteLine("SpeedType:Integration");
 			}
-			else if (config.SpeedType == 10 || config.SpeedType == 13)//old S1, Rookie
+			else if (config.SpeedType == 10)//Rookie, S1
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -162,7 +159,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = -270f;
 				SpeedType.StartForwardAccelForceSpeed = -270f;
 			}
-			else if (config.SpeedType == 11 || config.SpeedType == 14)//old S2, L3
+			else if (config.SpeedType == 11)//L3, S2
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -181,26 +178,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 450f;
 				SpeedType.StartForwardAccelForceSpeed = 450f;
 			}
-			else if (config.SpeedType == 12 || config.SpeedType == 16)//old S3, L1
-			{
-				SpeedType.AddSpec_SteerConstraint = 0f;
-				SpeedType.AddSpec_DriftEscapeForce = 0f;
-				SpeedType.AddSpec_TransAccelFactor = 0f;
-				SpeedType.DragFactor = 0.051f;
-				SpeedType.ForwardAccelForce = 750f;
-				SpeedType.BackwardAccelForce = 450f;
-				SpeedType.GripBrakeForce = 540f;
-				SpeedType.SlipBrakeForce = 325f;
-				SpeedType.SteerConstraint = 0.75f;
-				SpeedType.DriftEscapeForce = 1100f;
-				SpeedType.CornerDrawFactor = 0.02f;
-				SpeedType.DriftMaxGauge = 1700f;
-				SpeedType.TransAccelFactor = 0.0045f;
-				SpeedType.BoostAccelFactor = 0.006f;
-				SpeedType.StartForwardAccelForceItem = 1350f;
-				SpeedType.StartForwardAccelForceSpeed = 1350f;
-			}
-			else if (config.SpeedType == 15)//old L2
+			else if (config.SpeedType == 12)//L2
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -219,7 +197,26 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 400f;
 				SpeedType.StartForwardAccelForceSpeed = 400f;
 			}
-			else if (config.SpeedType == 17)//old Pro
+			else if (config.SpeedType == 13)//L1, S3
+			{
+				SpeedType.AddSpec_SteerConstraint = 0f;
+				SpeedType.AddSpec_DriftEscapeForce = 0f;
+				SpeedType.AddSpec_TransAccelFactor = 0f;
+				SpeedType.DragFactor = 0.051f;
+				SpeedType.ForwardAccelForce = 750f;
+				SpeedType.BackwardAccelForce = 450f;
+				SpeedType.GripBrakeForce = 540f;
+				SpeedType.SlipBrakeForce = 325f;
+				SpeedType.SteerConstraint = 0.75f;
+				SpeedType.DriftEscapeForce = 1100f;
+				SpeedType.CornerDrawFactor = 0.02f;
+				SpeedType.DriftMaxGauge = 1700f;
+				SpeedType.TransAccelFactor = 0.0045f;
+				SpeedType.BoostAccelFactor = 0.006f;
+				SpeedType.StartForwardAccelForceItem = 1350f;
+				SpeedType.StartForwardAccelForceSpeed = 1350f;
+			}
+			else if (config.SpeedType == 14)//Pro
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
