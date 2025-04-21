@@ -118,8 +118,11 @@ namespace KartRider
             // 
             Speed_comboBox.ForeColor = System.Drawing.Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-	    Speed_comboBox.Sorted = false;
-            Speed_comboBox.Items.AddRange(Enum.GetNames(typeof(SpeedName)));
+            Speed_comboBox.Sorted = false;
+            foreach (string key in SpeedType.speedNames.Keys)
+            {
+                Speed_comboBox.Items.Add(key);
+            }
             Speed_comboBox.Location = new System.Drawing.Point(54, 78);
             Speed_comboBox.Name = "Speed_comboBox";
             Speed_comboBox.Size = new System.Drawing.Size(78, 20);
@@ -568,10 +571,11 @@ namespace KartRider
         {
             if (Speed_comboBox.SelectedItem != null)
             {
-                if (Enum.TryParse(Speed_comboBox.SelectedItem.ToString(), out SpeedName id))
+                string selectedSpeed = Speed_comboBox.SelectedItem.ToString();
+                if (SpeedType.speedNames.ContainsKey(selectedSpeed))
                 {
-                    config.SpeedType = (byte)id;
-                    Console.WriteLine((SpeedName)config.SpeedType);
+                    config.SpeedType = SpeedType.speedNames[selectedSpeed];
+                    Console.WriteLine(selectedSpeed);
                 }
                 else
                 {
