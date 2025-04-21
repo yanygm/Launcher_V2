@@ -2,6 +2,7 @@
 using System.IO;
 using KartRider;
 using ExcData;
+using System.Linq;
 
 namespace Set_Data
 {
