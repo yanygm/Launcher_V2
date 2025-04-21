@@ -171,14 +171,8 @@ namespace KartRider
 
                 if (KartExcData.items.TryGetValue(selectedOuterKey, out Dictionary<short, string> innerDictionary))
                 {
-                    foreach (var kvp in innerDictionary)
-                    {
-                        if (kvp.Value == selectedInnerValue)
-                        {
-                            GetKart.Item_Code = kvp.Key;
-                            break;
-                        }
-                    }
+                    GetKart.Item_Code = innerDictionary.FirstOrDefault(pair => pair.Value == selectedInnerValue).Key;
+                    Console.WriteLine($"Add Item:{selectedInnerValue} ID:{GetKart.Item_Code}");
                 }
             }
         }
