@@ -4,10 +4,13 @@ namespace KartRider
 {
 	public class Kart
 	{
+		/// <summary>
+		/// 空气阻力-
+		/// </summary>
 		public static float AirFriction;
 
 		/// <summary>
-		/// 道具賽特殊加速器持續時間
+		/// 道具賽特殊加速器持续时间
 		/// </summary>
 		public static float AnimalBoosterTime;
 
@@ -17,7 +20,7 @@ namespace KartRider
 		public static float antiCollideBalance;
 
 		/// <summary>
-		/// 倒車加速度
+		/// 倒车加速度+
 		/// </summary>
 		public static float BackwardAccelForce;
 
@@ -39,7 +42,7 @@ namespace KartRider
 		public static float chargeBoostBySpeed;
 
 		/// <summary>
-		/// 改裝名稱：彎道加速度
+		/// 改裝名称：弯道加速度
 		/// </summary>
 		public static float CornerDrawFactor;
 
@@ -54,7 +57,7 @@ namespace KartRider
 		public static int draftTick;
 
 		/// <summary>
-		/// 改裝名稱：極限速度
+		/// 改裝名称：極限速度-
 		/// </summary>
 		public static float DragFactor;
 
@@ -69,32 +72,38 @@ namespace KartRider
 		public static int driftBoostTick;
 
 		/// <summary>
-		/// 改裝名稱：甩尾離心力
+		/// 改裝名称：漂移最佳化
 		/// </summary>
 		public static float DriftEscapeForce;
 
 		/// <summary>
-		/// 氮氣恢復量（％）
+		/// 碰撞时恢复集气量（％）
 		/// </summary>
 		public static float DriftGaguePreservePercent;
 
 		/// <summary>
-		/// 甩尾車身傾斜度
+		/// 漂移车身傾斜度
 		/// </summary>
 		public static float DriftLeanFactor;
 
 		/// <summary>
-		/// 改裝名稱：甩尾集氣量
+		/// 改裝名称：集气速度-
 		/// </summary>
 		public static float DriftMaxGauge;
 
 		/// <summary>
-		/// 彎道迴轉穩定度
+		/// 漂移稳定性
 		/// </summary>
 		public static float DriftSlipFactor;
 
+		/// <summary>
+		/// 漂移触发系数
+		/// </summary>
 		public static float DriftTriggerFactor;
-		
+
+		/// <summary>
+		/// 漂移触发时间
+		/// </summary>
 		public static float DriftTriggerTime;
 
 		/// <summary>
@@ -102,6 +111,9 @@ namespace KartRider
 		/// </summary>
 		public static float ForwardAccelForce;
 
+		/// <summary>
+		/// 弯道敏捷性
+		/// </summary>
 		public static float FrontGripFactor;
 
 		/// <summary>
@@ -115,25 +127,34 @@ namespace KartRider
 		/// 道具賽道具欄位數
 		/// </summary>
 		public static byte ItemSlotCapacity;
-		
+
+		/// <summary>
+		/// 车辆重量
+		/// </summary>
 		public static float Mass;
-		
+
+		/// <summary>
+		/// 最大转向角度
+		/// </summary>
 		public static float MaxSteerAngle;
 
 		/// <summary>
-		/// 啓用機車引擎
+		/// 启用摩托车引擎
 		/// </summary>
 		public static byte motorcycleType;
 
 		/// <summary>
-		/// 改裝名稱：加速器持續時間
+		/// 改裝名称：加速器持续时间
 		/// </summary>
 		public static float NormalBoosterTime;
-		
+
+		/// <summary>
+		/// 弯道敏捷性
+		/// </summary>
 		public static float RearGripFactor;
 
 		/// <summary>
-		/// 甩尾減速
+		/// 漂移減速
 		/// </summary>
 		public static float SlipBrakeForce;
 
@@ -153,7 +174,7 @@ namespace KartRider
 		public static float StartBoosterTimeItem;
 
 		/// <summary>
-		/// 改裝名稱：競速賽起步時間
+		/// 改裝名称：競速賽起步時間
 		/// </summary>
 		public static float StartBoosterTimeSpeed;
 
@@ -171,18 +192,21 @@ namespace KartRider
 		/// 轉向靈活度
 		/// </summary>
 		public static float SteerConstraint;
-		
+
+		/// <summary>
+		/// 转弯倾斜角度
+		/// </summary>
 		public static float SteerLeanFactor;
 		
 		public static float SuperBoosterTime;
 
 		/// <summary>
-		/// 改裝名稱：團體加速器時間
+		/// 改裝名称：團體加速器時間
 		/// </summary>
 		public static float TeamBoosterTime;
 
 		/// <summary>
-		/// 改裝名稱：變身加速器速度
+		/// 改裝名称：变形加速度
 		/// </summary>
 		public static float TransAccelFactor;
 		
@@ -369,7 +393,7 @@ namespace KartRider
 		public static float chargeBoostBySpeedAdded;
 
 		/// <summary>
-		/// 賦能：甩尾集氣速度
+		/// 賦能：漂移集氣速度
 		/// </summary>
 		public static float driftGaugeFactor;
 
