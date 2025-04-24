@@ -23,16 +23,28 @@ namespace KartRider
             Console.WriteLine($"当前版本为: {formattedDate}");
             if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
+                // 询问是否需要更新
                 Console.WriteLine($"发现新版本: {tag_name}, 请问是否需要更新? (Y/n)");
-                string input = Console.ReadLine();
-                if (input.ToLower() == "n")
+                string usrInput = "";
+                while (usrInput != "y" && usrInput != "Y" && usrInput != "n" && usrInput != "N")
                 {
-                    return false;
+                    usrInput = Console.ReadLine();
+                    if (usrInput == "n" || usrInput == "N")
+                    {
+                        return false;
+                    }
+                    else if (usrInput != "y" && usrInput != "Y")
+                    {
+                        Console.WriteLine("请输入 (Y/n): ");
+                    }
                 }
+                // 尝试下载最新的版本
+                Console.WriteLine($"正在下载 {tag_name}...");
                 try
                 {
                     string country = await GetCountryAsync();
                     string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
+                    // 中国大陆需要使用代理下载，处理url
                     if (country != "" && country == "CN")
                     {
                         List<string> urls = new List<string>() { "https://ghproxy.net/", "https://gh-proxy.com/", "https://hub.myany.uk/", "http://kra.myany.uk:2233/", "http://krb.myany.uk:2233/" };
