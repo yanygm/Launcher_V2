@@ -334,20 +334,20 @@ namespace ExcData
 				}
 				if (Kart.defaultExceedType == 7)//L赋能
 				{
-					Kart.chargeInstAccelGaugeByBoost: 0.02f;
-					Kart.chargeInstAccelGaugeByGrip: 0.07f;
-					Kart.chargeInstAccelGaugeByWall: 0.15f;
-					Kart.instAccelFactor: 1.14f;
-					Kart.instAccelGaugeCooldownTime: 3000;
-					Kart.instAccelGaugeLength: 2500f;
-					Kart.instAccelGaugeMinUsable: 500f;
-					Kart.instAccelGaugeMinVelBound: 0f;
-					Kart.instAccelGaugeMinVelLoss: 50f;
-					Kart.useExtendedAfterBoosterMore: 0;
-					Kart.wallCollGaugeCooldownTime: 3000;
-					Kart.wallCollGaugeMaxVelLoss: 200f;
-					Kart.wallCollGaugeMinVelBound: 200f;
-					Kart.wallCollGaugeMinVelLoss: 50f;
+					Kart.chargeInstAccelGaugeByBoost = 0.02f;
+					Kart.chargeInstAccelGaugeByGrip = 0.07f;
+					Kart.chargeInstAccelGaugeByWall = 0.15f;
+					Kart.instAccelFactor = 1.14f;
+					Kart.instAccelGaugeCooldownTime = 3000;
+					Kart.instAccelGaugeLength = 2500f;
+					Kart.instAccelGaugeMinUsable = 500f;
+					Kart.instAccelGaugeMinVelBound = 0f;
+					Kart.instAccelGaugeMinVelLoss = 50f;
+					Kart.useExtendedAfterBoosterMore = 0;
+					Kart.wallCollGaugeCooldownTime = 3000;
+					Kart.wallCollGaugeMaxVelLoss = 200f;
+					Kart.wallCollGaugeMinVelBound = 200f;
+					Kart.wallCollGaugeMinVelLoss = 50f;
 
 					Kart.chargeAntiCollideBalance = 0.8f;
 					Kart.chargeInstAccelGaugeByWallAdded = 0.1f;
