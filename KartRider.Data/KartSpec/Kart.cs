@@ -15,7 +15,7 @@ namespace KartRider
 		public static float AnimalBoosterTime;
 
 		/// <summary>
-		/// 碰撞防禦力
+		/// 碰撞防禦力-
 		/// </summary>
 		public static float antiCollideBalance;
 
@@ -121,6 +121,9 @@ namespace KartRider
 		/// </summary>
 		public static float GripBrakeForce;
 
+		/// <summary>
+		/// 道具赛加速器加速时间
+		/// </summary>
 		public static float ItemBoosterTime;
 
 		/// <summary>
@@ -197,7 +200,10 @@ namespace KartRider
 		/// 转弯倾斜角度
 		/// </summary>
 		public static float SteerLeanFactor;
-		
+
+		/// <summary>
+		/// 超级加速器時間
+		/// </summary>
 		public static float SuperBoosterTime;
 
 		/// <summary>
@@ -209,18 +215,30 @@ namespace KartRider
 		/// 改裝名称：变形加速度
 		/// </summary>
 		public static float TransAccelFactor;
-		
+
+		/// <summary>
+		/// 道具赛启用瞬间加速器
+		/// </summary>
 		public static byte UseExtendedAfterBooster;
 
 		/// <summary>
 		/// 啓用變形加速
 		/// </summary>
 		public static byte UseTransformBooster;
-		
+
+		/// <summary>
+		/// 启用二段式推進器
+		/// </summary>
 		public static byte dualBoosterSetAuto;
-		
+
+		/// <summary>
+		/// 二段加速最小触发时间
+		/// </summary>
 		public static int dualBoosterTickMin;
-		
+
+		/// <summary>
+		/// 二段加速最大触发时间
+		/// </summary>
 		public static int dualBoosterTickMax;
 
 		/// <summary>
