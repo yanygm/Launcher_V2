@@ -307,7 +307,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
 				}
-				if (Kart.defaultExceedType == 6)//L+
+				if (Kart.defaultExceedType == 6)//L时间
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.017f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -329,6 +329,31 @@ namespace ExcData
 					Kart.chargeInstAccelGaugeByBoostAdded = 0.02f;
 					Kart.chargerSystemboosterUseCount = 6;
 					Kart.chargerSystemUseTime = 4500;
+					Kart.chargeBoostBySpeedAdded = 350.0f;
+					Kart.driftGaugeFactor = 2.0f;
+				}
+				if (Kart.defaultExceedType == 7)//L赋能
+				{
+					Kart.chargeInstAccelGaugeByBoost: 0.02f;
+					Kart.chargeInstAccelGaugeByGrip: 0.07f;
+					Kart.chargeInstAccelGaugeByWall: 0.15f;
+					Kart.instAccelFactor: 1.14f;
+					Kart.instAccelGaugeCooldownTime: 3000;
+					Kart.instAccelGaugeLength: 2500f;
+					Kart.instAccelGaugeMinUsable: 500f;
+					Kart.instAccelGaugeMinVelBound: 0f;
+					Kart.instAccelGaugeMinVelLoss: 50f;
+					Kart.useExtendedAfterBoosterMore: 0;
+					Kart.wallCollGaugeCooldownTime: 3000;
+					Kart.wallCollGaugeMaxVelLoss: 200f;
+					Kart.wallCollGaugeMinVelBound: 200f;
+					Kart.wallCollGaugeMinVelLoss: 50f;
+
+					Kart.chargeAntiCollideBalance = 0.8f;
+					Kart.chargeInstAccelGaugeByWallAdded = 0.1f;
+					Kart.chargeInstAccelGaugeByBoostAdded = 0.04f;
+					Kart.chargerSystemboosterUseCount = 5;
+					Kart.chargerSystemUseTime = 4750;
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
