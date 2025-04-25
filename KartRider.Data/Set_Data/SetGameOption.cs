@@ -21,7 +21,7 @@ namespace Set_Data
 		public static byte Unk8 = 1;
 		public static byte Unk9 = 1;
 		public static byte Unk10 = 1;
-		public static byte Unk11 = 14; //녹화 품질
+		public static byte Unk11 = 14; // 录像质量 녹화 품질
 		public static byte BGM_Check = 1;
 		public static byte Sound_Check = 1;
 		public static byte Unk12 = 1;

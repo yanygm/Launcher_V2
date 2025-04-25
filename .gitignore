@@ -3,6 +3,7 @@
 .vs
 obj
 bin
+dist
 
 *.user
 *.sln

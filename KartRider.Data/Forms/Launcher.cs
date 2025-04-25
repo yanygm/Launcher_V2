@@ -37,6 +37,7 @@ namespace KartRider
         private Label Launcher_label;
         private Label ClientVersion;
         private Label label_Docs;
+        private Label label_TimeAttackLog;
         private Label VersionLabel;
 
         public Launcher()
@@ -58,6 +59,7 @@ namespace KartRider
             KartInfo = new Label();
             Launcher_label = new Label();
             label_Docs = new Label();
+            label_TimeAttackLog = new Label();
             SuspendLayout();
             // 
             // Start_Button
@@ -88,9 +90,9 @@ namespace KartRider
             label_Client.ForeColor = Color.Blue;
             label_Client.Location = new Point(2, 144);
             label_Client.Name = "label_Client";
-            label_Client.Size = new Size(47, 12);
+            label_Client.Size = new Size(53, 12);
             label_Client.TabIndex = 367;
-            label_Client.Text = "Client:";
+            label_Client.Text = "游戏版本:";
             label_Client.Click += label_Client_Click;
             // 
             // ClientVersion
@@ -99,7 +101,7 @@ namespace KartRider
             ClientVersion.BackColor = SystemColors.Control;
             ClientVersion.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             ClientVersion.ForeColor = Color.Red;
-            ClientVersion.Location = new Point(45, 144);
+            ClientVersion.Location = new Point(70, 144);
             ClientVersion.Name = "ClientVersion";
             ClientVersion.Size = new Size(0, 12);
             ClientVersion.TabIndex = 367;
@@ -111,7 +113,7 @@ namespace KartRider
             VersionLabel.BackColor = SystemColors.Control;
             VersionLabel.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             VersionLabel.ForeColor = Color.Red;
-            VersionLabel.Location = new Point(57, 160);
+            VersionLabel.Location = new Point(70, 160);
             VersionLabel.Name = "VersionLabel";
             VersionLabel.Size = new Size(0, 12);
             VersionLabel.TabIndex = 373;
@@ -119,14 +121,18 @@ namespace KartRider
             // 
             // Speed_comboBox
             // 
-            Speed_comboBox.ForeColor = Color.Red;
+            Speed_comboBox.ForeColor = System.Drawing.Color.Red;
             Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Items.AddRange(new object[] { "普通S1", "快速S2", "高速S3", "慢速S0", "标准", "旧版S1", "旧版S2", "旧版S3", "复古初级", "复古L3", "复古L2", "复古L1", "复古Pro" });
-            Speed_comboBox.Location = new Point(54, 78);
+            Speed_comboBox.Sorted = false;
+            foreach (string key in SpeedType.speedNames.Keys)
+            {
+                Speed_comboBox.Items.Add(key);
+            }
+            Speed_comboBox.Location = new System.Drawing.Point(54, 78);
             Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new Size(78, 20);
+            Speed_comboBox.Size = new System.Drawing.Size(100, 20);
             Speed_comboBox.TabIndex = 368;
-            Speed_comboBox.Text = "标准";
+            Speed_comboBox.Text = "统合S1.5";
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
             // 
             // Speed_label
@@ -167,21 +173,32 @@ namespace KartRider
             Launcher_label.ForeColor = Color.Blue;
             Launcher_label.Location = new Point(2, 160);
             Launcher_label.Name = "Launcher_label";
-            Launcher_label.Size = new Size(59, 12);
+            Launcher_label.Size = new Size(71, 12);
             Launcher_label.TabIndex = 373;
-            Launcher_label.Text = "Launcher:";
+            Launcher_label.Text = "启动器版本:";
             Launcher_label.Click += GitHub_Click;
             // 
             // label_Docs
             // 
             label_Docs.AutoSize = true;
             label_Docs.ForeColor = Color.Blue;
-            label_Docs.Location = new Point(225, 132);
+            label_Docs.Location = new Point(177, 132);
             label_Docs.Name = "label_Docs";
-            label_Docs.Size = new Size(29, 12);
+            label_Docs.Size = new Size(77, 12);
             label_Docs.TabIndex = 374;
-            label_Docs.Text = "Docs";
+            label_Docs.Text = "线上说明文档";
             label_Docs.Click += label_Docs_Click;
+            // 
+            // label_TimeAttackLog
+            // 
+            label_TimeAttackLog.AutoSize = true;
+            label_TimeAttackLog.ForeColor = Color.Blue;
+            label_TimeAttackLog.Location = new Point(177, 120);
+            label_TimeAttackLog.Name = "label_TimeAttackLog";
+            label_TimeAttackLog.Size = new Size(77, 12);
+            label_TimeAttackLog.TabIndex = 375;
+            label_TimeAttackLog.Text = "查看计时记录";
+            label_TimeAttackLog.Click += label_TimeAttackLog_Click;
             // 
             // Launcher
             // 
@@ -189,6 +206,7 @@ namespace KartRider
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             ClientSize = new Size(257, 180);
+            Controls.Add(label_TimeAttackLog);
             Controls.Add(label_Docs);
             Controls.Add(VersionLabel);
             Controls.Add(Launcher_label);
@@ -234,7 +252,7 @@ namespace KartRider
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
             SetGameOption.Version = val.Header.MinorVersion;
             SetGameOption.Save_SetGameOption();
-            ClientVersion.Text = SetGameOption.Version.ToString();
+            ClientVersion.Text = $"P{SetGameOption.Version.ToString()}";
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
@@ -582,14 +600,15 @@ namespace KartRider
         {
             if (Speed_comboBox.SelectedItem != null)
             {
-                if (Enum.TryParse(Speed_comboBox.SelectedItem.ToString(), out SpeedName id))
+                string selectedSpeed = Speed_comboBox.SelectedItem.ToString();
+                if (SpeedType.speedNames.ContainsKey(selectedSpeed))
                 {
-                    config.SpeedType = (byte)id;
-                    Console.WriteLine((SpeedName)config.SpeedType);
+                    config.SpeedType = SpeedType.speedNames[selectedSpeed];
+                    Console.WriteLine($"速度更改为: {selectedSpeed}");
                 }
                 else
                 {
-                    Console.WriteLine("Invalid speed type selected.");
+                    Console.WriteLine("未知/错误的速度选项");
                 }
             }
         }
@@ -643,6 +662,26 @@ namespace KartRider
             catch (Exception ex)
             {
                 Console.WriteLine($"错误: {ex.Message}");
+            }
+        }
+
+        private void label_TimeAttackLog_Click(object sender, EventArgs e)
+        {
+            string cmd = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TimeAttack.log";
+            try
+            {
+                Process.Start(new ProcessStartInfo(cmd) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                if (ex.GetType() == typeof(System.ComponentModel.Win32Exception))
+                {
+                    Console.WriteLine("计时日志文件未找到, 请进行计时后再查看!");
+                }
+                else
+                {
+                    Console.WriteLine($"错误: {ex.Message}");
+                }
             }
         }
     }

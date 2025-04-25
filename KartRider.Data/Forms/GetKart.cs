@@ -42,7 +42,7 @@ namespace KartRider
                             outPacket.WriteShort(GetKart.Item_Type);
                             outPacket.WriteShort(GetKart.Item_Code);
                             outPacket.WriteShort(KartSN);
-                            outPacket.WriteShort(1);//수량
+                            outPacket.WriteShort(1); // 数量 수량
                             outPacket.WriteShort(0);
                             outPacket.WriteShort(-1);
                             outPacket.WriteShort(0);
@@ -66,7 +66,7 @@ namespace KartRider
                                 outPacket.WriteShort(GetKart.Item_Type);
                                 outPacket.WriteShort(GetKart.Item_Code);
                                 outPacket.WriteShort(KartSN);
-                                outPacket.WriteShort(1);//수량
+                                outPacket.WriteShort(1); // 数量 수량
                                 outPacket.WriteShort(0);
                                 outPacket.WriteShort(-1);
                                 outPacket.WriteShort(0);
@@ -88,7 +88,7 @@ namespace KartRider
                                 outPacket.WriteShort(GetKart.Item_Type);
                                 outPacket.WriteShort(GetKart.Item_Code);
                                 outPacket.WriteShort(KartSN);
-                                outPacket.WriteShort(1);//수량
+                                outPacket.WriteShort(1); // 数量 수량
                                 outPacket.WriteShort(0);
                                 outPacket.WriteShort(-1);
                                 outPacket.WriteShort(0);
@@ -111,7 +111,7 @@ namespace KartRider
                         outPacket.WriteShort(GetKart.Item_Type);
                         outPacket.WriteShort(GetKart.Item_Code);
                         outPacket.WriteUShort(0);
-                        outPacket.WriteShort(1);//수량
+                        outPacket.WriteShort(1); // 数量 수량
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(-1);
                         outPacket.WriteShort(0);
@@ -171,14 +171,8 @@ namespace KartRider
 
                 if (KartExcData.items.TryGetValue(selectedOuterKey, out Dictionary<short, string> innerDictionary))
                 {
-                    foreach (var kvp in innerDictionary)
-                    {
-                        if (kvp.Value == selectedInnerValue)
-                        {
-                            GetKart.Item_Code = kvp.Key;
-                            break;
-                        }
-                    }
+                    GetKart.Item_Code = innerDictionary.FirstOrDefault(pair => pair.Value == selectedInnerValue).Key;
+                    Console.WriteLine($"Add Item:{selectedInnerValue} ID:{GetKart.Item_Code}");
                 }
             }
         }

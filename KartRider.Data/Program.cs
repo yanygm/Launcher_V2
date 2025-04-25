@@ -39,7 +39,7 @@ namespace KartRider
         [STAThread]
         private static async Task Main(string[] args)
         {
-            Console.WriteLine("Chinese KartRider Offline Server Start");
+            Console.WriteLine("中国跑跑卡丁车单机服务器已启动");
             Console.WriteLine("--------------------------------------------------");
             string input;
             string output;
