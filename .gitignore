@@ -1,0 +1,9 @@
+# ignore file
+
+.vs
+obj
+bin
+dist
+
+*.user
+*.sln

@@ -38,7 +38,7 @@ namespace ExcData
 		{
 			int fullCycles = (input - 1) / 10;
 			int positionInCycle = (input - 1) % 10;
-			int current = 201 + fullCycles * 23; // Each full cycle adds net +23 (30 -7)
+			int current = 201 + fullCycles * 23; // Each full cycle adds net +23 (from 30 - 7)
 			for (int i = 1; i <= positionInCycle; i++)
 			{
 				if (i <= 2)
@@ -182,7 +182,7 @@ namespace ExcData
 						Console.WriteLine("-------------------------------------------------------------");
 					}
 				}
-				if (Kart.defaultExceedType == 1)//item S
+				if (Kart.defaultExceedType == 1) // item S
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
 					Kart.chargeInstAccelGaugeByGrip = 0.06f;
@@ -207,7 +207,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
 				}
-				if (Kart.defaultExceedType == 2)//S
+				else if (Kart.defaultExceedType == 2) // S
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -232,7 +232,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 3)//B
+				else if (Kart.defaultExceedType == 3) // B
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -257,7 +257,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 4)//L
+				else if (Kart.defaultExceedType == 4) // L
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -282,7 +282,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 5)//?
+				else if (Kart.defaultExceedType == 5) // Unknown
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.016f;
 					Kart.chargeInstAccelGaugeByGrip = 0.06f;
@@ -307,7 +307,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
 				}
-				if (Kart.defaultExceedType == 6)//L时间
+				else if (Kart.defaultExceedType == 6) //L时间
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.017f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
@@ -332,7 +332,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 350.0f;
 					Kart.driftGaugeFactor = 2.0f;
 				}
-				if (Kart.defaultExceedType == 7)//L赋能
+				else if (Kart.defaultExceedType == 7) //L赋能
 				{
 					Kart.chargeInstAccelGaugeByBoost = 0.02f;
 					Kart.chargeInstAccelGaugeByGrip = 0.07f;
