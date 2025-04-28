@@ -8,18 +8,18 @@ namespace ExcData
 	public class SpeedType
 	{
 		public static Dictionary<string, byte> speedNames = new Dictionary<string, byte>
-    	{
-    		{ "标准", 7 },
-        	{ "慢速S0", 3 },
-        	{ "普通S1", 0 },
-        	{ "快速S2", 1 },
-        	{ "高速S3", 2 },
-        	{ "复古初级&S1", 10 },
-        	{ "复古L3&S2", 11 },
-        	{ "复古L2", 12 },
-        	{ "复古L1&S3", 13 },
-        	{ "复古Pro", 14 }
-    	};
+		{
+			{ "标准", 7 },
+			{ "慢速S0", 3 },
+			{ "普通S1", 0 },
+			{ "快速S2", 1 },
+			{ "高速S3", 2 },
+			{ "复古初级&S1", 10 },
+			{ "复古L3&S2", 11 },
+			{ "复古L2", 12 },
+			{ "复古L1&S3", 13 },
+			{ "复古Pro", 14 }
+		};
 
 		public static float AddSpec_TransAccelFactor = 0f;
 		public static float AddSpec_SteerConstraint = 0f;
