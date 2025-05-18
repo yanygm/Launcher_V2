@@ -17,6 +17,7 @@ namespace KartRider
     {
         public static async Task<bool> UpdateDataAsync()
         {
+            Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName assemblyName = assembly.GetName();
             string simpleName = assemblyName.Name;
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + simpleName);
@@ -118,6 +119,7 @@ namespace KartRider
 
         public static bool ApplyUpdate()
         {
+            Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName assemblyName = assembly.GetName();
             string simpleName = assemblyName.Name;
             try
