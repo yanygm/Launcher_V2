@@ -14,14 +14,14 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore
-      run: dotnet restore Launcher.csproj
+    - name: Publish64
+      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x64 -o PublishedWinExe -c Release
 
-    - name: Publish
-      run: dotnet publish Launcher.csproj -o PublishedWinExe
+    - name: Publish32
+      run: dotnet publish Launcher.csproj --runtime win-x86 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x32 -o PublishedWinExe -c Release
 
     - name: Archive Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Launcher
-        path: PublishedWinExe/Launcher.exe
+        path: PublishedWinExe/
