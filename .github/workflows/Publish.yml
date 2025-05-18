@@ -15,7 +15,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Publish_x64
-      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x64 -o PublishedWinExe -c Release
+      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher -o PublishedWinExe -c Release
 
     - name: Publish_x86
       run: dotnet publish Launcher.csproj --runtime win-x86 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x86 -o PublishedWinExe -c Release
