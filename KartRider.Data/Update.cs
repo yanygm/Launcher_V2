@@ -17,7 +17,9 @@ namespace KartRider
     {
         public static async Task<bool> UpdateDataAsync()
         {
-            DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe");
+            AssemblyName assemblyName = assembly.GetName();
+            string simpleName = assemblyName.Name;
+            DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + simpleName);
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
             Console.WriteLine($"当前版本为: {formattedDate}");
@@ -116,13 +118,15 @@ namespace KartRider
 
         public static bool ApplyUpdate()
         {
+            AssemblyName assemblyName = assembly.GetName();
+            string simpleName = assemblyName.Name;
             try
             {
                 System.IO.Compression.ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.zip", AppDomain.CurrentDomain.BaseDirectory + "Update\\");
                 string script = @$"@echo off
 timeout /t 3 /nobreak
-move {"\"" + AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.exe\""} {"\"" + AppDomain.CurrentDomain.BaseDirectory + "\""}
-start {"\"\" \"" + AppDomain.CurrentDomain.BaseDirectory + "Launcher.exe\""}
+move {"\"" + AppDomain.CurrentDomain.BaseDirectory + "Update\\" + simpleName + "\""} {"\"" + AppDomain.CurrentDomain.BaseDirectory + "\""}
+start {"\"\" \"" + AppDomain.CurrentDomain.BaseDirectory + simpleName + "\""}
 ";
                 string filePath = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
                 try
