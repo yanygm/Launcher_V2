@@ -19,7 +19,7 @@ namespace KartRider
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName assemblyName = assembly.GetName();
-            string simpleName = assemblyName.Name;
+            string simpleName = assemblyName.Name + ".exe";
             DateTime compilationDate = File.GetLastWriteTime(AppDomain.CurrentDomain.BaseDirectory + simpleName);
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
@@ -121,7 +121,7 @@ namespace KartRider
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName assemblyName = assembly.GetName();
-            string simpleName = assemblyName.Name;
+            string simpleName = assemblyName.Name + ".exe";
             try
             {
                 System.IO.Compression.ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.zip", AppDomain.CurrentDomain.BaseDirectory + "Update\\");
