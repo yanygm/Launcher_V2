@@ -194,6 +194,17 @@ namespace ExcData
 				{
 					ExcSpec.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
 				}
+				Console.WriteLine("-------------------------------------------------------------");
+				Console.WriteLine("TuneSpec DragFactor:{0}", ExcSpec.Tune_DragFactor);
+				Console.WriteLine("TuneSpec ForwardAccel:{0}", ExcSpec.Tune_ForwardAccel);
+				Console.WriteLine("TuneSpec CornerDrawFactor:{0}", ExcSpec.Tune_CornerDrawFactor);
+				Console.WriteLine("TuneSpec TeamBoosterTime:{0}", ExcSpec.Tune_TeamBoosterTime);
+				Console.WriteLine("TuneSpec NormalBoosterTime:{0}", ExcSpec.Tune_NormalBoosterTime);
+				Console.WriteLine("TuneSpec StartBoosterTimeSpeed:{0}", ExcSpec.Tune_StartBoosterTimeSpeed);
+				Console.WriteLine("TuneSpec TransAccelFactor:{0}", ExcSpec.Tune_TransAccelFactor);
+				Console.WriteLine("TuneSpec DriftMaxGauge:{0}", ExcSpec.Tune_DriftMaxGauge);
+				Console.WriteLine("TuneSpec DriftEscapeForce:{0}", ExcSpec.Tune_DriftEscapeForce);
+				Console.WriteLine("-------------------------------------------------------------");
 			}
 			else
 			{
@@ -204,7 +215,7 @@ namespace ExcData
 		public static void Use_PlantSpec(short Set_Kart, short Set_KartSN)
 		{
 			var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingPlant!= null)
+			if (existingPlant != null)
 			{
 				if (existingPlant[2] == 43)
 				{
@@ -1068,6 +1079,43 @@ namespace ExcData
 						ExcSpec.Plant46_SlipBrake = 0f;
 					}
 				}
+				Console.WriteLine("-------------------------------------------------------------");
+				Console.WriteLine("Plant43 TransAccelFactor:{0}", ExcSpec.Plant43_TransAccelFactor);
+				Console.WriteLine("Plant43 DragFactor:{0}", ExcSpec.Plant43_DragFactor);
+				Console.WriteLine("Plant43 StartForwardAccelSpeed:{0}", ExcSpec.Plant43_StartForwardAccelSpeed);
+				Console.WriteLine("Plant43 ForwardAccel:{0}", ExcSpec.Plant43_ForwardAccel);
+				Console.WriteLine("Plant43 StartBoosterTimeSpeed:{0}", ExcSpec.Plant43_StartBoosterTimeSpeed);
+
+				Console.WriteLine("Plant44 SlipBrake:{0}", ExcSpec.Plant44_SlipBrake);
+				Console.WriteLine("Plant44 GripBrake:{0}", ExcSpec.Plant44_GripBrake);
+				Console.WriteLine("Plant44 RearGripFactor:{0}", ExcSpec.Plant44_RearGripFactor);
+				Console.WriteLine("Plant44 FrontGripFactor:{0}", ExcSpec.Plant44_FrontGripFactor);
+				Console.WriteLine("Plant44 CornerDrawFactor:{0}", ExcSpec.Plant44_CornerDrawFactor);
+				Console.WriteLine("Plant44 SteerConstraint:{0}", ExcSpec.Plant44_SteerConstraint);
+
+				Console.WriteLine("Plant45 DriftEscapeForce:{0}", ExcSpec.Plant45_DriftEscapeForce);
+				Console.WriteLine("Plant45 DriftMaxGauge:{0}", ExcSpec.Plant45_DriftMaxGauge);
+				Console.WriteLine("Plant45 CornerDrawFactor:{0}", ExcSpec.Plant45_CornerDrawFactor);
+				Console.WriteLine("Plant45 SlipBrake:{0}", ExcSpec.Plant45_SlipBrake);
+				Console.WriteLine("Plant45 AnimalBoosterTime:{0}", ExcSpec.Plant45_AnimalBoosterTime);
+				Console.WriteLine("Plant45 AntiCollideBalance:{0}", ExcSpec.Plant45_AntiCollideBalance);
+				Console.WriteLine("Plant45 DragFactor:{0}", ExcSpec.Plant45_DragFactor);
+
+				Console.WriteLine("Plant46 DriftMaxGauge:{0}", ExcSpec.Plant46_DriftMaxGauge);
+				Console.WriteLine("Plant46 NormalBoosterTime:{0}", ExcSpec.Plant46_NormalBoosterTime);
+				Console.WriteLine("Plant46 DriftSlipFactor:{0}", ExcSpec.Plant46_DriftSlipFactor);
+				Console.WriteLine("Plant46 ForwardAccel:{0}", ExcSpec.Plant46_ForwardAccel);
+				Console.WriteLine("Plant46 AnimalBoosterTime:{0}", ExcSpec.Plant46_AnimalBoosterTime);
+				Console.WriteLine("Plant46 TeamBoosterTime:{0}", ExcSpec.Plant46_TeamBoosterTime);
+				Console.WriteLine("Plant46 StartForwardAccelSpeed:{0}", ExcSpec.Plant46_StartForwardAccelSpeed);
+				Console.WriteLine("Plant46 StartForwardAccelItem:{0}", ExcSpec.Plant46_StartForwardAccelItem);
+				Console.WriteLine("Plant46 StartBoosterTimeSpeed:{0}", ExcSpec.Plant46_StartBoosterTimeSpeed);
+				Console.WriteLine("Plant46 StartBoosterTimeItem:{0}", ExcSpec.Plant46_StartBoosterTimeItem);
+				Console.WriteLine("Plant46 ItemSlotCapacity:{0}", ExcSpec.Plant46_ItemSlotCapacity);
+				Console.WriteLine("Plant46 SpeedSlotCapacity:{0}", ExcSpec.Plant46_SpeedSlotCapacity);
+				Console.WriteLine("Plant46 GripBrake:{0}", ExcSpec.Plant46_GripBrake);
+				Console.WriteLine("Plant46 SlipBrake:{0}", ExcSpec.Plant46_SlipBrake);
+				Console.WriteLine("-------------------------------------------------------------");
 			}
 			else
 			{
@@ -1311,6 +1359,17 @@ namespace ExcData
 					ExcSpec.KartLevel_StartBoosterTimeItem = 100f;
 					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.05f;
 				}
+				Console.WriteLine("-------------------------------------------------------------");
+				Console.WriteLine("KartLevel DragFactor:{0}", ExcSpec.KartLevel_DragFactor);
+				Console.WriteLine("KartLevel ForwardAccel:{0}", ExcSpec.KartLevel_ForwardAccel);
+				Console.WriteLine("KartLevel CornerDrawFactor:{0}", ExcSpec.KartLevel_CornerDrawFactor);
+				Console.WriteLine("KartLevel SteerConstraint:{0}", ExcSpec.KartLevel_SteerConstraint);
+				Console.WriteLine("KartLevel DriftEscapeForce:{0}", ExcSpec.KartLevel_DriftEscapeForce);
+				Console.WriteLine("KartLevel TransAccelFactor:{0}", ExcSpec.KartLevel_TransAccelFactor);
+				Console.WriteLine("KartLevel StartBoosterTimeSpeed:{0}", ExcSpec.KartLevel_StartBoosterTimeSpeed);
+				Console.WriteLine("KartLevel StartBoosterTimeItem:{0}", ExcSpec.KartLevel_StartBoosterTimeItem);
+				Console.WriteLine("KartLevel BoostAccelFactorOnlyItem:{0}", ExcSpec.KartLevel_BoostAccelFactorOnlyItem);
+				Console.WriteLine("-------------------------------------------------------------");
 			}
 			else
 			{
@@ -1382,10 +1441,10 @@ namespace ExcData
 						}
 					}
 					Console.WriteLine("-------------------------------------------------------------");
-					Console.WriteLine("TransAccelFactor:{0}", PartSpec_TransAccelFactor);
-					Console.WriteLine("SteerConstraint:{0}", PartSpec_SteerConstraint);
-					Console.WriteLine("DriftEscapeForce:{0}", PartSpec_DriftEscapeForce);
-					Console.WriteLine("NormalBoosterTime:{0}", PartSpec_NormalBoosterTime);
+					Console.WriteLine("PartSpec TransAccelFactor:{0}", PartSpec_TransAccelFactor);
+					Console.WriteLine("PartSpec SteerConstraint:{0}", PartSpec_SteerConstraint);
+					Console.WriteLine("PartSpec DriftEscapeForce:{0}", PartSpec_DriftEscapeForce);
+					Console.WriteLine("PartSpec NormalBoosterTime:{0}", PartSpec_NormalBoosterTime);
 					Console.WriteLine("-------------------------------------------------------------");
 				}
 			}
