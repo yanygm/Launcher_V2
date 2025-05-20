@@ -1126,7 +1126,7 @@ namespace ExcData
 		public static void Use_KartLevelSpec(short Set_Kart, short Set_KartSN)
 		{
 			var existingLevel = KartExcData.LevelList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingLevel!= null)
+			if (existingLevel != null)
 			{
 				if (existingLevel[4] == 0)
 				{
@@ -1380,7 +1380,7 @@ namespace ExcData
 		public static void Use_PartsSpec(short id, short sn)
 		{
 			var existingParts = KartExcData.PartsList.FirstOrDefault(list => list[0] == id && list[1] == sn);
-			if (existingParts!= null)
+			if (existingParts != null)
 			{
 				for (short i = 63; i < 67; i++)
 				{
