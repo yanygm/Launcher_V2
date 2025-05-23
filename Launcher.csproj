@@ -9,6 +9,7 @@
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>true</PublishTrimmed>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishAot>true</PublishAot>
