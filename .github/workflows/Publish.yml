@@ -25,15 +25,3 @@ jobs:
       with:
         name: Launcher
         path: PublishedWinExe/
-
-    - name: Publish_x64_self-contained
-      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher -o PublishedWinExe -c Release --self-contained true
-
-    - name: Publish_x86_self-contained
-      run: dotnet publish Launcher.csproj --runtime win-x86 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x86 -o PublishedWinExe -c Release --self-contained true
-
-    - name: Archive Artifacts_self-contained
-      uses: actions/upload-artifact@v4
-      with:
-        name: Launcher_self-contained
-        path: PublishedWinExe/
