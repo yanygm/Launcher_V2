@@ -156,14 +156,14 @@ namespace ExcData
 						var skillData = new Dictionary<int, (string Name, float[] Values)>
 						{
 							{ 1, ("ForwardAccelForce", new[] { 0f, 1.5f, 1.7f, 2f, 2.5f, 3.5f }) },
-							{ 2, ("CornerDrawFactor", new[] { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.0015f }) },
+							{ 2, ("CornerDrawFactor", new[] { 0f, 0.0007f, 0.0008f, 0.001f, 0.0012f, 0.002f }) },
 							{ 3, ("DragFactor", new[] { 0f, -0.0008f, -0.001f, -0.0013f, -0.0017f, -0.00225f }) },
-							{ 4, ("NormalBoosterTime", new[] { 0f, 50f, 70f, 90f, 120f, 150f }) },
-							{ 5, ("TeamBoosterTime", new[] { 0f, 100f, 110f, 130f, 150f, 200f }) },
-							{ 6, ("StartBoosterTimeSpeed", new[] { 0f, 150f, 200f, 300f, 450f, 700f }) },
-							{ 7, ("TransAccelFactor", new[] { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.01f }) },
-							{ 8, ("DriftEscapeForce", new[] { 0f, 35f, 50f, 65f, 90f, 105f }) },
-							{ 9, ("DriftMaxGauge", new[] { 0f, -50f, -60f, -70f, -90f, -120f }) }
+							{ 4, ("NormalBoosterTime", new[] { 0f, 50f, 70f, 90f, 120f, 190f }) },
+							{ 5, ("TeamBoosterTime", new[] { 0f, 100f, 110f, 130f, 150f, 250f }) },
+							{ 6, ("StartBoosterTimeSpeed", new[] { 0f, 150f, 200f, 300f, 450f, 800f }) },
+							{ 7, ("TransAccelFactor", new[] { 0f, 0.003f, 0.004f, 0.005f, 0.007f, 0.02f }) },
+							{ 8, ("DriftEscapeForce", new[] { 0f, 35f, 50f, 65f, 90f, 210f }) },
+							{ 9, ("DriftMaxGauge", new[] { 0f, -50f, -60f, -70f, -90f, -200f }) }
 						};
 
 						// Process each skill

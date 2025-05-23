@@ -16,7 +16,6 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Linq;
 using System.Xml.Linq;
-using Vortice.Direct3D11;
 using System.Threading.Tasks;
 
 namespace KartRider

@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualBasic;
-using SharpGen.Runtime.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;

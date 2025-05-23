@@ -10,7 +10,6 @@ using System.Xml;
 using System.Dynamic;
 using System.Linq.Expressions;
 using System.Numerics;
-using Vulkan;
 using System.Text.Json.Nodes;
 
 namespace KartLibrary.Xml

@@ -1334,7 +1334,7 @@ namespace KartRider_PacketName
 		PqChangeClubIntroPacket = 1759840497,
 		PrChangeClubIntroPacket = 1761282290,
 		PqChangeClubAutoJoinStatePacket = 3182169103,
-		PrChangeClubAutoJoinStatePacket = 3184135184 ,
+		PrChangeClubAutoJoinStatePacket = 3184135184,
 		PqBreakUpClubPacket = 1197999945,
 		PrBreakUpClubPacket = 1199179594,
 		PqJoinClubPacket = 864290351,
@@ -1591,5 +1591,8 @@ namespace KartRider_PacketName
 		PrGetMsgrFriendList = 1218709359,
 		PqMsgrReceiveSendInfo = 1500973107,
 		PrMsgrReceiveSendInfo = 1502283828,
+		PqPersonalShopUserDataPacket = 2690255632,
+		PrPersonalShopUserDataPacket = 2692025105,
+		PqRepeatGetMsgrFriendList = 2106788303,
 	}
 }

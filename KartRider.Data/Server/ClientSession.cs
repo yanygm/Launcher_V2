@@ -1043,7 +1043,7 @@ namespace KartRider
 								if (existingList[5] != -1 && (int)(existingList[5]) + 2 == i)
 								{
 								}
-								else if(existingList[7] != -1 && (int)(existingList[7]) + 2 == i)
+								else if (existingList[7] != -1 && (int)(existingList[7]) + 2 == i)
 								{
 								}
 								else
@@ -1279,7 +1279,23 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrFinishTimeAttack"))
 						{
 							outPacket.WriteInt(type);
-							outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00");
+							if (type > 2 && GameType.RewardType == 1)
+							{
+								if (GameType.TimeAttackLevel == 3)
+								{
+									GameType.TimeAttackLevel = 0;
+								}
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteInt(0);
+								outPacket.WriteByte(GameType.TimeAttackLevel += 1);
+								outPacket.WriteInt(0);
+							}
+							else
+							{
+								outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00");
+							}
 							outPacket.WriteUInt(GameType.TimeAttack_RP);//RP
 							outPacket.WriteUInt(GameType.TimeAttack_Lucci);//LUCCI
 							this.Parent.Client.Send(outPacket);
@@ -1753,6 +1769,15 @@ namespace KartRider
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(0);
 							outPacket.WriteByte(1);
+							this.Parent.Client.Send(outPacket);
+						}
+						return;
+					}
+					else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqReceiveRewardItemPacket", 0))
+					{
+						using (OutPacket outPacket = new OutPacket("SpRpReceiveRewardItemPacket"))
+						{
+							outPacket.WriteInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
