@@ -13,7 +13,6 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     
     <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishAot>true</PublishAot>
     
     <AssemblyName>Launcher</AssemblyName>
     <RootNamespace>Launcher</RootNamespace>
