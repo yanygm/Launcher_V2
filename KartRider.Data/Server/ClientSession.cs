@@ -1279,7 +1279,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrFinishTimeAttack"))
 						{
 							outPacket.WriteInt(type);
-							if (type > 2 && GameType.RewardType == 1)
+							if (StartGameData.StartTimeAttack_RankingTimaAttackType == 0 && GameType.RewardType == 1)
 							{
 								if (GameType.TimeAttackLevel == 3)
 								{
