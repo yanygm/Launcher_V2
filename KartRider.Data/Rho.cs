@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using KartLibrary.Xml;
 using System.Text;
 using ExcData;
+using RiderData;
 using KartRider.Common.Utilities;
 using System.Xml;
 using System.Xml.Linq;
@@ -375,6 +376,33 @@ namespace RHOParser
                                     KartExcData.Dictionary.Add(Add);
                                 }
                             }
+                        }
+                    }
+                    if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackMission.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            DateTime now = DateTime.Now;
+                            FavoriteItem.MissionList = doc.Descendants("duelMission")
+                                .Where(mission =>
+                                {
+                                    string period = mission.Element("missionSet")?.Attribute("period")?.Value;
+                                    if (string.IsNullOrEmpty(period)) return false;
+
+                                    string[] timeRange = period.Split('~');
+                                    if (timeRange.Length != 2) return false;
+
+                                    if (!DateTime.TryParse(timeRange[0], out DateTime startTime)) return false;
+                                    if (!DateTime.TryParse(timeRange[1], out DateTime endTime)) return false;
+
+                                    return now >= startTime && now <= endTime;
+                                })
+                                .Select(mission => mission.Attribute("trackId")?.Value)
+                                .Where(trackId => !string.IsNullOrEmpty(trackId))
+                                .ToList();
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
