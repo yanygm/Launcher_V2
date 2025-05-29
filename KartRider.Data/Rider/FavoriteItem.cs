@@ -12,8 +12,10 @@ namespace RiderData
 	{
 		public static List<List<short>> FavoriteItemList = new List<List<short>>();
 		public static List<List<string>> FavoriteTrackList = new List<List<string>>();
+		public static List<string> MissionList = new List<string>();
 		public static string Favorite_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Favorite.xml";
 		public static string FavoriteTrack_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\FavoriteTrack.xml";
+		public static string TrainingMission_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TrainingMission.xml";
 
 		public static void Favorite_Item()
 		{
@@ -216,6 +218,140 @@ namespace RiderData
 				root.AppendChild(xe1);
 				xmlDoc.Save(FavoriteTrack_LoadFile);
 			}
+		}
+
+    	public static byte GetTrackLevel(uint track)
+    	{
+        	try
+        	{
+            	if (!File.Exists(TrainingMission_LoadFile))
+            	{
+            	    return 0;
+            	}
+
+            	XmlDocument doc = new XmlDocument();
+            	doc.Load(TrainingMission_LoadFile);
+
+            	// 获取根元素
+            	XmlElement root = doc.DocumentElement;
+
+            	// 查找指定Track
+            	foreach (XmlNode node in root.ChildNodes)
+            	{
+                	if (node.NodeType == XmlNodeType.Element && 
+                    	node.Name == "TrainingMission" && 
+                    	uint.TryParse(node.Attributes["Track"]?.Value, out uint existingTrack) &&
+                    	existingTrack == track)
+                	{
+                    	if (byte.TryParse(node.Attributes["Level"]?.Value, out byte level))
+                    	{
+                        	return level;
+                    	}
+                    	else
+                    	{
+                        	return 0;
+                    	}
+                	}
+            	}
+            	return 0; // 未找到指定Track
+        	}
+        	catch
+     		{
+        	    return 0; // 发生错误时返回0
+        	}
+    	}
+
+		public static byte TrainingMission(uint Track)
+		{
+			try
+			{
+				// 检查文件是否存在
+				if (!File.Exists(TrainingMission_LoadFile))
+				{
+					CreateXmlFile(Track);
+					return 1;
+				}
+				else
+				{
+					byte Level = ProcessExistingFile(Track);
+					return Level;
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"处理文件时发生错误: {ex.Message}");
+				return 0; // 返回0表示发生错误
+			}
+		}
+
+		public static void CreateXmlFile(uint Track)
+		{
+			XmlDocument doc = new XmlDocument();
+			// 创建XML声明
+			XmlDeclaration xmlDeclaration = doc.CreateXmlDeclaration("1.0", "utf-8", null);
+			doc.AppendChild(xmlDeclaration);
+
+			// 创建根元素
+			XmlElement root = doc.CreateElement("TrainingMission");
+			doc.AppendChild(root);
+
+			// 添加Track
+			XmlElement track1 = doc.CreateElement("TrainingMission");
+			track1.SetAttribute("Track", Track.ToString());
+			track1.SetAttribute("Level", "1");
+			root.AppendChild(track1);
+
+			// 保存文件
+			doc.Save(TrainingMission_LoadFile);
+		}
+
+		public static byte ProcessExistingFile(uint Track)
+		{
+			XmlDocument doc = new XmlDocument();
+			doc.Load(TrainingMission_LoadFile);
+
+			// 获取根元素
+			XmlElement root = doc.DocumentElement;
+
+			// 查找Track
+			XmlNode track1Node = null;
+			foreach (XmlNode node in root.ChildNodes)
+			{
+				if (node.NodeType == XmlNodeType.Element &&
+					node.Name == "TrainingMission" &&
+					node.Attributes["Track"]?.Value == Track.ToString())
+				{
+					track1Node = node;
+					break;
+				}
+			}
+
+			if (track1Node == null)
+			{
+				// Track不存在，添加它
+				XmlElement newTrack1 = doc.CreateElement("TrainingMission");
+				newTrack1.SetAttribute("Track", Track.ToString());
+				newTrack1.SetAttribute("Level", "1");
+				root.AppendChild(newTrack1);
+				return 1;
+			}
+			else
+			{
+				// Track存在，增加Level
+				if (byte.TryParse(track1Node.Attributes["Level"]?.Value, out byte currentLevel))
+				{
+					byte newLevel = (byte)(currentLevel + 1);
+					track1Node.Attributes["Level"].Value = newLevel.ToString();
+					return newLevel;
+				}
+				else
+				{
+					return 0; // 返回0表示发生错误
+				}
+			}
+
+			// 保存更改
+			doc.Save(TrainingMission_LoadFile);
 		}
 	}
 }
