@@ -7,7 +7,6 @@ namespace KartRider
 		public static uint TimeAttack_RP = 0;
 		public static uint TimeAttack_Lucci = 0;
 		public static byte RewardType = 0;
-		public static byte TimeAttackLevel = 0;
 
 		//Time
 		public static int min = 0;
