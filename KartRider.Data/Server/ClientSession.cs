@@ -1130,13 +1130,17 @@ namespace KartRider
 					{
 						int type = iPacket.ReadInt();
 						uint track = iPacket.ReadUInt();
+						byte Level = FavoriteItem.GetTrackLevel(track);
 						//PrGetTrainingMission 00 08 B7 51 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 						using (OutPacket outPacket = new OutPacket("PrGetTrainingMission"))
 						{
 							outPacket.WriteInt(type);
 							outPacket.WriteInt(0);
 							outPacket.WriteInt(0);
-							outPacket.WriteInt(0);
+							outPacket.WriteByte(0); //完成赛道
+							outPacket.WriteByte(0); //使用加速器道具（完成时累积）
+							outPacket.WriteByte(0); //撞击次数%s次以内
+							outPacket.WriteByte(0); //达成赛道纪录
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1149,7 +1153,14 @@ namespace KartRider
 							outPacket.WriteInt(0);
 							outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
 							outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
-							outPacket.WriteHexString("0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+							outPacket.WriteInt(FavoriteItem.MissionList.Count);
+							foreach (string Track in FavoriteItem.MissionList)
+							{
+								byte Level = FavoriteItem.GetTrackLevel(Adler32Helper.GenerateAdler32_UNICODE(Track, 0));
+								outPacket.WriteByte(Level);
+								outPacket.WriteInt(0);
+							}
+							//outPacket.WriteHexString("0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1281,15 +1292,15 @@ namespace KartRider
 							outPacket.WriteInt(type);
 							if (StartGameData.StartTimeAttack_RankingTimaAttackType == 0 && GameType.RewardType == 1)
 							{
-								if (GameType.TimeAttackLevel == 3)
-								{
-									GameType.TimeAttackLevel = 0;
-								}
+								byte Level = FavoriteItem.TrainingMission(StartGameData.StartTimeAttack_Track);
 								outPacket.WriteInt(0);
 								outPacket.WriteInt(0);
+								outPacket.WriteByte(0); //完成赛道
+								outPacket.WriteByte(0); //使用加速器道具（完成时累积）
+								outPacket.WriteByte(0); //撞击次数%s次以内
+								outPacket.WriteByte(0); //达成赛道纪录
 								outPacket.WriteInt(0);
-								outPacket.WriteInt(0);
-								outPacket.WriteByte(GameType.TimeAttackLevel += 1);
+								outPacket.WriteByte(Level);
 								outPacket.WriteInt(0);
 							}
 							else
