@@ -333,6 +333,7 @@ namespace RiderData
 				newTrack1.SetAttribute("Track", Track.ToString());
 				newTrack1.SetAttribute("Level", "1");
 				root.AppendChild(newTrack1);
+				doc.Save(TrainingMission_LoadFile);
 				return 1;
 			}
 			else
@@ -342,6 +343,7 @@ namespace RiderData
 				{
 					byte newLevel = (byte)(currentLevel + 1);
 					track1Node.Attributes["Level"].Value = newLevel.ToString();
+					doc.Save(TrainingMission_LoadFile);
 					return newLevel;
 				}
 				else
@@ -349,9 +351,6 @@ namespace RiderData
 					return 0; // 返回0表示发生错误
 				}
 			}
-
-			// 保存更改
-			doc.Save(TrainingMission_LoadFile);
 		}
 	}
 }
