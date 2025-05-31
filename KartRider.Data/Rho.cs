@@ -384,9 +384,12 @@ namespace RHOParser
                         byte[] data = packFileInfo.GetData();
                         using (MemoryStream stream = new MemoryStream(data))
                         {
+                            // 加载文档并解析任务
                             XDocument doc = XDocument.Load(stream);
                             DateTime now = DateTime.Now;
-                            FavoriteItem.MissionList = doc.Descendants("duelMission")
+
+                            // 解析当前流中的任务
+                            var currentMissionList = doc.Descendants("duelMission")
                                 .Where(mission =>
                                 {
                                     string period = mission.Element("missionSet")?.Attribute("period")?.Value;
@@ -403,6 +406,12 @@ namespace RHOParser
                                 .Select(mission => mission.Attribute("trackId")?.Value)
                                 .Where(trackId => !string.IsNullOrEmpty(trackId))
                                 .ToList();
+
+                            // 如果当前任务列表更长，则更新最大列表
+                            if (currentMissionList.Count > FavoriteItem.MissionList.Count)
+                            {
+                                FavoriteItem.MissionList = currentMissionList;
+                            }
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
