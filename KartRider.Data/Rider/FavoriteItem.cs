@@ -12,7 +12,7 @@ namespace RiderData
 	{
 		public static List<List<short>> FavoriteItemList = new List<List<short>>();
 		public static List<List<string>> FavoriteTrackList = new List<List<string>>();
-		public static List<string> MissionList = new List<string>();
+		public static List<string> MissionList = null;
 		public static string Favorite_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Favorite.xml";
 		public static string FavoriteTrack_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\FavoriteTrack.xml";
 		public static string TrainingMission_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TrainingMission.xml";
