@@ -407,8 +407,7 @@ namespace RHOParser
                                 .Where(trackId => !string.IsNullOrEmpty(trackId))
                                 .ToList();
 
-                            // 如果当前任务列表更长，则更新最大列表
-                            if (currentMissionList.Count > FavoriteItem.MissionList.Count)
+                            if (FavoriteItem.MissionList == null)
                             {
                                 FavoriteItem.MissionList = currentMissionList;
                             }
