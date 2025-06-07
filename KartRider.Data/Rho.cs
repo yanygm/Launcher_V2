@@ -411,6 +411,7 @@ namespace RHOParser
                             {
                                 FavoriteItem.MissionList = currentMissionList;
                             }
+                            Console.WriteLine(string.Join(", ", FavoriteItem.MissionList));
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")

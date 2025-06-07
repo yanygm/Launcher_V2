@@ -1594,5 +1594,9 @@ namespace KartRider_PacketName
 		PqPersonalShopUserDataPacket = 2690255632,
 		PrPersonalShopUserDataPacket = 2692025105,
 		PqRepeatGetMsgrFriendList = 2106788303,
+		PrRepeatGetMsgrFriendList = 2108361168,
+		PcGameClientFramePacket = 1728710863,
+		PcGameClientPingPacket = 1585842290,
+		PcGameClientFocusKartAbuseInfoPacket = 4256763378,
 	}
 }
