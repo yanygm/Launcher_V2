@@ -238,16 +238,47 @@ namespace KartRider
                 channeldata1 = 1;
                 channeldata2 = 4;
                 //StartGameRacing.GameRacing_SpeedType = 4;
-                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                if (channel == 72)
                 {
-                    oPacket.WriteInt(0);
-                    //oPacket.WriteInt(channeldata1);
-                    oPacket.WriteInt(4);
-                    oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                    RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(0);
+                        //oPacket.WriteInt(channeldata1);
+                        oPacket.WriteInt(4);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    GameSupport.OnDisconnect();
+                    StartGameData.StartTimeAttack_SpeedType = 7;
                 }
-                GameSupport.OnDisconnect();
+                else if (channel == 25)
+                {
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteInt(4);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    GameSupport.OnDisconnect();
+                    StartGameData.StartTimeAttack_SpeedType = 4;
+                }
+                else
+                {
+                    using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
+                    {
+                        outPacket.WriteInt(0);
+                        outPacket.WriteInt(0);
+                        outPacket.WriteInt(0);
+                        outPacket.WriteInt(0);
+                        outPacket.WriteInt(0);
+                        outPacket.WriteByte(0);
+                        RouterListener.MySession.Client.Send(outPacket);
+                    }
+                }
+                //GameSupport.OnDisconnect();
                 return;
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelMovein", 0))
@@ -369,7 +400,6 @@ namespace KartRider
                 using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
                 {
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
-                    StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_Track = track;
                     RandomTrack.SetGameType();
 
