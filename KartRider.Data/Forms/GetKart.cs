@@ -28,6 +28,15 @@ namespace KartRider
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (GetKart.Item_Code == 0)
+            {
+                Console.WriteLine($"Add Item:{ItemID.Text} ID:{ItemType.Text}");
+                short tempValue;
+                if (short.TryParse(ItemID.Text, out tempValue))
+                {
+                    GetKart.Item_Code = tempValue;
+                }
+            }
             (new Thread(() =>
             {
                 if (GetKart.Item_Type == 3)
