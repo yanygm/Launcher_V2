@@ -18,8 +18,7 @@ namespace KartRider
         public static async Task<bool> UpdateDataAsync()
         {
             string executablePath = Process.GetCurrentProcess().MainModule.FileName;
-            string executableFileName = Path.GetFileName(executablePath);
-            DateTime compilationDate = File.GetLastWriteTime(Path.Combine(baseDirectory, executableFileName));
+            DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
             Console.WriteLine($"当前版本为: {formattedDate}");
