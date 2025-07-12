@@ -220,14 +220,13 @@ namespace KartRider
         private void OnLoad(object sender, EventArgs e)
         {
 	    string executablePath = Process.GetCurrentProcess().MainModule.FileName;
-	    string executableFileName = Path.GetFileName(executablePath);
             Load_KartExcData();
             StartingLoad_ALL.StartingLoad();
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
             SetGameOption.Version = val.Header.MinorVersion;
             SetGameOption.Save_SetGameOption();
             ClientVersion.Text = SetGameOption.Version.ToString();
-            DateTime compilationDate = File.GetLastWriteTime(Path.Combine(baseDirectory, executableFileName));
+            DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
             Console.WriteLine("Process: {0}", this.kartRiderDirectory + Launcher.KartRider);
