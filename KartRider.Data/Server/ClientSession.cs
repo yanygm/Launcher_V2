@@ -383,7 +383,7 @@ namespace KartRider
 						}
 						using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
 						{
-							outPacket.WriteString("单机版完全免费，跑跑資訊站：https://kartinfo.me/thread-9369-1-1.html");
+							outPacket.WriteString("单机版完全免费，GitHub：https://github.com/yanygm/Launcher_V2");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -2324,7 +2324,7 @@ namespace KartRider
 							outPacket.WriteString("name");
 							outPacket.WriteString("endingBanner");
 							outPacket.WriteString("enable");
-							outPacket.WriteString("false");
+							outPacket.WriteString("true");//false
 							outPacket.WriteString("value");
 							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							outPacket.WriteInt(0);
