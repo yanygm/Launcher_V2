@@ -2324,7 +2324,7 @@ namespace KartRider
 							outPacket.WriteString("name");
 							outPacket.WriteString("endingBanner");
 							outPacket.WriteString("enable");
-							outPacket.WriteString("true");//false
+							outPacket.WriteString("false");
 							outPacket.WriteString("value");
 							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							outPacket.WriteInt(0);
