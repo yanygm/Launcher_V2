@@ -285,13 +285,13 @@ namespace KartRider
 			oPacket.WriteEncFloat(SpeedType.GripBrakeForce + Kart.GripBrakeForce);
 			oPacket.WriteEncFloat(SpeedType.SlipBrakeForce + Kart.SlipBrakeForce);
 			oPacket.WriteEncFloat(Kart.MaxSteerAngle);
-			oPacket.WriteEncFloat(SpeedType.SteerConstraint + Kart.SteerConstraint);
+			oPacket.WriteEncFloat(SpeedType.SteerConstraint + Kart.SteerConstraint + V2Spec.V2Default_SteerConstraint);
 			oPacket.WriteEncFloat(Kart.FrontGripFactor);
 			oPacket.WriteEncFloat(Kart.RearGripFactor);
 			oPacket.WriteEncFloat(Kart.DriftTriggerFactor);
 			oPacket.WriteEncFloat(Kart.DriftTriggerTime);
 			oPacket.WriteEncFloat(Kart.DriftSlipFactor);
-			oPacket.WriteEncFloat(SpeedType.DriftEscapeForce + Kart.DriftEscapeForce + FlyingPet.DriftEscapeForce + SpeedPatch.DriftEscapeForce);
+			oPacket.WriteEncFloat(SpeedType.DriftEscapeForce + Kart.DriftEscapeForce + FlyingPet.DriftEscapeForce + SpeedPatch.DriftEscapeForce + V2Spec.V2Default_DriftEscapeForce);
 			oPacket.WriteEncFloat(SpeedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + SpeedPatch.CornerDrawFactor);
 			oPacket.WriteEncFloat(Kart.DriftLeanFactor);
 			oPacket.WriteEncFloat(Kart.SteerLeanFactor);
@@ -309,7 +309,7 @@ namespace KartRider
 			}
 			else
 			{
-				oPacket.WriteEncFloat(Kart.NormalBoosterTime + FlyingPet.NormalBoosterTime);
+				oPacket.WriteEncFloat(Kart.NormalBoosterTime + FlyingPet.NormalBoosterTime + V2Spec.V2Default_NormalBoosterTime);
 			}
 			oPacket.WriteEncFloat(Kart.ItemBoosterTime + FlyingPet.ItemBoosterTime);
 			if (StartGameData.StartTimeAttack_SpeedType == 6)
@@ -322,7 +322,7 @@ namespace KartRider
 			}
 			oPacket.WriteEncFloat(Kart.AnimalBoosterTime);
 			oPacket.WriteEncFloat(Kart.SuperBoosterTime);
-			oPacket.WriteEncFloat(SpeedType.TransAccelFactor + Kart.TransAccelFactor + SpeedPatch.TransAccelFactor);
+			oPacket.WriteEncFloat(SpeedType.TransAccelFactor + Kart.TransAccelFactor + SpeedPatch.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
 			oPacket.WriteEncFloat(SpeedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
 			oPacket.WriteEncFloat(Kart.StartBoosterTimeItem);
 			oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed);
