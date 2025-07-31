@@ -265,6 +265,17 @@ namespace KartRider
                     //GameSupport.OnDisconnect();
                     StartGameData.StartTimeAttack_SpeedType = 4;
                 }
+                else if (channel == 70 || channel == 57)
+                {
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(1);
+                        oPacket.WriteInt(2);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    StartGameData.StartTimeAttack_SpeedType = 7;
+                }
                 else
                 {
                     using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
