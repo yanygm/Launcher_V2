@@ -315,14 +315,18 @@ namespace KartRider
 
         public void Load_KartExcData()
         {
-            if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml"))
-			{
-				string ModelMax = Resources.ModelMax;
-				using (StreamWriter streamWriter = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml", false))
-				{
-					streamWriter.Write(ModelMax);
-				}
-			}
+            string ModelMaxPath = AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml";
+            string ModelMax = Resources.ModelMax;
+            if (!File.Exists(ModelMaxPath))
+            {
+                using (StreamWriter streamWriter = new StreamWriter(ModelMaxPath, false))
+                {
+                    streamWriter.Write(ModelMax);
+                }
+            }
+            XmlFileUpdater.XmlUpdater updater = new XmlFileUpdater.XmlUpdater();
+            updater.UpdateLocalXmlWithResource(ModelMaxPath, ModelMax);
+
             EnsureDefaultDataFileExists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", CreateAIDefaultData);
 
             KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory+ @"Profile\NewKart.xml", LoadNewKart);
@@ -626,3 +630,4 @@ namespace KartRider
         }
     }
 }
+
