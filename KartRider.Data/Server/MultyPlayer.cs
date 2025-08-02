@@ -96,6 +96,19 @@ namespace KartRider
                 outPacket.WriteByte();
                 outPacket.WriteInt(1);
                 outPacket.WriteInt();
+                if (AiTimeData.Count < aiNodes.Count())
+                {
+                    // 如果 AiTimeData 中的 AI 数量少于 aiNodes，则填充缺失的 AI 时间数据
+                    foreach (var node in aiNodes)
+                    {
+                        string nodeName = node.Name.LocalName;
+                        int numberPart = int.Parse(nodeName.Substring(2)); // 从索引2开始截取（跳过"Ai"）
+                        if (!AiTimeData.ContainsKey(numberPart))
+                        {
+                            AiTimeData[numberPart] = 4294967295;
+                        }
+                    }
+                }
                 TimeData = AiTimeData;
                 if (FinishTime == 0)
                 {
@@ -956,3 +969,4 @@ namespace KartRider
         }
     }
 }
+
