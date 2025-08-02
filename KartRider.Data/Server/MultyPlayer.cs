@@ -1,4 +1,5 @@
 using ExcData;
+using KartLibrary.IO;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
 using KartRider_PacketName;
@@ -28,9 +29,10 @@ namespace KartRider
         static uint FinishTime = 0;
         static string AiXmlFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml";
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
+        public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
 
         [DllImport("kernel32")]
-        extern static UInt32 GetTickCount();
+        extern static ulong GetTickCount();
 
         public static void milTime(int time)
         {
@@ -42,9 +44,29 @@ namespace KartRider
 
         public static uint GetUpTime()
         {
-            var temp = TimeSpan.FromMilliseconds(GetTickCount()).Ticks;
-            temp /= 10000;
-            return (uint)temp;
+            var Time = (uint)GetTickCount();
+            return Time;
+        }
+
+        public static Dictionary<int, int> GetAllRanks()
+        {
+            if (TimeData.Count == 0)
+                return new Dictionary<int, int>();
+
+            // 按值降序排序（值越大排名越靠前）
+            var sortedItems = TimeData
+                .OrderBy(item => item.Value)
+                .ToList();
+
+            var ranks = new Dictionary<int, int>();
+
+            // 排名从0开始，逐个分配（相同值也会依次+1）
+            for (int i = 0; i < sortedItems.Count; i++)
+            {
+                ranks[sortedItems[i].Key] = i; // 直接使用索引作为排名
+            }
+
+            return ranks;
         }
 
         static void Set_settleTrigger()
@@ -68,21 +90,27 @@ namespace KartRider
             }
             using (OutPacket outPacket = new OutPacket("GameResultPacket"))
             {
+                // 加载 XML 文件
+                XDocument doc = XDocument.Load(AiXmlFile);
+                var aiNodes = doc.Root.Elements().Where(e => e.Name.LocalName.StartsWith("Ai") && !e.Name.LocalName.Equals("AiData")).OrderBy(e => e.Name.LocalName);
                 outPacket.WriteByte();
                 outPacket.WriteInt(1);
                 outPacket.WriteInt();
+                TimeData = AiTimeData;
                 if (FinishTime == 0)
                 {
                     outPacket.WriteHexString("FFFFFFFF");
+                    TimeData.Add(0, 4294967295);
                 }
                 else
                 {
                     outPacket.WriteUInt(FinishTime);
+                    TimeData.Add(0, FinishTime);
                 }
                 outPacket.WriteByte();
                 outPacket.WriteShort(SetRiderItem.Set_Kart);
-                outPacket.WriteShort();
-                outPacket.WriteShort();
+                var ranks = GetAllRanks();
+                outPacket.WriteInt(ranks[0]);
                 outPacket.WriteShort();
                 outPacket.WriteByte();
                 outPacket.WriteUInt(SetRider.RP += 10000);
@@ -91,15 +119,16 @@ namespace KartRider
                 outPacket.WriteUInt(SetRider.Lucci += 10000);
                 outPacket.WriteBytes(new byte[46]);
                 outPacket.WriteInt(1);
-                outPacket.WriteBytes(new byte[52]);
+                outPacket.WriteHexString("00 6B 01 00");
+                outPacket.WriteInt(0);
+                outPacket.WriteInt(12 - aiNodes.Count());
+                outPacket.WriteBytes(new byte[40]);
                 outPacket.WriteHexString("FF");
                 outPacket.WriteHexString("00 00 00 00 00 00 00 E3 23 07 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A8");
                 outPacket.WriteInt(1);
                 outPacket.WriteBytes(new byte[38]);
-                // 加载 XML 文件
-                XDocument doc = XDocument.Load(AiXmlFile);
-                var aiNodes = doc.Root.Elements().Where(e => e.Name.LocalName.StartsWith("Ai") && !e.Name.LocalName.Equals("AiData")).OrderBy(e => e.Name.LocalName);
                 outPacket.WriteInt(aiNodes.Count()); // AI count
+                int index = 0;
                 foreach (var node in aiNodes)
                 {
                     // 提取 Ai 后的数值部分（例如："Ai2" → "2"）
@@ -120,11 +149,11 @@ namespace KartRider
                     // 获取 kart 属性值
                     short kart = ParseShort(node.Attribute("kart"));
                     outPacket.WriteShort(kart);
-                    outPacket.WriteShort();
-                    outPacket.WriteShort();
+                    outPacket.WriteInt(ranks[numberPart]);
                     outPacket.WriteHexString("A0 60");
                     outPacket.WriteByte();
                     outPacket.WriteInt();
+                    index++;
                 }
                 outPacket.WriteBytes(new byte[34]);
                 outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
@@ -211,7 +240,7 @@ namespace KartRider
                     }
                     Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
                     Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 8000);
-                    if (AiTimeData.Count == 0) Set_settleTrigger();
+                    Set_settleTrigger();
                 }
                 return;
             }
@@ -551,13 +580,14 @@ namespace KartRider
                 {
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
-                        EndTicks = AiTime + 8000;
+                        EndTicks = GetUpTime() + 15000;
                         oPacket.WriteInt(3);
                         oPacket.WriteByte(0);
-                        oPacket.WriteUInt(EndTicks);
+                        oPacket.WriteUInt(GetUpTime() + 10000);
+                        RouterListener.MySession.Client.Send(oPacket);
                     }
                     Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
-                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 8000);
+                    Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
                     Set_settleTrigger();
                 }
                 AiTimeData.Add(AiNum, AiTime);
