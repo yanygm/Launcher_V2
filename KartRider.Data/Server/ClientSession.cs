@@ -1682,9 +1682,9 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrKartPassInitPacket"))
 						{
-							outPacket.WriteInt(3);
-							outPacket.WriteInt(0);
-							//outPacket.WriteHexString("0000000001000000000000000000000000");
+							//outPacket.WriteInt(3);
+							//outPacket.WriteInt(0);
+							outPacket.WriteHexString("0000000001000000000000000000000000");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
