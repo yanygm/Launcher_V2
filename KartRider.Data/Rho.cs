@@ -8,6 +8,7 @@ using KartLibrary.Xml;
 using System.Text;
 using ExcData;
 using RiderData;
+using KartRider;
 using KartRider.Common.Utilities;
 using System.Xml;
 using System.Xml.Linq;
@@ -353,6 +354,62 @@ namespace RHOParser
                                     {
                                         KartExcData.scenario.Add(id);
                                     }
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "item/slot/itemProb_indi@zz.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            foreach (var item in doc.Descendants("item"))
+                            {
+                                // 获取 idx 属性值
+                                string idxValue = item.Attribute("idx")?.Value;
+
+                                // 验证并转换为 short 类型
+                                if (short.TryParse(idxValue, out short idx))
+                                {
+                                    KartExcData.itemProb_indi.Add(idx);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"无法将 '{idxValue}' 转换为 short 类型");
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "item/slot/itemProb_team@zz.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            foreach (var item in doc.Descendants("item"))
+                            {
+                                // 获取 idx 属性值
+                                string idxValue = item.Attribute("idx")?.Value;
+
+                                // 验证并转换为 short 类型
+                                if (short.TryParse(idxValue, out short idx))
+                                {
+                                    KartExcData.itemProb_team.Add(idx);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"无法将 '{idxValue}' 转换为 short 类型");
                                 }
                             }
                         }
