@@ -18,6 +18,8 @@ using KartLibrary.File;
 using static KartRider.Common.Data.PINFile;
 using System.Collections;
 using System.Reflection;
+using System.Linq;
+using System.Xml.XPath;
 
 namespace KartRider
 {
@@ -344,6 +346,48 @@ namespace KartRider
             {
                 createDefaultData();
             }
+            else
+            {
+                try
+                {
+                    XDocument doc = XDocument.Load(filePath); // 解析XML内容
+                    if (!(doc.Descendants("SpeedSpec").Any())) // 查找是否存在指定元素
+                    {
+                        var aiNodes = doc.XPathSelectElements("//AI");
+                        foreach (var aiNode in aiNodes)
+                        {
+                            XElement speedSpecElement = new XElement("SpeedSpec");
+                            speedSpecElement.SetAttributeValue("a", "1");
+                            speedSpecElement.SetAttributeValue("b", "2300");
+                            speedSpecElement.SetAttributeValue("c", "2930");
+                            speedSpecElement.SetAttributeValue("d", "1.4");
+                            speedSpecElement.SetAttributeValue("e", "1000");
+                            speedSpecElement.SetAttributeValue("f", "1500");
+                            aiNode.Add(speedSpecElement);
+                        }
+                    }
+                    if (!(doc.Descendants("ItemSpec").Any()))
+                    {
+                        var aiNodes = doc.XPathSelectElements("//AI");
+                        foreach (var aiNode in aiNodes)
+                        {
+                            XElement itemSpecElement = new XElement("ItemSpec");
+                            itemSpecElement.SetAttributeValue("a", "0.8");
+                            itemSpecElement.SetAttributeValue("b", "2300");
+                            itemSpecElement.SetAttributeValue("c", "2930");
+                            itemSpecElement.SetAttributeValue("d", "1.4");
+                            itemSpecElement.SetAttributeValue("e", "1000");
+                            itemSpecElement.SetAttributeValue("f", "1500");
+                            aiNode.Add(itemSpecElement);
+                        }
+                    }
+                    doc.Save(filePath); // 保存修改后的XML内容
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"处理XML时出错: {ex.Message}");
+                }
+            }
         }
 
         private void CreateAIDefaultData()
@@ -359,7 +403,15 @@ namespace KartRider
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
             XmlNode root = xmlDoc.SelectSingleNode("AI");
-            XmlElement xe2 = xmlDoc.CreateElement("AiData");
+            XmlElement xe1 = xmlDoc.CreateElement("SpeedSpec");
+            xe1.SetAttribute("a", "1");
+            xe1.SetAttribute("b", "2300");
+            xe1.SetAttribute("c", "2930");
+            xe1.SetAttribute("d", "1.4");
+            xe1.SetAttribute("e", "1000");
+            xe1.SetAttribute("f", "1500");
+            root.AppendChild(xe1);
+            XmlElement xe2 = xmlDoc.CreateElement("ItemSpec");
             xe2.SetAttribute("a", "1");
             xe2.SetAttribute("b", "2300");
             xe2.SetAttribute("c", "2930");
@@ -630,4 +682,3 @@ namespace KartRider
         }
     }
 }
-
