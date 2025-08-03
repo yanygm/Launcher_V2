@@ -1682,9 +1682,9 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrKartPassInitPacket"))
 						{
-							//outPacket.WriteInt(3);
-							//outPacket.WriteInt(0);
-							outPacket.WriteHexString("0000000001000000000000000000000000");
+							outPacket.WriteInt(3);
+							outPacket.WriteInt(0);
+							//outPacket.WriteHexString("0000000001000000000000000000000000");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1713,7 +1713,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
 						{
-							outPacket.WriteUInt(0);
+							outPacket.WriteUInt(99);
 							outPacket.WriteUInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
@@ -1963,7 +1963,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrShopCashPage"))
 						{
-							outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1974,7 +1974,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrShopURLPage"))
 						{
 							outPacket.WriteInt(URLPageType);
-							outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
