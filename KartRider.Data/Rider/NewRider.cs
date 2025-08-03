@@ -58,7 +58,7 @@ namespace RiderData
 				oPacket.WriteString(SetRider.Card);
 				oPacket.WriteUInt(SetRider.Lucci);
 				oPacket.WriteUInt(SetRider.RP);
-				oPacket.WriteBytes(new byte[94]);
+				oPacket.WriteBytes(new byte[100]);
 				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
