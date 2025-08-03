@@ -412,7 +412,7 @@ namespace KartRider
             xe1.SetAttribute("f", "1500");
             root.AppendChild(xe1);
             XmlElement xe2 = xmlDoc.CreateElement("ItemSpec");
-            xe2.SetAttribute("a", "1");
+            xe2.SetAttribute("a", "0.8");
             xe2.SetAttribute("b", "2300");
             xe2.SetAttribute("c", "2930");
             xe2.SetAttribute("d", "1.4");
@@ -682,3 +682,4 @@ namespace KartRider
         }
     }
 }
+
