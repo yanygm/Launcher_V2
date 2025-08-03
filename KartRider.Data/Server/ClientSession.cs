@@ -1713,8 +1713,8 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
 						{
-							outPacket.WriteUInt(99);
-							outPacket.WriteUInt(10);
+							outPacket.WriteUInt(0);
+							outPacket.WriteUInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1963,7 +1963,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrShopCashPage"))
 						{
-							outPacket.WriteString("https://ripay.nexon.com/Payment/Index");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1974,7 +1974,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrShopURLPage"))
 						{
 							outPacket.WriteInt(URLPageType);
-							outPacket.WriteString("https://pay.tiancity.com/InnerGame/IndexII.aspx");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
