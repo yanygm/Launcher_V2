@@ -235,54 +235,18 @@ namespace KartRider
                     {
                         if (skill == 7) //导弹
                         {
-                            using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
-                            {
-                                oPacket.WriteInt();
-                                oPacket.WriteUInt(4294967295);
-                                oPacket.WriteByte(type);
-                                oPacket.WriteHexString("001000");
-                                oPacket.WriteShort(5); //磁铁
-                                oPacket.WriteByte(1);
-                                oPacket.WriteBytes(new byte[3]);
-                                oPacket.WriteByte(2);
-                                oPacket.WriteShort(5); //磁铁
-                                oPacket.WriteBytes(new byte[5]);
-                            }
+                            GameSupport.AddItemSkill(5); //磁铁
                         }
                         if (skill == 5) //磁铁
                         {
-                            using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
-                            {
-                                oPacket.WriteInt();
-                                oPacket.WriteUInt(4294967295);
-                                oPacket.WriteByte(type);
-                                oPacket.WriteHexString("001000");
-                                oPacket.WriteShort(24); //警笛
-                                oPacket.WriteByte(1);
-                                oPacket.WriteBytes(new byte[3]);
-                                oPacket.WriteByte(2);
-                                oPacket.WriteShort(24); //警笛
-                                oPacket.WriteBytes(new byte[5]);
-                            }
+                            GameSupport.AddItemSkill(24); //警灯
                         }
                     }
                     if (SetRiderItem.Set_Kart == 1563)
                     {
                         if (skill == 136) //黑豹导弹
                         {
-                            using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
-                            {
-                                oPacket.WriteInt();
-                                oPacket.WriteUInt(4294967295);
-                                oPacket.WriteByte(type);
-                                oPacket.WriteHexString("001000");
-                                oPacket.WriteShort(6); //加速器
-                                oPacket.WriteByte(1);
-                                oPacket.WriteBytes(new byte[3]);
-                                oPacket.WriteByte(2);
-                                oPacket.WriteShort(6); //加速器
-                                oPacket.WriteBytes(new byte[5]);
-                            }
+                            GameSupport.AddItemSkill(6); //加速器
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
