@@ -214,6 +214,8 @@ namespace ExcData
 					Kart.chargerSystemUseTime = 0;
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
+
+					startItemId = (int)(GameSupport.GetItemSkill(SetRiderItem.Set_Kart));
 				}
 				if (Kart.defaultExceedType == 2)//S
 				{
