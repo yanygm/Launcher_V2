@@ -32,10 +32,10 @@ namespace KartRider
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
         static short[] aiCharacter = new short[] { 1, 2, 3, 5, 6, 7, 8, 20 };
-        private static Dictionary<int, Dictionary<short, int>> skillMappings = new Dictionary<int, Dictionary<short, int>>
+        private static Dictionary<short, Dictionary<short, short>> skillMappings = new Dictionary<short, Dictionary<short, short>>
         {
-            { 1450, new Dictionary<short, int> { {7, 5}, {5, 24} } },
-            { 1563, new Dictionary<short, int> { {136, 6} } }
+            { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
+            { 1563, new Dictionary<short, short> { {136, 6} } }
         };
 
         [DllImport("kernel32")]
