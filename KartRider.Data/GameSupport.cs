@@ -300,13 +300,13 @@ namespace KartRider
 			return skill;
 		}
 
-		public static void AddItemSkill(byte type, short skill)
+		public static void AddItemSkill(short skill)
 		{
 			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
 			{
 				oPacket.WriteInt();
 				oPacket.WriteUInt(4294967295);
-				oPacket.WriteByte(type);
+				oPacket.WriteByte(10);
 				oPacket.WriteHexString("001000");
 				oPacket.WriteShort(skill);
 				oPacket.WriteByte(1);
