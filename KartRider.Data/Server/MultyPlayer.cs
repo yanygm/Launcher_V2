@@ -209,8 +209,8 @@ namespace KartRider
                     byte unk1 = iPacket.ReadByte();
                     byte[] data2 = iPacket.ReadBytes(4);
                     iPacket.ReadByte();
-                    iPacket.ReadByte();
-                    byte[] data3 = iPacket.ReadBytes(30);
+                    iPacket.ReadShort();
+                    byte[] data3 = iPacket.ReadBytes(29);
                     using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                     {
                         oPacket.WriteInt();
@@ -222,8 +222,8 @@ namespace KartRider
                         oPacket.WriteShort(KartExcData.itemProb_indi[index]);
                         oPacket.WriteByte(1);
                         oPacket.WriteBytes(data2);
-                        oPacket.WriteByte(0);
-                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(2);
+                        oPacket.WriteShort(KartExcData.itemProb_indi[index]);
                         oPacket.WriteBytes(data3);
                         RouterListener.MySession.Client.Send(oPacket);
                     }
