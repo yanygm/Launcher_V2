@@ -231,22 +231,26 @@ namespace KartRider
                 {
                     iPacket.ReadBytes(3);
                     var skill = iPacket.ReadShort();
-                    if (SetRiderItem.Set_Kart == 1450)
+                    var switch = iPacket.ReadByte();
+                    if (switch == 255)
                     {
-                        if (skill == 7) //导弹
+                        if (SetRiderItem.Set_Kart == 1450)
                         {
-                            GameSupport.AddItemSkill(type, 5); //磁铁
+                            if (skill == 7) //导弹
+                            {
+                                GameSupport.AddItemSkill(type, 5); //磁铁
+                            }
+                            if (skill == 5) //磁铁
+                            {
+                                GameSupport.AddItemSkill(type, 24); //警灯
+                            }
                         }
-                        if (skill == 5) //磁铁
+                        if (SetRiderItem.Set_Kart == 1563)
                         {
-                            GameSupport.AddItemSkill(type, 24); //警灯
-                        }
-                    }
-                    if (SetRiderItem.Set_Kart == 1563)
-                    {
-                        if (skill == 136) //黑豹导弹
-                        {
-                            GameSupport.AddItemSkill(type, 6); //加速器
+                            if (skill == 136) //黑豹导弹
+                            {
+                                GameSupport.AddItemSkill(type, 6); //加速器
+                            }
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
