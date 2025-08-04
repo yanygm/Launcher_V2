@@ -217,13 +217,12 @@ namespace KartRider
                         oPacket.WriteUInt(item);
                         oPacket.WriteByte(type);
                         oPacket.WriteBytes(data1);
-                        Random random = new Random();
-                        int index = random.Next(KartExcData.itemProb_indi.Count);
-                        oPacket.WriteShort(KartExcData.itemProb_indi[index]);
+                        short skill = GameSupport.GetItemSkill(SetRiderItem.Set_Kart);
+                        oPacket.WriteShort(skill);
                         oPacket.WriteByte(1);
                         oPacket.WriteBytes(data2);
                         oPacket.WriteByte(2);
-                        oPacket.WriteShort(KartExcData.itemProb_indi[index]);
+                        oPacket.WriteShort(skill);
                         oPacket.WriteBytes(data3);
                         RouterListener.MySession.Client.Send(oPacket);
                     }

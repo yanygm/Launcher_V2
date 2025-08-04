@@ -310,10 +310,7 @@ namespace KartRider
 					return 16;
 				}
 			}
-			else
-			{
-				return skill;
-			}
+			return skill;
 		}
 	}
 }
