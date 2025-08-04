@@ -317,5 +317,23 @@ namespace KartRider
 				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
+
+		public static void AttackedSkill(byte type, byte uni, short skill)
+		{
+			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
+			{
+				oPacket.WriteInt();
+				oPacket.WriteUInt();
+				oPacket.WriteByte(type);
+				oPacket.WriteByte(uni);
+				oPacket.WriteShort(skill);
+				oPacket.WriteByte(1);
+				oPacket.WriteShort();
+				oPacket.WriteByte(2);
+				oPacket.WriteShort(skill);
+				oPacket.WriteBytes(new byte[5]);
+				RouterListener.MySession.Client.Send(oPacket);
+			}
+		}
 	}
 }

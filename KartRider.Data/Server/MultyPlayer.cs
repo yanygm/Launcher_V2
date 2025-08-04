@@ -51,6 +51,14 @@ namespace KartRider
             { 1563, new Dictionary<short, short> { {136, 6} } }
         };
 
+        /// <summary>
+        /// 特殊道具车：被指定道具攻击后获得特殊道具
+        /// </summary>
+        public static Dictionary<short, Dictionary<short, short>> skillAttacked = new Dictionary<short, Dictionary<short, short>>
+        {
+            { 1561, new Dictionary<short, short> { {7, 111} } }
+        };
+
         [DllImport("kernel32")]
         extern static ulong GetTickCount();
 
@@ -245,9 +253,23 @@ namespace KartRider
                         RouterListener.MySession.Client.Send(oPacket);
                     }
                 }
+                if (type == 11)
+                {
+                    var uni = iPacket.ReadByte();
+                    var skill = iPacket.ReadShort();
+                    if (skillAttacked.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
+                    {
+                        if (kartSkills.TryGetValue(skill, out var targetSkill))
+                        {
+                            GameSupport.AttackedSkill(type, uni, targetSkill);
+                        }
+                    }
+                    Console.WriteLine("GameSlotPacket, Attacked. Skill = {0}", skill);
+                }
                 if (type == 18)
                 {
-                    iPacket.ReadBytes(3);
+                    var uni = iPacket.ReadByte();
+                    iPacket.ReadShort();
                     iPacket.ReadByte();
                     var skill = iPacket.ReadShort();
                     if (skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
@@ -257,7 +279,7 @@ namespace KartRider
                             GameSupport.AddItemSkill(targetSkill);
                         }
                     }
-                    Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
+                    Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
                 }
                 if (item == 0 && type == 12)
                 {
