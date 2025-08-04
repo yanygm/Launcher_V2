@@ -235,18 +235,18 @@ namespace KartRider
                     {
                         if (skill == 7) //导弹
                         {
-                            GameSupport.AddItemSkill(5); //磁铁
+                            GameSupport.AddItemSkill(type, 5); //磁铁
                         }
                         if (skill == 5) //磁铁
                         {
-                            GameSupport.AddItemSkill(24); //警灯
+                            GameSupport.AddItemSkill(type, 24); //警灯
                         }
                     }
                     if (SetRiderItem.Set_Kart == 1563)
                     {
                         if (skill == 136) //黑豹导弹
                         {
-                            GameSupport.AddItemSkill(6); //加速器
+                            GameSupport.AddItemSkill(type, 6); //加速器
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Skill = {0}", skill);

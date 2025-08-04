@@ -313,7 +313,7 @@ namespace KartRider
 			return skill;
 		}
 
-		public static void AddItemSkill(short skill)
+		public static void AddItemSkill(byte type, short skill)
 		{
 			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
 			{
