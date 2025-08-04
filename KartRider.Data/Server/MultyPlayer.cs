@@ -209,7 +209,7 @@ namespace KartRider
                 outPacket.WriteUInt(SettleTicks);
                 RouterListener.MySession.Client.Send(outPacket);
             }
-            Console.WriteLine("GameSlotPacket, Settle. Ticks = {0}", SettleTicks);
+            //Console.WriteLine("GameSlotPacket, Settle. Ticks = {0}", SettleTicks);
         }
 
         static short ParseShort(XAttribute attribute)
@@ -281,18 +281,18 @@ namespace KartRider
                     }
                     Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
                 }
-                if (item == 0 && type == 12)
-                {
-                    iPacket.ReadBytes(7);
-                    var nextpacketlenth = iPacket.ReadInt();
-                    var nextpackethash = iPacket.ReadUInt();
-                    if (nextpackethash == Adler32Helper.GenerateAdler32_ASCII("GopCourse", 0))
-                    {
-                        iPacket.ReadBytes(nextpacketlenth - 4 - 4);
-                        ArrivalTicks = iPacket.ReadUInt();
-                    }
-                    Console.WriteLine("GameSlotPacket, Arrivaled. Ticks = {0}", ArrivalTicks);
-                }
+                // if (item == 0 && type == 12)
+                // {
+                //     iPacket.ReadBytes(7);
+                //     var nextpacketlenth = iPacket.ReadInt();
+                //     var nextpackethash = iPacket.ReadUInt();
+                //     if (nextpackethash == Adler32Helper.GenerateAdler32_ASCII("GopCourse", 0))
+                //     {
+                //         iPacket.ReadBytes(nextpacketlenth - 4 - 4);
+                //         ArrivalTicks = iPacket.ReadUInt();
+                //     }
+                //     Console.WriteLine("GameSlotPacket, Arrivaled. Ticks = {0}", ArrivalTicks);
+                // }
                 return;
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameControlPacket"))
@@ -338,8 +338,8 @@ namespace KartRider
                         oPacket.WriteByte(0);
                         oPacket.WriteUInt(GetUpTime() + 10000);
                     }
-                    Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
-                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
+                    //Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
+                    //Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
                     Set_settleTrigger();
                 }
                 return;
@@ -699,8 +699,8 @@ namespace KartRider
                         oPacket.WriteUInt(GetUpTime() + 10000);
                         RouterListener.MySession.Client.Send(oPacket);
                     }
-                    Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
-                    Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
+                    //Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
+                    //Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
                     Set_settleTrigger();
                 }
                 AiTimeData.Add(AiNum, AiTime);
