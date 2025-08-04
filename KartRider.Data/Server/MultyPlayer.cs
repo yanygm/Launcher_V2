@@ -32,11 +32,19 @@ namespace KartRider
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
         static short[] aiCharacter = new short[] { 1, 2, 3, 5, 6, 7, 8, 20 };
+
+        /// <summary>
+        /// 特殊道具车：将指定道具变更为特殊道具
+        /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillChange = new Dictionary<short, Dictionary<short, short>>
         {
             { 1563, new Dictionary<short, short> { {7, 136}, {114, 16} } },
             { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } }
         };
+
+        /// <summary>
+        /// 特殊道具车：使用指定道具后获得特殊道具
+        /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillMappings = new Dictionary<short, Dictionary<short, short>>
         {
             { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
