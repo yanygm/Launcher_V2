@@ -292,23 +292,10 @@ namespace KartRider
 			Random random = new Random();
 			int index = random.Next(KartExcData.itemProb_indi.Count);
 			short skill = KartExcData.itemProb_indi[index];
-			if (kart == 1565)
+			if (MultyPlayer.skillChange.TryGetValue(kart, out var changes) && 
+				changes.TryGetValue(skill, out var changesSkill))
 			{
-				if (skill == 33 || skill == 3)
-				{
-					return 137;
-				}
-			}
-			if (kart == 1563)
-			{
-				if (skill == 7)
-				{
-					return 136;
-				}
-				if (skill == 114)
-				{
-					return 16;
-				}
+				return changesSkill;
 			}
 			return skill;
 		}
