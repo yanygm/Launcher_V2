@@ -141,12 +141,18 @@ namespace KartRider
                 if (FinishTime == 0)
                 {
                     outPacket.WriteHexString("FFFFFFFF");
-                    TimeData.Add(0, 4294967295);
+                    if (!TimeData.ContainsKey(0))
+                    {
+                        TimeData.Add(0, 4294967295);
+                    }
                 }
                 else
                 {
                     outPacket.WriteUInt(FinishTime);
-                    TimeData.Add(0, FinishTime);
+                    if (!TimeData.ContainsKey(0))
+                    {
+                        TimeData.Add(0, FinishTime);
+                    }
                 }
                 outPacket.WriteByte();
                 outPacket.WriteShort(SetRiderItem.Set_Kart);
@@ -703,7 +709,10 @@ namespace KartRider
                     //Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
                     Set_settleTrigger();
                 }
-                AiTimeData.Add(AiNum, AiTime);
+                if (!AiTimeData.ContainsKey(AiNum))
+                {
+                    AiTimeData.Add(AiNum, AiTime);
+                }
                 return;
             }
         }
