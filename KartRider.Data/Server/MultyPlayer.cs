@@ -339,13 +339,13 @@ namespace KartRider
                     }
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
-                        EndTicks = ArrivalTicks + 10000;
+                        EndTicks = GetUpTime() + 15000;;
                         oPacket.WriteInt(3);
                         oPacket.WriteByte(0);
-                        oPacket.WriteUInt(EndTicks);
+                        oPacket.WriteUInt(GetUpTime() + 10000);
                     }
                     Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
-                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 10000);
+                    Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
                     Set_settleTrigger();
                 }
                 return;
