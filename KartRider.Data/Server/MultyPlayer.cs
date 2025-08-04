@@ -32,6 +32,11 @@ namespace KartRider
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
         static short[] aiCharacter = new short[] { 1, 2, 3, 5, 6, 7, 8, 20 };
+        private static Dictionary<int, Dictionary<short, int>> skillMappings = new Dictionary<int, Dictionary<short, int>>
+        {
+            { 1450, new Dictionary<short, int> { {7, 5}, {5, 24} } },
+            { 1563, new Dictionary<short, int> { {136, 6} } }
+        };
 
         [DllImport("kernel32")]
         extern static ulong GetTickCount();
@@ -231,26 +236,12 @@ namespace KartRider
                 {
                     iPacket.ReadBytes(3);
                     var skill = iPacket.ReadShort();
-                    var switch = iPacket.ReadByte();
-                    if (switch == 255)
+                    var switchFlag = iPacket.ReadByte();
+                    if (switchFlag == 255 && skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
                     {
-                        if (SetRiderItem.Set_Kart == 1450)
+                        if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
-                            if (skill == 7) //导弹
-                            {
-                                GameSupport.AddItemSkill(type, 5); //磁铁
-                            }
-                            if (skill == 5) //磁铁
-                            {
-                                GameSupport.AddItemSkill(type, 24); //警灯
-                            }
-                        }
-                        if (SetRiderItem.Set_Kart == 1563)
-                        {
-                            if (skill == 136) //黑豹导弹
-                            {
-                                GameSupport.AddItemSkill(type, 6); //加速器
-                            }
+                            GameSupport.AddItemSkill(type, targetSkill);
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
