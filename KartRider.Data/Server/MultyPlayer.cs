@@ -237,12 +237,12 @@ namespace KartRider
                         RouterListener.MySession.Client.Send(oPacket);
                     }
                 }
-                if (item == 0 && type == 10)
+                if (type == 18)
                 {
                     iPacket.ReadBytes(3);
+                    iPacket.ReadByte();
                     var skill = iPacket.ReadShort();
-                    var switchFlag = iPacket.ReadByte();
-                    if (switchFlag == 255 && skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
+                    if (skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
