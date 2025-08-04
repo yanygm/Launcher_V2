@@ -246,7 +246,7 @@ namespace KartRider
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
-                            GameSupport.AddItemSkill(type, targetSkill);
+                            GameSupport.AddItemSkill(targetSkill);
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
