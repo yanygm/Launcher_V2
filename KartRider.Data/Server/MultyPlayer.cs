@@ -201,9 +201,10 @@ namespace KartRider
             {
                 iPacket.ReadInt();
                 uint item = iPacket.ReadUInt();
+                byte type = iPacket.ReadByte();
                 if (item == 4294967295 && iPacket.Length == 77)
                 {
-                    byte[] data1 = iPacket.ReadBytes(26);
+                    byte[] data1 = iPacket.ReadBytes(25);
                     short id1 = iPacket.ReadShort();
                     byte unk1 = iPacket.ReadByte();
                     byte[] data2 = iPacket.ReadBytes(4);
@@ -214,6 +215,7 @@ namespace KartRider
                     {
                         oPacket.WriteInt();
                         oPacket.WriteUInt(item);
+                        oPacket.WriteByte(type);
                         oPacket.WriteBytes(data1);
                         Random random = new Random();
                         int index = random.Next(KartExcData.itemProb_indi.Count);
@@ -226,9 +228,15 @@ namespace KartRider
                         RouterListener.MySession.Client.Send(oPacket);
                     }
                 }
-                else
+                if (item == 0 && type == 10)
                 {
-                    iPacket.ReadInt();
+                    iPacket.ReadBytes(3);
+                    var skill = iPacket.ReadShort();
+                    Console.WriteLine("GameSlotPacket, Skill = {0}", skill);
+                }
+                if (item == 0 && type == 12)
+                {
+                    iPacket.ReadBytes(7);
                     var nextpacketlenth = iPacket.ReadInt();
                     var nextpackethash = iPacket.ReadUInt();
                     if (nextpackethash == Adler32Helper.GenerateAdler32_ASCII("GopCourse", 0))
