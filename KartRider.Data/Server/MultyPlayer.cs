@@ -308,7 +308,7 @@ namespace KartRider
                 if (state == 0)
                 {
                     BootTicksNow = GetUpTime();
-                    StartTicks += (StartTicks == 0) ? (BootTicksNow + 15000) : (BootTicksNow - BootTicksPrev);
+                    StartTicks += (StartTicks == 0) ? (BootTicksNow + 10000) : (BootTicksNow - BootTicksPrev);
                     BootTicksPrev = BootTicksNow;
                     using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
                     {
@@ -1100,4 +1100,5 @@ namespace KartRider
         }
     }
 }
+
 
