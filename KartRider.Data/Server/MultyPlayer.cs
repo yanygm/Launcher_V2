@@ -59,9 +59,6 @@ namespace KartRider
             { 1561, new Dictionary<short, short> { {7, 111} } }
         };
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern uint GetTickCount();
-
         public static void milTime(int time)
         {
             GameType.min = time / 60000;
@@ -76,7 +73,7 @@ namespace KartRider
             try
             {
                 // 调用API获取系统启动后的毫秒数（返回值为uint，最大可表示约49.7天）
-                Time = GetTickCount();
+                Time = Environment.TickCount64;
                 // 转换为TimeSpan以便更友好地展示
                 TimeSpan uptime = TimeSpan.FromMilliseconds(Time);
                 Console.WriteLine($"系统已运行总毫秒数: {Time} ms");
@@ -1118,3 +1115,4 @@ namespace KartRider
         }
     }
 }
+
