@@ -73,7 +73,7 @@ namespace KartRider
             try
             {
                 // 调用API获取系统启动后的毫秒数（返回值为uint，最大可表示约49.7天）
-                Time = Environment.TickCount64;
+                Time = (uint)Environment.TickCount64;
                 // 转换为TimeSpan以便更友好地展示
                 TimeSpan uptime = TimeSpan.FromMilliseconds(Time);
                 Console.WriteLine($"系统已运行总毫秒数: {Time} ms");
@@ -1115,4 +1115,5 @@ namespace KartRider
         }
     }
 }
+
 
