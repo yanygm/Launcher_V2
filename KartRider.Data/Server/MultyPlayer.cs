@@ -21,11 +21,11 @@ namespace KartRider
     {
         static string RoomName;
         static byte[] RoomUnkBytes;
-        static uint ArrivalTicks, EndTicks, SettleTicks;
+        static uint EndTicks = 0;
         static int channeldata2 = 0;
         //static uint track = Adler32Helper.GenerateAdler32_UNICODE("village_R01", 0);
         static uint track = 0;
-        public static uint BootTicksPrev, BootTicksNow;
+        public static uint BootTicksNow = 0;
         public static uint StartTicks = 0;
         static uint FinishTime = 0;
         static string AiXmlFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml";
@@ -59,8 +59,8 @@ namespace KartRider
             { 1561, new Dictionary<short, short> { {7, 111} } }
         };
 
-        [DllImport("kernel32")]
-        extern static ulong GetTickCount();
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetTickCount();
 
         public static void milTime(int time)
         {
@@ -72,7 +72,22 @@ namespace KartRider
 
         public static uint GetUpTime()
         {
-            var Time = (uint)GetTickCount();
+            uint Time = 0;
+            try
+            {
+                // 调用API获取系统启动后的毫秒数（返回值为uint，最大可表示约49.7天）
+                Time = GetTickCount();
+                // 转换为TimeSpan以便更友好地展示
+                TimeSpan uptime = TimeSpan.FromMilliseconds(Time);
+                Console.WriteLine($"系统已运行总毫秒数: {Time} ms");
+                Console.WriteLine($"运行时间: {uptime.Days}天 {uptime.Hours}小时 {uptime.Minutes}分钟 {uptime.Seconds}秒");
+                return Time;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"获取系统运行时间失败: {ex.Message}");
+                return Time;
+            }
             return Time;
         }
 
@@ -108,7 +123,7 @@ namespace KartRider
 
         static void settleTrigger(object sender, System.Timers.ElapsedEventArgs e)
         {
-            SettleTicks = EndTicks + 3100;
+            //SettleTicks = EndTicks + 3100;
             using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
             {
                 outPacket.WriteByte(1);
@@ -212,8 +227,9 @@ namespace KartRider
             {
                 outPacket.WriteInt(4);
                 outPacket.WriteByte(0);
-                outPacket.WriteUInt(SettleTicks);
+                outPacket.WriteUInt(EndTicks + 5000);
                 RouterListener.MySession.Client.Send(outPacket);
+                Console.WriteLine("EndTicks = {0}", EndTicks + 5000);
             }
             //Console.WriteLine("GameSlotPacket, Settle. Ticks = {0}", SettleTicks);
         }
@@ -308,8 +324,9 @@ namespace KartRider
                 if (state == 0)
                 {
                     BootTicksNow = GetUpTime();
-                    StartTicks += (StartTicks == 0) ? (BootTicksNow + 10000) : (BootTicksNow - BootTicksPrev);
-                    BootTicksPrev = BootTicksNow;
+                    StartTicks = BootTicksNow + 10000;
+                    //StartTicks += (StartTicks == 0) ? (BootTicksNow + 10000) : (BootTicksNow - BootTicksPrev);
+                    //BootTicksPrev = BootTicksNow;
                     using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
                     {
                         oPacket.WriteInt();
@@ -324,7 +341,7 @@ namespace KartRider
                     }
                     AiTimeData = new Dictionary<int, uint>();
                     FinishTime = 0;
-                    Console.WriteLine("GameControlPacket, Start. Ticks = {0}", StartTicks);
+                    Console.WriteLine("StartTicks = {0}", StartTicks);
                 }
                 //finish
                 else if (state == 2)
@@ -694,6 +711,7 @@ namespace KartRider
                     oPacket.WriteInt(AiNum);
                     oPacket.WriteUInt(AiTime);
                     RouterListener.MySession.Client.Send(oPacket);
+                    Console.WriteLine("AiTime = {0}", AiTime);
                 }
                 if (AiTimeData.Count == 0 && FinishTime == 0)
                 {
@@ -1100,5 +1118,3 @@ namespace KartRider
         }
     }
 }
-
-
