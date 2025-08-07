@@ -40,12 +40,13 @@ namespace KartRider
         {
             { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } },
             { 1563, new Dictionary<short, short> { {7, 136}, {114, 16} } },
-            { 1561, new Dictionary<short, short> { {8, 37} } },
+            { 1561, new Dictionary<short, short> { {8, 37}, {6, 31} } },
             { 1551, new Dictionary<short, short> { {8, 25} } },
+            { 1543, new Dictionary<short, short> { {6, 31} } },
             { 1548, new Dictionary<short, short> { {4, 132} } },
             { 1536, new Dictionary<short, short> { {8, 17}, {5, 103} } },
             { 1526, new Dictionary<short, short> { {9, 27} } },
-            { 1522, new Dictionary<short, short> { {9, 34} } }
+            { 1522, new Dictionary<short, short> { {9, 34}, {6, 31} } }
         };
 
         /// <summary>
