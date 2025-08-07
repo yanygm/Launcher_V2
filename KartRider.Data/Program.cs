@@ -51,8 +51,8 @@ namespace KartRider
                 Directory.Delete(Update_Folder, true);
             }
             AllocConsole();
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.Unicode;
+            Console.InputEncoding = Encoding.Unicode;
             if (!await Update.UpdateDataAsync())
             {
                 string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "Profile\\CountryCode.ini";
