@@ -76,8 +76,8 @@ namespace KartRider
             { 1548, new Dictionary<short, short> { {5, 6} } },
             { 1510, new Dictionary<short, short> { {32, 32} } },
             { 1507, new Dictionary<short, short> { {5, 31} } },
-            { 1496, new Dictionary<short, short> { {5, 24} },
-            { 1489, new Dictionary<short, short> { {5, 10} },
+            { 1496, new Dictionary<short, short> { {5, 24} } },
+            { 1489, new Dictionary<short, short> { {5, 10} } },
             { 1479, new Dictionary<short, short> { {131, 5} } }
         };
 
