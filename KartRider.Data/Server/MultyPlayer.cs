@@ -296,13 +296,16 @@ namespace KartRider
                     iPacket.ReadByte();
                     iPacket.ReadShort();
                     byte[] data3 = iPacket.ReadBytes(29);
+                    Random random = new Random();
+                    int index = random.Next(KartExcData.itemProb_indi.Count);
+                    short skill = KartExcData.itemProb_indi[index];
+                    skill = GameSupport.GetItemSkill(skill);
                     using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                     {
                         oPacket.WriteInt();
                         oPacket.WriteUInt(item);
                         oPacket.WriteByte(type);
                         oPacket.WriteBytes(data1);
-                        short skill = GameSupport.GetItemSkill(SetRiderItem.Set_Kart);
                         oPacket.WriteShort(skill);
                         oPacket.WriteByte(1);
                         oPacket.WriteBytes(data2);
@@ -316,6 +319,11 @@ namespace KartRider
                 {
                     var uni = iPacket.ReadByte();
                     var skill = iPacket.ReadShort();
+                    List<short> skills = V2Spec.GetSkills();
+                    if (skills.Contains(13) && skill == 3)
+                    {
+                        GameSupport.AttackedSkill(type, uni, 10);
+                    }
                     if (skillAttacked.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
@@ -331,6 +339,11 @@ namespace KartRider
                     iPacket.ReadShort();
                     iPacket.ReadByte();
                     var skill = iPacket.ReadShort();
+                    List<short> skills = V2Spec.GetSkills();
+                    if (skills.Contains(14) && skill == 5)
+                    {
+                        GameSupport.AddItemSkill(6);
+                    }
                     if (skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
@@ -1155,6 +1168,3 @@ namespace KartRider
         }
     }
 }
-
-
-
