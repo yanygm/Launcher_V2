@@ -38,8 +38,15 @@ namespace KartRider
         /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillChange = new Dictionary<short, Dictionary<short, short>>
         {
+            { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } },
             { 1563, new Dictionary<short, short> { {7, 136}, {114, 16} } },
-            { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } }
+            { 1561, new Dictionary<short, short> { {8, 37}, {6, 335} } },
+            { 1551, new Dictionary<short, short> { {8, 25} } },
+            { 1548, new Dictionary<short, short> { {4, 132} } },
+            { 1543, new Dictionary<short, short> { {6, 159} } },
+            { 1536, new Dictionary<short, short> { {8, 17}, {5, 103} } },
+            { 1526, new Dictionary<short, short> { {9, 27} } },
+            { 1522, new Dictionary<short, short> { {9, 34}, {6, 266} } }
         };
 
         /// <summary>
@@ -48,7 +55,8 @@ namespace KartRider
         public static Dictionary<short, Dictionary<short, short>> skillMappings = new Dictionary<short, Dictionary<short, short>>
         {
             { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
-            { 1563, new Dictionary<short, short> { {136, 6} } }
+            { 1563, new Dictionary<short, short> { {136, 6} } },
+            { 1548, new Dictionary<short, short> { {5, 6} } }
         };
 
         /// <summary>
@@ -56,7 +64,11 @@ namespace KartRider
         /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillAttacked = new Dictionary<short, Dictionary<short, short>>
         {
-            { 1561, new Dictionary<short, short> { {7, 111} } }
+            { 1561, new Dictionary<short, short> { {7, 111} } },
+            { 1557, new Dictionary<short, short> { {7, 32}, {5, 103} } },
+            { 1555, new Dictionary<short, short> { {4, 6}, {9, 6} } },
+            { 1551, new Dictionary<short, short> { {7, 6} } },
+            { 1524, new Dictionary<short, short> { {5, 103} } }
         };
 
         public static void milTime(int time)
