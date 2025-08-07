@@ -46,7 +46,24 @@ namespace KartRider
             { 1548, new Dictionary<short, short> { {4, 132} } },
             { 1536, new Dictionary<short, short> { {8, 17}, {5, 103} } },
             { 1526, new Dictionary<short, short> { {9, 27} } },
-            { 1522, new Dictionary<short, short> { {9, 34}, {6, 31} } }
+            { 1522, new Dictionary<short, short> { {9, 34}, {6, 31} } },
+            { 1511, new Dictionary<short, short> { {2, 38} } },
+            { 1510, new Dictionary<short, short> { {7, 32} } },
+            { 1509, new Dictionary<short, short> { {7, 32} } },
+            { 1507, new Dictionary<short, short> { {6, 31} } },
+            { 1506, new Dictionary<short, short> { {5, 103} } },
+            { 1505, new Dictionary<short, short> { {8, 129}, {4, 120} } },
+            { 1502, new Dictionary<short, short> { {7, 4} } },
+            { 1500, new Dictionary<short, short> { {9, 34}, {113, 135}, {33, 135} } },
+            { 1496, new Dictionary<short, short> { {7, 134}, {6, 31} } },
+            { 1494, new Dictionary<short, short> { {4, 132}, {6, 31} } },
+            { 1491, new Dictionary<short, short> { {8, 82}, {9, 27}, {13, 28} } },
+            { 1489, new Dictionary<short, short> { {9, 111}, {6, 31} } },
+            { 1487, new Dictionary<short, short> { {5, 103}, {10, 36} } },
+            { 1484, new Dictionary<short, short> { {7, 32}, {6, 31} } },
+            { 1482, new Dictionary<short, short> { {5, 6} } },
+            { 1481, new Dictionary<short, short> { {7, 102}, {9, 34} } },
+            { 1479, new Dictionary<short, short> { {7, 131} } }
         };
 
         /// <summary>
@@ -56,7 +73,12 @@ namespace KartRider
         {
             { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
             { 1563, new Dictionary<short, short> { {136, 6} } },
-            { 1548, new Dictionary<short, short> { {5, 6} } }
+            { 1548, new Dictionary<short, short> { {5, 6} } },
+            { 1510, new Dictionary<short, short> { {32, 32} } },
+            { 1507, new Dictionary<short, short> { {5, 31} } },
+            { 1496, new Dictionary<short, short> { {5, 24} },
+            { 1489, new Dictionary<short, short> { {5, 10} },
+            { 1479, new Dictionary<short, short> { {131, 5} } }
         };
 
         /// <summary>
@@ -68,7 +90,13 @@ namespace KartRider
             { 1557, new Dictionary<short, short> { {7, 32}, {5, 103} } },
             { 1555, new Dictionary<short, short> { {4, 6}, {9, 6} } },
             { 1551, new Dictionary<short, short> { {7, 6} } },
-            { 1524, new Dictionary<short, short> { {5, 103} } }
+            { 1524, new Dictionary<short, short> { {5, 103} } },
+            { 1511, new Dictionary<short, short> { {7, 5} } },
+            { 1510, new Dictionary<short, short> { {5, 10} } },
+            { 1509, new Dictionary<short, short> { {5, 10} } },
+            { 1506, new Dictionary<short, short> { {4, 6}, {9, 6} } },
+            { 1502, new Dictionary<short, short> { {4, 9} } },
+            { 1482, new Dictionary<short, short> { {4, 119}, {9, 119} } }
         };
 
         public static void milTime(int time)
