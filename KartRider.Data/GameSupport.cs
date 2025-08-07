@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
@@ -287,12 +288,18 @@ namespace KartRider
 			}
 		}
 
-		public static short GetItemSkill(short kart)
+		public static short GetItemSkill(short skill)
     	{
-			Random random = new Random();
-			int index = random.Next(KartExcData.itemProb_indi.Count);
-			short skill = KartExcData.itemProb_indi[index];
-			if (MultyPlayer.skillChange.TryGetValue(kart, out var changes) && 
+			List<short> skills = V2Spec.GetSkills();
+			for (int i = 0; i < skills.Count; i++)
+			{
+				if (V2Spec.itemSkill.TryGetValue(skills[i], out var Level) &&
+					Level.TryGetValue(skill, out var LevelSkill))
+				{
+					return LevelSkill;
+				}
+			}
+			if (MultyPlayer.skillChange.TryGetValue(SetRiderItem.Set_Kart, out var changes) &&
 				changes.TryGetValue(skill, out var changesSkill))
 			{
 				return changesSkill;
@@ -302,6 +309,7 @@ namespace KartRider
 
 		public static void AddItemSkill(short skill)
 		{
+			skill = GameSupport.GetItemSkill(skill);
 			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
 			{
 				oPacket.WriteInt();
@@ -320,6 +328,7 @@ namespace KartRider
 
 		public static void AttackedSkill(byte type, byte uni, short skill)
 		{
+			skill = GameSupport.GetItemSkill(skill);
 			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
 			{
 				oPacket.WriteInt();
