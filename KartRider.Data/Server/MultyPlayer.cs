@@ -112,7 +112,7 @@ namespace KartRider
             uint Time = 0;
             try
             {
-                // 调用API获取系统启动后的毫秒数（返回值为uint，最大可表示约49.7天）
+                // 返回值为uint，最大可表示约24.855天
                 Time = (uint)Environment.TickCount;
                 // 转换为TimeSpan以便更友好地展示
                 TimeSpan uptime = TimeSpan.FromMilliseconds(Time);
@@ -1168,3 +1168,4 @@ namespace KartRider
         }
     }
 }
+
