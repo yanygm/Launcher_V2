@@ -14,11 +14,11 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Publish_x64
+    - name: Publish_win-x64
       run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher -o PublishedWinExe -c Release --no-self-contained
 
-    - name: Publish_x86
-      run: dotnet publish Launcher.csproj --runtime win-x86 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x86 -o PublishedWinExe -c Release --no-self-contained
+    # - name: Publish_win-arm64
+    #   run: dotnet publish Launcher.csproj --runtime win-arm64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_arm64 -o PublishedWinExe -c Release --no-self-contained
 
     - name: Archive Artifacts
       uses: actions/upload-artifact@v4

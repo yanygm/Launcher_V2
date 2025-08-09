@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
+
 namespace KartLibrary.Encrypt
 {
     public static class RhoEncrypt

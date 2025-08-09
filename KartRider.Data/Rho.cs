@@ -414,6 +414,59 @@ namespace RHOParser
                             }
                         }
                     }
+                    if (fullName == "zeta_/" + regionCode + "/content/basicAI.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            XElement aiItem = doc.Descendants("aiItem").First();
+
+                            // 角色Dictionary：键为short类型的角色ID
+                            var aiCharacterDict = aiItem.Elements("character")
+                                .ToDictionary(
+                                    c => short.Parse(c.Attribute("id").Value),  // 键：short类型ID
+                                    c => new AICharacter
+                                    {
+                                        Id = short.Parse(c.Attribute("id").Value),
+                                        Rids = c.Elements("rid").Select(rid => rid.Attribute("name").Value).ToList(),
+                                        Balloons = c.Elements("balloon").Select(b => new AIAccessory
+                                        {
+                                            Id = short.Parse(b.Attribute("id").Value),
+                                            Speed = int.Parse(b.Attribute("speed").Value),
+                                            Item = int.Parse(b.Attribute("item").Value)
+                                        }).ToList(),
+                                        Headbands = c.Elements("headband").Select(h => new AIAccessory
+                                        {
+                                            Id = short.Parse(h.Attribute("id").Value),
+                                            Speed = int.Parse(h.Attribute("speed").Value),
+                                            Item = int.Parse(h.Attribute("item").Value)
+                                        }).ToList(),
+                                        Goggles = c.Elements("goggle").Select(g => new AIAccessory
+                                        {
+                                            Id = short.Parse(g.Attribute("id").Value),
+                                            Speed = int.Parse(g.Attribute("speed").Value),
+                                            Item = int.Parse(g.Attribute("item").Value)
+                                        }).ToList()
+                                    }
+                                );
+                            KartExcData.aiCharacterDict = aiCharacterDict;
+
+                            // 卡丁车Dictionary：键为short类型的卡丁车ID
+                            var aiKartDict = aiItem.Elements("kart")
+                                .ToDictionary(
+                                    k => short.Parse(k.Attribute("id").Value),  // 键：short类型ID
+                                    k => new AIKart
+                                    {
+                                        Id = short.Parse(k.Attribute("id").Value),
+                                        Speed = int.Parse(k.Attribute("speed").Value),
+                                        Item = int.Parse(k.Attribute("item").Value),
+                                    }
+                                );
+                            KartExcData.aiKartDict = aiKartDict;
+                        }
+                    }
                     if (fullName == "zeta_/" + regionCode + "/content/itemDictionary.xml")
                     {
                         Console.WriteLine(fullName);

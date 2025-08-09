@@ -221,7 +221,7 @@ namespace KartRider
 
         private void OnLoad(object sender, EventArgs e)
         {
-	    string executablePath = Process.GetCurrentProcess().MainModule.FileName;
+        string executablePath = Process.GetCurrentProcess().MainModule.FileName;
             Load_KartExcData();
             StartingLoad_ALL.StartingLoad();
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
@@ -340,47 +340,64 @@ namespace KartRider
             KartExcData.Level12List = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\Level12Data.xml", LoadLevel12Data);
         }
 
-        private void EnsureDefaultDataFileExists(string filePath, Action createDefaultData)
+        private void EnsureDefaultDataFileExists(string filePath, Action<string> createDefaultData)
         {
             if (!File.Exists(filePath))
             {
-                createDefaultData();
+                createDefaultData(filePath);
             }
             else
             {
                 try
                 {
                     XDocument doc = XDocument.Load(filePath); // 解析XML内容
-                    if (!(doc.Descendants("SpeedSpec").Any())) // 查找是否存在指定元素
+
+                    // 处理SpeedAI和SpeedSpec
+                    XElement speedAI = doc.Root.Element("SpeedAI");
+                    // 如果SpeedAI不存在，则创建它
+                    if (speedAI == null)
                     {
-                        var aiNodes = doc.XPathSelectElements("//AI");
-                        foreach (var aiNode in aiNodes)
-                        {
-                            XElement speedSpecElement = new XElement("SpeedSpec");
-                            speedSpecElement.SetAttributeValue("a", "1");
-                            speedSpecElement.SetAttributeValue("b", "2300");
-                            speedSpecElement.SetAttributeValue("c", "2930");
-                            speedSpecElement.SetAttributeValue("d", "1.4");
-                            speedSpecElement.SetAttributeValue("e", "1000");
-                            speedSpecElement.SetAttributeValue("f", "1500");
-                            aiNode.Add(speedSpecElement);
-                        }
+                        speedAI = new XElement("SpeedAI");
+                        doc.Root.Add(speedAI);
                     }
-                    if (!(doc.Descendants("ItemSpec").Any()))
+
+                    // 检查是否存在SpeedSpec，不存在则添加
+                    bool hasSpeedSpec = speedAI.Elements("SpeedSpec").Any();
+                    if (!hasSpeedSpec)
                     {
-                        var aiNodes = doc.XPathSelectElements("//AI");
-                        foreach (var aiNode in aiNodes)
-                        {
-                            XElement itemSpecElement = new XElement("ItemSpec");
-                            itemSpecElement.SetAttributeValue("a", "0.8");
-                            itemSpecElement.SetAttributeValue("b", "2300");
-                            itemSpecElement.SetAttributeValue("c", "2930");
-                            itemSpecElement.SetAttributeValue("d", "1.4");
-                            itemSpecElement.SetAttributeValue("e", "1000");
-                            itemSpecElement.SetAttributeValue("f", "1500");
-                            aiNode.Add(itemSpecElement);
-                        }
+                        XElement speedSpecElement = new XElement("SpeedSpec");
+                        speedSpecElement.SetAttributeValue("a", "1");
+                        speedSpecElement.SetAttributeValue("b", "2300");
+                        speedSpecElement.SetAttributeValue("c", "2930");
+                        speedSpecElement.SetAttributeValue("d", "1.4");
+                        speedSpecElement.SetAttributeValue("e", "1000");
+                        speedSpecElement.SetAttributeValue("f", "1500");
+                        speedAI.Add(speedSpecElement);
                     }
+
+                    // 处理ItemAI和ItemSpec
+                    XElement itemAI = doc.Root.Element("ItemAI");
+                    // 如果ItemAI不存在，则创建它
+                    if (itemAI == null)
+                    {
+                        itemAI = new XElement("ItemAI");
+                        doc.Root.Add(itemAI);
+                    }
+
+                    // 检查是否存在ItemSpec，不存在则添加
+                    bool hasItemSpec = itemAI.Elements("ItemSpec").Any();
+                    if (!hasItemSpec)
+                    {
+                        XElement itemSpecElement = new XElement("ItemSpec");
+                        itemSpecElement.SetAttributeValue("a", "0.8");
+                        itemSpecElement.SetAttributeValue("b", "2300");
+                        itemSpecElement.SetAttributeValue("c", "2930");
+                        itemSpecElement.SetAttributeValue("d", "1.4");
+                        itemSpecElement.SetAttributeValue("e", "1000");
+                        itemSpecElement.SetAttributeValue("f", "1500");
+                        itemAI.Add(itemSpecElement);
+                    }
+
                     doc.Save(filePath); // 保存修改后的XML内容
                 }
                 catch (Exception ex)
@@ -390,36 +407,46 @@ namespace KartRider
             }
         }
 
-        private void CreateAIDefaultData()
+        private void CreateAIDefaultData(string filePath)
         {
-            using (XmlTextWriter writer = new XmlTextWriter(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", System.Text.Encoding.UTF8))
+            try
             {
-                writer.Formatting = Formatting.Indented;
-                writer.WriteStartDocument();
-                writer.WriteStartElement("AI");
-                writer.WriteEndElement();
+                // 创建XML文档
+                XDocument doc = new XDocument(
+                    // XML声明
+                    new XDeclaration("1.0", "utf-8", null),
+                    // 根元素AI
+                    new XElement("AI",
+                        // SpeedAI元素及其内容
+                        new XElement("SpeedAI",
+                            new XElement("SpeedSpec",
+                                new XAttribute("a", "1"),
+                                new XAttribute("b", "2300"),
+                                new XAttribute("c", "2930"),
+                                new XAttribute("d", "1.4"),
+                                new XAttribute("e", "1000"),
+                                new XAttribute("f", "1500")
+                            )
+                        ),
+                        // ItemAI元素及其内容
+                        new XElement("ItemAI",
+                            new XElement("ItemSpec",
+                                new XAttribute("a", "0.8"),
+                                new XAttribute("b", "2300"),
+                                new XAttribute("c", "2930"),
+                                new XAttribute("d", "1.4"),
+                                new XAttribute("e", "1000"),
+                                new XAttribute("f", "1500")
+                            )
+                        )
+                    )
+                );
+                doc.Save(filePath);
             }
-
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
-            XmlNode root = xmlDoc.SelectSingleNode("AI");
-            XmlElement xe1 = xmlDoc.CreateElement("SpeedSpec");
-            xe1.SetAttribute("a", "1");
-            xe1.SetAttribute("b", "2300");
-            xe1.SetAttribute("c", "2930");
-            xe1.SetAttribute("d", "1.4");
-            xe1.SetAttribute("e", "1000");
-            xe1.SetAttribute("f", "1500");
-            root.AppendChild(xe1);
-            XmlElement xe2 = xmlDoc.CreateElement("ItemSpec");
-            xe2.SetAttribute("a", "0.8");
-            xe2.SetAttribute("b", "2300");
-            xe2.SetAttribute("c", "2930");
-            xe2.SetAttribute("d", "1.4");
-            xe2.SetAttribute("e", "1000");
-            xe2.SetAttribute("f", "1500");
-            root.AppendChild(xe2);
-            xmlDoc.Save(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"生成XML文件时出错：{ex.Message}");
+            }
         }
 
         private List<List<short>> LoadKartData(string filePath, Func<XmlNodeList, List<List<short>>> parseDataFunction)
