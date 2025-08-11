@@ -110,6 +110,10 @@ namespace ExcData
 			V2Parts_SteerConstraint = 0f;
 			V2Parts_DriftEscapeForce = 0f;
 			V2Parts_NormalBoosterTime = 0f;
+			V2Default_TransAccelFactor = 0f;
+			V2Default_SteerConstraint = 0f;
+			V2Default_DriftEscapeForce = 0f;
+			V2Default_NormalBoosterTime = 0f;
 		}
 
 		public void ExceedSpec()

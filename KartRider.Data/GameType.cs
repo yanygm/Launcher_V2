@@ -9,9 +9,9 @@ namespace KartRider
 		public static byte RewardType = 0;
 
 		//Time
-		public static int min = 0;
-		public static int sec = 0;
-		public static int mil = 0;
+		public static uint min = 0;
+		public static uint sec = 0;
+		public static uint mil = 0;
 
 		public static float S4_DriftMaxGauge = 1f;
 		public static float S6_BoosterTime = 2000000f;

@@ -100,10 +100,10 @@ namespace KartRider
             { 1482, new Dictionary<short, short> { {4, 119}, {9, 119} } }
         };
 
-        public static void milTime(int time)
+        public static void milTime(uint time)
         {
             GameType.min = time / 60000;
-            int sec = time - GameType.min * 60000;
+            uint sec = time - GameType.min * 60000;
             GameType.sec = sec / 1000;
             GameType.mil = time % 1000;
         }

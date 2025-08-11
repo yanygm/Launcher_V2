@@ -15,6 +15,7 @@ using System.Linq;
 using KartRider;
 using System.Xml.Linq;
 using System.Diagnostics;
+using RHOParser;
 
 namespace KartRider
 {
@@ -30,6 +31,8 @@ namespace KartRider
 		{
 			this.Parent = parent;
 		}
+
+		public static uint Time = 0;
 
 		public override void OnDisconnect()
 		{
@@ -76,9 +79,46 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqAddRacingTimePacket", 0))
 					{
+						uint Track = iPacket.ReadUInt();
+						iPacket.ReadBytes(10);
+						short Kart = iPacket.ReadShort();
+						iPacket.ReadBytes(416);
+						short Auf = iPacket.ReadShort();
+						iPacket.ReadShort();
+						short Cf = iPacket.ReadShort();
+						iPacket.ReadShort();
 						using (OutPacket outPacket = new OutPacket("LoRpAddRacingTimePacket"))
 						{
-							outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00 00 00 00 00 00");
+							//outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00 00 00 00 00 00");
+							outPacket.WriteUInt(Time);
+							outPacket.WriteInt(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteInt(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						var manager = new CompetitiveDataManager();
+						var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Auf = Auf, Cf = Cf };
+						manager.SaveData(data);
+						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
+						{
+							var competitiveData = manager.LoadAllData();
+							outPacket.WriteInt(competitiveData.Count);
+							foreach (var competitive in competitiveData)
+							{
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteShort(competitive.Kart);
+								outPacket.WriteUInt(competitive.Time);
+								outPacket.WriteHexString("FF FF FF FF");
+								outPacket.WriteShort(competitive.Auf);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(competitive.Cf);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteUInt(0);
+								outPacket.WriteUInt(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1269,9 +1309,9 @@ namespace KartRider
 						iPacket.ReadInt();
 						iPacket.ReadInt();
 						iPacket.ReadInt();
-						int Time = iPacket.ReadInt();
+						Time = iPacket.ReadUInt();
 						GameType.min = Time / 60000;
-						int sec = Time - GameType.min * 60000;
+						uint sec = Time - GameType.min * 60000;
 						GameType.sec = sec / 1000;
 						GameType.mil = Time % 1000;
 						if (GameType.RewardType == 0)
@@ -1813,9 +1853,27 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveSlotInfo", 0))
 					{
+						var manager = new CompetitiveDataManager();
+						var competitiveData = manager.LoadAllData();
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
 						{
-							outPacket.WriteInt(0);
+							outPacket.WriteInt(competitiveData.Count);
+							foreach (var competitive in competitiveData)
+							{
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteShort(competitive.Kart);
+								outPacket.WriteUInt(competitive.Time);
+								outPacket.WriteHexString("FF FF FF FF");
+								outPacket.WriteShort(competitive.Auf);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(competitive.Cf);
+								outPacket.WriteShort(0);
+								outPacket.WriteShort(0);
+								outPacket.WriteUInt(0);
+								outPacket.WriteUInt(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1824,7 +1882,12 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveCount"))
 						{
-							outPacket.WriteHexString("B3 02 52 1B 00 00 B4 02 54 1B 00 00 B9 02 82 1B 00 00");
+							//outPacket.WriteHexString("B3 02 52 1B 00 00 B4 02 54 1B 00 00 B9 02 82 1B 00 00");
+							foreach (var track in FavoriteItem.Competitive)
+							{
+								outPacket.WriteUInt(Adler32Helper.GenerateAdler32_UNICODE(track, 0));
+								outPacket.WriteShort(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
