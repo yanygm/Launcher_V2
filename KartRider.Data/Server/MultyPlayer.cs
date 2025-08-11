@@ -731,9 +731,25 @@ namespace KartRider
             {
                 int unk1 = iPacket.ReadInt();
                 Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
+                var selector = new DictionaryRandomSelector();
+                var charDict = KartExcData.aiCharacterDict;
+                var kartDict = KartExcData.aiKartDict;
+                List<short> randomCharIds = selector.GetRandomCharacterIds(charDict, 1);
+                List<short> randomKartIds = new List<short>();
+                string AiXml = "";
+                if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+                {
+                    randomKartIds = selector.GetRandomKartIds(kartDict, 1, true, false);
+                    AiXml = "SpeedAI";
+                }
+                else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
+                {
+                    randomKartIds = selector.GetRandomKartIds(kartDict, 1, false, true);
+                    AiXml = "ItemAI";
+                }
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(AiXmlFile);
-                XmlNode ai = xmlDoc.SelectSingleNode("//Ai" + unk1.ToString());
+                XmlNode ai = xmlDoc.SelectSingleNode("//" + AiXml + "/Ai" + unk1.ToString());
                 if (ai != null)
                 {
                     using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
@@ -753,19 +769,20 @@ namespace KartRider
                 }
                 else
                 {
-                    var selector = new DictionaryRandomSelector();
-                    var charDict = KartExcData.aiCharacterDict;
-                    var kartDict = KartExcData.aiKartDict;
-                    List<short> randomCharIds = selector.GetRandomCharacterIds(charDict, 1);
-                    List<short> randomKartIds = selector.GetRandomKartIds(kartDict, 1);
                     short targetCharId = randomCharIds[0];
                     short targetKartId = randomKartIds[0];
                     if (charDict.TryGetValue(targetCharId, out var targetChar))
                     {
                         short? ridIndex = selector.GetRandomRidIndex(targetChar);
-                        short? balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
-                        short? headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
-                        short? goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                        short? balloonId = 0;
+                        short? headbandId = 0;
+                        short? goggleId = 0;
+                        if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
+                        {
+                            balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
+                            headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
+                            goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                        }
                         using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
                         {
                             oPacket.WriteInt(0);
@@ -783,19 +800,56 @@ namespace KartRider
                             oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                             RouterListener.MySession.Client.Send(oPacket);
                         }
-                        XmlElement element = xmlDoc.CreateElement("Ai" + unk1.ToString());
-                        element.SetAttribute("character", targetCharId.ToString());
-                        element.SetAttribute("rid", ridIndex?.ToString() ?? "0");
-                        element.SetAttribute("kart", targetKartId.ToString());
-                        element.SetAttribute("balloon", balloonId?.ToString() ?? "0");
-                        element.SetAttribute("headBand", headbandId?.ToString() ?? "0");
-                        element.SetAttribute("goggle", goggleId?.ToString() ?? "0");
-                        XmlNode rootNode = xmlDoc.DocumentElement;
-                        if (rootNode != null)
+                        try
                         {
-                            rootNode.AppendChild(element);
+                            // 查找根节点
+                            XmlNode rootNode = xmlDoc.DocumentElement;
+                            if (rootNode != null)
+                            {
+                                // 查找节点
+                                XmlNode AiNode = rootNode.SelectSingleNode(AiXml);
+                                if (AiNode != null)
+                                {
+                                    // 查找是否已存在Ai1元素
+                                    XmlNode existing = AiNode.SelectSingleNode("Ai" + unk1.ToString());
+                                    if (existing != null)
+                                    {
+                                        existing.Attributes["character"].Value = targetCharId.ToString();
+                                        existing.Attributes["rid"].Value = (ridIndex ?? 0).ToString();
+                                        existing.Attributes["kart"].Value = targetKartId.ToString();
+                                        existing.Attributes["balloon"].Value = (balloonId ?? 0).ToString();
+                                        existing.Attributes["headBand"].Value = (headbandId ?? 0).ToString();
+                                        existing.Attributes["goggle"].Value = (goggleId ?? 0).ToString();
+                                        Console.WriteLine("Ai" + unk1.ToString() + "元素已成功更新");
+                                    }
+                                    else
+                                    {
+                                        XmlElement aiElement = xmlDoc.CreateElement("Ai" + unk1.ToString());
+                                        aiElement.SetAttribute("character", targetCharId.ToString());
+                                        aiElement.SetAttribute("rid", (ridIndex ?? 0).ToString());
+                                        aiElement.SetAttribute("kart", targetKartId.ToString());
+                                        aiElement.SetAttribute("balloon", (balloonId ?? 0).ToString());
+                                        aiElement.SetAttribute("headBand", (headbandId ?? 0).ToString());
+                                        aiElement.SetAttribute("goggle", (goggleId ?? 0).ToString());
+                                        AiNode.AppendChild(aiElement);
+                                        Console.WriteLine("Ai" + unk1.ToString() + "元素已成功添加");
+                                    }
+                                    xmlDoc.Save(AiXmlFile);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("未找到节点" + AiXml);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("XML文档没有根节点");
+                            }
                         }
-                        xmlDoc.Save(AiXmlFile);
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("操作出错: " + ex.Message);
+                        }
                     }
                 }
                 using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
