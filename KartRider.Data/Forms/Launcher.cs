@@ -230,7 +230,20 @@ namespace KartRider
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
             Console.WriteLine("Process: {0}", this.kartRiderDirectory + Launcher.KartRider);
-            RouterListener.Start();
+            try
+            {
+                RouterListener.Start();
+            }
+            catch (Exception ex)
+            {
+                if (ex is System.Net.Sockets.SocketException)
+                {
+                    Console.WriteLine("This port has been used. Probably there is another launcher starts at the same time.");
+                    Console.WriteLine("Exit with code 1.");
+                    MessageBox.Show("已经有一个启动器在运行了。\n不可以同时运行多个启动器，因为通常每个套接字地址只允许使用一次\n点击确认以退出程序", "警告", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Environment.Exit(1);
+                }
+            }
         }
 
         private void Start_Button_Click(object sender, EventArgs e)
