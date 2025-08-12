@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using KartRider.Common.Utilities;
 
 namespace RHOParser
 {
@@ -12,8 +13,11 @@ namespace RHOParser
         public uint Track { get; set; }
         public short Kart { get; set; }
         public uint Time { get; set; }
-        public short Auf { get; set; }
-        public short Cf { get; set; }
+        public short Boooster { get; set; }
+        public int BooosterPoint { get; set; }
+        public short Crash { get; set; }
+        public int CrashPoint { get; set; }
+        public int Point { get; set; }
     }
 
     public class CompetitiveDataManager
@@ -62,8 +66,11 @@ namespace RHOParser
                     existingElement.Attribute("Track").SetValue(data.Track);
                     existingElement.Attribute("Kart").SetValue(data.Kart);
                     existingElement.Attribute("Time").SetValue(data.Time);
-                    existingElement.Attribute("Auf").SetValue(data.Auf);
-                    existingElement.Attribute("Cf").SetValue(data.Cf);
+                    existingElement.Attribute("Boooster").SetValue(data.Boooster);
+                    existingElement.Attribute("BooosterPoint").SetValue(data.BooosterPoint);
+                    existingElement.Attribute("Crash").SetValue(data.Crash);
+                    existingElement.Attribute("CrashPoint").SetValue(data.CrashPoint);
+                    existingElement.Attribute("Point").SetValue(data.Point);
                 }
                 // 如果Time不更小则不做处理
             }
@@ -74,8 +81,11 @@ namespace RHOParser
                     new XAttribute("Track", data.Track),
                     new XAttribute("Kart", data.Kart),
                     new XAttribute("Time", data.Time),
-                    new XAttribute("Auf", data.Auf),
-                    new XAttribute("Cf", data.Cf)
+                    new XAttribute("Boooster", data.Boooster),
+                    new XAttribute("BooosterPoint", data.BooosterPoint),
+                    new XAttribute("Crash", data.Crash),
+                    new XAttribute("CrashPoint", data.CrashPoint),
+                    new XAttribute("Point", data.Point)
                 ));
             }
 
@@ -96,8 +106,11 @@ namespace RHOParser
                     Track = (uint)e.Attribute("Track"),
                     Kart = (short)e.Attribute("Kart"),
                     Time = (uint)e.Attribute("Time"),
-                    Auf = (short)e.Attribute("Auf"),
-                    Cf = (short)e.Attribute("Cf")
+                    Boooster = (short)e.Attribute("Boooster"),
+                    BooosterPoint = (int)e.Attribute("BooosterPoint"),
+                    Crash = (short)e.Attribute("Crash"),
+                    CrashPoint = (int)e.Attribute("CrashPoint"),
+                    Point = (int)e.Attribute("Point")
                 })
                 .ToList();
         }
@@ -190,5 +203,194 @@ namespace RHOParser
             // 确保周数在1-4范围内
             return Math.Clamp(weekNumber, 1, 4);
         }
+    }
+
+    public class CompleteTrackScoreCalculator
+    {
+        /// <summary>
+        /// 从XML文件加载赛道数据
+        /// </summary>
+        public Dictionary<uint, TrackData> LoadFromXml(XDocument doc)
+        {
+            Dictionary<uint, TrackData> TrackDictionary = new Dictionary<uint, TrackData>();
+
+            foreach (XElement trackElement in doc.Descendants("TrackInfo"))
+            {
+                uint trackId = Adler32Helper.GenerateAdler32_UNICODE(trackElement.Attribute("trackId").Value, 0);
+                uint standardTime = uint.Parse(trackElement.Attribute("time").Value);
+
+                TrackData trackData = new TrackData
+                {
+                    TrackId = trackId,
+                    StandardTime = standardTime
+                };
+
+                foreach (XElement bonusElement in trackElement.Elements("driveBonus"))
+                {
+                    string type = bonusElement.Attribute("type").Value;
+                    int count = int.Parse(bonusElement.Attribute("count").Value);
+                    int point = int.Parse(bonusElement.Attribute("point").Value);
+
+                    trackData.Bonuses.Add(new DriveBonus
+                    {
+                        Type = type,
+                        Count = count,
+                        Point = point
+                    });
+                }
+
+                TrackDictionary[trackId] = trackData;
+            }
+            return TrackDictionary;
+        }
+
+        /// <summary>
+        /// 计算指定赛道的详细得分（碰撞得分只取最高优先级）
+        /// </summary>
+        public TrackScoreDetails CalculateTrackScoreDetails(
+            uint trackId,
+            uint actualTime,
+            int actualBoostCount,
+            int actualCrashCount,
+            Dictionary<uint, TrackData> TrackDictionary)
+        {
+            if (!TrackDictionary.ContainsKey(trackId))
+            {
+                throw new KeyNotFoundException($"找不到赛道ID: {trackId}");
+            }
+
+            TrackData track = TrackDictionary[trackId];
+            int timeScore = CalculateTimeScore(track.StandardTime, actualTime);
+            int boostScore = CalculateBoostScore(track.Bonuses, actualBoostCount);
+            int crashScore = CalculateCrashScoreWithPriority(track.Bonuses, actualCrashCount);
+
+            return new TrackScoreDetails
+            {
+                TrackId = trackId,
+                TotalScore = timeScore + boostScore + crashScore,
+                TimeScore = timeScore,
+                BoostScore = boostScore,
+                CrashScore = crashScore,
+            };
+        }
+
+        /// <summary>
+        /// 计算加速得分（累加所有符合条件的分数）
+        /// </summary>
+        private int CalculateBoostScore(List<DriveBonus> bonuses, int actualBoostCount)
+        {
+            int score = 0;
+            foreach (var bonus in bonuses.Where(b => b.Type == "boooster"))
+            {
+                if (actualBoostCount > bonus.Count)
+                {
+                    score += bonus.Point;
+                }
+            }
+            return score;
+        }
+
+        /// <summary>
+        /// 计算碰撞得分（只取最高优先级的符合条件分数）
+        /// 优先级：count值越小，优先级越高（条件越严格）
+        /// </summary>
+        private int CalculateCrashScoreWithPriority(List<DriveBonus> bonuses, int actualCrashCount)
+        {
+            // 获取所有crash类型的奖励，并按count升序排序（优先级从高到低）
+            var crashBonuses = bonuses
+                .Where(b => b.Type == "crash")
+                .OrderBy(b => b.Count)
+                .ToList();
+
+            // 依次检查，返回第一个符合条件的分数（最高优先级）
+            foreach (var bonus in crashBonuses)
+            {
+                if (actualCrashCount < bonus.Count)
+                {
+                    return bonus.Point;
+                }
+            }
+
+            // 没有符合条件的情况
+            return 0;
+        }
+
+        /// <summary>
+        /// 根据标准时间和实际用时计算时间成绩得分
+        /// </summary>
+        /// <param name="standardTime">标准时间</param>
+        /// <param name="actualTime">实际用时</param>
+        /// <returns>时间成绩得分</returns>
+        private int CalculateTimeScore(uint standardTime, uint actualTime)
+        {
+            try
+            {
+                // 输出计算过程，方便调试
+                Console.WriteLine($"\n时间得分计算过程:");
+                Console.WriteLine($"标准时间: {standardTime}, 实际时间: {actualTime}");
+
+                // 计算偏差值
+                long deviation = (long)actualTime - standardTime; // 使用long避免溢出
+                Console.WriteLine($"偏差值: {deviation}");
+
+                double score;
+                if (deviation < 0)
+                {
+                    // 实际时间更少，加分
+                    double bonus = Math.Abs(deviation) * 0.5;
+                    score = 10000 + bonus;
+                    Console.WriteLine($"加分计算: 10000 + {Math.Abs(deviation)} × 0.5 = {10000} + {bonus} = {score}");
+                }
+                else
+                {
+                    // 实际时间更多，扣分
+                    double penalty = deviation * 0.2;
+                    score = 10000 - penalty;
+                    Console.WriteLine($"扣分计算: 10000 - {deviation} × 0.2 = {10000} - {penalty} = {score}");
+                }
+
+                int integerPart = (int)score;
+                int finalScore = (score > integerPart) ? integerPart + 1 : integerPart;
+
+                // 确保得分不低于0
+                return Math.Max(0, finalScore);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"计算错误: {ex.Message}");
+                return 0; // 出错时返回0
+            }
+        }
+    }
+
+    // 赛道得分明细类（包含时间成绩）
+    public class TrackScoreDetails
+    {
+        public uint TrackId { get; set; }
+        public int TotalScore { get; set; }      // 总得分
+        public int TimeScore { get; set; }       // 时间成绩得分
+        public int BoostScore { get; set; }      // 加速得分
+        public int CrashScore { get; set; }      // 碰撞得分
+    }
+
+    // 赛道数据类
+    public class TrackData
+    {
+        public uint TrackId { get; set; }
+        public uint StandardTime { get; set; }
+        public List<DriveBonus> Bonuses { get; set; }
+
+        public TrackData()
+        {
+            Bonuses = new List<DriveBonus>();
+        }
+    }
+
+    // 奖励信息类
+    public class DriveBonus
+    {
+        public string Type { get; set; }
+        public int Count { get; set; }
+        public int Point { get; set; }
     }
 }

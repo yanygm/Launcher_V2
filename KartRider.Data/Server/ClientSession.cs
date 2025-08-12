@@ -83,9 +83,9 @@ namespace KartRider
 						iPacket.ReadBytes(10);
 						short Kart = iPacket.ReadShort();
 						iPacket.ReadBytes(416);
-						short Auf = iPacket.ReadShort();
+						short Boooster = iPacket.ReadShort();
 						iPacket.ReadShort();
-						short Cf = iPacket.ReadShort();
+						short Crash = iPacket.ReadShort();
 						iPacket.ReadShort();
 						using (OutPacket outPacket = new OutPacket("LoRpAddRacingTimePacket"))
 						{
@@ -97,7 +97,9 @@ namespace KartRider
 							this.Parent.Client.Send(outPacket);
 						}
 						var manager = new CompetitiveDataManager();
-						var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Auf = Auf, Cf = Cf };
+						CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
+						var Scores = calculator.CalculateTrackScoreDetails(Track, Time, Boooster, Crash, FavoriteItem.TrackDictionary);
+						var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Boooster = Boooster, BooosterPoint = Scores.BoostScore, Crash = Crash, CrashPoint = Scores.CrashScore, Point = Scores.TotalScore };
 						manager.SaveData(data);
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
 						{
@@ -110,14 +112,12 @@ namespace KartRider
 								outPacket.WriteShort(competitive.Kart);
 								outPacket.WriteUInt(competitive.Time);
 								outPacket.WriteHexString("FF FF FF FF");
-								outPacket.WriteShort(competitive.Auf);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(competitive.Cf);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(0);
-								outPacket.WriteUInt(0);
-								outPacket.WriteUInt(0);
+								outPacket.WriteShort(competitive.Boooster);
+								outPacket.WriteInt(competitive.BooosterPoint);
+								outPacket.WriteShort(competitive.Crash);
+								outPacket.WriteInt(competitive.CrashPoint);
+								outPacket.WriteInt(competitive.Point);
+								outPacket.WriteInt(0);
 							}
 							this.Parent.Client.Send(outPacket);
 						}
@@ -1865,14 +1865,12 @@ namespace KartRider
 								outPacket.WriteShort(competitive.Kart);
 								outPacket.WriteUInt(competitive.Time);
 								outPacket.WriteHexString("FF FF FF FF");
-								outPacket.WriteShort(competitive.Auf);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(competitive.Cf);
-								outPacket.WriteShort(0);
-								outPacket.WriteShort(0);
-								outPacket.WriteUInt(0);
-								outPacket.WriteUInt(0);
+								outPacket.WriteShort(competitive.Boooster);
+								outPacket.WriteInt(competitive.BooosterPoint);
+								outPacket.WriteShort(competitive.Crash);
+								outPacket.WriteInt(competitive.CrashPoint);
+								outPacket.WriteInt(competitive.Point);
+								outPacket.WriteInt(0);
 							}
 							this.Parent.Client.Send(outPacket);
 						}

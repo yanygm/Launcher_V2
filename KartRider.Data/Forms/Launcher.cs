@@ -15,7 +15,7 @@ using KartRider;
 using KartRider.IO.Packet;
 using KartRider.Common.Utilities;
 using KartLibrary.File;
-using static KartRider.Common.Data.PINFile;
+using KartRider.Common.Data;
 using System.Collections;
 using System.Reflection;
 using System.Linq;
@@ -254,11 +254,11 @@ namespace KartRider
                     }
                     File.Copy(this.kartRiderDirectory + "KartRider.pin", this.kartRiderDirectory + "KartRider-bak.pin");
                     PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
-                    foreach (AuthMethod authMethod in val.AuthMethods)
+                    foreach (PINFile.AuthMethod authMethod in val.AuthMethods)
                     {
                         Console.WriteLine("Changing IP Addr to local... {0}", authMethod.Name);
                         authMethod.LoginServers.Clear();
-                        authMethod.LoginServers.Add(new IPEndPoint
+                        authMethod.LoginServers.Add(new PINFile.IPEndPoint
                         {
                             IP = "127.0.0.1",
                             Port = 39312

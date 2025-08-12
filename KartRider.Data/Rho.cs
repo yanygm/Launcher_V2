@@ -536,6 +536,18 @@ namespace RHOParser
                             FavoriteItem.Competitive = extractor.GetCurrentWeekTrackIds(doc);
                         }
                     }
+                    if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitiveData.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            // 加载文档并解析任务
+                            XDocument doc = XDocument.Load(stream);
+                            CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
+                            FavoriteItem.TrackDictionary = calculator.LoadFromXml(doc);
+                        }
+                    }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
                     {
                         Console.WriteLine(fullName);
