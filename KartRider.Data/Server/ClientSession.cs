@@ -460,16 +460,18 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("RmSlotDataPacket"))
 						{
 							outPacket.WriteUInt(SetRider.UserNO);
-							outPacket.WriteBytes(new byte[12]);
+							outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
+							outPacket.WriteInt();
+							outPacket.WriteShort();
 							outPacket.WriteString(SetRider.Nickname);
 							GameSupport.GetRider(outPacket);
 							outPacket.WriteShort(0);
 							outPacket.WriteUInt(SetRider.RP);
-							outPacket.WriteBytes(new byte[34]);
+							outPacket.WriteBytes(new byte[44]);
 							for (int i = 0; i < 7; i++)
 							{
-								outPacket.WriteBytes(new byte[132]);
-								outPacket.WriteHexString("FF");
+								outPacket.WriteBytes(new byte[133]);
+								//outPacket.WriteHexString("FF");
 							}
 							this.Parent.Client.Send(outPacket);
 						}
