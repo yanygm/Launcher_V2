@@ -42,6 +42,8 @@ namespace KartRider
 					//StartGameData.Start_KartSpac();
 				}
 			}
+			var v2Spec = new V2Spec();
+			v2Spec.ExceedSpec();
 		}
 
 		public static void Kart_Spec(short id, XmlDocument Spec)
@@ -253,8 +255,6 @@ namespace KartRider
 			Kart.chargeAntiCollideBalance = float.Parse(AddList[83]);
 			Kart.startItemTableId = 0;
 			Kart.startItemId = 0;
-			var v2Spec = new V2Spec();
-			v2Spec.ExceedSpec();
 			//StartGameData.Start_KartSpac();
 		}
 
