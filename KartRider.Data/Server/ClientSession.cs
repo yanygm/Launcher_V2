@@ -113,10 +113,10 @@ namespace KartRider
 								outPacket.WriteUInt(competitive.Time);
 								outPacket.WriteHexString("FF FF FF FF");
 								outPacket.WriteShort(competitive.Boooster);
-								outPacket.WriteInt(competitive.BooosterPoint);
+								outPacket.WriteUInt(competitive.BooosterPoint);
 								outPacket.WriteShort(competitive.Crash);
-								outPacket.WriteInt(competitive.CrashPoint);
-								outPacket.WriteInt(competitive.Point);
+								outPacket.WriteUInt(competitive.CrashPoint);
+								outPacket.WriteUInt(competitive.Point);
 								outPacket.WriteInt(0);
 							}
 							this.Parent.Client.Send(outPacket);
@@ -1868,10 +1868,10 @@ namespace KartRider
 								outPacket.WriteUInt(competitive.Time);
 								outPacket.WriteHexString("FF FF FF FF");
 								outPacket.WriteShort(competitive.Boooster);
-								outPacket.WriteInt(competitive.BooosterPoint);
+								outPacket.WriteUInt(competitive.BooosterPoint);
 								outPacket.WriteShort(competitive.Crash);
-								outPacket.WriteInt(competitive.CrashPoint);
-								outPacket.WriteInt(competitive.Point);
+								outPacket.WriteUInt(competitive.CrashPoint);
+								outPacket.WriteUInt(competitive.Point);
 								outPacket.WriteInt(0);
 							}
 							this.Parent.Client.Send(outPacket);
