@@ -14,10 +14,10 @@ namespace RHOParser
         public short Kart { get; set; }
         public uint Time { get; set; }
         public short Boooster { get; set; }
-        public int BooosterPoint { get; set; }
+        public uint BooosterPoint { get; set; }
         public short Crash { get; set; }
-        public int CrashPoint { get; set; }
-        public int Point { get; set; }
+        public uint CrashPoint { get; set; }
+        public uint Point { get; set; }
     }
 
     public class CompetitiveDataManager
@@ -107,10 +107,10 @@ namespace RHOParser
                     Kart = (short)e.Attribute("Kart"),
                     Time = (uint)e.Attribute("Time"),
                     Boooster = (short)e.Attribute("Boooster"),
-                    BooosterPoint = (int)e.Attribute("BooosterPoint"),
+                    BooosterPoint = (uint)e.Attribute("BooosterPoint"),
                     Crash = (short)e.Attribute("Crash"),
-                    CrashPoint = (int)e.Attribute("CrashPoint"),
-                    Point = (int)e.Attribute("Point")
+                    CrashPoint = (uint)e.Attribute("CrashPoint"),
+                    Point = (uint)e.Attribute("Point")
                 })
                 .ToList();
         }
@@ -228,8 +228,8 @@ namespace RHOParser
                 foreach (XElement bonusElement in trackElement.Elements("driveBonus"))
                 {
                     string type = bonusElement.Attribute("type").Value;
-                    int count = int.Parse(bonusElement.Attribute("count").Value);
-                    int point = int.Parse(bonusElement.Attribute("point").Value);
+                    uint count = uint.Parse(bonusElement.Attribute("count").Value);
+                    uint point = uint.Parse(bonusElement.Attribute("point").Value);
 
                     trackData.Bonuses.Add(new DriveBonus
                     {
@@ -250,8 +250,8 @@ namespace RHOParser
         public TrackScoreDetails CalculateTrackScoreDetails(
             uint trackId,
             uint actualTime,
-            int actualBoostCount,
-            int actualCrashCount,
+            short actualBoostCount,
+            short actualCrashCount,
             Dictionary<uint, TrackData> TrackDictionary)
         {
             if (!TrackDictionary.ContainsKey(trackId))
@@ -260,9 +260,9 @@ namespace RHOParser
             }
 
             TrackData track = TrackDictionary[trackId];
-            int timeScore = CalculateTimeScore(track.StandardTime, actualTime);
-            int boostScore = CalculateBoostScore(track.Bonuses, actualBoostCount);
-            int crashScore = CalculateCrashScoreWithPriority(track.Bonuses, actualCrashCount);
+            uint timeScore = CalculateTimeScore(track.StandardTime, actualTime);
+            uint boostScore = CalculateBoostScore(track.Bonuses, actualBoostCount);
+            uint crashScore = CalculateCrashScoreWithPriority(track.Bonuses, actualCrashCount);
 
             return new TrackScoreDetails
             {
@@ -277,9 +277,9 @@ namespace RHOParser
         /// <summary>
         /// 计算加速得分（累加所有符合条件的分数）
         /// </summary>
-        private int CalculateBoostScore(List<DriveBonus> bonuses, int actualBoostCount)
+        private uint CalculateBoostScore(List<DriveBonus> bonuses, short actualBoostCount)
         {
-            int score = 0;
+            uint score = 0;
             foreach (var bonus in bonuses.Where(b => b.Type == "boooster"))
             {
                 if (actualBoostCount > bonus.Count)
@@ -294,7 +294,7 @@ namespace RHOParser
         /// 计算碰撞得分（只取最高优先级的符合条件分数）
         /// 优先级：count值越小，优先级越高（条件越严格）
         /// </summary>
-        private int CalculateCrashScoreWithPriority(List<DriveBonus> bonuses, int actualCrashCount)
+        private uint CalculateCrashScoreWithPriority(List<DriveBonus> bonuses, short actualCrashCount)
         {
             // 获取所有crash类型的奖励，并按count升序排序（优先级从高到低）
             var crashBonuses = bonuses
@@ -321,7 +321,7 @@ namespace RHOParser
         /// <param name="standardTime">标准时间</param>
         /// <param name="actualTime">实际用时</param>
         /// <returns>时间成绩得分</returns>
-        private int CalculateTimeScore(uint standardTime, uint actualTime)
+        private uint CalculateTimeScore(uint standardTime, uint actualTime)
         {
             try
             {
@@ -349,11 +349,8 @@ namespace RHOParser
                     Console.WriteLine($"扣分计算: 10000 - {deviation} × 0.2 = {10000} - {penalty} = {score}");
                 }
 
-                int integerPart = (int)score;
-                int finalScore = (score > integerPart) ? integerPart + 1 : integerPart;
-
-                // 确保得分不低于0
-                return Math.Max(0, finalScore);
+                uint integerPart = (uint)score;
+                return integerPart;
             }
             catch (Exception ex)
             {
@@ -367,10 +364,10 @@ namespace RHOParser
     public class TrackScoreDetails
     {
         public uint TrackId { get; set; }
-        public int TotalScore { get; set; }      // 总得分
-        public int TimeScore { get; set; }       // 时间成绩得分
-        public int BoostScore { get; set; }      // 加速得分
-        public int CrashScore { get; set; }      // 碰撞得分
+        public uint TotalScore { get; set; }      // 总得分
+        public uint TimeScore { get; set; }       // 时间成绩得分
+        public uint BoostScore { get; set; }      // 加速得分
+        public uint CrashScore { get; set; }      // 碰撞得分
     }
 
     // 赛道数据类
@@ -390,7 +387,7 @@ namespace RHOParser
     public class DriveBonus
     {
         public string Type { get; set; }
-        public int Count { get; set; }
-        public int Point { get; set; }
+        public uint Count { get; set; }
+        public uint Point { get; set; }
     }
 }
