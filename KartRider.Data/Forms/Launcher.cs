@@ -32,6 +32,7 @@ namespace KartRider
         public static string pinFile = "KartRider.pin";
         private Button Start_Button;
         private Button GetKart_Button;
+        private Button button_ToggleTerminal;
         private Label label_Client;
         private ComboBox Speed_comboBox;
         private Label Speed_label;
@@ -50,6 +51,7 @@ namespace KartRider
         {
             Start_Button = new Button();
             GetKart_Button = new Button();
+            button_ToggleTerminal = new Button();
             label_Client = new Label();
             ClientVersion = new Label();
             VersionLabel = new Label();
@@ -80,6 +82,42 @@ namespace KartRider
             GetKart_Button.UseVisualStyleBackColor = true;
             GetKart_Button.Click += GetKart_Button_Click;
             // 
+            // button_ToggleTerminal
+            // 
+            button_ToggleTerminal.Location = new System.Drawing.Point(19, 78);
+            button_ToggleTerminal.Name = "button_ToggleTerminal";
+            button_ToggleTerminal.Size = new System.Drawing.Size(114, 23);
+            button_ToggleTerminal.TabIndex = 366;
+            button_ToggleTerminal.Text = "切换终端";
+            button_ToggleTerminal.UseVisualStyleBackColor = true;
+            button_ToggleTerminal.Click += button_ToggleTerminal_Click;
+            // 
+            // Speed_comboBox
+            // 
+            Speed_comboBox.ForeColor = System.Drawing.Color.Red;
+            Speed_comboBox.FormattingEnabled = true;
+            Speed_comboBox.Sorted = false;
+            foreach (string key in SpeedType.speedNames.Keys)
+            {
+                Speed_comboBox.Items.Add(key);
+            }
+            Speed_comboBox.Location = new System.Drawing.Point(54, 107);
+            Speed_comboBox.Name = "Speed_comboBox";
+            Speed_comboBox.Size = new System.Drawing.Size(78, 20);
+            Speed_comboBox.TabIndex = 367;
+            Speed_comboBox.Text = "标准";
+            Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
+            // 
+            // Speed_label
+            // 
+            Speed_label.AutoSize = true;
+            Speed_label.ForeColor = System.Drawing.Color.Blue;
+            Speed_label.Location = new System.Drawing.Point(19, 111);
+            Speed_label.Name = "Speed_label";
+            Speed_label.Size = new System.Drawing.Size(59, 12);
+            Speed_label.TabIndex = 368;
+            Speed_label.Text = "速度:";
+            // 
             // label_Client
             // 
             label_Client.AutoSize = true;
@@ -89,7 +127,7 @@ namespace KartRider
             label_Client.Location = new System.Drawing.Point(2, 144);
             label_Client.Name = "label_Client";
             label_Client.Size = new System.Drawing.Size(47, 12);
-            label_Client.TabIndex = 367;
+            label_Client.TabIndex = 369;
             label_Client.Text = "Client:";
             label_Client.Click += label_Client_Click;
             // 
@@ -102,7 +140,7 @@ namespace KartRider
             ClientVersion.Location = new System.Drawing.Point(45, 144);
             ClientVersion.Name = "ClientVersion";
             ClientVersion.Size = new System.Drawing.Size(0, 12);
-            ClientVersion.TabIndex = 367;
+            ClientVersion.TabIndex = 370;
             ClientVersion.Click += label_Client_Click;
             //
             // VersionLabel
@@ -114,34 +152,8 @@ namespace KartRider
             VersionLabel.Location = new System.Drawing.Point(57, 160);
             VersionLabel.Name = "VersionLabel";
             VersionLabel.Size = new System.Drawing.Size(0, 12);
-            VersionLabel.TabIndex = 373;
+            VersionLabel.TabIndex = 371;
             VersionLabel.Click += GitHub_Click;
-            // 
-            // Speed_comboBox
-            // 
-            Speed_comboBox.ForeColor = System.Drawing.Color.Red;
-            Speed_comboBox.FormattingEnabled = true;
-            Speed_comboBox.Sorted = false;
-            foreach (string key in SpeedType.speedNames.Keys)
-            {
-                Speed_comboBox.Items.Add(key);
-            }
-            Speed_comboBox.Location = new System.Drawing.Point(54, 78);
-            Speed_comboBox.Name = "Speed_comboBox";
-            Speed_comboBox.Size = new System.Drawing.Size(78, 20);
-            Speed_comboBox.TabIndex = 368;
-            Speed_comboBox.Text = "标准";
-            Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
-            // 
-            // Speed_label
-            // 
-            Speed_label.AutoSize = true;
-            Speed_label.ForeColor = System.Drawing.Color.Blue;
-            Speed_label.Location = new System.Drawing.Point(19, 82);
-            Speed_label.Name = "Speed_label";
-            Speed_label.Size = new System.Drawing.Size(59, 12);
-            Speed_label.TabIndex = 369;
-            Speed_label.Text = "速度:";
             // 
             // GitHub
             // 
@@ -150,7 +162,7 @@ namespace KartRider
             GitHub.Location = new System.Drawing.Point(213, 144);
             GitHub.Name = "GitHub";
             GitHub.Size = new System.Drawing.Size(41, 12);
-            GitHub.TabIndex = 371;
+            GitHub.TabIndex = 372;
             GitHub.Text = "GitHub";
             GitHub.Click += GitHub_Click;
             // 
@@ -161,7 +173,7 @@ namespace KartRider
             KartInfo.Location = new System.Drawing.Point(201, 160);
             KartInfo.Name = "KartInfo";
             KartInfo.Size = new System.Drawing.Size(53, 12);
-            KartInfo.TabIndex = 372;
+            KartInfo.TabIndex = 373;
             KartInfo.Text = "KartInfo";
             KartInfo.Click += KartInfo_Click;
             //
@@ -172,7 +184,7 @@ namespace KartRider
             Launcher_label.Location = new System.Drawing.Point(2, 160);
             Launcher_label.Name = "Launcher_label";
             Launcher_label.Size = new System.Drawing.Size(47, 12);
-            Launcher_label.TabIndex = 373;
+            Launcher_label.TabIndex = 374;
             Launcher_label.Text = "Launcher:";
             Launcher_label.Click += GitHub_Click;
             // 
@@ -190,6 +202,7 @@ namespace KartRider
             Controls.Add(Speed_label);
             Controls.Add(ClientVersion);
             Controls.Add(label_Client);
+            Controls.Add(button_ToggleTerminal);
             Controls.Add(GetKart_Button);
             Controls.Add(Start_Button);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
@@ -221,7 +234,7 @@ namespace KartRider
 
         private void OnLoad(object sender, EventArgs e)
         {
-        string executablePath = Process.GetCurrentProcess().MainModule.FileName;
+            string executablePath = Process.GetCurrentProcess().MainModule.FileName;
             Load_KartExcData();
             StartingLoad_ALL.StartingLoad();
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
@@ -344,7 +357,7 @@ namespace KartRider
 
             EnsureDefaultDataFileExists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory+ @"Profile\NewKart.xml", LoadNewKart);
+            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\NewKart.xml", LoadNewKart);
             KartExcData.TuneList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml", LoadTuneData);
             KartExcData.PlantList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml", LoadPlantData);
             KartExcData.LevelList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml", LoadLevelData);
@@ -720,6 +733,16 @@ namespace KartRider
                 Console.WriteLine($"错误: {ex.Message}");
             }
         }
+
+        private void button_ToggleTerminal_Click(object sender, EventArgs e)
+        {
+            bool isConsoleVisible = Program.IsWindowVisible(Program.consoleHandle);
+            isConsoleVisible = !isConsoleVisible;
+            Program.ShowWindow(Program.consoleHandle, isConsoleVisible ? Program.SW_SHOW : Program.SW_HIDE);
+            using (StreamWriter streamWriter = new StreamWriter(Program.Load_Console, false))
+            {
+                streamWriter.Write((isConsoleVisible ? "1" : "0"));
+            }
+        }
     }
 }
-
