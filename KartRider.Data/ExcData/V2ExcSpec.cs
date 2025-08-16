@@ -29,6 +29,40 @@ namespace ExcData
 		public static float V2Level_DriftEscapeForce = 0f;
 		public static float V2Level_DriftMaxGauge = 0f;
 
+        /// <summary>
+        /// 迅道具技能
+        /// </summary>
+		public static Dictionary<short, Dictionary<short, short>> itemSkill = new Dictionary<short, Dictionary<short, short>>
+		{
+			//{ 13, new Dictionary<short, short> { {3, 10} } },
+			//{ 14, new Dictionary<short, short> { {5, 6} } },
+			{ 15, new Dictionary<short, short> { {10, 18} } },
+			{ 16, new Dictionary<short, short> { {6, 18} } },
+			{ 18, new Dictionary<short, short> { {9, 27} } },
+			{ 19, new Dictionary<short, short> { {7, 32} } },
+			{ 20, new Dictionary<short, short> { {6, 24} } },
+			{ 21, new Dictionary<short, short> { {8, 37} } }
+		};
+
+		public static List<short> GetSkills()
+		{
+			int[] skillID = { 4, 6, 8 };
+			List<short> skills = new List<short>();
+			var existingLevel = KartExcData.Level12List.FirstOrDefault(list => list[0] == SetRiderItem.Set_Kart && list[1] == SetRiderItem.Set_KartSN);
+			if (existingLevel != null)
+			{
+				for (int i = 0; i < skillID.Length; i++)
+				{
+					if (existingLevel[skillID[i]] != 0)
+					{
+						skills.Add(existingLevel[skillID[i] - 1]);
+					}
+				}
+				return skills;
+			}
+			return new List<short>();
+		}
+
 		public static byte GetGrade(byte level)
 		{
 			if (level > 30) return 1;
@@ -76,6 +110,10 @@ namespace ExcData
 			V2Parts_SteerConstraint = 0f;
 			V2Parts_DriftEscapeForce = 0f;
 			V2Parts_NormalBoosterTime = 0f;
+			V2Default_TransAccelFactor = 0f;
+			V2Default_SteerConstraint = 0f;
+			V2Default_DriftEscapeForce = 0f;
+			V2Default_NormalBoosterTime = 0f;
 		}
 
 		public void ExceedSpec()
@@ -214,6 +252,12 @@ namespace ExcData
 					Kart.chargerSystemUseTime = 0;
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
+
+					Random random = new Random();
+					int index = random.Next(KartExcData.itemProb_indi.Count);
+					short skill = KartExcData.itemProb_indi[index];
+					skill = GameSupport.GetItemSkill(skill);
+					Kart.startItemId = (int)(skill);
 				}
 				if (Kart.defaultExceedType == 2)//S
 				{

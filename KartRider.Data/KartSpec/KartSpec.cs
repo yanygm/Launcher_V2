@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using ExcData;
@@ -42,6 +43,8 @@ namespace KartRider
 					//StartGameData.Start_KartSpac();
 				}
 			}
+			var v2Spec = new V2Spec();
+			v2Spec.ExceedSpec();
 		}
 
 		public static void Kart_Spec(short id, XmlDocument Spec)
@@ -229,12 +232,13 @@ namespace KartRider
 			Kart.wallCollGaugeMinVelBound = float.Parse(AddList[68]);
 			Kart.wallCollGaugeMinVelLoss = float.Parse(AddList[69]);
 			XDocument xdoc = XDocument.Load(AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml");
-			var bodyParams = xdoc.Descendants("id" + id.ToString());
-			foreach (var item in bodyParams)
-			{
-				Kart.modelMaxX = item.Attribute("modelMaxX") != null ? float.Parse(item.Attribute("modelMaxX").Value) : float.Parse(AddList[70]);
-				Kart.modelMaxY = item.Attribute("modelMaxY") != null ? float.Parse(item.Attribute("modelMaxY").Value) : float.Parse(AddList[71]);
-			}
+			var targetElement = xdoc.Descendants("id" + id.ToString()).FirstOrDefault();
+			Kart.modelMaxX = targetElement?.Attribute("modelMaxX") != null 
+				? (float.TryParse(targetElement.Attribute("modelMaxX").Value, out float x) ? x : 0) 
+				: 0;
+			Kart.modelMaxY = targetElement?.Attribute("modelMaxY") != null 
+				? (float.TryParse(targetElement.Attribute("modelMaxY").Value, out float y) ? y : 0) 
+				: 0;
 			Kart.defaultExceedType = int.Parse(AddList[72]);
 			Kart.defaultEngineType = byte.Parse(AddList[73]);
 			Kart.EngineType = 1;
@@ -253,8 +257,6 @@ namespace KartRider
 			Kart.chargeAntiCollideBalance = float.Parse(AddList[83]);
 			Kart.startItemTableId = 0;
 			Kart.startItemId = 0;
-			var v2Spec = new V2Spec();
-			v2Spec.ExceedSpec();
 			//StartGameData.Start_KartSpac();
 		}
 

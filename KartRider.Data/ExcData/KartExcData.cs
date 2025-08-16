@@ -39,6 +39,10 @@ namespace ExcData
 		public static List<int> scenario = new List<int>();
 		public static List<int> quest = new List<int>();
 		public static int seasonId = 0;
+		public static List<short> itemProb_indi = new List<short>();
+		public static List<short> itemProb_team = new List<short>();
+		public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
+		public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
 
 		public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
 

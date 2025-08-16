@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using System.Runtime.Intrinsics.X86;
-
 namespace KartLibrary.Encrypt
 {
     public class Rho5KeyProvider

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using System.IO;
 
 namespace KartLibrary.Encrypt
 {
@@ -69,6 +70,52 @@ namespace KartLibrary.Encrypt
             BaseStream.Flush();
         }
 
+        // 通用向量加载方法（替代Sse2.LoadVector128）
+        private unsafe static Vector128<T> LoadVector128<T>(void* address) where T : unmanaged
+        {
+            // 将void*显式转换为T*类型指针
+            T* typedPtr = (T*)address;
+
+            // 使用类型化指针加载向量
+            return Vector128.Load<T>(typedPtr);
+        }
+
+        // 通用向量存储方法（替代Sse2.Store）
+        private unsafe static void StoreVector128<T>(void* address, Vector128<T> vector) where T : unmanaged
+        {
+            // 将void*转换为类型化指针T*
+            T* typedPtr = (T*)address;
+
+            // 向量实例的Store方法：将向量数据写入指针指向的内存
+            vector.Store(typedPtr);
+        }
+
+        /// <summary>
+        /// 模拟Sse2.ShiftRightLogical128BitLane的功能：按64位lane向右逻辑移位
+        /// </summary>
+        /// <param name="vector">128位输入向量</param>
+        /// <param name="shiftCount">移位计数（0或1，单位：64位lane）</param>
+        /// <returns>移位后的128位向量</returns>
+        private static Vector128<byte> ShiftRightLogical128BitLane(Vector128<byte> vector, byte shiftCount)
+        {
+            // 仅支持移位0或1个lane（SSE2指令的限制）
+            shiftCount = (byte)(shiftCount & 0x1); // 确保移位值为0或1
+
+            if (shiftCount == 0)
+                return vector; // 移位0：返回原向量
+
+            // 移位1个lane（8字节）：[lane0, lane1] → [lane1, 0]
+            // 1. 提取原向量的高64位（lane1）
+            Vector64<byte> highLane = Vector128.GetUpper(vector);
+
+            // 2. 创建新的低64位（原高64位）和高64位（全0）
+            Vector64<byte> newLowLane = highLane;
+            Vector64<byte> newHighLane = Vector64<byte>.Zero;
+
+            // 3. 组合新的128位向量
+            return Vector128.WithUpper(Vector128.WithLower(Vector128<byte>.Zero, newLowLane), newHighLane);
+        }
+
         public override unsafe int Read(byte[] writeArr, int offset, int count)
         {
             int readLen = Math.Min(count, (int)(this.Length - this.Position));
@@ -78,7 +125,7 @@ namespace KartLibrary.Encrypt
             {
                 if (readLen < 0)
                     throw new EndOfStreamException();
-                if (Sse2.IsSupported)
+                if (Vector128.IsHardwareAccelerated) //Sse2.IsSupported
                 {
                     int writePos = 0, reqCpy = readLen;
                     while (reqCpy > 0)
@@ -97,10 +144,21 @@ namespace KartLibrary.Encrypt
                         {
                             int bIndex = bufferRead & ~(0xF);
                             int nIndex = bufferRead & 0xF;
-                            Vector128<byte> bufVec = Sse2.LoadVector128(bufPtr + bIndex);
-                            if (nIndex != 0)
-                                bufVec = Sse2.ShiftRightLogical128BitLane(bufVec, (byte)nIndex);
-                            Sse2.Store(writePtr + writePos, bufVec);
+                            Vector128<byte> bufVec = Vector128<byte>.Zero;
+                            if (Sse2.IsSupported)
+                            {
+                                bufVec = Sse2.LoadVector128(bufPtr + bIndex);
+                                if (nIndex != 0)
+                                    bufVec = Sse2.ShiftRightLogical128BitLane(bufVec, (byte)nIndex);
+                                Sse2.Store(writePtr + writePos, bufVec);
+                            }
+                            else
+                            {
+                                bufVec = LoadVector128<byte>(bufPtr + bIndex);
+                                if (nIndex != 0)
+                                    bufVec = ShiftRightLogical128BitLane(bufVec, (byte)nIndex);
+                                StoreVector128<byte>(writePtr + writePos, bufVec);
+                            }
                             writePos += cpyLen;
                             bufferRead += cpyLen;
                             reqCpy -= cpyLen;
@@ -167,44 +225,109 @@ namespace KartLibrary.Encrypt
             BasePosition = basePos;
         }
 
+        // private unsafe void updateBuffer()
+        // {
+        //     bufferLength = (int)Math.Min(64, BaseStream.Length - BaseStream.Position);
+        //     _position = BaseStream.Position;
+        //     BaseStream.Read(buffer, 0, bufferLength);
+        //     if (Avx2.IsSupported)
+        //     {
+        //         fixed (byte* keyPtr = extendedKey, bufPtr = buffer)
+        //         {
+        //             for (int i = 0; i < 2; i++)
+        //             {
+        //                 Vector256<byte> keyVec = Avx.LoadVector256(keyPtr + (i << 5));
+        //                 Vector256<byte> bufVec = Avx.LoadVector256(bufPtr + (i << 5));
+        //                 bufVec = Avx2.Xor(bufVec, keyVec);
+        //                 Avx.Store(bufPtr + (i << 5), bufVec);
+        //             }
+        //         }
+        //     }
+        //     else if (Sse2.IsSupported)
+        //     {
+        //         fixed (byte* keyPtr = extendedKey, bufPtr = buffer)
+        //         {
+        //             for (int i = 0; i < 4; i++)
+        //             {
+        //                 Vector128<byte> keyVec = Sse2.LoadVector128(keyPtr + (i << 4));
+        //                 Vector128<byte> bufVec = Sse2.LoadVector128(bufPtr + (i << 4));
+        //                 bufVec = Sse2.Xor(bufVec, keyVec);
+        //                 Sse2.Store(bufPtr + (i << 4), bufVec);
+        //             }
+        //         }
+        //     }
+        //     else
+        //     {
+        //         for (int i = 0; i < bufferLength; i++)
+        //         {
+        //             buffer[i] ^= extendedKey[i];
+        //         }
+        //     }
+        //     bufferRead = 0;
+        // }
+
         private unsafe void updateBuffer()
         {
             bufferLength = (int)Math.Min(64, BaseStream.Length - BaseStream.Position);
             _position = BaseStream.Position;
             BaseStream.Read(buffer, 0, bufferLength);
-            if (Avx2.IsSupported)
+
+            // 使用通用向量API，自动适配当前架构
+            if (Vector256.IsHardwareAccelerated)
             {
+                // 优先使用256位向量（如AVX2或ARM NEON的256位扩展）
                 fixed (byte* keyPtr = extendedKey, bufPtr = buffer)
                 {
-                    for (int i = 0; i < 2; i++)
+                    int vectorSize = Vector256<byte>.Count; // 通常为32字节
+                    int iterations = bufferLength / vectorSize;
+
+                    for (int i = 0; i < iterations; i++)
                     {
-                        Vector256<byte> keyVec = Avx.LoadVector256(keyPtr + (i << 5));
-                        Vector256<byte> bufVec = Avx.LoadVector256(bufPtr + (i << 5));
-                        bufVec = Avx2.Xor(bufVec, keyVec);
-                        Avx.Store(bufPtr + (i << 5), bufVec);
+                        Vector256<byte> keyVec = Vector256.Load<byte>(keyPtr + i * vectorSize);
+                        Vector256<byte> bufVec = Vector256.Load<byte>(bufPtr + i * vectorSize);
+                        bufVec = Vector256.Xor(bufVec, keyVec);
+                        bufVec.Store(bufPtr + i * vectorSize);
+                    }
+
+                    // 处理剩余字节（不足一个向量长度的部分）
+                    for (int i = iterations * vectorSize; i < bufferLength; i++)
+                    {
+                        buffer[i] ^= extendedKey[i];
                     }
                 }
             }
-            else if (Sse2.IsSupported)
+            else if (Vector128.IsHardwareAccelerated)
             {
+                // 使用128位向量（如SSE2或ARM NEON）
                 fixed (byte* keyPtr = extendedKey, bufPtr = buffer)
                 {
-                    for (int i = 0; i < 4; i++)
+                    int vectorSize = Vector128<byte>.Count; // 通常为16字节
+                    int iterations = bufferLength / vectorSize;
+
+                    for (int i = 0; i < iterations; i++)
                     {
-                        Vector128<byte> keyVec = Sse2.LoadVector128(keyPtr + (i << 4));
-                        Vector128<byte> bufVec = Sse2.LoadVector128(bufPtr + (i << 4));
-                        bufVec = Sse2.Xor(bufVec, keyVec);
-                        Sse2.Store(bufPtr + (i << 4), bufVec);
+                        Vector128<byte> keyVec = Vector128.Load<byte>(keyPtr + i * vectorSize);
+                        Vector128<byte> bufVec = Vector128.Load<byte>(bufPtr + i * vectorSize);
+                        bufVec = Vector128.Xor(bufVec, keyVec);
+                        bufVec.Store(bufPtr + i * vectorSize);
+                    }
+
+                    // 处理剩余字节
+                    for (int i = iterations * vectorSize; i < bufferLength; i++)
+                    {
+                        buffer[i] ^= extendedKey[i];
                     }
                 }
             }
             else
             {
+                // 无向量加速时使用纯软件实现
                 for (int i = 0; i < bufferLength; i++)
                 {
                     buffer[i] ^= extendedKey[i];
                 }
             }
+
             bufferRead = 0;
         }
     }

@@ -8,6 +8,7 @@ using KartLibrary.Xml;
 using System.Text;
 using ExcData;
 using RiderData;
+using KartRider;
 using KartRider.Common.Utilities;
 using System.Xml;
 using System.Xml.Linq;
@@ -357,6 +358,115 @@ namespace RHOParser
                             }
                         }
                     }
+                    if (fullName == "item/slot/itemProb_indi@zz.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            foreach (var item in doc.Descendants("item"))
+                            {
+                                // 获取 idx 属性值
+                                string idxValue = item.Attribute("idx")?.Value;
+
+                                // 验证并转换为 short 类型
+                                if (short.TryParse(idxValue, out short idx))
+                                {
+                                    KartExcData.itemProb_indi.Add(idx);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"无法将 '{idxValue}' 转换为 short 类型");
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "item/slot/itemProb_team@zz.bml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        BinaryXmlDocument bxd = new BinaryXmlDocument();
+                        bxd.Read(Encoding.GetEncoding("UTF-16"), data);
+                        string output_bml = bxd.RootTag.ToString();
+                        byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                        using (MemoryStream stream = new MemoryStream(output_data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            foreach (var item in doc.Descendants("item"))
+                            {
+                                // 获取 idx 属性值
+                                string idxValue = item.Attribute("idx")?.Value;
+
+                                // 验证并转换为 short 类型
+                                if (short.TryParse(idxValue, out short idx))
+                                {
+                                    KartExcData.itemProb_team.Add(idx);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"无法将 '{idxValue}' 转换为 short 类型");
+                                }
+                            }
+                        }
+                    }
+                    if (fullName == "zeta_/" + regionCode + "/content/basicAI.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            XDocument doc = XDocument.Load(stream);
+                            XElement aiItem = doc.Descendants("aiItem").First();
+
+                            // 角色Dictionary：键为short类型的角色ID
+                            var aiCharacterDict = aiItem.Elements("character")
+                                .ToDictionary(
+                                    c => short.Parse(c.Attribute("id").Value),  // 键：short类型ID
+                                    c => new AICharacter
+                                    {
+                                        Id = short.Parse(c.Attribute("id").Value),
+                                        Rids = c.Elements("rid").Select(rid => rid.Attribute("name").Value).ToList(),
+                                        Balloons = c.Elements("balloon").Select(b => new AIAccessory
+                                        {
+                                            Id = short.Parse(b.Attribute("id").Value),
+                                            Speed = int.Parse(b.Attribute("speed").Value),
+                                            Item = int.Parse(b.Attribute("item").Value)
+                                        }).ToList(),
+                                        Headbands = c.Elements("headband").Select(h => new AIAccessory
+                                        {
+                                            Id = short.Parse(h.Attribute("id").Value),
+                                            Speed = int.Parse(h.Attribute("speed").Value),
+                                            Item = int.Parse(h.Attribute("item").Value)
+                                        }).ToList(),
+                                        Goggles = c.Elements("goggle").Select(g => new AIAccessory
+                                        {
+                                            Id = short.Parse(g.Attribute("id").Value),
+                                            Speed = int.Parse(g.Attribute("speed").Value),
+                                            Item = int.Parse(g.Attribute("item").Value)
+                                        }).ToList()
+                                    }
+                                );
+                            KartExcData.aiCharacterDict = aiCharacterDict;
+
+                            // 卡丁车Dictionary：键为short类型的卡丁车ID
+                            var aiKartDict = aiItem.Elements("kart")
+                                .ToDictionary(
+                                    k => short.Parse(k.Attribute("id").Value),  // 键：short类型ID
+                                    k => new AIKart
+                                    {
+                                        Id = short.Parse(k.Attribute("id").Value),
+                                        Speed = int.Parse(k.Attribute("speed").Value),
+                                        Item = int.Parse(k.Attribute("item").Value),
+                                    }
+                                );
+                            KartExcData.aiKartDict = aiKartDict;
+                        }
+                    }
                     if (fullName == "zeta_/" + regionCode + "/content/itemDictionary.xml")
                     {
                         Console.WriteLine(fullName);
@@ -412,6 +522,30 @@ namespace RHOParser
                                 FavoriteItem.MissionList = currentMissionList;
                             }
                             Console.WriteLine(string.Join(", ", FavoriteItem.MissionList));
+                        }
+                    }
+                    if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitive.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            // 加载文档并解析任务
+                            XDocument doc = XDocument.Load(stream);
+                            var extractor = new TrackIdExtractor();
+                            FavoriteItem.Competitive = extractor.GetCurrentWeekTrackIds(doc);
+                        }
+                    }
+                    if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitiveData.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            // 加载文档并解析任务
+                            XDocument doc = XDocument.Load(stream);
+                            CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
+                            FavoriteItem.TrackDictionary = calculator.LoadFromXml(doc);
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
@@ -284,6 +285,63 @@ namespace KartRider
 				outPacket.WriteShort(0);
 				outPacket.WriteShort(0);
 				outPacket.WriteShort(0);
+			}
+		}
+
+		public static short GetItemSkill(short skill)
+    	{
+			List<short> skills = V2Spec.GetSkills();
+			for (int i = 0; i < skills.Count; i++)
+			{
+				if (V2Spec.itemSkill.TryGetValue(skills[i], out var Level) &&
+					Level.TryGetValue(skill, out var LevelSkill))
+				{
+					return LevelSkill;
+				}
+			}
+			if (MultyPlayer.skillChange.TryGetValue(SetRiderItem.Set_Kart, out var changes) &&
+				changes.TryGetValue(skill, out var changesSkill))
+			{
+				return changesSkill;
+			}
+			return skill;
+		}
+
+		public static void AddItemSkill(short skill)
+		{
+			skill = GameSupport.GetItemSkill(skill);
+			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
+			{
+				oPacket.WriteInt();
+				oPacket.WriteUInt(4294967295);
+				oPacket.WriteByte(10);
+				oPacket.WriteHexString("001000");
+				oPacket.WriteShort(skill);
+				oPacket.WriteByte(1);
+				oPacket.WriteBytes(new byte[3]);
+				oPacket.WriteByte(2);
+				oPacket.WriteShort(skill);
+				oPacket.WriteBytes(new byte[5]);
+				RouterListener.MySession.Client.Send(oPacket);
+			}
+		}
+
+		public static void AttackedSkill(byte type, byte uni, short skill)
+		{
+			skill = GameSupport.GetItemSkill(skill);
+			using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
+			{
+				oPacket.WriteInt();
+				oPacket.WriteUInt();
+				oPacket.WriteByte(type);
+				oPacket.WriteByte(uni);
+				oPacket.WriteShort(skill);
+				oPacket.WriteByte(1);
+				oPacket.WriteShort();
+				oPacket.WriteByte(2);
+				oPacket.WriteShort(skill);
+				oPacket.WriteBytes(new byte[5]);
+				RouterListener.MySession.Client.Send(oPacket);
 			}
 		}
 	}

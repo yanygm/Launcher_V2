@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
@@ -541,23 +542,38 @@ namespace KartLibrary.Encrypt
     0xE4, 0xEF, 0xE1, 0x17, 0xF2, 0xBD, 0x66, 0x33, 0x80, 0x88, 0xB4, 0x37,
     0x3E, 0x2C, 0xB8, 0xBF, 0x91, 0xDE, 0xAC, 0x19
 }; //F4A300~F4AAFF
-        //4B9FD0, arg1: key, arg2: u1
-        //function 4B9DF0(unsigned char *key, double u2)
-        //4C19A0 1.23516 ver
+   //4B9FD0, arg1: key, arg2: u1
+   //function 4B9DF0(unsigned char *key, double u2)
+   //4C19A0 1.23516 ver
         public unsafe static byte[] GetPackedFileKey(byte[] fileChksum, int u1, string FileName)
         {
-            if (!Sse2.IsSupported)
-                throw new NotSupportedException("Your computer is not support SSE2.");
+            //if (!Sse2.IsSupported)
+            //    throw new NotSupportedException("Your computer is not support SSE2.");
+            if (!Vector128.IsHardwareAccelerated)
+                Console.WriteLine("警告：当前环境不支持硬件加速向量操作，性能可能下降");
             byte[] fileNameData = Encoding.GetEncoding("UTF-16").GetBytes(FileName);
             uint temp_ebx = (uint)u1;
             double[] arr1 = new double[] { 0d, 4294967296d };
             double temp1 = arr1[(uint)u1 >> 31];
-            Vector128<int> dv = Sse2.LoadVector128(&u1);
-            Vector128<double> dr = Sse2.ConvertToVector128Double(dv);
-            Vector128<double> temp2 = Sse2.LoadVector128(&temp1);
-            dr = Sse2.AddScalar(dr, temp2);
-            Vector128<double> a1 = func_E321D0(dr);
-            int temp_esi = Sse2.ConvertToInt32WithTruncation(a1);
+            int temp_esi = 0;
+            if (Sse2.IsSupported)
+            {
+                Vector128<int> dv = Sse2.LoadVector128(&u1);
+                Vector128<double> dr = Sse2.ConvertToVector128Double(dv);
+                Vector128<double> temp2 = Sse2.LoadVector128(&temp1);
+                dr = Sse2.AddScalar(dr, temp2);
+                Vector128<double> a1 = func_E321D0(dr);
+                temp_esi = Sse2.ConvertToInt32WithTruncation(a1);
+            }
+            else
+            {
+                Vector128<int> dv = Vector128.Create(u1);
+                Vector128<double> dr = ConvertToVector128Double(dv);
+                Vector128<double> temp2 = Vector128.Create(temp1);
+                dr = Vector128.Add(dr, temp2);
+                Vector128<double> a1 = func_g(dr);
+                temp_esi = (int)Math.Truncate(a1.GetElement(0));
+            }
             int[] arr2 = new int[temp_esi + 1];
             int i = temp_esi;
             while (temp_ebx != 0)
@@ -678,20 +694,230 @@ namespace KartLibrary.Encrypt
             return new Vector128<double>();
         }
 
+        private unsafe static Vector128<double> func_g(Vector128<double> _inxmm0)
+        {
+            Vector128<double> xmm0 = _inxmm0;
+            double temp_1 = 0;
+
+            // 存储向量低64位到内存
+            Vector64<double> lower64 = Vector128.GetLower(xmm0);
+            *(double*)&temp_1 = lower64.GetElement(0);
+
+            int temp_edx = 0;
+            while (true)
+            {
+                Vector128<double> xmm5 = xmm0;
+                // 手动实现UnpackLow功能：将两个向量的低半部分元素交错组合
+                xmm0 = UnpackLow(xmm0, xmm0);
+
+                // 处理移位操作
+                xmm5 = Vector128.AsDouble(
+                    Vector128.ShiftRightLogical(
+                        Vector128.AsInt64(xmm5), 0x34)
+                );
+
+                // 提取元素
+                int temp_ecx = Vector128.AsUInt16(xmm5).GetElement(0);
+
+                // 常量定义
+                long _temp_F4A320 = 0x000FFFFFFFFFFFFF;
+                long _temp_F4A330 = 0x3FDBC00000000000;
+                long _temp_F4A340 = 0x428FFFFFFFFFF810;
+                long _temp_F4A350 = 0x7FFFFFFF80000000;
+                long _temp_F4A390 = 0x3FF0000000000000;
+
+                Vector128<double> xmm1 = LoadVector128LH((double*)&_temp_F4A320);
+                Vector128<double> xmm2 = LoadVector128LH((double*)&_temp_F4A330);
+                Vector128<double> xmm3 = LoadVector128LH((double*)&_temp_F4A390);
+                Vector128<double> xmm4 = LoadVector128LH((double*)&_temp_F4A340);
+                Vector128<double> xmm6 = LoadVector128LH((double*)&_temp_F4A350);
+
+                // 使用BitwiseAnd替代And
+                xmm0 = Vector128.BitwiseAnd(xmm0, xmm1);
+                // 使用BitwiseOr替代Or
+                xmm0 = Vector128.BitwiseOr(xmm0, xmm3);
+                // 加法操作
+                xmm4 = Vector128.Add(xmm4, xmm0);
+
+                int temp_eax = Vector128.AsUInt16(xmm4).GetElement(0);
+                temp_eax &= 0x7F0;
+
+                xmm4 = LoadVector128FromByteArray(_mem_F4CEE0, temp_eax);
+                Vector128<double> xmm7 = LoadVector128FromByteArray(_mem_F4CAD0, temp_eax);
+
+                // 使用BitwiseAnd替代And
+                xmm6 = Vector128.BitwiseAnd(xmm6, xmm0);
+                // 减法操作
+                xmm0 = Vector128.Subtract(xmm0, xmm6);
+                // 乘法操作
+                xmm6 = Vector128.Multiply(xmm6, xmm4);
+                xmm6 = Vector128.Subtract(xmm6, xmm2);
+                xmm7 = Vector128.Add(xmm7, xmm6);
+                xmm0 = Vector128.Multiply(xmm0, xmm4);
+                xmm4 = xmm0;
+                xmm0 = Vector128.Add(xmm0, xmm6);
+
+                temp_ecx &= 0xFFF;
+                temp_ecx--;
+
+                if (temp_ecx <= 0x7FD)
+                {
+                    temp_ecx -= 0x3FE;
+                    temp_ecx += temp_edx;
+
+                    // 创建标量向量并手动实现UnpackLow
+                    Vector128<double> ecxVec = Vector128.Create((double)temp_ecx);
+                    xmm6 = UnpackLow(ecxVec, ecxVec);
+
+                    temp_ecx <<= 0x0A;
+                    temp_eax += temp_ecx;
+                    temp_ecx = 0x10;
+                    temp_edx = 0;
+                    if (temp_eax == 0)
+                        temp_edx = temp_ecx;
+
+                    xmm1 = LoadVector128FromByteArray(_mem_F4A300, 0xE0);
+                    xmm3 = xmm0;
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0xF0);
+                    xmm1 = Vector128.Multiply(xmm1, xmm0);
+                    xmm3 = Vector128.Multiply(xmm3, xmm3);
+                    xmm1 = Vector128.Add(xmm1, xmm2);
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0x100);
+                    xmm3 = Vector128.Multiply(xmm3, xmm3);
+                    xmm5 = LoadVector128FromByteArray(_mem_F4A300, 0x60);
+                    xmm6 = Vector128.Multiply(xmm6, xmm5);
+                    xmm5 = LoadVector128FromByteArray(_mem_F4A300, 0x70 + temp_edx);
+                    // 使用BitwiseAnd替代And
+                    xmm4 = Vector128.BitwiseAnd(xmm4, xmm5);
+                    xmm7 = Vector128.Add(xmm7, xmm6);
+                    xmm7 = Vector128.Add(xmm7, xmm4);
+                    xmm1 = Vector128.Multiply(xmm1, xmm0);
+                    xmm3 = Vector128.Multiply(xmm3, xmm0);
+                    xmm1 = Vector128.Add(xmm1, xmm2);
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0x110);
+                    xmm2 = Vector128.Multiply(xmm2, xmm0);
+                    xmm6 = xmm7;
+                    // 手动实现UnpackHigh功能
+                    xmm6 = UnpackHigh(xmm6, xmm6);
+                    xmm1 = Vector128.Multiply(xmm1, xmm3);
+                    xmm0 = xmm1;
+                    xmm1 = Vector128.Add(xmm1, xmm2);
+                    // 手动实现UnpackHigh功能
+                    xmm0 = UnpackHigh(xmm0, xmm0);
+                    xmm0 = Vector128.Add(xmm0, xmm1);
+                    xmm0 = Vector128.Add(xmm0, xmm6);
+                    xmm0 = Vector128.Add(xmm0, xmm7);
+
+                    return xmm0;
+                }
+                else
+                {
+                    // 从内存加载低64位到向量
+                    Vector64<double> loadedLow = Vector64.Create(*(double*)&temp_1);
+                    xmm0 = Vector128.WithLower(xmm0, loadedLow);
+                }
+            }
+        }
+
+        // 手动实现UnpackLow功能：将两个向量的低半部分元素交错组合
+        private static Vector128<double> UnpackLow(Vector128<double> left, Vector128<double> right)
+        {
+            // 对于double类型的Vector128，每个向量包含2个元素
+            double left0 = left.GetElement(0);
+            double right0 = right.GetElement(0);
+
+            // 组合成新的向量：[left0, right0]
+            return Vector128.Create(left0, right0);
+        }
+
+        // 手动实现UnpackHigh功能：将两个向量的高半部分元素交错组合
+        private static Vector128<double> UnpackHigh(Vector128<double> left, Vector128<double> right)
+        {
+            // 对于double类型的Vector128，每个向量包含2个元素
+            double left1 = left.GetElement(1);
+            double right1 = right.GetElement(1);
+
+            // 组合成新的向量：[left1, right1]
+            return Vector128.Create(left1, right1);
+        }
+
         private unsafe static Vector128<double> LoadVector128LH(double* address)
         {
-            Vector128<double> output = Sse2.LoadVector128(address).AsDouble();
-            output = Sse2.LoadHigh(output, address);
+            Vector128<double> output = Vector128<double>.Zero;
+            if (Sse2.IsSupported)
+            {
+                output = Sse2.LoadVector128(address).AsDouble();
+                output = Sse2.LoadHigh(output, address);
+            }
+            else
+            {
+                // 从地址加载128位向量（低64位 + 高64位）
+                output = Vector128.Load<double>(address);
+                // 从相同地址加载64位数据作为新的高64位，并用WithUpper替换
+                // 注意：原SSE2.LoadHigh是从address加载64位到高部分，这里保持相同逻辑
+                Vector64<double> highPart = Vector64.Create(*address); // 从address加载64位数据
+                output = Vector128.WithUpper(output, highPart); // 替换高64位
+            }
             return output;
         }
 
         private unsafe static Vector128<double> LoadVector128FromByteArray(byte[] arr, int index)
         {
-            fixed (byte* address = arr)
+            // 验证输入，确保不会越界
+            if (index < 0 || index + 16 > arr.Length)
+                throw new ArgumentOutOfRangeException(nameof(index), "索引超出数组范围或剩余空间不足 16 字节");
+            if (Sse2.IsSupported)
             {
-                Vector128<double> output = Sse2.LoadVector128(address + index).AsDouble();
-                return output;
+                fixed (byte* address = arr)
+                {
+                    Vector128<double> output = Sse2.LoadVector128(address + index).AsDouble();
+                    return output;
+                }
             }
+            else
+            {
+                fixed (byte* address = arr)
+                {
+                    // 使用通用的 Vector128 加载方法，不依赖特定架构指令
+                    // 将字节指针转换为 double*，然后加载 128 位向量
+                    double* doubleAddress = (double*)(address + index);
+                    return Vector128.Load<double>(doubleAddress);
+                }
+            }
+        }
+
+        // 通用方法：将128位整数向量转换为双精度浮点数向量（支持int类型）
+        private static Vector128<double> ConvertToVector128Double(Vector128<int> intVector)
+        {
+            // 提取 int 向量的 4 个元素（32 位 int，共 128 位）
+            int int0 = intVector.GetElement(0);
+            int int1 = intVector.GetElement(1);
+            int int2 = intVector.GetElement(2);
+            int int3 = intVector.GetElement(3);
+
+            // 将 4 个 int 合并为 2 个 long（每个 long 由 2 个 int 组成）
+            long long0 = (long)((uint)int1 << 32 | (uint)int0);
+            long long1 = (long)((uint)int3 << 32 | (uint)int2);
+
+            // 转换为 double 向量（2 个元素，每个对应一个 long）
+            return Vector128.Create(
+            (double)long0,
+            (double)long1
+            );
+        }
+
+        // 通用方法：将128位长整数向量转换为双精度浮点数向量（支持long类型）
+        private static Vector128<double> ConvertToVector128Double(Vector128<long> longVector)
+        {
+            // 提取long向量的2个元素（Vector128<long>包含2个64位long）
+            long long0 = longVector.GetElement(0);
+            long long1 = longVector.GetElement(1);
+
+            // 逐个转换为double，再组合为Vector128<double>
+            return Vector128.Create(
+                (double)long0,
+                (double)long1
+            );
         }
 
         public unsafe static int GetFileKey_U1(string anotherData)

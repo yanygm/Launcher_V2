@@ -15,6 +15,7 @@ using System.Linq;
 using KartRider;
 using System.Xml.Linq;
 using System.Diagnostics;
+using RHOParser;
 
 namespace KartRider
 {
@@ -30,6 +31,8 @@ namespace KartRider
 		{
 			this.Parent = parent;
 		}
+
+		public static uint Time = 0;
 
 		public override void OnDisconnect()
 		{
@@ -76,9 +79,46 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqAddRacingTimePacket", 0))
 					{
+						uint Track = iPacket.ReadUInt();
+						iPacket.ReadBytes(10);
+						short Kart = iPacket.ReadShort();
+						iPacket.ReadBytes(416);
+						short Boooster = iPacket.ReadShort();
+						iPacket.ReadShort();
+						short Crash = iPacket.ReadShort();
+						iPacket.ReadShort();
 						using (OutPacket outPacket = new OutPacket("LoRpAddRacingTimePacket"))
 						{
-							outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00 00 00 00 00 00");
+							//outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00 00 00 00 00 00");
+							outPacket.WriteUInt(Time);
+							outPacket.WriteInt(0);
+							outPacket.WriteShort(0);
+							outPacket.WriteInt(0);
+							this.Parent.Client.Send(outPacket);
+						}
+						var manager = new CompetitiveDataManager();
+						CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
+						var Scores = calculator.CalculateTrackScoreDetails(Track, Time, Boooster, Crash, FavoriteItem.TrackDictionary);
+						var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Boooster = Boooster, BooosterPoint = Scores.BoostScore, Crash = Crash, CrashPoint = Scores.CrashScore, Point = Scores.TotalScore };
+						manager.SaveData(data);
+						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
+						{
+							var competitiveData = manager.LoadAllData();
+							outPacket.WriteInt(competitiveData.Count);
+							foreach (var competitive in competitiveData)
+							{
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteShort(competitive.Kart);
+								outPacket.WriteUInt(competitive.Time);
+								outPacket.WriteHexString("FF FF FF FF");
+								outPacket.WriteShort(competitive.Boooster);
+								outPacket.WriteUInt(competitive.BooosterPoint);
+								outPacket.WriteShort(competitive.Crash);
+								outPacket.WriteUInt(competitive.CrashPoint);
+								outPacket.WriteUInt(competitive.Point);
+								outPacket.WriteInt(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -420,16 +460,18 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("RmSlotDataPacket"))
 						{
 							outPacket.WriteUInt(SetRider.UserNO);
-							outPacket.WriteBytes(new byte[12]);
+							outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
+							outPacket.WriteInt();
+							outPacket.WriteShort();
 							outPacket.WriteString(SetRider.Nickname);
 							GameSupport.GetRider(outPacket);
 							outPacket.WriteShort(0);
 							outPacket.WriteUInt(SetRider.RP);
-							outPacket.WriteBytes(new byte[34]);
+							outPacket.WriteBytes(new byte[44]);
 							for (int i = 0; i < 7; i++)
 							{
-								outPacket.WriteBytes(new byte[132]);
-								outPacket.WriteHexString("FF");
+								outPacket.WriteBytes(new byte[133]);
+								//outPacket.WriteHexString("FF");
 							}
 							this.Parent.Client.Send(outPacket);
 						}
@@ -1269,9 +1311,9 @@ namespace KartRider
 						iPacket.ReadInt();
 						iPacket.ReadInt();
 						iPacket.ReadInt();
-						int Time = iPacket.ReadInt();
+						Time = iPacket.ReadUInt();
 						GameType.min = Time / 60000;
-						int sec = Time - GameType.min * 60000;
+						uint sec = Time - GameType.min * 60000;
 						GameType.sec = sec / 1000;
 						GameType.mil = Time % 1000;
 						if (GameType.RewardType == 0)
@@ -1491,26 +1533,11 @@ namespace KartRider
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEventBuyCount", 0))
 					{
 						EventBuyCount.BuyCount = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 1) EventBuyCount.ShopItem1 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 2) EventBuyCount.ShopItem2 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 3) EventBuyCount.ShopItem3 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 4) EventBuyCount.ShopItem4 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 5) EventBuyCount.ShopItem5 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 6) EventBuyCount.ShopItem6 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 7) EventBuyCount.ShopItem7 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 8) EventBuyCount.ShopItem8 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 9) EventBuyCount.ShopItem9 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 10) EventBuyCount.ShopItem10 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 11) EventBuyCount.ShopItem11 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 12) EventBuyCount.ShopItem12 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 13) EventBuyCount.ShopItem13 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 14) EventBuyCount.ShopItem14 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 15) EventBuyCount.ShopItem15 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 16) EventBuyCount.ShopItem16 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 17) EventBuyCount.ShopItem17 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 18) EventBuyCount.ShopItem18 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 19) EventBuyCount.ShopItem19 = iPacket.ReadInt();
-						if (EventBuyCount.BuyCount >= 20) EventBuyCount.ShopItem20 = iPacket.ReadInt();
+						EventBuyCount.ShopItem = new int[EventBuyCount.BuyCount];
+						for (int i = 0; i < EventBuyCount.BuyCount; i++)
+						{
+							EventBuyCount.ShopItem[i] = iPacket.ReadInt();
+						}
 						EventBuyCount.PrEventBuyCount();
 						return;
 					}
@@ -1714,7 +1741,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
 						{
 							outPacket.WriteUInt(99);
-							outPacket.WriteUInt(10);
+							outPacket.WriteUInt(0);
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1828,9 +1855,25 @@ namespace KartRider
 					}
 					else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveSlotInfo", 0))
 					{
+						var manager = new CompetitiveDataManager();
+						var competitiveData = manager.LoadAllData();
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
 						{
-							outPacket.WriteInt(0);
+							outPacket.WriteInt(competitiveData.Count);
+							foreach (var competitive in competitiveData)
+							{
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteUInt(competitive.Track);
+								outPacket.WriteShort(competitive.Kart);
+								outPacket.WriteUInt(competitive.Time);
+								outPacket.WriteHexString("FF FF FF FF");
+								outPacket.WriteShort(competitive.Boooster);
+								outPacket.WriteUInt(competitive.BooosterPoint);
+								outPacket.WriteShort(competitive.Crash);
+								outPacket.WriteUInt(competitive.CrashPoint);
+								outPacket.WriteUInt(competitive.Point);
+								outPacket.WriteInt(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1839,7 +1882,12 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveCount"))
 						{
-							outPacket.WriteHexString("B3 02 52 1B 00 00 B4 02 54 1B 00 00 B9 02 82 1B 00 00");
+							//outPacket.WriteHexString("B3 02 52 1B 00 00 B4 02 54 1B 00 00 B9 02 82 1B 00 00");
+							foreach (var track in FavoriteItem.Competitive)
+							{
+								outPacket.WriteUInt(Adler32Helper.GenerateAdler32_UNICODE(track, 0));
+								outPacket.WriteShort(0);
+							}
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1963,7 +2011,7 @@ namespace KartRider
 					{
 						using (OutPacket outPacket = new OutPacket("PrShopCashPage"))
 						{
-							outPacket.WriteString("https://ripay.nexon.com/Payment/Index");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
@@ -1974,7 +2022,7 @@ namespace KartRider
 						using (OutPacket outPacket = new OutPacket("PrShopURLPage"))
 						{
 							outPacket.WriteInt(URLPageType);
-							outPacket.WriteString("https://pay.tiancity.com/InnerGame/IndexII.aspx");
+							outPacket.WriteString("https://github.com/yanygm/Launcher_V2/releases");
 							this.Parent.Client.Send(outPacket);
 						}
 						return;
