@@ -33,12 +33,12 @@ namespace KartRider
                 try
                 {
                     string country = await GetCountryAsync();
-                    string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
                     if (country != "" && country == "CN")
                     {
                         List<string> urls = new List<string>() { "https://ghproxy.net/", "https://gh-proxy.com/", "https://hub.myany.uk/", "http://kra.myany.uk:2233/", "http://krb.myany.uk:2233/" };
                         foreach (string url_ in urls)
                         {
+                            string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
                             if (url_ == "https://ghproxy.net/" || url_ == "https://hub.myany.uk/")
                             {
                                 url = url_ + url;
