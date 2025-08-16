@@ -97,7 +97,6 @@ namespace KartRider
                             this.Parent.Client.Send(outPacket);
                         }
                         var manager = new CompetitiveDataManager();
-
                         CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
                         var Scores = calculator.CalculateTrackScoreDetails(Track, Time, Boooster, Crash, FavoriteItem.TrackDictionary);
                         if (Scores != null)
@@ -105,7 +104,6 @@ namespace KartRider
                             var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Boooster = Boooster, BooosterPoint = Scores.BoostScore, Crash = Crash, CrashPoint = Scores.CrashScore, Point = Scores.TotalScore };
                             manager.SaveData(data);
                         }
-
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
                         {
                             var competitiveData = manager.LoadAllData();
