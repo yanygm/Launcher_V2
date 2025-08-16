@@ -256,7 +256,8 @@ namespace RHOParser
         {
             if (!TrackDictionary.ContainsKey(trackId))
             {
-                throw new KeyNotFoundException($"找不到赛道ID: {trackId}");
+                Console.WriteLine($"找不到赛道ID: {trackId}");
+                return null;
             }
 
             TrackData track = TrackDictionary[trackId];
