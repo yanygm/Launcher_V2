@@ -235,6 +235,7 @@ namespace KartRider
 
         private void OnLoad(object sender, EventArgs e)
         {
+            Load_SpeedType();
             string executablePath = Process.GetCurrentProcess().MainModule.FileName;
             Load_KartExcData();
             StartingLoad_ALL.StartingLoad();
@@ -339,6 +340,31 @@ namespace KartRider
                 Program.GetKartDlg = new GetKart();
                 Program.GetKartDlg.ShowDialog();
                 //GetKart_Button.Enabled = true;
+            }
+        }
+
+        public void Load_SpeedType()
+        {
+            string Load_Speed = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Speed.ini";
+            if (File.Exists(Load_Speed))
+            {
+                string textValue = System.IO.File.ReadAllText(Load_Speed);
+                KeyValuePair<string, byte> speed = SpeedType.speedNames.FirstOrDefault(a => a.Value.ToString() == textValue);
+                if (!String.IsNullOrEmpty(speed.Key))
+                {
+                    Speed_comboBox.Text = speed.Key;
+                }
+            }
+            else
+            {
+                if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "Profile"))
+                {
+                    Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "Profile");
+                }
+                using (StreamWriter streamWriter = new StreamWriter(Load_Speed, false))
+                {
+                    streamWriter.Write(config.SpeedType);
+                }
             }
         }
 
@@ -688,6 +714,16 @@ namespace KartRider
                 {
                     config.SpeedType = SpeedType.speedNames[selectedSpeed];
                     Console.WriteLine(selectedSpeed);
+
+                    string Load_Speed = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Speed.ini";
+                    if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "Profile"))
+                    {
+                        Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "Profile");
+                    }
+                    using (StreamWriter streamWriter = new StreamWriter(Load_Speed, false))
+                    {
+                        streamWriter.Write(config.SpeedType);
+                    }
                 }
                 else
                 {
