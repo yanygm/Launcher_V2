@@ -106,6 +106,7 @@ namespace KartRider
             Speed_comboBox.Size = new System.Drawing.Size(78, 20);
             Speed_comboBox.TabIndex = 367;
             Speed_comboBox.Text = "标准";
+            Speed_comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
             // 
             // Speed_label
@@ -746,3 +747,4 @@ namespace KartRider
         }
     }
 }
+
