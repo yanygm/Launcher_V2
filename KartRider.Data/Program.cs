@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Linq;
 using System.Xml.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace KartRider
@@ -53,7 +54,7 @@ namespace KartRider
             AllocConsole();
 
             // 初始化自适应编码
-            ConsoleEncodingHelper.SetAdaptiveConsoleEncoding();
+            SetAdaptiveConsoleEncoding();
 
             if (!await Update.UpdateDataAsync())
             {
