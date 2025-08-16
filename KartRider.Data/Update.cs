@@ -21,6 +21,7 @@ namespace KartRider
             DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             string tag_name = await GetTag_name();
+            string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
             Console.WriteLine($"当前版本为: {formattedDate}");
             if (tag_name != "" && int.Parse(formattedDate) < int.Parse(tag_name))
             {
@@ -38,18 +39,18 @@ namespace KartRider
                         List<string> urls = new List<string>() { "https://ghproxy.net/", "https://gh-proxy.com/", "https://hub.myany.uk/", "http://kra.myany.uk:2233/", "http://krb.myany.uk:2233/" };
                         foreach (string url_ in urls)
                         {
-                            string url = "https://github.com/yanygm/Launcher_V2/releases/download/" + tag_name + "/Launcher.zip";
+                            string url2 = "";
                             if (url_ == "https://ghproxy.net/" || url_ == "https://hub.myany.uk/")
                             {
-                                url = url_ + url;
+                                url2 = url_ + url;
                             }
                             else
                             {
-                                url = url_ + url.Replace("https://", "");
+                                url2 = url_ + url.Replace("https://", "");
                             }
-                            if (await GetUrl(url))
+                            if (await GetUrl(url2))
                             {
-                                return await DownloadUpdate(url);
+                                return await DownloadUpdate(url2);
                                 break;
                             }
                         }
