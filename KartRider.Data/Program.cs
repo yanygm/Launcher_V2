@@ -54,6 +54,7 @@ namespace KartRider
             AllocConsole();
 
             // 初始化自适应编码
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             SetAdaptiveConsoleEncoding();
 
             if (!await Update.UpdateDataAsync())
