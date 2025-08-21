@@ -39,6 +39,7 @@ namespace KartRider
         /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillChange = new Dictionary<short, Dictionary<short, short>>
         {
+            { 1567, new Dictionary<short, short> { {6, 31} } },
             { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } },
             { 1563, new Dictionary<short, short> { {7, 136}, {114, 16} } },
             { 1561, new Dictionary<short, short> { {8, 37}, {6, 31} } },
@@ -72,6 +73,7 @@ namespace KartRider
         /// </summary>
         public static Dictionary<short, Dictionary<short, short>> skillMappings = new Dictionary<short, Dictionary<short, short>>
         {
+            { 1567, new Dictionary<short, short> { {5, 31} } },
             { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
             { 1563, new Dictionary<short, short> { {136, 6} } },
             { 1548, new Dictionary<short, short> { {5, 6} } },
@@ -1291,3 +1293,4 @@ namespace KartRider
         }
     }
 }
+
