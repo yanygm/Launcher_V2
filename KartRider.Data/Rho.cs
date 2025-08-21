@@ -517,7 +517,7 @@ namespace RHOParser
                                 .Where(trackId => !string.IsNullOrEmpty(trackId))
                                 .ToList();
 
-                            if (FavoriteItem.MissionList == null)
+                            if (FavoriteItem.MissionList.Count == 0)
                             {
                                 FavoriteItem.MissionList = currentMissionList;
                             }
