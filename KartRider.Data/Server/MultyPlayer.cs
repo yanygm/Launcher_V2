@@ -423,10 +423,10 @@ namespace KartRider
                     }
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
-                        EndTicks = GetUpTime() + 15000;;
+                        EndTicks = GetUpTime() + 10000;
                         oPacket.WriteInt(3);
                         oPacket.WriteByte(0);
-                        oPacket.WriteLong(GetUpTime() + 10000);
+                        oPacket.WriteLong(EndTicks);
                     }
                     //Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
                     //Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
@@ -438,6 +438,8 @@ namespace KartRider
             {
                 using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
                 {
+                    //oPacket.WriteHexString("0300000000000000030000009D02070000002759B65B004E778DA9737E002100F603CA34010107000801B80003000000DB02070000002759B65B004E778DA9737E002100050000000001070108030000000000009A02070000002759B65B004E778DA9737E00210005000000000107010202000000000000");
+                    oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
                     RouterListener.MySession.Client.Send(oPacket);
@@ -875,10 +877,10 @@ namespace KartRider
                 {
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
-                        EndTicks = GetUpTime() + 15000;
+                        EndTicks = GetUpTime() + 10000;
                         oPacket.WriteInt(3);
                         oPacket.WriteByte(0);
-                        oPacket.WriteLong(GetUpTime() + 10000);
+                        oPacket.WriteLong(EndTicks);
                         RouterListener.MySession.Client.Send(oPacket);
                     }
                     //Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
