@@ -106,11 +106,11 @@ namespace RHOParser
                     Track = (uint)e.Attribute("Track"),
                     Kart = (short)e.Attribute("Kart"),
                     Time = (uint)e.Attribute("Time"),
-                    Boooster = (short)e.Attribute("Boooster"),
-                    BooosterPoint = (uint)e.Attribute("BooosterPoint"),
-                    Crash = (short)e.Attribute("Crash"),
-                    CrashPoint = (uint)e.Attribute("CrashPoint"),
-                    Point = (uint)e.Attribute("Point")
+                    Boooster = e.Attribute("Boooster") != null ? (short)e.Attribute("Boooster") : (short)0,
+                    BooosterPoint = e.Attribute("BooosterPoint") != null ? (uint)e.Attribute("BooosterPoint") : 0u,
+                    Crash = e.Attribute("Crash") != null ? (short)e.Attribute("Crash") : (short)0,
+                    CrashPoint = e.Attribute("CrashPoint") != null ? (uint)e.Attribute("CrashPoint") : 0u,
+                    Point = e.Attribute("Point") != null ? (uint)e.Attribute("Point") : 0u
                 })
                 .ToList();
         }
@@ -256,7 +256,8 @@ namespace RHOParser
         {
             if (!TrackDictionary.ContainsKey(trackId))
             {
-                throw new KeyNotFoundException($"找不到赛道ID: {trackId}");
+                Console.WriteLine($"找不到赛道ID: {trackId}");
+                return null;
             }
 
             TrackData track = TrackDictionary[trackId];

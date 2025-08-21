@@ -98,9 +98,12 @@ namespace KartRider
 						}
 						var manager = new CompetitiveDataManager();
 						CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
-						var Scores = calculator.CalculateTrackScoreDetails(Track, Time, Boooster, Crash, FavoriteItem.TrackDictionary);
-						var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Boooster = Boooster, BooosterPoint = Scores.BoostScore, Crash = Crash, CrashPoint = Scores.CrashScore, Point = Scores.TotalScore };
-						manager.SaveData(data);
+						var scores = calculator.CalculateTrackScoreDetails(Track, Time, Boooster, Crash, FavoriteItem.TrackDictionary);
+						if (scores != null)
+						{
+							var data = new CompetitiveData { Track = Track, Kart = Kart, Time = Time, Boooster = Boooster, BooosterPoint = scores.BoostScore, Crash = Crash, CrashPoint = scores.CrashScore, Point = scores.TotalScore };
+							manager.SaveData(data);
+						}
 						using (OutPacket outPacket = new OutPacket("PrGetCompetitiveSlotInfo"))
 						{
 							var competitiveData = manager.LoadAllData();
