@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
-using Set_Data;
 using System.Xml;
 using ExcData;
 using Launcher.Properties;
@@ -20,6 +19,8 @@ using System.Collections;
 using System.Reflection;
 using System.Linq;
 using System.Xml.XPath;
+using Newtonsoft.Json;
+using Profile;
 
 namespace KartRider
 {
@@ -237,11 +238,17 @@ namespace KartRider
         {
             string executablePath = Process.GetCurrentProcess().MainModule.FileName;
             Load_KartExcData();
-            StartingLoad_ALL.StartingLoad();
+            ProfileService.Load();
+            Console.WriteLine(JsonConvert.SerializeObject(ProfileService.ProfileConfig));
+            KeyValuePair<string, byte> speed = SpeedType.speedNames.FirstOrDefault(a => a.Value == ProfileService.ProfileConfig.GameOption.SpeedType);
+            if (!String.IsNullOrEmpty(speed.Key))
+            {
+                Speed_comboBox.Text = speed.Key;
+            }
             PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
-            SetGameOption.Version = val.Header.MinorVersion;
-            SetGameOption.Save_SetGameOption();
-            ClientVersion.Text = SetGameOption.Version.ToString();
+            ProfileService.ProfileConfig.GameOption.Version = val.Header.MinorVersion;
+            ProfileService.Save();
+            ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
             DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
@@ -683,7 +690,8 @@ namespace KartRider
                 string selectedSpeed = Speed_comboBox.SelectedItem.ToString();
                 if (SpeedType.speedNames.ContainsKey(selectedSpeed))
                 {
-                    config.SpeedType = SpeedType.speedNames[selectedSpeed];
+                    ProfileService.ProfileConfig.GameOption.SpeedType = SpeedType.speedNames[selectedSpeed];
+                    ProfileService.Save();
                     Console.WriteLine(selectedSpeed);
                 }
                 else

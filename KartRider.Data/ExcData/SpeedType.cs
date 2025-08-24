@@ -1,7 +1,7 @@
 using System;
 using KartRider;
-using Set_Data;
 using System.Collections.Generic;
+using Profile;
 
 namespace ExcData
 {
@@ -41,7 +41,7 @@ namespace ExcData
 
 		public static void SpeedTypeData()
 		{
-			if (config.SpeedType == 3)//S0 보통
+			if (ProfileService.ProfileConfig.GameOption.SpeedType == 3)//S0 보통
 			{
 				SpeedType.AddSpec_SteerConstraint = -0.3f;
 				SpeedType.AddSpec_DriftEscapeForce = -350f;
@@ -61,7 +61,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = -950f;
 				Console.WriteLine("SpeedType:S0");
 			}
-			else if (config.SpeedType == 0)//S1 빠름
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 0)//S1 빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 1.7f;
 				SpeedType.AddSpec_DriftEscapeForce = 150f;
@@ -81,7 +81,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = -360f;
 				Console.WriteLine("SpeedType:S1");
 			}
-			else if (config.SpeedType == 1)//S2 매우빠름
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 1)//S2 매우빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 2.2f;
 				SpeedType.AddSpec_DriftEscapeForce = 1100f;
@@ -101,7 +101,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 360f;
 				Console.WriteLine("SpeedType:S2");
 			}
-			else if (config.SpeedType == 2)//S3 가장빠름
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 2)//S3 가장빠름
 			{
 				SpeedType.AddSpec_SteerConstraint = 2.7f;
 				SpeedType.AddSpec_DriftEscapeForce = 1500f;
@@ -121,7 +121,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
 				Console.WriteLine("SpeedType:S3");
 			}
-			else if (config.SpeedType == 4 || config.SpeedType == 6 || config.SpeedType == 7)//무부, 통합
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 4 || ProfileService.ProfileConfig.GameOption.SpeedType == 6 || ProfileService.ProfileConfig.GameOption.SpeedType == 7)//무부, 통합
 			{
 				SpeedType.AddSpec_SteerConstraint = 1.95f;
 				SpeedType.AddSpec_DriftEscapeForce = 400f;
@@ -141,7 +141,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceSpeed = 0f;
 				Console.WriteLine("SpeedType:Integration");
 			}
-			else if (config.SpeedType == 10)//Rookie, S1
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 10)//Rookie, S1
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -160,7 +160,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = -270f;
 				SpeedType.StartForwardAccelForceSpeed = -270f;
 			}
-			else if (config.SpeedType == 11)//L3, S2
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 11)//L3, S2
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -179,7 +179,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 450f;
 				SpeedType.StartForwardAccelForceSpeed = 450f;
 			}
-			else if (config.SpeedType == 12)//L2
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 12)//L2
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -198,7 +198,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 400f;
 				SpeedType.StartForwardAccelForceSpeed = 400f;
 			}
-			else if (config.SpeedType == 13)//L1, S3
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 13)//L1, S3
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
@@ -217,7 +217,7 @@ namespace ExcData
 				SpeedType.StartForwardAccelForceItem = 1350f;
 				SpeedType.StartForwardAccelForceSpeed = 1350f;
 			}
-			else if (config.SpeedType == 14)//Pro
+			else if (ProfileService.ProfileConfig.GameOption.SpeedType == 14)//Pro
 			{
 				SpeedType.AddSpec_SteerConstraint = 0f;
 				SpeedType.AddSpec_DriftEscapeForce = 0f;
