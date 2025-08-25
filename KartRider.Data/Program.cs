@@ -33,7 +33,6 @@ namespace KartRider
 
         public const int SW_HIDE = 0;
         public const int SW_SHOW = 5;
-        public static int consoleStatus = SW_SHOW;
         public static string Load_Console = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Console.ini";
         public static IntPtr consoleHandle;
         public static Launcher LauncherDlg;
@@ -110,7 +109,7 @@ namespace KartRider
                         {
                             Console.WriteLine($"读取Data文件时出错: {ex.Message}");
                         }
-                        consoleHandle  = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+                        consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
                         if (!File.Exists(Load_Console))
                         {
                             using (StreamWriter streamWriter = new StreamWriter(Load_Console, false))
@@ -182,7 +181,7 @@ namespace KartRider
                         }
                         else
                         {
-                            Program.encodea(input, output);
+                            //Program.encodea(input, output);
                         }
                     }
                 }
