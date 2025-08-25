@@ -1,6 +1,6 @@
 ﻿using System;
 using ExcData;
-using Set_Data;
+using Profile;
 
 namespace KartRider
 {
@@ -156,9 +156,9 @@ namespace KartRider
 
 		public static void DataReset()
 		{
-			if (SetRider.Lucci > SessionGroup.LucciMax)
+			if (ProfileService.ProfileConfig.Rider.Lucci > SessionGroup.LucciMax)
 			{
-				SetRider.Lucci = SessionGroup.LucciMax;
+				ProfileService.ProfileConfig.Rider.Lucci = SessionGroup.LucciMax;
 			}
 			GameDataReset.RandomTrack_DataReset();
 			GameDataReset.GameType_DataReset();

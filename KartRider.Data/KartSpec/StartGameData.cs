@@ -1,7 +1,7 @@
 using System;
 using KartRider.IO.Packet;
 using ExcData;
-using Set_Data;
+using Profile;
 
 namespace KartRider
 {
@@ -64,8 +64,8 @@ namespace KartRider
 				oPacket.WriteByte(0);
 				oPacket.WriteInt(0);
 				oPacket.WriteInt(0);
-				oPacket.WriteUInt(SetRider.Lucci);
-				oPacket.WriteUInt(SetRider.Koin);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
 				oPacket.WriteUInt(StartGameData.StartTimeAttack_Track);
 				RouterListener.MySession.Client.Send(oPacket);
 			}
@@ -107,8 +107,8 @@ namespace KartRider
 				oPacket.WriteByte(0);
 				oPacket.WriteInt(0);
 				oPacket.WriteInt(0);
-				oPacket.WriteUInt(SetRider.Lucci);
-				oPacket.WriteUInt(SetRider.Koin);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
 				oPacket.WriteUInt(StartGameData.StartTimeAttack_Track);
 				RouterListener.MySession.Client.Send(oPacket);
 			}
