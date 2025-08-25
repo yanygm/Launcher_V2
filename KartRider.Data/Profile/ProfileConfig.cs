@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,14 +14,12 @@ namespace Profile
             this.Rider = new RiderData();
             this.RiderItem = new RiderItemData();
             this.MyRoom = new MyRoomData();
-            this.ETC = new ETCData();
             this.GameOption = new GameOptionData();
         }
         public ServerSetting ServerSetting { get; set; }
         public RiderData Rider { get; set; }
         public RiderItemData RiderItem { get; set; }
         public MyRoomData MyRoom { get; set; }
-        public ETCData ETC { get; set; }
         public GameOptionData GameOption { get; set; }
     }
     public class ServerSetting
@@ -86,17 +84,6 @@ namespace Profile
         public string ItemPwd { get; set; } = "";
         public short MyRoomKart1 { get; set; } = 0;
         public short MyRoomKart2 { get; set; } = 0;
-    }
-    public class ETCData
-    {
-        public byte DataPack_Use { get; set; } = 0;
-        public bool DataPack
-        {
-            get
-            {
-                return this.DataPack_Use == 0 ? false : true;
-            }
-        }
     }
     public class GameOptionData
     {
