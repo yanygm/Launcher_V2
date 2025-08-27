@@ -1425,38 +1425,88 @@ namespace KartRider
                         Console.WriteLine("PqGetTrainingMissionReward: {0}", iPacket);
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestKartInfoPacket", 0))
+                    {
+                        int count = 0;
+                        using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                        {
+                            outPacket.WriteByte(1);
+                            outPacket.WriteInt(count);
+                            for (int i = 0; i < count; i++)
+                            {
+                                outPacket.WriteShort(3);
+                                outPacket.WriteShort(1494);
+                                outPacket.WriteShort(1);
+                                outPacket.WriteShort(1);
+                                outPacket.WriteShort(0);
+                                outPacket.WriteShort(-1);
+                                outPacket.WriteShort(0);
+                                outPacket.WriteShort(0);
+                                outPacket.WriteShort(0);
+                            }
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaSelectSetPacket", 0))
+                    {
+                        Bingo.BingoItem = iPacket.ReadByte();//选择的Bingo道具
+                        using (OutPacket outPacket = new OutPacket("SpRpBingoGachaSelectSetPacket"))
+                        {
+                            outPacket.WriteInt(1);
+                            outPacket.WriteByte(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaInfoPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("SpRpBingoGachaInfoPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteByte(Bingo.BingoItem);//选择的Bingo道具
+                            outPacket.WriteBytes(new byte[3]);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteInt(Bingo.BingoNumsList.Count);//Bingo格子数量
+                            foreach (var num in Bingo.BingoNumsList)
+                            {
+                                outPacket.WriteByte(num);//Bingo格子数字
+                                outPacket.WriteByte(Bingo.BingoNums[num]);//数字是否获得
+                            }
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaPacket", 0))
                     {
                         int BingoType = iPacket.ReadInt();
-                        if (BingoType == 0)
+                        using (OutPacket outPacket = new OutPacket("SpRpBingoGachaPacket"))
                         {
-                            using (OutPacket outPacket = new OutPacket("SpRpBingoGachaPacket"))
+                            outPacket.WriteInt(BingoType);
+                            outPacket.WriteInt(Bingo.BingoNumsList.Count);//Bingo格子数量
+                            foreach (var num in Bingo.BingoNumsList)
                             {
-                                outPacket.WriteInt(BingoType);
-                                for (int i = 0; i < 5; i++)
-                                {
-                                    outPacket.WriteInt(0);
-                                }
-                                outPacket.WriteByte(0);
-                                outPacket.WriteByte(0);
-                                outPacket.WriteByte(0);
-                                this.Parent.Client.Send(outPacket);
+                                outPacket.WriteByte(num);//Bingo格子数字
+                                outPacket.WriteByte(Bingo.BingoNums[num]);//数字是否获得
                             }
-                        }
-                        else if (BingoType == 4)
-                        {
-                            using (OutPacket outPacket = new OutPacket("SpRpBingoGachaPacket"))
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(Bingo.BingoItemsList.Count);//Bingo道具数量
+                            foreach (var item in Bingo.BingoItemsList)
                             {
-                                outPacket.WriteInt(BingoType);
-                                for (int i = 0; i < 5; i++)
-                                {
-                                    outPacket.WriteInt(0);
-                                }
-                                outPacket.WriteByte(0);
-                                outPacket.WriteByte(0);
-                                outPacket.WriteByte(0);
-                                this.Parent.Client.Send(outPacket);
+                                outPacket.WriteInt(item);//Bingo道具
+                                outPacket.WriteByte(Bingo.BingoItems[item]);//道具是否获得
                             }
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteShort(Bingo.BingoCount);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(Bingo.BingoNum);//上次获取的数字
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
+                            this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
@@ -1544,7 +1594,14 @@ namespace KartRider
                         short Lottery_Item = iPacket.ReadShort();
                         byte Unk = iPacket.ReadByte();
                         int Type = iPacket.ReadInt();
-                        GameSupport.SpRpLotteryPacket();
+                        if (Lottery_Item == 1175 || Lottery_Item == 1176 || Lottery_Item == 1177)
+                        {
+                            Bingo.SpRpLotteryPacket(Lottery_Item);
+                        }
+                        else
+                        {
+                            GameSupport.SpRpLotteryPacket();
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEventBuyCount", 0))
