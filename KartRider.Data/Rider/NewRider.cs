@@ -4,15 +4,15 @@ using System.IO;
 using KartRider.IO.Packet;
 using KartRider;
 using ExcData;
-using Set_Data;
 using System.Xml;
 using System.Linq;
+using Profile;
 
 namespace RiderData
 {
 	public static class NewRider
 	{
-		private static readonly HashSet<short> excludedKeys = new HashSet<short>{ 3, 6, 10, 15, 19, 24, 25, 29, 30, 32, 33, 34, 35, 36, 40, 41, 47, 48, 50, 51, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
+		private static readonly HashSet<short> excludedKeys = new HashSet<short>{ 3, 6, 10, 15, 19, 25, 29, 30, 32, 33, 34, 35, 36, 40, 41, 47, 48, 50, 51, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
 		private static readonly HashSet<short> ValidItemCatIds = new HashSet<short> { 1, 2, 4, 8, 11, 12, 13, 14, 16, 18, 20, 21, 26, 27, 28, 31, 52, 61, 70, 71 };
 
 		public static void LoadItemData()
@@ -47,17 +47,17 @@ namespace RiderData
 			{
 				oPacket.WriteByte(1);
 				oPacket.WriteByte(0);
-				oPacket.WriteString(SetRider.Nickname);
+				oPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
 				oPacket.WriteShort(0);
 				oPacket.WriteShort(0);
-				oPacket.WriteShort(SetRider.Emblem1);
-				oPacket.WriteShort(SetRider.Emblem2);
+				oPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem1);
+				oPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem2);
 				oPacket.WriteShort(0);
 				GameSupport.GetRider(oPacket);
 				oPacket.WriteShort(0);
-				oPacket.WriteString(SetRider.Card);
-				oPacket.WriteUInt(SetRider.Lucci);
-				oPacket.WriteUInt(SetRider.RP);
+				oPacket.WriteString(ProfileService.ProfileConfig.Rider.Card);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
+				oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
 				oPacket.WriteBytes(new byte[94]);
 				RouterListener.MySession.Client.Send(oPacket);
 			}
@@ -65,7 +65,6 @@ namespace RiderData
 
 		public static void NewKart1()
 		{
-			
 			short sn = 1;
 			int range = 100;//分批次数
 			if (KartExcData.items.TryGetValue(3, out Dictionary<short, string> resultDict))
@@ -138,7 +137,7 @@ namespace RiderData
 					foreach (var item in category.Value)
 					{
 						short sn = 0;
-						ushort num = SetRider.SlotChanger;
+						ushort num = ProfileService.ProfileConfig.Rider.SlotChanger;
 						short id = item.Key;
 						if (ValidItemCatIds.Contains(itemCatId))
 						{
@@ -213,7 +212,7 @@ namespace RiderData
 						oPacket.WriteShort(72);
 						oPacket.WriteShort(id);
 						oPacket.WriteShort(0);
-						oPacket.WriteUShort(SetRider.SlotChanger);
+						oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(-1);
@@ -258,7 +257,7 @@ namespace RiderData
 						oPacket.WriteShort(73);
 						oPacket.WriteShort(id);
 						oPacket.WriteShort(0);
-						oPacket.WriteUShort(SetRider.SlotChanger);
+						oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(-1);
@@ -303,7 +302,7 @@ namespace RiderData
 						oPacket.WriteShort(74);
 						oPacket.WriteShort(id);
 						oPacket.WriteShort(0);
-						oPacket.WriteUShort(SetRider.SlotChanger);
+						oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(-1);
@@ -348,7 +347,7 @@ namespace RiderData
 						oPacket.WriteShort(75);
 						oPacket.WriteShort(id);
 						oPacket.WriteShort(0);
-						oPacket.WriteUShort(SetRider.SlotChanger);
+						oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 						oPacket.WriteByte(0);
 						oPacket.WriteByte(0);
 						oPacket.WriteShort(-1);
@@ -391,7 +390,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -405,7 +404,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -419,7 +418,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -433,7 +432,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -460,7 +459,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -474,7 +473,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -488,7 +487,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -502,7 +501,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -529,7 +528,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -543,7 +542,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -557,7 +556,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -571,7 +570,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -598,7 +597,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -612,7 +611,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -626,7 +625,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -640,7 +639,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(1);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -668,7 +667,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -682,7 +681,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -696,7 +695,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -710,7 +709,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -737,7 +736,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -751,7 +750,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -765,7 +764,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -779,7 +778,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -806,7 +805,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -820,7 +819,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -834,7 +833,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -848,7 +847,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -875,7 +874,7 @@ namespace RiderData
 					oPacket.WriteShort(63);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -889,7 +888,7 @@ namespace RiderData
 					oPacket.WriteShort(64);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -903,7 +902,7 @@ namespace RiderData
 					oPacket.WriteShort(65);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);
@@ -917,7 +916,7 @@ namespace RiderData
 					oPacket.WriteShort(66);
 					oPacket.WriteShort(2);
 					oPacket.WriteShort(0);
-					oPacket.WriteUShort(SetRider.SlotChanger);
+					oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
 					oPacket.WriteByte(0);
 					oPacket.WriteByte(0);
 					oPacket.WriteShort(-1);

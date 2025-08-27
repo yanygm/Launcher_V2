@@ -548,6 +548,41 @@ namespace RHOParser
                             FavoriteItem.TrackDictionary = calculator.LoadFromXml(doc);
                         }
                     }
+                    if (fullName == "zeta_/" + regionCode + "/lottery/lottery.xml")
+                    {
+                        Console.WriteLine(fullName);
+                        byte[] data = packFileInfo.GetData();
+                        using (MemoryStream stream = new MemoryStream(data))
+                        {
+                            // 创建XML文档对象
+                            XmlDocument doc = new XmlDocument();
+                            doc.Load(stream);
+
+                            // 获取所有rewardSet节点
+                            XmlNodeList rewardSetNodes = doc.GetElementsByTagName("rewardSet");
+                            XmlNode targetRewardSet = null;
+
+                            // 查找指定id的rewardSet
+                            foreach (XmlNode node in rewardSetNodes)
+                            {
+                                XmlElement rewardSetElement = node as XmlElement;
+                                if (rewardSetElement != null && rewardSetElement.GetAttribute("id") == "1080")
+                                {
+                                    targetRewardSet = node;
+                                    break;
+                                }
+                            }
+                            if (targetRewardSet == null)
+                            {
+                                Console.WriteLine($"未找到ID为1080的rewardSet节点");
+                                return;
+                            }
+
+                            // 获取该rewardSet下的所有reward节点
+                            XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./reward");
+                            LotteryManager.Initialize(rewardNodes);
+                        }
+                    }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
                     {
                         Console.WriteLine(fullName);

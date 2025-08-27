@@ -3,7 +3,7 @@ using KartLibrary.IO;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
 using KartRider_PacketName;
-using Set_Data;
+using Profile;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -226,26 +226,26 @@ namespace KartRider
                     }
                 }
                 outPacket.WriteByte();
-                outPacket.WriteShort(SetRiderItem.Set_Kart);
+                outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
                 var ranks = GetAllRanks();
                 outPacket.WriteInt(ranks[0]);
                 outPacket.WriteShort();
                 outPacket.WriteByte();
-                outPacket.WriteUInt(SetRider.RP += 10000);
+                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP += 10000);
                 outPacket.WriteInt(10000); //Earned RP
                 outPacket.WriteInt(10000); //Earned Lucci
-                outPacket.WriteUInt(SetRider.Lucci += 10000);
+                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci += 10000);
                 outPacket.WriteBytes(new byte[46]);
                 outPacket.WriteInt(1);
                 outPacket.WriteByte(0);
-                outPacket.WriteShort(SetRiderItem.Set_Character);
+                outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Character);
                 outPacket.WriteByte(0);
                 outPacket.WriteInt(0);
                 outPacket.WriteInt(12 - aiNodes.Count());
                 outPacket.WriteBytes(new byte[40]);
                 outPacket.WriteHexString("FF");
                 outPacket.WriteHexString("00 00 00 00 00 00 00 E3 23 07 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-                outPacket.WriteInt(SetRider.ClubMark_LOGO);
+                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
                 outPacket.WriteBytes(new byte[39]);
                 outPacket.WriteInt(aiNodes.Count()); // AI count
                 int index = 0;
@@ -343,7 +343,7 @@ namespace KartRider
                     {
                         GameSupport.AttackedSkill(type, uni, 10);
                     }
-                    if (skillAttacked.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
+                    if (skillAttacked.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
@@ -363,7 +363,7 @@ namespace KartRider
                     {
                         GameSupport.AddItemSkill(6);
                     }
-                    if (skillMappings.TryGetValue(SetRiderItem.Set_Kart, out var kartSkills))
+                    if (skillMappings.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
@@ -626,7 +626,7 @@ namespace KartRider
                 using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
                 {
                     //oPacket.WriteHexString("ff 76 05 5d 01");
-                    oPacket.WriteUInt(SetRider.UserNO);
+                    oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
                     oPacket.WriteByte(1);
                     oPacket.WriteInt(7);
                     oPacket.WriteInt(7);
@@ -923,7 +923,7 @@ namespace KartRider
 
             /* ---- One/First player ---- */
             outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = ? , 7 = AI
-            outPacket.WriteUInt(SetRider.UserNO);
+            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
 
             outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
             //outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
@@ -931,14 +931,14 @@ namespace KartRider
             outPacket.WriteInt();
             outPacket.WriteShort();
 
-            outPacket.WriteString(SetRider.Nickname);
-            outPacket.WriteShort(SetRider.Emblem1);
-            outPacket.WriteShort(SetRider.Emblem2);
+            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+            outPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem1);
+            outPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem2);
             outPacket.WriteShort(0);
             GameSupport.GetRider(outPacket);
             outPacket.WriteShort(0);
-            outPacket.WriteString(SetRider.Card);
-            outPacket.WriteUInt(SetRider.RP);
+            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Card);
+            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
             outPacket.WriteByte();
             outPacket.WriteByte();
             outPacket.WriteByte();
@@ -1189,7 +1189,7 @@ namespace KartRider
         {
             using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
             {
-                oPacket.WriteUInt(SetRider.UserNO);
+                oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
                 oPacket.WriteInt(1);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(Data);

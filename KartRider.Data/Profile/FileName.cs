@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Set_Data
+namespace Profile
 {
 	public static class FileName
 	{

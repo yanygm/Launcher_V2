@@ -7,6 +7,7 @@ using System.Xml;
 using ExcData;
 using System.Linq;
 using System.Collections.Generic;
+using Profile;
 
 namespace KartRider
 {
@@ -28,14 +29,11 @@ namespace KartRider
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (GetKart.Item_Code == 0)
+            short tempValue;
+            if (short.TryParse(ItemID.Text, out tempValue))
             {
+                GetKart.Item_Code = tempValue;
                 Console.WriteLine($"Add Item:{ItemID.Text} ID:{ItemType.Text}");
-                short tempValue;
-                if (short.TryParse(ItemID.Text, out tempValue))
-                {
-                    GetKart.Item_Code = tempValue;
-                }
             }
             (new Thread(() =>
             {
@@ -119,8 +117,8 @@ namespace KartRider
                         outPacket.WriteInt(1);
                         outPacket.WriteShort(GetKart.Item_Type);
                         outPacket.WriteShort(GetKart.Item_Code);
-                        outPacket.WriteUShort(0);
-                        outPacket.WriteShort(1);//수량
+                        outPacket.WriteShort(0);
+                        outPacket.WriteUShort(1);//수량
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(-1);
                         outPacket.WriteShort(0);

@@ -20,8 +20,7 @@ jobs:
     # - name: Publish_win-arm64
     #   run: dotnet publish Launcher.csproj --runtime win-arm64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_arm64 -o PublishedWinExe -c Release --no-self-contained
 
-    - name: Archive Artifacts
-      uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4
       with:
         name: Launcher
         path: PublishedWinExe/
