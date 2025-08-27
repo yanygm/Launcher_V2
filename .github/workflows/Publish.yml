@@ -24,4 +24,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Launcher
-        path: PublishedWinExe/Launcher.exe
+        path: ./PublishedWinExe/Launcher.exe
+        if-no-files-found: error  # 如果文件不存在会报错
