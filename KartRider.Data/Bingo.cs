@@ -152,7 +152,7 @@ namespace KartRider
     {
         public static byte BingoItem = 0;
         public static byte BingoNum = 0;
-        public static short BingoCount = 399;
+        public static short BingoCount = 0;
         public static Dictionary<byte, byte> BingoNums = new Dictionary<byte, byte>();
         public static List<byte> BingoNumsList = new List<byte>();
         public static Dictionary<int, byte> BingoItems = new Dictionary<int, byte>();
@@ -317,3 +317,4 @@ namespace KartRider
         }
     }
 }
+
