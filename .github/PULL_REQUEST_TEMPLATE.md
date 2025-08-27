@@ -19,11 +19,11 @@ tips: most PRs need an issue number, except some trivial changes, like fixing a 
 - [ ] 文档更新 / Documentation
 - [ ] 优化/重构 / Refactor
 - [ ] 杂项：拼写，统一码风等 / Chore
-- [ ] 其他 / Other
+- [ ] 其他，请说明类型 / Other
 
 ## 变更内容简述 / Description
 
-<!-- 请简要描述本次 PR 的主要内容与动机 / Briefly describe the main changes and motivation -->
+<!-- 请简要描述本次 PR 的主要内容 / Briefly describe the main changes -->
 
 ## 相关 Issue（如有）/ Related Issue (if any)
 
@@ -31,8 +31,8 @@ tips: most PRs need an issue number, except some trivial changes, like fixing a 
 
 ## 测试说明 / Test Instructions
 
-- [ ] 本地测试已通过 / Tested locally
-- [ ] 需要 reviewer 帮忙测试 / Need reviewer to test
+- [ ] 已本地测试 / Tested locally
+- [ ] 需要帮忙测试 / Test Needed
 
 <!-- 如果是文档修改，则无需勾选 / No need to check if it is a documentation change -->
 
