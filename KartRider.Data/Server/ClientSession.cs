@@ -1510,6 +1510,22 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLotteryMileagePrizePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrLotteryMileagePrizePacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        Bingo.BingoItem = 0;
+                        Bingo.BingoNum = 0;
+                        Bingo.BingoCount = 0;
+                        Bingo.BingoNums = new Dictionary<byte, byte>();
+                        Bingo.BingoNumsList = new List<byte>();
+                        Bingo.BingoItems = new Dictionary<int, byte>();
+                        Bingo.BingoItemsList = new List<int>();
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckMyClubStatePacket", 0))
                     {
                         GameSupport.PrCheckMyClubStatePacket();
@@ -1596,7 +1612,7 @@ namespace KartRider
                         int Type = iPacket.ReadInt();
                         if (Lottery_Item == 1175 || Lottery_Item == 1176 || Lottery_Item == 1177)
                         {
-                            Bingo.SpRpLotteryPacket(Lottery_Item);
+                            Bingo.SpRpLotteryPacket();
                         }
                         else
                         {

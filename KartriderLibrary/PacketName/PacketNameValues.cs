@@ -824,6 +824,8 @@ namespace KartRider_PacketName
 		SpRpBingoGachaInfoPacket = 1892944172,
 		SpRqBingoGachaSelectSetPacket = 2768767789,
 		SpRpBingoGachaSelectSetPacket = 2767063852,
+		PqLotteryMileagePrizePacket = 2526612170,
+		PrLotteryMileagePrizePacket = 2528316107,
 		GameBossDefeatPacket = 1324615602,
 		GoItemDinoClawRocket = 1327564734,
 		F1GameAiPathIdxPacket = 1328809893,
