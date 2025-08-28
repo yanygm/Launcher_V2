@@ -2980,6 +2980,42 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqReturnMissionSetPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrReturnMissionSetPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPromiseEventEnterPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrPromiseEventEnterPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqReturnMissionRequestDataPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrReturnMissionRequestDataPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangEnterPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrHitPangPangEnterPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))

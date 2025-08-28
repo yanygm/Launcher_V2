@@ -1604,5 +1604,12 @@ namespace KartRider_PacketName
 		PcGameClientFramePacket = 1728710863,
 		PcGameClientPingPacket = 1585842290,
 		PcGameClientFocusKartAbuseInfoPacket = 4256763378,
+		PcClubRaceSessionEnterPacket = 2600143598,
+		PqReturnMissionSetPacket = 2016479655,
+		PrReturnMissionSetPacket = 2017986984,
+		PqPromiseEventEnterPacket = 2160855544,
+		PrPromiseEventEnterPacket = 2162428409,
+		PqReturnMissionRequestDataPacket = 3567914206,
+		PrReturnMissionRequestDataPacket = 3569945823,
 	}
 }
