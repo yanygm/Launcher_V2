@@ -2200,6 +2200,7 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("SpRepBuyItemPacket"))
                         {
                             outPacket.WriteHexString("01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                            this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
