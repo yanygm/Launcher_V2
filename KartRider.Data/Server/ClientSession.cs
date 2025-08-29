@@ -1564,7 +1564,14 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
                         {
-                            outPacket.WriteInt(0);
+                            if (ProfileService.ProfileConfig.Rider.ClubMark_LOGO == 0)
+                            {
+                                outPacket.WriteInt(0);
+                            }
+                            else
+                            {
+                                outPacket.WriteInt(1);
+                            }
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1573,16 +1580,55 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubInfoPacket"))
                         {
-                            outPacket.WriteHexString("50 F7 EA 07 00 00 00 00 00 00 FA DC 98 00 00 00 00 00 02 00 00 00 50 F7 EA 07 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00 0F 00 00 00 00 00 00 00");
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteByte(5);
+                            outPacket.WriteByte(1);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                            outPacket.WriteInt(500);//最大成员数
+                            outPacket.WriteHexString("00000000E803000004FFFF0000");
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubIntro);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LINE);
+                            outPacket.WriteInt(3000000);//周活跃度
+                            outPacket.WriteInt(3000000);//俱乐部活跃度
+                            outPacket.WriteHexString("C0C62D0000000000");
+                            outPacket.WriteInt(500);//成员数
+                            outPacket.WriteHexString("000000000000D43C1B01ED7E0B00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSearchClubListPacket", 0))
                     {
+                        int ClubID = iPacket.ReadInt();
+                        int ClubCount = 1;
                         using (OutPacket outPacket = new OutPacket("PrSearchClubListPacket"))
                         {
-                            outPacket.WriteHexString("0C 00 00 00 7F 3D 00 00 04 00 00 00 1C 75 C7 8F 1D 52 4B 60 05 F4 01 00 00 FF FF FF FF 00 00 00 00 40 4B 4C 00 07 00 00 00 00 00 00 00 07 00 00 00 0B 4E E8 96 56 00 52 00 61 00 69 00 6E 00 64 00 00 00 E7 AA 50 46 0F 00 00 00 A1 6C C0 4E 48 4E 79 72 7F 95 2C 00 31 5C 2F 66 65 55 FD 90 1A 4F B9 70 2E 00 2E 00 2E 00 00 05 C4 D6 6E 01 5D 37 00 00 08 00 00 00 D0 67 9D 5B 1C 64 EB 77 C5 60 E5 5D 5C 4F A4 5B 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 1C 01 00 00 00 00 00 00 06 00 00 00 13 4E 1A 4E 37 52 5A 80 50 4E E8 90 1B 00 00 00 A3 AA B7 2A 4C 00 00 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 3D 00 3D 00 3D 00 3D 00 D1 8D D1 8D 94 54 01 4E 66 8F 20 00 D8 98 FB 79 3D 00 3D 00 3D 00 3D 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 A4 7F 3A 00 37 00 39 00 30 00 30 00 33 00 33 00 36 00 31 00 37 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 7D 59 0B 67 CB 53 00 4E 77 8D D8 98 00 04 8F 1C 4E 00 04 00 00 00 07 00 00 00 59 00 78 00 36 4E 54 00 65 00 61 00 6D 00 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 92 01 00 00 00 00 00 00 05 00 00 00 59 00 78 00 36 4E 1F 96 7F 95 24 00 00 00 33 AA 99 2A 46 00 00 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 28 4E E0 65 50 96 66 8F 1F 96 28 4E 20 00 66 8F 1F 96 03 80 38 68 36 65 BA 4E 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 A5 63 85 5F 2F 00 03 80 38 68 71 00 A4 7F 3B 00 34 00 39 00 39 00 33 00 33 00 33 00 33 00 31 00 31 00 20 00 00 04 DA 93 27 00 DF 21 00 00 04 00 00 00 28 4E 18 7F 2F 54 28 4E 05 F4 01 00 00 FF FF FF FF 00 00 00 00 40 4B 4C 00 70 01 00 00 00 00 00 00 04 00 00 00 CC 51 75 70 36 4E 63 00 14 00 00 00 47 AA EF 2E 2F 00 00 00 2E 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 3C 00 20 00 20 00 20 00 22 6B 20 00 11 7B 20 00 C5 60 20 00 82 59 20 00 E7 65 20 00 2D 00 20 00 27 84 20 00 8F 75 20 00 13 9B 20 00 F2 5D 20 00 91 65 20 00 20 00 3E 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 00 05 50 6B 20 00 64 3E 00 00 04 00 00 00 52 00 69 00 63 00 68 00 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 8B 01 00 00 00 00 00 00 07 00 00 00 52 00 69 00 63 00 68 00 CE 8F A8 60 65 67 60 00 00 00 F4 AA CF 4E 5E 00 00 00 20 00 20 00 20 00 20 00 20 00 52 00 69 00 63 00 68 00 94 4E A7 7E 66 8F 1F 96 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 22 6B CE 8F A8 60 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 3B 4E A9 73 E0 65 50 96 20 00 20 00 20 00 20 00 20 00 20 00 66 8F 1F 96 03 80 38 68 A5 63 85 5F A4 7F 3A 00 35 00 32 00 37 00 31 00 32 00 36 00 39 00 38 00 37 00 00 04 3C 45 14 00 7A 49 00 00 05 00 00 00 08 54 A6 7E 36 65 CF 85 B6 5B 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 75 00 00 00 00 00 00 00 06 00 00 00 48 00 79 00 2C 7B 00 4E 73 59 4C 80 23 00 00 00 5D AB AB 36 05 00 00 00 5E 97 F7 8B FF 52 65 51 2E 00 00 04 D4 1E 11 00 8F 55 00 00 06 00 00 00 28 4E 5D 4E 29 59 FD 63 08 67 28 4E 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 8F 01 00 00 00 00 00 00 06 00 00 00 3D 63 1F 66 B8 82 50 6C E5 82 36 4E 30 00 00 00 A4 AB 44 52 07 00 00 00 66 8F 1F 96 82 66 F6 65 0D 4E 36 65 BA 4E 00 04 90 6D 10 00 AD 0B 00 00 06 00 00 00 28 4E A2 7E D7 65 66 8F 1F 96 28 4E 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 75 00 00 00 00 00 00 00 06 00 00 00 A2 7E D7 65 85 8D A7 7E 66 5B 38 97 18 00 00 00 33 AA 4C 4A 25 00 00 00 65 51 1F 96 81 89 42 6C 3A 00 66 8F 93 5E E5 62 09 67 A2 7E D7 65 68 51 FB 7C 66 8F 86 8F 2C 00 3A 7F 00 4E 0D 4E EF 53 2C 00 26 7B 08 54 81 89 42 6C 84 76 A0 52 A4 7F 31 00 32 00 39 00 30 00 34 00 33 00 33 00 37 00 32 00 00 04 EC 39 10 00 75 01 00 00 06 00 00 00 28 4E 0D 54 1F 66 66 8F 1F 96 28 4E 05 F4 01 00 00 FF FF FF FF 00 00 00 00 40 4B 4C 00 95 01 00 00 00 00 00 00 05 00 00 00 0D 54 1F 66 01 80 05 5E E5 54 33 01 00 00 33 AA 6B 2B 54 00 00 00 0D 54 1F 66 F1 4F 50 4E E8 90 2F 66 CC 53 94 4E A7 7E CC 53 EE 4F F1 4F 50 4E E8 90 20 00 DE 7A 1F 90 3B 4E 53 62 53 00 32 00 20 00 53 90 77 51 3A 4E 4E 4F 1F 90 CC 53 81 79 8C 54 26 5E 01 95 20 00 16 59 A4 4E A4 7F A4 7F F7 53 3A 4E 33 00 31 00 36 00 36 00 34 00 31 00 32 00 30 00 30 00 20 00 22 6B CE 8F FF 7E 72 82 A9 73 B6 5B A0 52 65 51 20 00 81 89 42 6C 39 65 0D 54 20 00 D1 53 B0 73 28 75 85 8F A9 52 D1 8D 66 8F 20 00 05 6E 06 74 20 00 0C 5E 1B 67 27 59 B6 5B 92 4E F8 76 D1 76 63 77 3E 4E A5 62 00 05 06 82 09 00 31 15 00 00 06 00 00 00 28 4E 64 8D DA 8B 4B 4E C3 5F 28 4E 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 71 01 00 00 00 00 00 00 06 00 00 00 64 8D DA 8B 28 4E 6B 84 A6 82 28 4E 1C 00 00 00 36 AA 63 24 4C 00 00 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 00 4E 47 72 64 8D DA 8B 4B 4E C3 5F 20 00 B3 7E B0 65 A4 7F 31 00 30 00 35 00 36 00 39 00 31 00 39 00 38 00 36 00 31 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 2A 67 39 65 0D 54 00 4E 8B 5F 0D 4E 88 4E 1A 90 C7 8F 20 00 20 00 20 00 3C 68 0F 5F 20 00 20 00 20 00 64 8D DA 8B 28 4E 78 00 78 00 28 4E 00 04 C5 1A 05 00 F7 32 00 00 08 00 00 00 50 00 6C 00 61 00 79 00 43 00 6C 00 75 00 62 00 05 2C 01 00 00 FF FF FF FF 00 00 00 00 C0 C6 2D 00 75 00 00 00 00 00 00 00 06 00 00 00 50 00 6C 00 61 00 79 00 1C 4E CE 98 A0 00 00 00 81 AA 71 25 49 00 00 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 50 00 6C 00 61 00 79 00 20 00 2D 00 20 00 43 00 6C 00 75 00 62 00 20 00 2D 00 20 00 46 00 6F 00 72 00 65 00 76 00 65 00 72 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 20 00 00 04 9A E7 03 00 6B 20 00 00 03 00 00 00 28 4E 6A 8C 28 4E 05 F4 01 00 00 FF FF FF FF 00 00 00 00 40 4B 4C 00 03 00 00 00 00 00 00 00 02 00 00 00 E4 4E 77 83 3F 00 00 00 43 AA E0 01 25 00 00 00 53 90 77 51 66 8F 1F 96 20 00 20 00 20 00 00 97 81 89 39 65 0D 54 20 00 20 00 20 00 A5 63 85 5F A4 7F 20 00 31 00 20 00 31 00 20 00 35 00 20 00 39 00 20 00 30 00 20 00 35 00 20 00 33 00 20 00 35 00 20 00 32 00 20 00 36 00 00 05 CF 9C 03 00 01");
+                            outPacket.WriteInt(ClubCount);
+                            for (int i = 0; i < ClubCount; i++)
+                            {
+                                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                                outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
+                                outPacket.WriteByte(5);
+                                outPacket.WriteInt(500);//最大成员数
+                                outPacket.WriteHexString("FFFFFFFF");
+                                outPacket.WriteInt(3000000);//活跃度
+                                outPacket.WriteInt(3000000);//最大活跃度
+                                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
+                                outPacket.WriteInt(0);
+                                outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                                outPacket.WriteInt(500);//成员数
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubIntro);
+                                outPacket.WriteShort(0);
+                                outPacket.WriteInt(3000000);//周活跃度
+                            }
+                            outPacket.WriteByte(1);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1591,7 +1637,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubListCountPacket"))
                         {
-                            outPacket.WriteHexString("7F F7 00 00 01 00 00 00");
+                            outPacket.WriteHexString("01 00 00 00 01 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1600,7 +1646,317 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubWaitingCrewCountPacket"))
                         {
-                            outPacket.WriteHexString("32 00 00 00 32 00 00 00");
+                            outPacket.WriteHexString("01 00 00 00 01 00 00 00");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubInitFirstPacket", 0))
+                    {
+                        int ClubMemberCount = 1;
+                        using (OutPacket outPacket = new OutPacket("PrClubInitFirstPacket"))
+                        {
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteByte(5);
+                            outPacket.WriteByte(1);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                            outPacket.WriteInt(500);//最大成员数
+                            outPacket.WriteHexString("00000000E803000004FFFF0000");
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubIntro);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LINE);
+                            outPacket.WriteInt(3000000);//周活跃度
+                            outPacket.WriteInt(3000000);//俱乐部活跃度
+                            outPacket.WriteHexString("C0C62D0000000000");
+                            outPacket.WriteInt(500);//成员数
+                            outPacket.WriteHexString("00000000A11100008B170000D20A000004100000");
+                            outPacket.WriteInt(ClubMemberCount);
+                            for (int i = 0; i < ClubMemberCount; i++)
+                            {
+                                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                                outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
+                                outPacket.WriteShort(5);//职位
+                                outPacket.WriteUInt(3000000);//周活跃度
+                                outPacket.WriteUInt(3000000);//累计活跃度
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteHexString("FFFF0000");
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteInt(0);
+                            }
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
+                            outPacket.WriteShort(5);//职位
+                            outPacket.WriteUInt(3000000);//周活跃度
+                            outPacket.WriteUInt(3000000);//累计活跃度
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteHexString("FFFF0000");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("D43C1B01ED7E0B00");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("22394703A87F0B00880AFB03A67F0B0000000000");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubRealCrewListPacket", 0))
+                    {
+                        int ClubID = iPacket.ReadInt();
+                        int ClubMemberCount = 1;
+                        using (OutPacket outPacket = new OutPacket("PrGetClubRealCrewListPacket"))
+                        {
+                            outPacket.WriteInt(ClubMemberCount);
+                            for (int i = 0; i < ClubMemberCount; i++)
+                            {
+                                outPacket.WriteInt(ClubID);
+                                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                                outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
+                                outPacket.WriteShort(5);//职位
+                                outPacket.WriteUInt(3000000);//周活跃度
+                                outPacket.WriteUInt(3000000);//累计活跃度
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteHexString("FFFF0000");
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                                outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                                outPacket.WriteInt(0);
+                            }
+                            outPacket.WriteInt(300);
+                            outPacket.WriteInt(ClubID);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
+                            outPacket.WriteShort(5);//职位
+                            outPacket.WriteUInt(3000000);//周活跃度
+                            outPacket.WriteUInt(3000000);//累计活跃度
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteHexString("FFFF0000");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("22394703A87F0B00");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckClubDirtyTimePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrCheckClubDirtyTimePacket"))
+                        {
+                            outPacket.WriteHexString("D43C1B01ED7E0B00");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("22394703A87F0B00880AFB03A67F0B0000000000000000000000000000000000");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubRecordPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrGetClubRecordPacket"))
+                        {
+                            outPacket.WriteHexString("00000000000000000000000000000000");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0))
+                    {
+                        iPacket.ReadString();
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLeaveClubPacket", 0))
+                    {
+                        int ClubID = iPacket.ReadInt();
+                        using (OutPacket outPacket = new OutPacket("PrLeaveClubPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(ClubID);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBreakUpClubPacket", 0))
+                    {
+                        int ClubID = iPacket.ReadInt();
+                        using (OutPacket outPacket = new OutPacket("PrBreakUpClubPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(ClubID);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubAutoJoinStatePacket", 0))
+                    {
+                        byte AutoJoin = iPacket.ReadByte();
+                        using (OutPacket outPacket = new OutPacket("PrChangeClubAutoJoinStatePacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteByte(AutoJoin);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubHousePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrInitClubHousePacket"))
+                        {
+                            outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
+                            outPacket.WriteByte(5);
+                            outPacket.WriteByte(5);
+                            outPacket.WriteInt(500);
+                            outPacket.WriteInt(500);
+                            outPacket.WriteInt(3000000);
+                            outPacket.WriteInt(1000);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubHQPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrInitClubHQPacket"))
+                        {
+                            outPacket.WriteHexString("00000000000000000000000000F4010000");
+                            outPacket.WriteInt(10);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubBankPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrInitClubBankPacket"))
+                        {
+                            outPacket.WriteInt(1000);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(4);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(3);
+                            outPacket.WriteInt(5);
+                            outPacket.WriteInt(10);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubSupportPacket", 0))
+                    {
+                        int LUCCI = iPacket.ReadInt();
+                        using (OutPacket outPacket = new OutPacket("PrClubSupportPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(LUCCI);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitRacingCenterPacket", 0))
+                    {
+                        byte[] levels = new byte[] { 2, 3, 4, 5, 0 };
+                        using (OutPacket outPacket = new OutPacket("PrInitRacingCenterPacket"))
+                        {
+                            outPacket.WriteShort(0);
+                            outPacket.WriteInt(5);
+                            foreach (var i in levels)
+                            {
+                                outPacket.WriteByte(i);
+                                outPacket.WriteInt(0);
+                                outPacket.WriteInt(0);
+                                outPacket.WriteInt(0);
+                            }
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitRiderCenterPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrInitRiderCenterPacket"))
+                        {
+                            outPacket.WriteHexString("0232000000E09304000000000000000000");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubNamePacket", 0))
+                    {
+                        string oldClubName = iPacket.ReadString();
+                        string newClubName = iPacket.ReadString();
+                        using (OutPacket outPacket = new OutPacket("PrChangeClubNamePacket"))
+                        {
+                            outPacket.WriteString(newClubName);
+                            outPacket.WriteInt(1000);
+                            this.Parent.Client.Send(outPacket);
+                            ProfileService.ProfileConfig.Rider.ClubName = newClubName;
+                            ProfileService.Save();
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubMarkPacket", 0))
+                    {
+                        int oldClubMark = iPacket.ReadInt();
+                        int newClubMark = iPacket.ReadInt();
+                        using (OutPacket outPacket = new OutPacket("PrChangeClubMarkPacket"))
+                        {
+                            outPacket.WriteInt(newClubMark);
+                            outPacket.WriteInt(1000);
+                            this.Parent.Client.Send(outPacket);
+                            ProfileService.ProfileConfig.Rider.ClubMark_LOGO = newClubMark;
+                            ProfileService.Save();
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubIntroPacket", 0))
+                    {
+                        ProfileService.ProfileConfig.Rider.ClubIntro = iPacket.ReadString();
+                        ProfileService.Save();
+                        using (OutPacket outPacket = new OutPacket("PrChangeClubIntroPacket"))
+                        {
+                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1821,7 +2177,7 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("SpRpRemainCashPacket"))
                         {
                             outPacket.WriteUInt(0);
-                            outPacket.WriteUInt(0);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Cash);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1831,17 +2187,19 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
                         {
                             outPacket.WriteUInt(99);
-                            outPacket.WriteUInt(0);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.TcCash);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
                     {
+                        int stockId = iPacket.ReadInt();
+                        int unk = iPacket.ReadInt();
+                        byte mode = iPacket.ReadByte();//货币类型0:电池 1:金币 3:KOIN
                         using (OutPacket outPacket = new OutPacket("SpRepBuyItemPacket"))
                         {
                             outPacket.WriteHexString("01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-                            this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
@@ -2984,7 +3342,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrReturnMissionSetPacket"))
                         {
-                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2993,7 +3351,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrPromiseEventEnterPacket"))
                         {
-                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 FF FF 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3011,7 +3369,25 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangEnterPacket"))
                         {
-                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("04 00 00 00 00 22 00 8C 02 03 00");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangInitPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrHitPangPangInitPacket"))
+                        {
+                            outPacket.WriteHexString("04000000002B000000000D070178000000002C240000013A07017800000000AB1F000000120701780000000061490000001307017800000000AE5300000013070178000000007F4700000010070178000000002972000000270701780000000071340000013D07017800000000F3480000020307012C0100000013750000011B07017800000000CF020000010E0701780000000045450000013F07017800000000F40B0000014807017800000000AD060000011B070178000000004D3E0000014807017800000000192A0000000007017800000000531A0000000007017800000000C4100000020307012C01000000A0570000000907017800000000EA19000001420701780000000083640000001707013C000000006E060000001007017800000000330E0000013C07017800000000803F000000000701780000000087130000002007017800000000872E000001480701780000000033620000020307012C01000000B9030000002007017800000000F24200000009070178000000002456000001410701780000000032530000013F0701780000000018430000001E070178000000001A6B0000002707017800000000376C0000000907017800000000FF040000001707013C000000008D3A0000020207012C010000009E770000001707013C0000000082720000000D07017800000000C366000001410701780000000085370000013D070178000000001B460000002007017800000000C06F0000013A0701780000000060380000012407017800000000355700005906000050C30000102700003333333F0000803F00000040");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangResultPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrHitPangPangResultPacket"))
+                        {
+                            outPacket.WriteHexString("04 00 00 00 FF FF FF FF D0 02 00 00 01");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;

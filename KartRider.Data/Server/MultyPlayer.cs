@@ -952,14 +952,20 @@ namespace KartRider
             outPacket.WriteInt(162); //outPacket.WriteInt();
             outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
             outPacket.WriteInt(5); //outPacket.WriteInt(5);
-            outPacket.WriteByte(255);
-            outPacket.WriteByte(0);
-            outPacket.WriteByte(0);
-            outPacket.WriteByte(0);
+
+            outPacket.WriteHexString("FF 00 00 00");
 
             outPacket.WriteByte(3); //3
-            outPacket.WriteString("");
-            outPacket.WriteInt();
+            if (ProfileService.ProfileConfig.Rider.ClubMark_LOGO == 0)
+            {
+                outPacket.WriteString("");
+                outPacket.WriteInt(0);
+            }
+            else
+            {
+                outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
+                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
+            }
             outPacket.WriteInt();
             outPacket.WriteInt();
             outPacket.WriteInt();
@@ -1297,4 +1303,3 @@ namespace KartRider
         }
     }
 }
-

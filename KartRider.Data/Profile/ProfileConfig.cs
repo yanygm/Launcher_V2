@@ -30,9 +30,10 @@ namespace Profile
     public class RiderData
     {
         public int ClubCode { get; set; } = 10000;
-        public int ClubMark_LOGO { get; set; } = 0;//343 베로
+        public int ClubMark_LOGO { get; set; } = 2;//343 베로
         public int ClubMark_LINE { get; set; } = 0;
-        public string ClubName { get; set; } = "KartRider";
+        public string ClubName { get; set; } = "TCCstar";
+        public string ClubIntro { get; set; } = "跑跑卡丁车交流群：84338611\n单机启动器下载地址：https://github.com/yanygm/Launcher_V2/releases";
         public string UserID { get; set; } = "Yany";
         public uint UserNO { get; set; } = 1982596588;
         public string Nickname { get; set; } = "Yany";
@@ -43,9 +44,11 @@ namespace Profile
         public uint Lucci { get; set; } = 1000000;
         public uint RP { get; set; } = 2000000000;
         public uint Koin { get; set; } = 10000;
+        public uint Cash { get; set; } = 10000;
+        public uint TcCash { get; set; } = 10000;
         public int Premium { get; set; } = 5;//100
         public byte Ranker { get; set; } = 0;
-        public ushort SlotChanger { get; set; } = 60000;
+        public ushort SlotChanger { get; set; } = 32766;
         public uint pmap { get; set; } = 0;//3130 //1068 //2520
         public byte IdentificationType { get; set; } = 1;
     }

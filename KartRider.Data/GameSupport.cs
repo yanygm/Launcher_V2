@@ -169,6 +169,7 @@ namespace KartRider
                 outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
                 outPacket.WriteInt(1);//ClubMember
                 outPacket.WriteByte(5);//Level
+                outPacket.WriteHexString("A2 0E 90 AB 9A 99");
                 RouterListener.MySession.Client.Send(outPacket);
             }
         }
