@@ -1555,7 +1555,35 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckCreateClubConditionPacket"))
                         {
-                            outPacket.WriteInt(3);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCreateClubPacket", 0))
+                    {
+                        ProfileService.ProfileConfig.Rider.ClubName = iPacket.ReadString();
+                        ProfileService.ProfileConfig.Rider.ClubIntro = iPacket.ReadString();
+                        ProfileService.ProfileConfig.Rider.ClubMark_LOGO = iPacket.ReadInt();
+                        ProfileService.Save();
+                        using (OutPacket outPacket = new OutPacket("PrNewCareerNoticePacket"))
+                        {
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrCreateClubPacket"))
+                        {
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
+                            outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LINE);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
+                        {
+                            outPacket.WriteInt(1);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
