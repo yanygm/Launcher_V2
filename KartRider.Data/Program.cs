@@ -5,6 +5,7 @@ using KartLibrary.Xml;
 using KartRider.IO.Packet;
 using Microsoft.Win32;
 using RHOParser;
+using Profile;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;

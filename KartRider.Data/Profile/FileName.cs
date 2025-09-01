@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using Profile;
 
 namespace Profile
 {
