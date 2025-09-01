@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Linq;
 using KartRider;
 using KartRider.IO.Packet;
+using Profile;
 
 namespace ExcData
 {

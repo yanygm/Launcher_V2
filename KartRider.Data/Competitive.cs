@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using KartRider.Common.Utilities;
+using Profile;
 
 namespace RHOParser
 {
