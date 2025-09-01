@@ -270,10 +270,8 @@ namespace KartRider
                     item.FileEncryptionProperty = RhoFileProperty.Compressed;
                 else if (extension == ".xml")
                     item.FileEncryptionProperty = RhoFileProperty.Encrypted;
-                else if (extension == ".kml")
-                    item.FileEncryptionProperty = RhoFileProperty.None;
                 else
-                    item.FileEncryptionProperty = RhoFileProperty.PartialEncrypted;
+                    item.FileEncryptionProperty = RhoFileProperty.None;
                 folder.AddFile(item);
             }
 
