@@ -49,7 +49,7 @@ namespace KartRider
             string input;
             string output;
             string Update_File = FileName.Dir + "Update.bat";
-            string Update_Folder = FileName.Diry + "Update";
+            string Update_Folder = FileName.Dir + "Update";
             if (File.Exists(Update_File))
             {
                 File.Delete(Update_File);
