@@ -2464,13 +2464,13 @@ namespace KartRider
                         if (ItemType == 3)
                         {
                             XmlDocument doc = new XmlDocument();
-                            doc.Load(GetKart.NewKart_LoadFile);
+                            doc.Load(FileName.NewKart_LoadFile);
                             XmlElement elementToRemove = doc.SelectSingleNode("//Kart[@id='" + ItemID + "' and @sn='" + SN + "']") as XmlElement;
                             if (elementToRemove != null)
                             {
                                 elementToRemove.ParentNode.RemoveChild(elementToRemove);
                             }
-                            doc.Save(GetKart.NewKart_LoadFile);
+                            doc.Save(FileName.NewKart_LoadFile);
                         }
                         return;
                     }

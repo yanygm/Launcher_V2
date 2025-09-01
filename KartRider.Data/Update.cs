@@ -86,13 +86,12 @@ namespace KartRider
                         response.EnsureSuccessStatusCode();
                         using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                         {
-                            string folderPath = FileName.Dir + "Update";
-                            if (!Directory.Exists(folderPath))
+                            if (!Directory.Exists(FileName.Update_Folder))
                             {
-                                Directory.CreateDirectory(folderPath);
+                                Directory.CreateDirectory(FileName.Update_Folder);
                             }
                             long? totalBytes = response.Content.Headers.ContentLength;
-                            using (FileStream fileStream = new FileStream(FileName.Dir + "Update\\Launcher.zip", FileMode.Create, FileAccess.Write, FileShare.None))
+                            using (FileStream fileStream = new FileStream(FileName.Update_ZipFile, FileMode.Create, FileAccess.Write, FileShare.None))
                             {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead;
@@ -124,23 +123,22 @@ namespace KartRider
             string simpleName = assemblyName.Name + ".exe";
             try
             {
-                System.IO.Compression.ZipFile.ExtractToDirectory(FileName.Dir + "Update\\Launcher.zip", FileName.Dir + "Update\\");
+                System.IO.Compression.ZipFile.ExtractToDirectory(FileName.Update_ZipFile, FileName.Update_Folder);
                 string script = @$"@echo off
 timeout /t 3 /nobreak
-move {"\"" + FileName.Dir + "Update\\" + simpleName + "\""} {"\"" + FileName.Dir + "\""}
-start {"\"\" \"" + FileName.Dir + simpleName + "\""}
+move {"\"" + Path.GetFullPath(Path.Combine(FileName.appDir, @"Update\" + simpleName)) + "\""} {"\"" + Path.GetFullPath(FileName.appDir) + "\""}
+start {"\"\" \"" + Path.GetFullPath(Path.Combine(FileName.appDir, simpleName)) + "\""}
 ";
-                string filePath = FileName.Dir + "Update.bat";
                 try
                 {
-                    File.WriteAllText(filePath, script);
+                    File.WriteAllText(FileName.Update_File, script);
                     Console.WriteLine("\n写入文件成功。");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"\n写入文件时出错: {ex.Message}");
                 }
-                Process.Start(filePath);
+                Process.Start(FileName.Update_File);
                 Process.GetCurrentProcess().Kill();
                 return true;
             }

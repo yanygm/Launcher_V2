@@ -13,7 +13,6 @@ namespace Profile
 {
     public class ProfileService
     {
-        private readonly static string config_path = FileName.ProfileDir + "Launcher.json";
         public static ProfileConfig ProfileConfig { get; set; } = new ProfileConfig();
         public static void Save()
         {
@@ -22,16 +21,16 @@ namespace Profile
                 Formatting = Newtonsoft.Json.Formatting.Indented,
             };
 
-            using (StreamWriter streamWriter = new StreamWriter(config_path, false))
+            using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false))
             {
                 streamWriter.Write(Newtonsoft.Json.JsonConvert.SerializeObject(ProfileConfig, jsonSettings));
             }
         }
         public static void Load()
         {
-            if (File.Exists(config_path))
+            if (File.Exists(FileName.config_path))
             {
-                string config_str = System.IO.File.ReadAllText(config_path);
+                string config_str = System.IO.File.ReadAllText(FileName.config_path);
                 ProfileConfig = JsonConvert.DeserializeObject<ProfileConfig>(config_str);
 
                 Loaded();
@@ -39,7 +38,7 @@ namespace Profile
             else
             {
                 LoadOldData();
-                using (StreamWriter streamWriter = new StreamWriter(config_path, false))
+                using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false))
                 {
                     streamWriter.Write(JsonConvert.SerializeObject(ProfileConfig));
                 }
@@ -604,10 +603,9 @@ namespace Profile
         }
         private static void DeleteOldFiles()
         {
-            var dir_path = FileName.ProfileDir + @"Launcher";
-            if (Directory.Exists(dir_path))
+            if (Directory.Exists(FileName.LoadFolder))
             {
-                Directory.Delete(dir_path, true);
+                Directory.Delete(FileName.LoadFolder, true);
             }
         }
     }

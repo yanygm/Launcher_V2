@@ -13,7 +13,6 @@ namespace KartRider
 {
     public partial class GetKart : Form
     {
-        public static string NewKart_LoadFile = FileName.ProfileDir + @"NewKart.xml";
         public static short Item_Type = 0;
         public static short Item_Code = 0;
 
@@ -132,8 +131,8 @@ namespace KartRider
 
         public static void Save_NewKartList(List<List<short>> NewKart)
         {
-            File.Delete(NewKart_LoadFile);
-            XmlTextWriter writer = new XmlTextWriter(NewKart_LoadFile, System.Text.Encoding.UTF8);
+            File.Delete(FileName.NewKart_LoadFile);
+            XmlTextWriter writer = new XmlTextWriter(FileName.NewKart_LoadFile, System.Text.Encoding.UTF8);
             writer.Formatting = Formatting.Indented;
             writer.WriteStartDocument();
             writer.WriteStartElement("NewKart");
@@ -142,13 +141,13 @@ namespace KartRider
             for (var i = 0; i < NewKart.Count; i++)
             {
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(NewKart_LoadFile);
+                xmlDoc.Load(FileName.NewKart_LoadFile);
                 XmlNode root = xmlDoc.SelectSingleNode("NewKart");
                 XmlElement xe1 = xmlDoc.CreateElement("Kart");
                 xe1.SetAttribute("id", NewKart[i][0].ToString());
                 xe1.SetAttribute("sn", NewKart[i][1].ToString());
                 root.AppendChild(xe1);
-                xmlDoc.Save(NewKart_LoadFile);
+                xmlDoc.Save(FileName.NewKart_LoadFile);
             }
         }
 

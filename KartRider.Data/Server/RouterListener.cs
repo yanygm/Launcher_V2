@@ -66,10 +66,10 @@ namespace KartRider
 				IPEndPoint clientEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
 				RouterListener.client = clientEndPoint;
 				Console.WriteLine("Client: " + RouterListener.client.Address.ToString() + ":" + RouterListener.client.Port.ToString());
-				if (File.Exists(Program.LauncherDlg.kartRiderDirectory + "KartRider-bak.pin"))
+				if (File.Exists(Launcher.pinFileBak))
 				{
-					File.Delete(Program.LauncherDlg.kartRiderDirectory + "KartRider.pin");
-					File.Move(Program.LauncherDlg.kartRiderDirectory + "KartRider-bak.pin", Program.LauncherDlg.kartRiderDirectory + "KartRider.pin");
+					File.Delete(Launcher.pinFile);
+					File.Move(Launcher.pinFileBak, Launcher.pinFile);
 				}
 				GameSupport.PcFirstMessage();
 			}

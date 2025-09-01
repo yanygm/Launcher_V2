@@ -28,9 +28,10 @@ namespace KartRider
     {
         public static bool GetKart = true;
         public static short KartSN = 0;
-        public string kartRiderDirectory = null;
-        public static string KartRider = "KartRider.exe";
-        public static string pinFile = "KartRider.pin";
+        public string kartRiderDirectory;
+        public static string KartRider;
+        public static string pinFile;
+        public static string pinFileBak;
         private Button Start_Button;
         private Button GetKart_Button;
         private Button button_ToggleTerminal;
@@ -222,10 +223,10 @@ namespace KartRider
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
-            if (File.Exists(this.kartRiderDirectory + "KartRider-bak.pin"))
+            if (File.Exists(pinFileBak))
             {
-                File.Delete(this.kartRiderDirectory + "KartRider.pin");
-                File.Move(this.kartRiderDirectory + "KartRider-bak.pin", this.kartRiderDirectory + "KartRider.pin");
+                File.Delete(pinFile);
+                File.Move(pinFileBak, pinFile);
             }
             if (Process.GetProcessesByName("KartRider").Length != 0)
             {
@@ -245,14 +246,14 @@ namespace KartRider
             {
                 Speed_comboBox.Text = speed.Key;
             }
-            PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
+            PINFile val = new PINFile(pinFile);
             ProfileService.ProfileConfig.GameOption.Version = val.Header.MinorVersion;
             ProfileService.Save();
             ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
             DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
-            Console.WriteLine("Process: {0}", this.kartRiderDirectory + Launcher.KartRider);
+            Console.WriteLine("Process: {0}", KartRider);
             try
             {
                 RouterListener.Start();
@@ -277,14 +278,14 @@ namespace KartRider
                 (new Thread(() =>
                 {
                     Console.WriteLine("Backing up old PinFile...");
-                    Console.WriteLine(this.kartRiderDirectory + "KartRider-bak.pin");
-                    if (File.Exists(this.kartRiderDirectory + "KartRider-bak.pin"))
+                    Console.WriteLine(pinFile);
+                    if (File.Exists(pinFileBak))
                     {
-                        File.Delete(this.kartRiderDirectory + "KartRider.pin");
-                        File.Move(this.kartRiderDirectory + "KartRider-bak.pin", this.kartRiderDirectory + "KartRider.pin");
+                        File.Delete(pinFile);
+                        File.Move(pinFileBak, pinFile);
                     }
-                    File.Copy(this.kartRiderDirectory + "KartRider.pin", this.kartRiderDirectory + "KartRider-bak.pin");
-                    PINFile val = new PINFile(this.kartRiderDirectory + "KartRider.pin");
+                    File.Copy(pinFile, pinFileBak);
+                    PINFile val = new PINFile(pinFile);
                     foreach (PINFile.AuthMethod authMethod in val.AuthMethods)
                     {
                         Console.WriteLine("Changing IP Addr to local... {0}", authMethod.Name);
@@ -310,12 +311,12 @@ namespace KartRider
                             }
                         }
                     }
-                    File.WriteAllBytes(this.kartRiderDirectory + "KartRider.pin", val.GetEncryptedData());
+                    File.WriteAllBytes(pinFile, val.GetEncryptedData());
                     Start_Button.Enabled = true;
                     Launcher.GetKart = false;
-                    ProcessStartInfo startInfo = new ProcessStartInfo(Launcher.KartRider, "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
+                    ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
                     {
-                        WorkingDirectory = this.kartRiderDirectory,
+                        WorkingDirectory = Path.GetFullPath(this.kartRiderDirectory),
                         UseShellExecute = true,
                         Verb = "runas"
                     };
@@ -348,27 +349,26 @@ namespace KartRider
 
         public void Load_KartExcData()
         {
-            string ModelMaxPath = FileName.ProfileDir + @"ModelMax.xml";
             string ModelMax = Resources.ModelMax;
-            if (!File.Exists(ModelMaxPath))
+            if (!File.Exists(FileName.ModelMax_LoadFile))
             {
-                using (StreamWriter streamWriter = new StreamWriter(ModelMaxPath, false))
+                using (StreamWriter streamWriter = new StreamWriter(FileName.ModelMax_LoadFile, false))
                 {
                     streamWriter.Write(ModelMax);
                 }
             }
             XmlFileUpdater.XmlUpdater updater = new XmlFileUpdater.XmlUpdater();
-            updater.UpdateLocalXmlWithResource(ModelMaxPath, ModelMax);
+            updater.UpdateLocalXmlWithResource(FileName.ModelMax_LoadFile, ModelMax);
 
-            EnsureDefaultDataFileExists(FileName.ProfileDir + @"Profile\AI.xml", CreateAIDefaultData);
+            EnsureDefaultDataFileExists(FileName.AI_LoadFile, CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(FileName.ProfileDir + @"NewKart.xml", LoadNewKart);
-            KartExcData.TuneList = LoadKartData(FileName.ProfileDir + @"TuneData.xml", LoadTuneData);
-            KartExcData.PlantList = LoadKartData(FileName.ProfileDir + @"PlantData.xml", LoadPlantData);
-            KartExcData.LevelList = LoadKartData(FileName.ProfileDir + @"LevelData.xml", LoadLevelData);
-            KartExcData.PartsList = LoadKartData(FileName.ProfileDir + @"PartsData.xml", LoadPartsData);
-            KartExcData.Parts12List = LoadKartData(FileName.ProfileDir + @"Parts12Data.xml", LoadParts12Data);
-            KartExcData.Level12List = LoadKartData(FileName.ProfileDir + @"Level12Data.xml", LoadLevel12Data);
+            KartExcData.NewKart = LoadKartData(FileName.NewKart_LoadFile, LoadNewKart);
+            KartExcData.TuneList = LoadKartData(FileName.TuneData_LoadFile, LoadTuneData);
+            KartExcData.PlantList = LoadKartData(FileName.PlantData_LoadFile, LoadPlantData);
+            KartExcData.LevelList = LoadKartData(FileName.LevelData_LoadFile, LoadLevelData);
+            KartExcData.PartsList = LoadKartData(FileName.PartsData_LoadFile, LoadPartsData);
+            KartExcData.Parts12List = LoadKartData(FileName.Parts12Data_LoadFile, LoadParts12Data);
+            KartExcData.Level12List = LoadKartData(FileName.Level12Data_LoadFile, LoadLevel12Data);
         }
 
         private void EnsureDefaultDataFileExists(string filePath, Action<string> createDefaultData)
@@ -745,7 +745,7 @@ namespace KartRider
             bool isConsoleVisible = Program.IsWindowVisible(Program.consoleHandle);
             isConsoleVisible = !isConsoleVisible;
             Program.ShowWindow(Program.consoleHandle, isConsoleVisible ? Program.SW_SHOW : Program.SW_HIDE);
-            using (StreamWriter streamWriter = new StreamWriter(Program.Load_Console, false))
+            using (StreamWriter streamWriter = new StreamWriter(FileName.Load_Console, false))
             {
                 streamWriter.Write((isConsoleVisible ? "1" : "0"));
             }

@@ -6,6 +6,7 @@ using KartRider;
 using System.Xml;
 using System.Linq;
 using RHOParser;
+using Profile;
 
 namespace RiderData
 {
@@ -16,18 +17,15 @@ namespace RiderData
 		public static List<string> MissionList = new List<string>();
 		public static List<string> Competitive = new List<string>();
 		public static Dictionary<uint, TrackData> TrackDictionary = new Dictionary<uint, TrackData>();
-		public static string Favorite_LoadFile = FileName.ProfileDir + @"Favorite.xml";
-		public static string FavoriteTrack_LoadFile = FileName.ProfileDir + @"FavoriteTrack.xml";
-		public static string TrainingMission_LoadFile = FileName.ProfileDir + @"TrainingMission.xml";
 
 		public static void Favorite_Item()
 		{
 			using (OutPacket outPacket = new OutPacket("PrFavoriteItemGet"))
 			{
-				if (File.Exists(Favorite_LoadFile))
+				if (File.Exists(FileName.Favorite_LoadFile))
 				{
 					XmlDocument doc = new XmlDocument();
-					doc.Load(Favorite_LoadFile);
+					doc.Load(FileName.Favorite_LoadFile);
 					FavoriteItemList = new List<List<short>>();
 					XmlNodeList lis = doc.GetElementsByTagName("Title");
 					if (lis.Count > 0)
@@ -86,8 +84,8 @@ namespace RiderData
 
 		public static void Save_ItemList(List<List<short>> SaveFavorite)
 		{
-			File.Delete(Favorite_LoadFile);
-			XmlTextWriter writer = new XmlTextWriter(Favorite_LoadFile, System.Text.Encoding.UTF8);
+			File.Delete(FileName.Favorite_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(FileName.Favorite_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("Favorite");
@@ -96,23 +94,23 @@ namespace RiderData
 			for (var i = 0; i < SaveFavorite.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(Favorite_LoadFile);
+				xmlDoc.Load(FileName.Favorite_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("Favorite");
 				XmlElement xe1 = xmlDoc.CreateElement("Title");
 				xe1.SetAttribute("item", SaveFavorite[i][0].ToString());
 				xe1.SetAttribute("id", SaveFavorite[i][1].ToString());
 				xe1.SetAttribute("sn", SaveFavorite[i][2].ToString());
 				root.AppendChild(xe1);
-				xmlDoc.Save(Favorite_LoadFile);
+				xmlDoc.Save(FileName.Favorite_LoadFile);
 			}
 		}
 
 		public static void Favorite_Track()
 		{
-			if (File.Exists(FavoriteTrack_LoadFile))
+			if (File.Exists(FileName.FavoriteTrack_LoadFile))
 			{
 				XmlDocument doc = new XmlDocument();
-				doc.Load(FavoriteTrack_LoadFile);
+				doc.Load(FileName.FavoriteTrack_LoadFile);
 				if (!(doc.DocumentElement == null))
 				{
 					XmlNode rootNode = doc.DocumentElement;
@@ -204,8 +202,8 @@ namespace RiderData
 
 		public static void Save_TrackList(List<List<string>> SaveFavorite)
 		{
-			File.Delete(FavoriteTrack_LoadFile);
-			XmlTextWriter writer = new XmlTextWriter(FavoriteTrack_LoadFile, System.Text.Encoding.UTF8);
+			File.Delete(FileName.FavoriteTrack_LoadFile);
+			XmlTextWriter writer = new XmlTextWriter(FileName.FavoriteTrack_LoadFile, System.Text.Encoding.UTF8);
 			writer.Formatting = Formatting.Indented;
 			writer.WriteStartDocument();
 			writer.WriteStartElement("FavoriteTrack");
@@ -214,12 +212,12 @@ namespace RiderData
 			for (var i = 0; i < SaveFavorite.Count; i++)
 			{
 				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(FavoriteTrack_LoadFile);
+				xmlDoc.Load(FileName.FavoriteTrack_LoadFile);
 				XmlNode root = xmlDoc.SelectSingleNode("FavoriteTrack");
 				XmlElement xe1 = xmlDoc.CreateElement(SaveFavorite[i][0]);
 				xe1.SetAttribute("track", SaveFavorite[i][1]);
 				root.AppendChild(xe1);
-				xmlDoc.Save(FavoriteTrack_LoadFile);
+				xmlDoc.Save(FileName.FavoriteTrack_LoadFile);
 			}
 		}
 
@@ -227,13 +225,13 @@ namespace RiderData
     	{
         	try
         	{
-            	if (!File.Exists(TrainingMission_LoadFile))
+            	if (!File.Exists(FileName.TrainingMission_LoadFile))
             	{
             	    return 0;
             	}
 
             	XmlDocument doc = new XmlDocument();
-            	doc.Load(TrainingMission_LoadFile);
+            	doc.Load(FileName.TrainingMission_LoadFile);
 
             	// 获取根元素
             	XmlElement root = doc.DocumentElement;
@@ -269,7 +267,7 @@ namespace RiderData
 			try
 			{
 				// 检查文件是否存在
-				if (!File.Exists(TrainingMission_LoadFile))
+				if (!File.Exists(FileName.TrainingMission_LoadFile))
 				{
 					CreateXmlFile(Track);
 					return 1;
@@ -305,13 +303,13 @@ namespace RiderData
 			root.AppendChild(track1);
 
 			// 保存文件
-			doc.Save(TrainingMission_LoadFile);
+			doc.Save(FileName.TrainingMission_LoadFile);
 		}
 
 		public static byte ProcessExistingFile(uint Track)
 		{
 			XmlDocument doc = new XmlDocument();
-			doc.Load(TrainingMission_LoadFile);
+			doc.Load(FileName.TrainingMission_LoadFile);
 
 			// 获取根元素
 			XmlElement root = doc.DocumentElement;
@@ -336,7 +334,7 @@ namespace RiderData
 				newTrack1.SetAttribute("Track", Track.ToString());
 				newTrack1.SetAttribute("Level", "1");
 				root.AppendChild(newTrack1);
-				doc.Save(TrainingMission_LoadFile);
+				doc.Save(FileName.TrainingMission_LoadFile);
 				return 1;
 			}
 			else
@@ -346,7 +344,7 @@ namespace RiderData
 				{
 					byte newLevel = (byte)(currentLevel + 1);
 					track1Node.Attributes["Level"].Value = newLevel.ToString();
-					doc.Save(TrainingMission_LoadFile);
+					doc.Save(FileName.TrainingMission_LoadFile);
 					return newLevel;
 				}
 				else

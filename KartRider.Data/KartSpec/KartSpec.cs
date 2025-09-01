@@ -9,17 +9,13 @@ using System.Xml.Linq;
 using ExcData;
 using KartRider;
 using RiderData;
+using Profile;
 
 namespace KartRider
 {
     public class KartSpec
     {
         #region 常量定义（消除硬编码）
-        /// <summary>ModelMax.xml相对路径</summary>
-        private const string ModelMaxXmlRelativePath = @"ModelMax.xml";
-        /// <summary>ModelMax.xml完整路径（自动拼接根目录）</summary>
-        private static readonly string ModelMaxXmlFullPath = FileName.ProfileDir + ModelMaxXmlRelativePath;
-        
         /// <summary>布尔类型的XML属性名集合（统一管理）</summary>
         private static readonly HashSet<string> BooleanAttributes = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -274,16 +270,16 @@ namespace KartRider
         private static (float modelMaxX, float modelMaxY) LoadModelMaxDimensions(short kartId)
         {
             // 检查文件是否存在
-            if (!File.Exists(ModelMaxXmlFullPath))
+            if (!File.Exists(FileName.ModelMax_LoadFile))
             {
-                Console.WriteLine($"[KartSpec] 警告：ModelMax.xml不存在 - 路径：{ModelMaxXmlFullPath}");
+                Console.WriteLine($"[KartSpec] 警告：ModelMax.xml不存在 - 路径：{FileName.ModelMax_LoadFile}");
                 return (DefaultModelDimension, DefaultModelDimension);
             }
 
             try
             {
                 // 只对文件流使用using，XDocument不实现IDisposable，不需要using
-                using (var fileStream = File.OpenRead(ModelMaxXmlFullPath))
+                using (var fileStream = File.OpenRead(FileName.ModelMax_LoadFile))
                 {
                     var xdoc = XDocument.Load(fileStream);
 
