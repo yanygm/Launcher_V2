@@ -22,7 +22,7 @@ namespace RHOParser
 
     public class CompetitiveDataManager
     {
-        private string _filePath = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Competitive.xml";
+        private string _filePath = FileName.ProfileDir + @"Competitive.xml";
 
         public CompetitiveDataManager()
         {

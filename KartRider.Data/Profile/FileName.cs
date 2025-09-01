@@ -6,11 +6,14 @@ namespace Profile
 	{
 		public static string Extension = ".ini";
 
-		public static string SetRider_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\SetRider\";
-		public static string SetRiderItem_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\SetRider\SetRiderItem\";
-		public static string SetMyRoom_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\MyRoom\";
-		public static string SetGameOption_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\GameOption\";
-		public static string config_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher\config\";
+		public static string appDir = AppDomain.CurrentDomain.BaseDirectory; // 应用程序所在目录
+		public static string Dir = Path.GetFullPath(appDir);
+		public static string ProfileDir = Path.GetFullPath(Path.Combine(appDir, @"Profile\"));
+		public static string SetRider_LoadFile = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher\SetRider\"));
+		public static string SetRiderItem_LoadFile = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher\SetRider\SetRiderItem\"));
+		public static string SetMyRoom_LoadFile = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher\MyRoom\"));
+		public static string SetGameOption_LoadFile = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher\GameOption\"));
+		public static string config_LoadFile = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher\config\"));
 
 		public static string SetRider_Nickname = "Set_Nickname";
 		public static string SetRider_RiderIntro = "Set_RiderIntro";

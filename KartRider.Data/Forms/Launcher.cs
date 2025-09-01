@@ -348,7 +348,7 @@ namespace KartRider
 
         public void Load_KartExcData()
         {
-            string ModelMaxPath = AppDomain.CurrentDomain.BaseDirectory + @"Profile\ModelMax.xml";
+            string ModelMaxPath = FileName.ProfileDir + @"ModelMax.xml";
             string ModelMax = Resources.ModelMax;
             if (!File.Exists(ModelMaxPath))
             {
@@ -360,15 +360,15 @@ namespace KartRider
             XmlFileUpdater.XmlUpdater updater = new XmlFileUpdater.XmlUpdater();
             updater.UpdateLocalXmlWithResource(ModelMaxPath, ModelMax);
 
-            EnsureDefaultDataFileExists(AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml", CreateAIDefaultData);
+            EnsureDefaultDataFileExists(FileName.ProfileDir + @"Profile\AI.xml", CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\NewKart.xml", LoadNewKart);
-            KartExcData.TuneList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml", LoadTuneData);
-            KartExcData.PlantList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml", LoadPlantData);
-            KartExcData.LevelList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml", LoadLevelData);
-            KartExcData.PartsList = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\PartsData.xml", LoadPartsData);
-            KartExcData.Parts12List = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\Parts12Data.xml", LoadParts12Data);
-            KartExcData.Level12List = LoadKartData(AppDomain.CurrentDomain.BaseDirectory + @"Profile\Level12Data.xml", LoadLevel12Data);
+            KartExcData.NewKart = LoadKartData(FileName.ProfileDir + @"NewKart.xml", LoadNewKart);
+            KartExcData.TuneList = LoadKartData(FileName.ProfileDir + @"TuneData.xml", LoadTuneData);
+            KartExcData.PlantList = LoadKartData(FileName.ProfileDir + @"PlantData.xml", LoadPlantData);
+            KartExcData.LevelList = LoadKartData(FileName.ProfileDir + @"LevelData.xml", LoadLevelData);
+            KartExcData.PartsList = LoadKartData(FileName.ProfileDir + @"PartsData.xml", LoadPartsData);
+            KartExcData.Parts12List = LoadKartData(FileName.ProfileDir + @"Parts12Data.xml", LoadParts12Data);
+            KartExcData.Level12List = LoadKartData(FileName.ProfileDir + @"Level12Data.xml", LoadLevel12Data);
         }
 
         private void EnsureDefaultDataFileExists(string filePath, Action<string> createDefaultData)

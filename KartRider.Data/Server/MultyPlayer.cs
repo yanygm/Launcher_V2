@@ -30,7 +30,7 @@ namespace KartRider
         public static long BootTicksNow = 0;
         public static long StartTicks = 0;
         static uint FinishTime = 0;
-        static string AiXmlFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\AI.xml";
+        static string AiXmlFile = FileName.ProfileDir + @"AI.xml";
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
 

@@ -13,7 +13,7 @@ namespace Profile
 {
     public class ProfileService
     {
-        private readonly static string config_path = AppDomain.CurrentDomain.BaseDirectory + @"Profile\" + "Launcher.json";
+        private readonly static string config_path = FileName.ProfileDir + "Launcher.json";
         public static ProfileConfig ProfileConfig { get; set; } = new ProfileConfig();
         public static void Save()
         {
@@ -604,7 +604,7 @@ namespace Profile
         }
         private static void DeleteOldFiles()
         {
-            var dir_path = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Launcher";
+            var dir_path = FileName.ProfileDir + @"Launcher";
             if (Directory.Exists(dir_path))
             {
                 Directory.Delete(dir_path, true);

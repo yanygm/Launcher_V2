@@ -16,10 +16,9 @@ namespace KartRider
     {
         #region 常量定义（消除硬编码）
         /// <summary>ModelMax.xml相对路径</summary>
-        private const string ModelMaxXmlRelativePath = @"Profile\ModelMax.xml";
+        private const string ModelMaxXmlRelativePath = @"ModelMax.xml";
         /// <summary>ModelMax.xml完整路径（自动拼接根目录）</summary>
-        private static readonly string ModelMaxXmlFullPath = 
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ModelMaxXmlRelativePath);
+        private static readonly string ModelMaxXmlFullPath = FileName.ProfileDir + ModelMaxXmlRelativePath;
         
         /// <summary>布尔类型的XML属性名集合（统一管理）</summary>
         private static readonly HashSet<string> BooleanAttributes = new(StringComparer.OrdinalIgnoreCase)

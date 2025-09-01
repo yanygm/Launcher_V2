@@ -12,12 +12,12 @@ namespace ExcData
 {
 	public static class KartExcData
 	{
-		public static string TuneData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TuneData.xml";
-		public static string PlantData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\PlantData.xml";
-		public static string LevelData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\LevelData.xml";
-		public static string PartsData_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\PartsData.xml";
-		public static string Parts12Data_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Parts12Data.xml";
-		public static string Level12Data_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Level12Data.xml";
+		public static string TuneData_LoadFile = FileName.ProfileDir + @"TuneData.xml";
+		public static string PlantData_LoadFile = FileName.ProfileDir + @"PlantData.xml";
+		public static string LevelData_LoadFile = FileName.ProfileDir + @"LevelData.xml";
+		public static string PartsData_LoadFile = FileName.ProfileDir + @"PartsData.xml";
+		public static string Parts12Data_LoadFile = FileName.ProfileDir + @"Parts12Data.xml";
+		public static string Level12Data_LoadFile = FileName.ProfileDir + @"Level12Data.xml";
 		public static List<List<short>> TuneList = new List<List<short>>();
 		public static List<List<short>> PlantList = new List<List<short>>();
 		public static List<List<short>> LevelList = new List<List<short>>();

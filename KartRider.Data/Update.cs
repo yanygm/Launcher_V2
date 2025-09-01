@@ -85,13 +85,13 @@ namespace KartRider
                         response.EnsureSuccessStatusCode();
                         using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                         {
-                            string folderPath = AppDomain.CurrentDomain.BaseDirectory + "Update";
+                            string folderPath = FileName.Dir + "Update";
                             if (!Directory.Exists(folderPath))
                             {
                                 Directory.CreateDirectory(folderPath);
                             }
                             long? totalBytes = response.Content.Headers.ContentLength;
-                            using (FileStream fileStream = new FileStream(AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.zip", FileMode.Create, FileAccess.Write, FileShare.None))
+                            using (FileStream fileStream = new FileStream(FileName.Dir + "Update\\Launcher.zip", FileMode.Create, FileAccess.Write, FileShare.None))
                             {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead;
@@ -123,13 +123,13 @@ namespace KartRider
             string simpleName = assemblyName.Name + ".exe";
             try
             {
-                System.IO.Compression.ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "Update\\Launcher.zip", AppDomain.CurrentDomain.BaseDirectory + "Update\\");
+                System.IO.Compression.ZipFile.ExtractToDirectory(FileName.Dir + "Update\\Launcher.zip", FileName.Dir + "Update\\");
                 string script = @$"@echo off
 timeout /t 3 /nobreak
-move {"\"" + AppDomain.CurrentDomain.BaseDirectory + "Update\\" + simpleName + "\""} {"\"" + AppDomain.CurrentDomain.BaseDirectory + "\""}
-start {"\"\" \"" + AppDomain.CurrentDomain.BaseDirectory + simpleName + "\""}
+move {"\"" + FileName.Dir + "Update\\" + simpleName + "\""} {"\"" + FileName.Dir + "\""}
+start {"\"\" \"" + FileName.Dir + simpleName + "\""}
 ";
-                string filePath = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
+                string filePath = FileName.Dir + "Update.bat";
                 try
                 {
                     File.WriteAllText(filePath, script);

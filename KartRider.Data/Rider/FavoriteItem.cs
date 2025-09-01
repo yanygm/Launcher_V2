@@ -16,9 +16,9 @@ namespace RiderData
 		public static List<string> MissionList = new List<string>();
 		public static List<string> Competitive = new List<string>();
 		public static Dictionary<uint, TrackData> TrackDictionary = new Dictionary<uint, TrackData>();
-		public static string Favorite_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\Favorite.xml";
-		public static string FavoriteTrack_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\FavoriteTrack.xml";
-		public static string TrainingMission_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\TrainingMission.xml";
+		public static string Favorite_LoadFile = FileName.ProfileDir + @"Favorite.xml";
+		public static string FavoriteTrack_LoadFile = FileName.ProfileDir + @"FavoriteTrack.xml";
+		public static string TrainingMission_LoadFile = FileName.ProfileDir + @"TrainingMission.xml";
 
 		public static void Favorite_Item()
 		{

@@ -33,7 +33,7 @@ namespace KartRider
 
         public const int SW_HIDE = 0;
         public const int SW_SHOW = 5;
-        public static string Load_Console = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Console.ini";
+        public static string Load_Console = FileName.ProfileDir + "Console.ini";
         public static IntPtr consoleHandle;
         public static Launcher LauncherDlg;
         public static GetKart GetKartDlg;
@@ -47,8 +47,8 @@ namespace KartRider
         {
             string input;
             string output;
-            string Update_File = AppDomain.CurrentDomain.BaseDirectory + "Update.bat";
-            string Update_Folder = AppDomain.CurrentDomain.BaseDirectory + "Update";
+            string Update_File = FileName.Dir + "Update.bat";
+            string Update_Folder = FileName.Diry + "Update";
             if (File.Exists(Update_File))
             {
                 File.Delete(Update_File);
@@ -65,7 +65,7 @@ namespace KartRider
 
             if (!await Update.UpdateDataAsync())
             {
-                string Load_CC = AppDomain.CurrentDomain.BaseDirectory + "Profile\\CountryCode.ini";
+                string Load_CC = FileName.ProfileDir + "CountryCode.ini";
                 if (File.Exists(Load_CC))
                 {
                     string textValue = System.IO.File.ReadAllText(Load_CC);
@@ -73,9 +73,9 @@ namespace KartRider
                 }
                 else
                 {
-                    if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "Profile"))
+                    if (!Directory.Exists(FileName.ProfileDir))
                     {
-                        Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "Profile");
+                        Directory.CreateDirectory(FileName.ProfileDir);
                     }
                     using (StreamWriter streamWriter = new StreamWriter(Load_CC, false))
                     {
@@ -86,9 +86,9 @@ namespace KartRider
                 {
                     string text = "HKEY_CURRENT_USER\\SOFTWARE\\TCGame\\kart";
                     RootDirectory = (string)Registry.GetValue(text, "gamepath", null);
-                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "KartRider.pin") && File.Exists(AppDomain.CurrentDomain.BaseDirectory + "KartRider.exe"))
+                    if (File.Exists(FileName.Dir + "KartRider.pin") && File.Exists(FileName.Dir + "KartRider.exe"))
                     {
-                        RootDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                        RootDirectory = FileName.Dir;
                     }
                     else if (File.Exists(RootDirectory + "KartRider.pin") && File.Exists(RootDirectory + "KartRider.exe"))
                     {
@@ -469,8 +469,8 @@ namespace KartRider
         {
             string[] whitelist = { "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_", "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_", "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_", "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_", "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_", "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_", "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_", "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_", "world_", "forest_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp" };
             string[] blacklist = { "character_" };
-            string Whitelist = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Whitelist.ini";
-            string Blacklist = AppDomain.CurrentDomain.BaseDirectory + "Profile\\Blacklist.ini";
+            string Whitelist = FileName.ProfileDir + "Whitelist.ini";
+            string Blacklist = FileName.ProfileDir + "Blacklist.ini";
             if (File.Exists(Whitelist))
             {
                 whitelist = File.ReadAllLines(Whitelist);

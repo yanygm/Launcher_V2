@@ -13,7 +13,7 @@ namespace KartRider
 {
     public partial class GetKart : Form
     {
-        public static string NewKart_LoadFile = AppDomain.CurrentDomain.BaseDirectory + @"Profile\NewKart.xml";
+        public static string NewKart_LoadFile = FileName.ProfileDir + @"NewKart.xml";
         public static short Item_Type = 0;
         public static short Item_Code = 0;
 
