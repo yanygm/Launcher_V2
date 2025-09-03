@@ -39,6 +39,7 @@ namespace KartRider
         public static GetKart GetKartDlg;
         public static bool SpeedPatch;
         public static bool PreventItem;
+        public static Encoding targetEncoding = Encoding.UTF8;
         public static CountryCode CC = CountryCode.CN;
 
         private static readonly string[] datapack =
@@ -149,7 +150,7 @@ namespace KartRider
                 bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             
                 // 2. 优先尝试 UTF-8（跨平台通用）
-                Encoding targetEncoding = Encoding.UTF8;
+                targetEncoding = Encoding.UTF8;
 
                 // 3. Windows 中文环境特殊处理（部分终端默认 GBK）
                 if (isWindows)
