@@ -12,6 +12,7 @@ namespace Profile
 		public static string pinFile = Path.GetFullPath(Path.Combine(appDir, @"KartRider.pin"));
 		public static string ProfileDir = Path.GetFullPath(Path.Combine(appDir, @"Profile\"));
 		public static string config_path = Path.GetFullPath(Path.Combine(appDir, @"Profile\Launcher.json"));
+		public static string SpecialKartConfig = Path.GetFullPath(Path.Combine(appDir, @"Profile\SpecialKartConfig.json"));
 
 		public static string Load_Console = Path.GetFullPath(Path.Combine(appDir, @"Profile\Console.ini"));
 		public static string Load_CC = Path.GetFullPath(Path.Combine(appDir, @"Profile\CountryCode.ini"));

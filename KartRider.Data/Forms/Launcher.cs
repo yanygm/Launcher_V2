@@ -369,6 +369,8 @@ namespace KartRider
             KartExcData.PartsList = LoadKartData(FileName.PartsData_LoadFile, LoadPartsData);
             KartExcData.Parts12List = LoadKartData(FileName.Parts12Data_LoadFile, LoadParts12Data);
             KartExcData.Level12List = LoadKartData(FileName.Level12Data_LoadFile, LoadLevel12Data);
+            SpecialKartConfig.SaveConfigToFile(FileName.SpecialKartConfig);
+            MultyPlayer.kartConfig = SpecialKartConfig.LoadConfigFromFile(FileName.SpecialKartConfig);
         }
 
         private void EnsureDefaultDataFileExists(string filePath, Action<string> createDefaultData)

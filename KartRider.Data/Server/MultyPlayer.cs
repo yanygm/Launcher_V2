@@ -32,78 +32,7 @@ namespace KartRider
         static uint FinishTime = 0;
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
-
-        /// <summary>
-        /// 特殊道具车：将指定道具变更为特殊道具
-        /// </summary>
-        public static Dictionary<short, Dictionary<short, short>> skillChange = new Dictionary<short, Dictionary<short, short>>
-        {
-            { 1571, new Dictionary<short, short> { {7, 32} } },
-            { 1569, new Dictionary<short, short> { {4, 7} } },
-            { 1567, new Dictionary<short, short> { {6, 31} } },
-            { 1565, new Dictionary<short, short> { {33, 137}, {3, 137} } },
-            { 1563, new Dictionary<short, short> { {7, 136}, {114, 16} } },
-            { 1561, new Dictionary<short, short> { {8, 37}, {6, 31} } },
-            { 1551, new Dictionary<short, short> { {8, 25} } },
-            { 1543, new Dictionary<short, short> { {6, 31} } },
-            { 1548, new Dictionary<short, short> { {4, 132} } },
-            { 1536, new Dictionary<short, short> { {8, 17}, {5, 103} } },
-            { 1526, new Dictionary<short, short> { {9, 27} } },
-            { 1522, new Dictionary<short, short> { {9, 34}, {6, 31} } },
-            { 1511, new Dictionary<short, short> { {2, 38} } },
-            { 1510, new Dictionary<short, short> { {7, 32} } },
-            { 1509, new Dictionary<short, short> { {7, 32} } },
-            { 1507, new Dictionary<short, short> { {6, 31} } },
-            { 1506, new Dictionary<short, short> { {5, 103} } },
-            { 1505, new Dictionary<short, short> { {8, 129}, {4, 120} } },
-            { 1502, new Dictionary<short, short> { {7, 4} } },
-            { 1500, new Dictionary<short, short> { {9, 34}, {113, 135}, {33, 135} } },
-            { 1496, new Dictionary<short, short> { {7, 134}, {6, 31} } },
-            { 1494, new Dictionary<short, short> { {4, 132}, {6, 31} } },
-            { 1491, new Dictionary<short, short> { {8, 82}, {9, 27}, {13, 28} } },
-            { 1489, new Dictionary<short, short> { {9, 111}, {6, 31} } },
-            { 1487, new Dictionary<short, short> { {5, 103}, {10, 36} } },
-            { 1484, new Dictionary<short, short> { {7, 32}, {6, 31} } },
-            { 1482, new Dictionary<short, short> { {5, 6} } },
-            { 1481, new Dictionary<short, short> { {7, 102}, {9, 34} } },
-            { 1479, new Dictionary<short, short> { {7, 131} } }
-        };
-
-        /// <summary>
-        /// 特殊道具车：使用指定道具后获得特殊道具
-        /// </summary>
-        public static Dictionary<short, Dictionary<short, short>> skillMappings = new Dictionary<short, Dictionary<short, short>>
-        {
-            { 1569, new Dictionary<short, short> { {5, 7} } },
-            { 1567, new Dictionary<short, short> { {5, 31} } },
-            { 1450, new Dictionary<short, short> { {7, 5}, {5, 24} } },
-            { 1563, new Dictionary<short, short> { {136, 6} } },
-            { 1548, new Dictionary<short, short> { {5, 6} } },
-            { 1510, new Dictionary<short, short> { {32, 32} } },
-            { 1507, new Dictionary<short, short> { {5, 31} } },
-            { 1496, new Dictionary<short, short> { {5, 24} } },
-            { 1489, new Dictionary<short, short> { {5, 10} } },
-            { 1479, new Dictionary<short, short> { {131, 5} } }
-        };
-
-        /// <summary>
-        /// 特殊道具车：被指定道具攻击后获得特殊道具
-        /// </summary>
-        public static Dictionary<short, Dictionary<short, short>> skillAttacked = new Dictionary<short, Dictionary<short, short>>
-        {
-            { 1571, new Dictionary<short, short> { {8, 6} } },
-            { 1561, new Dictionary<short, short> { {7, 111} } },
-            { 1557, new Dictionary<short, short> { {7, 32}, {5, 103} } },
-            { 1555, new Dictionary<short, short> { {4, 6}, {9, 6} } },
-            { 1551, new Dictionary<short, short> { {7, 6} } },
-            { 1524, new Dictionary<short, short> { {5, 103} } },
-            { 1511, new Dictionary<short, short> { {7, 5} } },
-            { 1510, new Dictionary<short, short> { {5, 10} } },
-            { 1509, new Dictionary<short, short> { {5, 10} } },
-            { 1506, new Dictionary<short, short> { {4, 6}, {9, 6} } },
-            { 1502, new Dictionary<short, short> { {4, 9} } },
-            { 1482, new Dictionary<short, short> { {4, 119}, {9, 119} } }
-        };
+        public static SpecialKartConfig kartConfig = new SpecialKartConfig();
 
         public static void milTime(uint time)
         {
@@ -346,7 +275,7 @@ namespace KartRider
                     {
                         GameSupport.AttackedSkill(type, uni, 10);
                     }
-                    if (skillAttacked.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
+                    if (kartConfig.SkillAttacked.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
@@ -366,7 +295,7 @@ namespace KartRider
                     {
                         GameSupport.AddItemSkill(6);
                     }
-                    if (skillMappings.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
+                    if (kartConfig.SkillMappings.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {

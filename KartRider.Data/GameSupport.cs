@@ -300,7 +300,7 @@ namespace KartRider
                     return LevelSkill;
                 }
             }
-            if (MultyPlayer.skillChange.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var changes) &&
+            if (MultyPlayer.kartConfig.SkillChange.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var changes) &&
                 changes.TryGetValue(skill, out var changesSkill))
             {
                 return changesSkill;
