@@ -131,7 +131,7 @@ start {"\"\" \"" + Path.GetFullPath(Path.Combine(FileName.appDir, simpleName)) +
 ";
                 try
                 {
-                    File.WriteAllText(FileName.Update_File, script);
+                    File.WriteAllText(FileName.Update_File, script, Program.targetEncoding);
                     Console.WriteLine("\n写入文件成功。");
                 }
                 catch (Exception ex)
@@ -233,3 +233,4 @@ start {"\"\" \"" + Path.GetFullPath(Path.Combine(FileName.appDir, simpleName)) +
         }
     }
 }
+
