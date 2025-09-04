@@ -91,7 +91,7 @@ namespace KartRider
                     {
                         RootDirectory = FileName.appDir;
                     }
-                    else if (File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) && File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")))
+                    else if (File.Exists(RootDirectory + @"KartRider.pin") && File.Exists(RootDirectory + @"KartRider.exe"))
                     {
                         RootDirectory = Path.GetFullPath((string)Registry.GetValue(TCGame, "gamepath", null));
                     }
