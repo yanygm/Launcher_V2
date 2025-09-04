@@ -18,7 +18,7 @@ namespace KartRider
 
 		public static void MessageBoxType3()
 		{
-			MessageBox.Show(Launcher.KartRider + " 或 " + Launcher.pinFile + " 找不到文件！\n点击确认退出程序", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			MessageBox.Show("找不到KartRider.exe或KartRider.pin文件！\n点击确认退出程序", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			Environment.Exit(1);
 		}
 	}
