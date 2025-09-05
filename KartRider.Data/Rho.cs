@@ -521,7 +521,10 @@ namespace RHOParser
                             {
                                 FavoriteItem.MissionList = currentMissionList;
                             }
-                            Console.WriteLine(string.Join(", ", FavoriteItem.MissionList));
+                            if (FavoriteItem.MissionList.Count > 0)
+                            {
+                                Console.WriteLine(string.Join(", ", FavoriteItem.MissionList));
+                            }
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitive.xml")
@@ -684,3 +687,4 @@ namespace RHOParser
         }
     }
 }
+
