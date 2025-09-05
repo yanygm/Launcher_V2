@@ -82,7 +82,7 @@ namespace KartRider
             {
                 Directory.Delete(Update_Folder, true);
             }
-            Console.WriteLine("开始读取GitHub Releases API数据...\n");
+            Console.WriteLine("开始读取GitHub Releases API数据...");
             try
             {
                 // 2. 创建HttpClient（设置User-Agent，避免GitHub API拒绝请求）
@@ -114,8 +114,8 @@ namespace KartRider
                 {
                     Console.WriteLine("找到目标文件：" + name);
                     Console.WriteLine("==============================");
-                    Console.WriteLine($"Digest SHA256: {launcherExeAsset.Digest}");
-                    Console.WriteLine($"Browser Download URL: {launcherExeAsset.Browser_Download_Url}");
+                    Console.WriteLine($"Digest: {launcherExeAsset.Digest}");
+                    Console.WriteLine($"Browser_Download_Url: {launcherExeAsset.Browser_Download_Url}");
                     if (launcherExeAsset.Digest != sha256Hash)
                     {
                         Console.WriteLine($"发现新版本, 请问是否需要更新? (Y/n)");
@@ -334,3 +334,4 @@ namespace KartRider
         }
     }
 }
+
