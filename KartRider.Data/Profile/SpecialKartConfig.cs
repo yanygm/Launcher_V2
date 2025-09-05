@@ -144,7 +144,8 @@ public class SpecialKartConfig
             throw new Exception("配置文件解析失败，可能是JSON格式错误");
         }
 
-        Console.WriteLine($"配置已成功从 {filePath} 读取");
+        Console.WriteLine($"道具车特性配置已成功从 {filePath} 读取");
         return config;
     }
 }
+
