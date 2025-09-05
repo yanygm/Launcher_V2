@@ -240,7 +240,7 @@ namespace KartRider
             string executablePath = Process.GetCurrentProcess().MainModule.FileName;
             Load_KartExcData();
             ProfileService.Load();
-            Console.WriteLine(JsonConvert.SerializeObject(ProfileService.ProfileConfig));
+            JsonConvert.SerializeObject(ProfileService.ProfileConfig);
             KeyValuePair<string, byte> speed = SpeedType.speedNames.FirstOrDefault(a => a.Value == ProfileService.ProfileConfig.GameOption.SpeedType);
             if (!String.IsNullOrEmpty(speed.Key))
             {
