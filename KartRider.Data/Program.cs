@@ -98,8 +98,11 @@ namespace KartRider
                 {
                     try
                     {
+                        Console.WriteLine("开始读取客户端Data数据...");
                         KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
                         KartRhoFile.packFolderManager.Reset();
+
+                        Console.WriteLine("启动Launcher窗口...");
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
                         Launcher StartLauncher = new Launcher();
@@ -109,23 +112,23 @@ namespace KartRider
                         Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
                         Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
                         Application.Run(StartLauncher);
+                        consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+                        if (!File.Exists(FileName.Load_Console))
+                        {
+                            using (StreamWriter streamWriter = new StreamWriter(FileName.Load_Console, false))
+                            {
+                                streamWriter.Write("0");
+                            }
+                        }
+                        string textValue = System.IO.File.ReadAllText(FileName.Load_Console);
+                        if (textValue == "0")
+                        {
+                            ShowWindow(consoleHandle, SW_HIDE);
+                        }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"读取Data文件时出错: {ex.Message}");
-                    }
-                    consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
-                    if (!File.Exists(FileName.Load_Console))
-                    {
-                        using (StreamWriter streamWriter = new StreamWriter(FileName.Load_Console, false))
-                        {
-                            streamWriter.Write("0");
-                        }
-                    }
-                    string textValue = System.IO.File.ReadAllText(FileName.Load_Console);
-                    if (textValue == "0")
-                    {
-                        ShowWindow(consoleHandle, SW_HIDE);
                     }
                 }
             }
