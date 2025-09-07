@@ -23,18 +23,20 @@ namespace KartRider
 {
     internal static class Program
     {
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool AllocConsole();
 
-        [DllImport("user32.dll")]
-        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetConsoleWindow();
 
-        [DllImport("user32.dll")]
-        public static extern bool IsWindowVisible(IntPtr hWnd);
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         public const int SW_HIDE = 0;
         public const int SW_SHOW = 5;
-        public static IntPtr consoleHandle;
+        public static bool isVisible = true;
+        public static readonly IntPtr consoleHandle = GetConsoleWindow();
+
         public static Launcher LauncherDlg;
         public static GetKart GetKartDlg;
         public static bool SpeedPatch;
@@ -85,9 +87,9 @@ namespace KartRider
                 {
                     RootDirectory = FileName.appDir;
                 }
-                else if (File.Exists(RootDirectory + @"KartRider.pin") && File.Exists(RootDirectory + @"KartRider.exe"))
+                else if (File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) && File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")))
                 {
-                    RootDirectory = Path.GetFullPath((string)Registry.GetValue(TCGame, "gamepath", null));
+                    RootDirectory = Path.GetFullPath(RootDirectory);
                 }
                 else
                 {
@@ -104,7 +106,6 @@ namespace KartRider
                         KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
                         KartRhoFile.packFolderManager.Reset();
 
-                        consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
                         if (!File.Exists(FileName.Load_Console))
                         {
                             using (StreamWriter streamWriter = new StreamWriter(FileName.Load_Console, false))
@@ -116,6 +117,7 @@ namespace KartRider
                         if (textValue == "0")
                         {
                             ShowWindow(consoleHandle, SW_HIDE);
+                            isVisible = false;
                         }
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);

@@ -19,7 +19,7 @@ namespace KartRider
     /// <summary>
     /// GitHub Releases API返回的根对象
     /// </summary>
-    public class GitHubReleaseRoot
+    class GitHubReleaseRoot
     {
         /// <summary>
         /// 发布版本下的所有资产文件（如exe、zip）
@@ -30,7 +30,7 @@ namespace KartRider
     /// <summary>
     /// GitHub Releases中的单个资产文件（如Launcher.exe）
     /// </summary>
-    public class GitHubReleaseAsset
+    class GitHubReleaseAsset
     {
         /// <summary>
         /// 文件名（如Launcher.exe）
@@ -48,7 +48,7 @@ namespace KartRider
         public string Browser_Download_Url { get; set; }
     }
 
-    internal static class Update
+    class Update
     {
         static string owner = "yanygm";
         static string repo = "Launcher_V2";
@@ -143,14 +143,14 @@ namespace KartRider
                                     }
                                     if (await GetUrl(url2))
                                     {
-                                        return await DownloadUpdate(filePath, url2);
+                                        return await DownloadUpdate(url2, filePath);
                                         break;
                                     }
                                 }
                             }
                             else
                             {
-                                return await DownloadUpdate(filePath, launcherExeAsset.Browser_Download_Url);
+                                return await DownloadUpdate(launcherExeAsset.Browser_Download_Url, filePath);
                             }
                         }
                         catch (Exception ex)
@@ -191,51 +191,156 @@ namespace KartRider
             }
         }
 
-        public static async Task<bool> DownloadUpdate(string filePath, string UpdatePackageUrl)
+        static async Task<bool> DownloadUpdate(string url, string filePath)
         {
+            HttpClient httpClient = new HttpClient();
             string Update_Folder = Path.Combine(Path.GetDirectoryName(filePath), "Update");
             string Update_FilePath = Path.Combine(Update_Folder, Path.GetFileName(filePath));
+            if (!Directory.Exists(Update_Folder))
+            {
+                Directory.CreateDirectory(Update_Folder);
+            }
+            // 获取文件大小和响应流
+            Console.WriteLine("开始更新...");
+            Console.WriteLine("==============================");
             try
             {
-                Console.WriteLine($"开始下载更新包: {UpdatePackageUrl}");
-                using (HttpClient client = new HttpClient())
+                using (var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
                 {
-                    using (HttpResponseMessage response = await client.GetAsync(UpdatePackageUrl, HttpCompletionOption.ResponseHeadersRead))
+                    response.EnsureSuccessStatusCode();
+
+                    long? totalBytes = response.Content.Headers.ContentLength;
+                    bool canVerify = totalBytes.HasValue;
+
+                    // 下载文件并显示进度
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(Update_FilePath, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
-                        response.EnsureSuccessStatusCode();
-                        using (Stream contentStream = await response.Content.ReadAsStreamAsync())
+                        var buffer = new byte[8192];
+                        long totalRead = 0;
+                        int bytesRead;
+                        int progressBarWidth = 50;
+                        int lastProgressLength = 0;
+                        try
                         {
-                            if (!Directory.Exists(Update_Folder))
+                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                             {
-                                Directory.CreateDirectory(Update_Folder);
-                            }
-                            long? totalBytes = response.Content.Headers.ContentLength;
-                            using (FileStream fileStream = new FileStream(Update_FilePath, FileMode.Create, FileAccess.Write, FileShare.None))
-                            {
-                                byte[] buffer = new byte[4096];
-                                int bytesRead;
-                                long totalRead = 0;
-                                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                                await fileStream.WriteAsync(buffer, 0, bytesRead);
+
+                                totalRead += bytesRead;
+
+                                // 只有在知道总大小的情况下才显示进度
+                                if (totalBytes.HasValue)
                                 {
-                                    await fileStream.WriteAsync(buffer, 0, bytesRead);
-                                    totalRead += bytesRead;
-                                    double progress = totalBytes.HasValue ? (double)totalRead / totalBytes.Value * 100 : 0;
-                                    Console.Write($"\r下载进度: {progress:F2}%");
+                                    double percentage = (double)totalRead / totalBytes.Value * 100;
+                                    int progress = (int)(percentage / 100 * progressBarWidth);
+
+                                    // 更新进度条
+                                    string progressText = $"[{new string('#', progress)}{new string(' ', progressBarWidth - progress)}] " + $"{percentage:F2}%  " + $"({FormatFileSize(totalRead)} / {FormatFileSize(totalBytes.Value)})";
+                                    Console.Write($"\r{new string(' ', lastProgressLength)}");
+                                    Console.Write($"\r{progressText}");
+                                    lastProgressLength = progressText.Length;
+                                }
+                                else
+                                {
+                                    Console.Write($"\r已下载: {FormatFileSize(totalRead)}");
                                 }
                             }
                         }
+                        catch (IOException ex)
+                        {
+                            Console.WriteLine($"\n错误: 文件读写错误 - {ex.Message}");
+                            // 清理不完整的文件
+                            if (File.Exists(Update_FilePath))
+                            {
+                                File.Delete(Update_FilePath);
+                            }
+                            return false;
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Console.WriteLine("\n错误: 下载已被取消。");
+                            if (File.Exists(Update_FilePath))
+                            {
+                                File.Delete(Update_FilePath);
+                            }
+                            return false;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"\n错误: 下载过程中发生错误 - {ex.Message}");
+                            if (File.Exists(Update_FilePath))
+                            {
+                                File.Delete(Update_FilePath);
+                            }
+                            return false;
+                        }
+
+                        // 验证下载是否成功
+                        if (canVerify)
+                        {
+                            // 确保文件流已刷新到磁盘
+                            await fileStream.FlushAsync();
+
+                            // 获取实际文件大小
+                            long fileSize = new FileInfo(Update_FilePath).Length;
+
+                            // 比较下载的大小与预期大小
+                            if (fileSize == totalBytes.Value)
+                            {
+                                return ApplyUpdate(filePath, Update_FilePath);
+                            }
+                            else
+                            {
+                                Console.WriteLine("\n下载的文件大小与预期不符，下载可能未完成或已损坏。");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            // 无法验证，只能确认下载过程没有抛出异常
+                            return ApplyUpdate(filePath, Update_FilePath);
+                        }
                     }
-                    return ApplyUpdate(filePath, Update_FilePath);
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"错误: HTTP请求失败 - {ex.Message}");
+                return false;
+            }
+            catch (UriFormatException ex)
+            {
+                Console.WriteLine($"错误: 无效的URL格式 - {ex.Message}");
+                return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"下载过程中出现错误: {ex.Message}");
+                Console.WriteLine($"错误: 下载准备阶段发生错误 - {ex.Message}");
                 return false;
             }
         }
 
-        public static bool ApplyUpdate(string filePath, string Update_FilePath)
+        // 格式化文件大小为易读格式
+        static string FormatFileSize(long bytes)
+            {
+                if (bytes == 0)
+                    return "0 B";
+
+                string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+                int order = 0;
+                double adjustedBytes = bytes;
+
+                while (adjustedBytes >= 1024 && order < sizes.Length - 1)
+                {
+                    order++;
+                    adjustedBytes /= 1024;
+                }
+
+                return $"{adjustedBytes:0.##} {sizes[order]}";
+            }
+
+        static bool ApplyUpdate(string filePath, string Update_FilePath)
         {
             string Update_Bat = Path.GetDirectoryName(Update_FilePath) + @"\Update.bat";
             try
@@ -261,7 +366,7 @@ namespace KartRider
             }
         }
 
-        public static async Task<string> GetCountryAsync()
+        static async Task<string> GetCountryAsync()
         {
             try
             {
@@ -289,7 +394,7 @@ namespace KartRider
             }
         }
 
-        public static async Task<bool> GetUrl(string url)
+        static async Task<bool> GetUrl(string url)
         {
             try
             {

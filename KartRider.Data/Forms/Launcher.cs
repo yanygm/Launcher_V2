@@ -744,12 +744,11 @@ namespace KartRider
 
         private void button_ToggleTerminal_Click(object sender, EventArgs e)
         {
-            bool isConsoleVisible = Program.IsWindowVisible(Program.consoleHandle);
-            isConsoleVisible = !isConsoleVisible;
-            Program.ShowWindow(Program.consoleHandle, isConsoleVisible ? Program.SW_SHOW : Program.SW_HIDE);
+            Program.isVisible = !Program.isVisible;
+            Program.ShowWindow(Program.consoleHandle, Program.isVisible ? Program.SW_SHOW : Program.SW_HIDE);
             using (StreamWriter streamWriter = new StreamWriter(FileName.Load_Console, false))
             {
-                streamWriter.Write((isConsoleVisible ? "1" : "0"));
+                streamWriter.Write((Program.isVisible ? "1" : "0"));
             }
         }
     }
