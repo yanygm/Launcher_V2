@@ -100,6 +100,15 @@ namespace KartRider
                     {
                         KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
                         KartRhoFile.packFolderManager.Reset();
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        Launcher StartLauncher = new Launcher();
+                        Program.LauncherDlg = StartLauncher;
+                        Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                        Launcher.KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
+                        Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
+                        Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
+                        Application.Run(StartLauncher);
                     }
                     catch (Exception ex)
                     {
@@ -118,15 +127,6 @@ namespace KartRider
                     {
                         ShowWindow(consoleHandle, SW_HIDE);
                     }
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    Launcher StartLauncher = new Launcher();
-                    Program.LauncherDlg = StartLauncher;
-                    Program.LauncherDlg.kartRiderDirectory = RootDirectory;
-                    Launcher.KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
-                    Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
-                    Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
-                    Application.Run(StartLauncher);
                 }
             }
             else
