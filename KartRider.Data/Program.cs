@@ -99,6 +99,7 @@ namespace KartRider
                     try
                     {
                         Console.WriteLine("开始读取客户端Data数据...");
+                        Console.WriteLine("==============================");
                         KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
                         KartRhoFile.packFolderManager.Reset();
 
