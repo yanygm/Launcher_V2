@@ -102,16 +102,6 @@ namespace KartRider
                         KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
                         KartRhoFile.packFolderManager.Reset();
 
-                        Console.WriteLine("启动Launcher窗口...");
-                        Application.EnableVisualStyles();
-                        Application.SetCompatibleTextRenderingDefault(false);
-                        Launcher StartLauncher = new Launcher();
-                        Program.LauncherDlg = StartLauncher;
-                        Program.LauncherDlg.kartRiderDirectory = RootDirectory;
-                        Launcher.KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
-                        Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
-                        Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
-                        Application.Run(StartLauncher);
                         consoleHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
                         if (!File.Exists(FileName.Load_Console))
                         {
@@ -125,6 +115,15 @@ namespace KartRider
                         {
                             ShowWindow(consoleHandle, SW_HIDE);
                         }
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        Launcher StartLauncher = new Launcher();
+                        Program.LauncherDlg = StartLauncher;
+                        Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                        Launcher.KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
+                        Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
+                        Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
+                        Application.Run(StartLauncher);
                     }
                     catch (Exception ex)
                     {
