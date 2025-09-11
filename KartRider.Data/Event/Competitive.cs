@@ -30,9 +30,6 @@ namespace RHOParser
             {
                 CreateNewFile();
             }
-            {
-                CreateNewFile();
-            }
         }
 
         // 创建新的XML文件

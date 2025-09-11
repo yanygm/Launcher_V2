@@ -65,7 +65,7 @@ namespace KartRider
                 }
                 if (hash == Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) ? false : hash != 1340475309)//PqGameReportMyBadUdp
                 {
-                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderQuestUX2ndData", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
+                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
                     {
                         return;
                     }
@@ -73,7 +73,7 @@ namespace KartRider
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqWriteActionLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventTimerPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqTimeShopOpenTimePacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetSlotDataList", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("VipPlaytimeCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqWriteActionLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventTimerPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("VipPlaytimeCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
                     {
                         //PqGetRecommandChatServerInfo = 라이더 챗
                         return;
@@ -184,11 +184,37 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRider", 0))
                     {
+                        using (OutPacket outPacket = new OutPacket("PrSeasonGrandprixRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSeasonTierMatchingRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSeasonVersusModeRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSimGameRankRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrCompetitiveRewardPacket"))
+                        {
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                            this.Parent.Client.Send(outPacket);
+                        }
                         NewRider.LoadItemData();
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqGetRiderItemPacket", 0))
                     {
+                        //NewRider.LoadItemData();
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqSetRiderItemOnPacket", 0))
@@ -1408,7 +1434,11 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndPacket", 0))
                     {
-                        GameSupport.PrQuestUX2ndPacket();
+                        using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
+                        {
+                            GameSupport.PrQuestUX2ndPacket(OutPacket);
+                            this.Parent.Client.Send(outPacket);
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGameOutRunUX2ndClearPacket", 0))
@@ -2142,7 +2172,7 @@ namespace KartRider
                         {
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
-                            outPacket.WriteHexString("60 B2 6B 2B");
+                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2928,8 +2958,17 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
                     {
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
+                        {
+                            outPacket.WriteShort(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBoomhillExchangeInfo", 0))
@@ -2949,8 +2988,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
                         {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteByte(0);
+                            outPacket.WriteHexString("00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3331,7 +3369,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendNRUserStatePacket"))
                         {
-                            outPacket.WriteByte(4);
+                            outPacket.WriteByte(0);
                             outPacket.WriteByte(0);
                             this.Parent.Client.Send(outPacket);
                         }
@@ -3341,8 +3379,8 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
                         {
-                            outPacket.WriteByte(4);
-                            outPacket.WriteByte(1);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3417,6 +3455,102 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangResultPacket"))
                         {
                             outPacket.WriteHexString("04 00 00 00 FF FF FF FF D0 02 00 00 01");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPlaytimePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrPlaytimePacket"))
+                        {
+                            outPacket.WriteByte(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPersonalShopUserDataPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrPersonalShopUserDataPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqTimeShopOpenTimePacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrTimeShopOpenTimePacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetSlotDataList", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrItemPresetSlotDataList"))
+                        {
+                            outPacket.WriteInt(3);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                short id = (short)(i + 1);
+                                outPacket.WriteShort(id);
+                                outPacket.WriteShort(id);
+                                outPacket.WriteHexString("00000000003BB007260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+                            }
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetMaxGiftIdPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMyMsgrInfoPacket", 0))
+                    {
+                        uint unk1 = iPacket.ReadUInt();
+                        using (OutPacket outPacket = new OutPacket("PrGetMyMsgrInfoPacket"))
+                        {
+                            outPacket.WriteUInt(unk1);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMsgrFriendList", 0))
+                    {
+                        uint unk1 = iPacket.ReadUInt();
+                        using (OutPacket outPacket = new OutPacket("PrGetMsgrFriendList"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMsgrReceiveSendInfo", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrMsgrReceiveSendInfo"))
+                        {
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderQuestUX2ndData", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrGetRiderQuestUX2ndData"))
+                        {
+                            GameSupport.PrQuestUX2ndPacket(OutPacket);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;

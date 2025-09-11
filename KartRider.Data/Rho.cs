@@ -578,12 +578,13 @@ namespace RHOParser
                             if (targetRewardSet == null)
                             {
                                 Console.WriteLine($"未找到ID为1080的rewardSet节点");
-                                return;
                             }
-
-                            // 获取该rewardSet下的所有reward节点
-                            XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./reward");
-                            LotteryManager.Initialize(rewardNodes);
+                            else
+                            {
+                                // 获取该rewardSet下的所有reward节点
+                                XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./reward");
+                                LotteryManager.Initialize(rewardNodes);
+                            }
                         }
                     }
                     if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
