@@ -1436,7 +1436,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
                         {
-                            GameSupport.PrQuestUX2ndPacket(OutPacket);
+                            GameSupport.PrQuestUX2ndPacket(outPacket);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3550,7 +3550,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderQuestUX2ndData"))
                         {
-                            GameSupport.PrQuestUX2ndPacket(OutPacket);
+                            GameSupport.PrQuestUX2ndPacket(outPacket);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
