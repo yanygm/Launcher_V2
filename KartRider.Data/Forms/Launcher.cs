@@ -21,6 +21,7 @@ using System.Linq;
 using System.Xml.XPath;
 using Newtonsoft.Json;
 using Profile;
+using LoggerLibrary;
 
 namespace KartRider
 {
@@ -35,6 +36,7 @@ namespace KartRider
         private Button Start_Button;
         private Button GetKart_Button;
         private Button button_ToggleTerminal;
+        private Button ConsoleLogger;
         private Label label_Client;
         private ComboBox Speed_comboBox;
         private Label Speed_label;
@@ -54,6 +56,7 @@ namespace KartRider
             Start_Button = new Button();
             GetKart_Button = new Button();
             button_ToggleTerminal = new Button();
+            ConsoleLogger = new Button();
             label_Client = new Label();
             ClientVersion = new Label();
             VersionLabel = new Label();
@@ -88,9 +91,9 @@ namespace KartRider
             // 
             button_ToggleTerminal.Location = new System.Drawing.Point(19, 78);
             button_ToggleTerminal.Name = "button_ToggleTerminal";
-            button_ToggleTerminal.Size = new System.Drawing.Size(114, 23);
+            button_ToggleTerminal.Size = new System.Drawing.Size(57, 23);
             button_ToggleTerminal.TabIndex = 366;
-            button_ToggleTerminal.Text = "切换终端";
+            button_ToggleTerminal.Text = "控制台";
             button_ToggleTerminal.UseVisualStyleBackColor = true;
             button_ToggleTerminal.Click += button_ToggleTerminal_Click;
             // 
@@ -191,6 +194,16 @@ namespace KartRider
             Launcher_label.Text = "Launcher:";
             Launcher_label.Click += GitHub_Click;
             // 
+            // ConsoleLogger
+            // 
+            ConsoleLogger.Location = new System.Drawing.Point(76, 78);
+            ConsoleLogger.Name = "ConsoleLogger";
+            ConsoleLogger.Size = new System.Drawing.Size(57, 23);
+            ConsoleLogger.TabIndex = 375;
+            ConsoleLogger.Text = "输出";
+            ConsoleLogger.UseVisualStyleBackColor = true;
+            ConsoleLogger.Click += ConsoleLogger_Click;
+            // 
             // Launcher
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -206,6 +219,7 @@ namespace KartRider
             Controls.Add(ClientVersion);
             Controls.Add(label_Client);
             Controls.Add(button_ToggleTerminal);
+            Controls.Add(ConsoleLogger);
             Controls.Add(GetKart_Button);
             Controls.Add(Start_Button);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
@@ -750,6 +764,12 @@ namespace KartRider
             {
                 streamWriter.Write((Program.isVisible ? "1" : "0"));
             }
+        }
+
+        private void ConsoleLogger_Click(object sender, EventArgs e)
+        {
+            CachedConsoleWriter.SaveToFile();
+            CachedConsoleWriter.cachedWriter.ClearCache();
         }
     }
 }

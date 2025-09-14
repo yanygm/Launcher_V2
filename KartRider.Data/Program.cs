@@ -6,6 +6,7 @@ using KartRider.IO.Packet;
 using Microsoft.Win32;
 using RHOParser;
 using Profile;
+using LoggerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -56,12 +57,16 @@ namespace KartRider
             // 分配控制台
             AllocConsole();
 
+            // 保存原始输出流
+            var originalOut = Console.Out;
+
+            // 创建缓存编写器并替换控制台输出
+            CachedConsoleWriter.cachedWriter = new CachedConsoleWriter(originalOut);
+            Console.SetOut(CachedConsoleWriter.cachedWriter);
+
             // 初始化自适应编码
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             SetAdaptiveConsoleEncoding();
-
-            // 检查更新
-            await Update.UpdateDataAsync();
 
             if (File.Exists(FileName.Load_CC))
             {
@@ -79,8 +84,16 @@ namespace KartRider
                     streamWriter.Write(Program.CC.ToString());
                 }
             }
-            if (args == null || args.Length == 0)
+
+            if (args != null && args.Length > 0)
             {
+                PackTool(args);
+            }
+            else
+            {
+                // 检查更新
+                await Update.UpdateDataAsync();
+
                 string TCGame = "HKEY_CURRENT_USER\\SOFTWARE\\TCGame\\kart";
                 string RootDirectory = (string)Registry.GetValue(TCGame, "gamepath", null);
                 if (File.Exists(FileName.pinFile) && File.Exists(FileName.KartRider))
@@ -119,6 +132,7 @@ namespace KartRider
                             ShowWindow(consoleHandle, SW_HIDE);
                             isVisible = false;
                         }
+
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
                         Launcher StartLauncher = new Launcher();
@@ -134,10 +148,6 @@ namespace KartRider
                         Console.WriteLine($"读取Data文件时出错: {ex.Message}");
                     }
                 }
-            }
-            else
-            {
-                PackTool(args);
             }
         }
 

@@ -19,6 +19,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <NuGetAudit>False</NuGetAudit>
+  
+    <!-- 启用应用程序清单 -->
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+    <!-- 可选：如果需要在调试时也以管理员身份运行 -->
+    <EnableClickOnceSecuritySettings>true</EnableClickOnceSecuritySettings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningLevel>0</WarningLevel>
