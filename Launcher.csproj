@@ -25,26 +25,40 @@
     <!-- 可选：如果需要在调试时也以管理员身份运行 -->
     <EnableClickOnceSecuritySettings>true</EnableClickOnceSecuritySettings>
   </PropertyGroup>
-  <!-- 预生成事件：根据操作系统生成编译时间（格式 250925） -->
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <!-- Windows 系统（使用 cmd） -->
-    <Exec Command="echo namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;%date:~2,2%%date:~5,2%%date:~8,2%&quot;; } } > &quot;$(ProjectDir)CompileTime.cs&quot;" 
-          Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))" />
 
-    <!-- Linux/macOS 系统（使用 bash） -->
-    <Exec Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(date +%y%m%d)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
-          Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)) or $([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))" />
+  <!-- 预生成事件：跨平台生成编译时间 -->
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <!-- Windows 系统（cmd 命令） -->
+    <Exec 
+      Command="echo namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;%date:~2,2%%date:~5,2%%date:~8,2%&quot;; } } > &quot;$(ProjectDir)CompileTime.cs&quot;" 
+      Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))" 
+    />
+
+    <!-- Linux 系统（bash 命令） -->
+    <Exec 
+      Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(date +%y%m%d)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
+      Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))" 
+    />
+
+    <!-- macOS 系统（bash 命令） -->
+    <Exec 
+      Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(date +%y%m%d)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
+      Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))" 
+    />
   </Target>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningLevel>0</WarningLevel>
     <PublishDir>.\</PublishDir>
     <DebugType>none</DebugType>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <WarningLevel>0</WarningLevel>
     <PublishDir>.\</PublishDir>
     <DebugType>none</DebugType>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="CompileTime.cs" />
     <PackageReference Include="Ionic.Zlib.Core" Version="1.0.0" />
