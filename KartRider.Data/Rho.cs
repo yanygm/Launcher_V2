@@ -562,14 +562,17 @@ namespace RHOParser
                             doc.Load(stream);
 
                             // 获取所有rewardSet节点
-                            XmlNodeList rewardSetNodes = doc.GetElementsByTagName("rewardSet");
+                            XmlNodeList rewardSetNodes = doc.GetElementsByTagName("lottery");
                             XmlNode targetRewardSet = null;
+
+                            var BingoLotteryID = Bingo.BingoLotteryIDs[Bingo.BingoLotteryIDs.Length - 1].ToString();
 
                             // 查找指定id的rewardSet
                             foreach (XmlNode node in rewardSetNodes)
                             {
                                 XmlElement rewardSetElement = node as XmlElement;
-                                if (rewardSetElement != null && rewardSetElement.GetAttribute("id") == "1080")
+
+                                if (rewardSetElement != null && rewardSetElement.GetAttribute("id") == BingoLotteryID)
                                 {
                                     targetRewardSet = node;
                                     break;
@@ -577,12 +580,12 @@ namespace RHOParser
                             }
                             if (targetRewardSet == null)
                             {
-                                Console.WriteLine($"未找到ID为1080的rewardSet节点");
+                                Console.WriteLine($"未找到ID为{BingoLotteryID}的lottery节点");
                             }
                             else
                             {
                                 // 获取该rewardSet下的所有reward节点
-                                XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./reward");
+                                XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./rewardSet/reward");
                                 LotteryManager.Initialize(rewardNodes);
                             }
                         }
@@ -688,4 +691,3 @@ namespace RHOParser
         }
     }
 }
-
