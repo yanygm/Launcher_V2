@@ -40,6 +40,7 @@ public class SpecialKartConfig
             SkillChangeDesc = "特殊道具车：将指定道具变更为特殊道具",
             SkillChange = new Dictionary<short, Dictionary<short, short>>
             {
+                { 1575, new Dictionary<short, short> { {4, 119}, {9, 27} } },
                 { 1571, new Dictionary<short, short> { {7, 32} } },
                 { 1569, new Dictionary<short, short> { {4, 7} } },
                 { 1567, new Dictionary<short, short> { {6, 31} } },
@@ -148,4 +149,5 @@ public class SpecialKartConfig
         return config;
     }
 }
+
 
