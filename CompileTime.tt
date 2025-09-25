@@ -1,9 +1,0 @@
-<#@ template language="C#" #>
-<#@ output extension=".cs" #>
-namespace KartRider
-{
-    public static class CompileTime
-    {
-        public static readonly string Time = "<#= DateTime.Now.ToString("yy-MM-dd") #>";
-    }
-}
