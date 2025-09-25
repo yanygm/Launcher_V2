@@ -262,8 +262,11 @@ namespace KartRider
             }
             PINFile val = new PINFile(pinFile);
             ProfileService.ProfileConfig.GameOption.Version = val.Header.MinorVersion;
+            Console.WriteLine("ClientVersion：{val.Header.MinorVersion}");
             ProfileService.Save();
             ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
+            DateTime CompileTime = DateTime.ParseExact($"{__DATE__} {__TIME__}", "MMM d yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+            Console.WriteLine($"程序编译时间：{CompileTime:yyyy-MM-dd HH:mm:ss}");
             DateTime compilationDate = File.GetLastWriteTime(executablePath);
             string formattedDate = compilationDate.ToString("yyMMdd");
             VersionLabel.Text = formattedDate;
@@ -773,3 +776,4 @@ namespace KartRider
         }
     }
 }
+
