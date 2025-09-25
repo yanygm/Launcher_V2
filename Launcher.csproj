@@ -26,24 +26,22 @@
     <EnableClickOnceSecuritySettings>true</EnableClickOnceSecuritySettings>
   </PropertyGroup>
 
-  <!-- 预生成事件：跨平台生成编译时间 -->
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <!-- Windows 系统（cmd 命令） -->
+    <PropertyGroup>
+      <!-- 生成统一的 yymmdd 日期格式 -->
+      <CurrentDate>$([System.DateTime]::Now.ToString("yyMMdd"))</CurrentDate>
+    </PropertyGroup>
+
+    <!-- Windows 平台：使用 cmd 兼容的引号转义 -->
     <Exec 
-      Command="echo namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;%date:~2,2%%date:~5,2%%date:~8,2%&quot;; } } > &quot;$(ProjectDir)CompileTime.cs&quot;" 
+      Command="echo namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(CurrentDate)&quot;; } } > &quot;$(ProjectDir)CompileTime.cs&quot;" 
       Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))" 
     />
 
-    <!-- Linux 系统（bash 命令） -->
+    <!-- Linux/macOS 平台：使用单引号包裹命令，内部用双引号 -->
     <Exec 
-      Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(date +%y%m%d)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
-      Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))" 
-    />
-
-    <!-- macOS 系统（bash 命令） -->
-    <Exec 
-      Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(date +%y%m%d)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
-      Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))" 
+      Command="echo 'namespace KartRider { public static class CompileTime { public static readonly string Time = &quot;$(CurrentDate)&quot;; } }' > &quot;$(ProjectDir)CompileTime.cs&quot;" 
+      Condition="!$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))" 
     />
   </Target>
 
