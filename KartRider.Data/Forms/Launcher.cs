@@ -262,13 +262,11 @@ namespace KartRider
             }
             PINFile val = new PINFile(pinFile);
             ProfileService.ProfileConfig.GameOption.Version = val.Header.MinorVersion;
-            Console.WriteLine("ClientVersion：{val.Header.MinorVersion}");
+            Console.WriteLine($"ClientVersion: {val.Header.MinorVersion}");
             ProfileService.Save();
             ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
-            Console.WriteLine($"程序编译时间：{CompileTime.Time}");
-            DateTime compilationDate = File.GetLastWriteTime(executablePath);
-            string formattedDate = compilationDate.ToString("yyMMdd");
-            VersionLabel.Text = formattedDate;
+            Console.WriteLine($"程序编译时间: {CompileTime.Time}");
+            VersionLabel.Text = CompileTime.Time;
             Console.WriteLine("Process: {0}", KartRider);
             try
             {
@@ -775,5 +773,3 @@ namespace KartRider
         }
     }
 }
-
-
