@@ -14,28 +14,160 @@ public class SpecialKartConfig
     /// 特殊道具车：将指定道具变更为特殊道具
     /// </summary>
     public string SkillChangeDesc { get; set; }
-    public Dictionary<short, Dictionary<short, short>> SkillChange { get; set; }
+    public Dictionary<short, Dictionary<short, short>> SkillChange { get; set; } = new();
 
     /// <summary>
     /// 特殊道具车：使用指定道具后获得特殊道具
     /// </summary>
     public string SkillMappingsDesc { get; set; }
-    public Dictionary<short, Dictionary<short, short>> SkillMappings { get; set; }
+    public Dictionary<short, Dictionary<short, short>> SkillMappings { get; set; } = new();
 
     /// <summary>
     /// 特殊道具车：被指定道具攻击后获得特殊道具
     /// </summary>
     public string SkillAttackedDesc { get; set; }
-    public Dictionary<short, Dictionary<short, short>> SkillAttacked { get; set; }
+    public Dictionary<short, Dictionary<short, short>> SkillAttacked { get; set; } = new();
 
     /// <summary>
-    /// 将特殊道具车配置存储到JSON文件
+    /// 将特殊道具车配置存储到JSON文件（存在时补充缺失内容，保留额外内容）
     /// </summary>
     /// <param name="filePath">文件路径（如：./Config/SpecialKartConfig.json）</param>
     public static void SaveConfigToFile(string filePath)
     {
-        // 1. 初始化配置对象，填充原代码中的数据
-        var config = new SpecialKartConfig
+        // 1. 创建默认配置模板
+        var defaultConfig = GetDefaultConfig();
+
+        // 2. 确保目录存在
+        var directory = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // 3. 处理文件内容
+        SpecialKartConfig finalConfig;
+        if (File.Exists(filePath))
+        {
+            // 3.1 读取现有配置
+            var existingJson = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+            var existingConfig = JsonConvert.DeserializeObject<SpecialKartConfig>(existingJson) ?? new SpecialKartConfig();
+
+            // 3.2 初始化现有配置的字典（避免null引用）
+            existingConfig.SkillChange ??= new Dictionary<short, Dictionary<short, short>>();
+            existingConfig.SkillMappings ??= new Dictionary<short, Dictionary<short, short>>();
+            existingConfig.SkillAttacked ??= new Dictionary<short, Dictionary<short, short>>();
+
+            // 3.3 补充缺失的描述文本
+            existingConfig.SkillChangeDesc ??= defaultConfig.SkillChangeDesc;
+            existingConfig.SkillMappingsDesc ??= defaultConfig.SkillMappingsDesc;
+            existingConfig.SkillAttackedDesc ??= defaultConfig.SkillAttackedDesc;
+
+            // 3.4 补充SkillChange中缺失的配置
+            foreach (var (key, valueDict) in defaultConfig.SkillChange)
+            {
+                if (!existingConfig.SkillChange.ContainsKey(key))
+                {
+                    existingConfig.SkillChange[key] = new Dictionary<short, short>(valueDict);
+                }
+                else
+                {
+                    foreach (var (innerKey, innerValue) in valueDict)
+                    {
+                        if (!existingConfig.SkillChange[key].ContainsKey(innerKey))
+                        {
+                            existingConfig.SkillChange[key][innerKey] = innerValue;
+                        }
+                    }
+                }
+            }
+
+            // 3.5 补充SkillMappings中缺失的配置
+            foreach (var (key, valueDict) in defaultConfig.SkillMappings)
+            {
+                if (!existingConfig.SkillMappings.ContainsKey(key))
+                {
+                    existingConfig.SkillMappings[key] = new Dictionary<short, short>(valueDict);
+                }
+                else
+                {
+                    foreach (var (innerKey, innerValue) in valueDict)
+                    {
+                        if (!existingConfig.SkillMappings[key].ContainsKey(innerKey))
+                        {
+                            existingConfig.SkillMappings[key][innerKey] = innerValue;
+                        }
+                    }
+                }
+            }
+
+            // 3.6 补充SkillAttacked中缺失的配置
+            foreach (var (key, valueDict) in defaultConfig.SkillAttacked)
+            {
+                if (!existingConfig.SkillAttacked.ContainsKey(key))
+                {
+                    existingConfig.SkillAttacked[key] = new Dictionary<short, short>(valueDict);
+                }
+                else
+                {
+                    foreach (var (innerKey, innerValue) in valueDict)
+                    {
+                        if (!existingConfig.SkillAttacked[key].ContainsKey(innerKey))
+                        {
+                            existingConfig.SkillAttacked[key][innerKey] = innerValue;
+                        }
+                    }
+                }
+            }
+
+            finalConfig = existingConfig;
+            Console.WriteLine($"配置已更新（补充缺失内容）：{filePath}");
+        }
+        else
+        {
+            // 4. 文件不存在时直接使用默认配置
+            finalConfig = defaultConfig;
+            Console.WriteLine($"配置已创建：{filePath}");
+        }
+
+        // 5. 写入最终配置
+        var json = JsonConvert.SerializeObject(finalConfig, Formatting.Indented);
+        File.WriteAllText(filePath, json, System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// 从JSON文件读取特殊道具车配置
+    /// </summary>
+    /// <param name="filePath">配置文件路径</param>
+    /// <returns>特殊道具车配置对象（SpecialKartConfig）</returns>
+    public static SpecialKartConfig LoadConfigFromFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("特殊道具车配置文件不存在", filePath);
+        }
+
+        string json = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+        var config = JsonConvert.DeserializeObject<SpecialKartConfig>(json);
+        if (config == null)
+        {
+            throw new Exception("配置文件解析失败，可能是JSON格式错误");
+        }
+
+        // 确保字典不为null（避免后续使用时的null引用异常）
+        config.SkillChange ??= new Dictionary<short, Dictionary<short, short>>();
+        config.SkillMappings ??= new Dictionary<short, Dictionary<short, short>>();
+        config.SkillAttacked ??= new Dictionary<short, Dictionary<short, short>>();
+
+        Console.WriteLine($"道具车特性配置已成功从 {filePath} 读取");
+        return config;
+    }
+
+    /// <summary>
+    /// 创建默认配置模板（提取为单独方法便于维护）
+    /// </summary>
+    private static SpecialKartConfig GetDefaultConfig()
+    {
+        return new SpecialKartConfig
         {
             SkillChangeDesc = "特殊道具车：将指定道具变更为特殊道具",
             SkillChange = new Dictionary<short, Dictionary<short, short>>
@@ -104,50 +236,5 @@ public class SpecialKartConfig
                 { 1482, new Dictionary<short, short> { {4, 119}, {9, 119} } }
             }
         };
-
-        // 2. 确保目录存在（若不存在则创建）
-        var directory = Path.GetDirectoryName(filePath);
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        // 3. 若文件不存在，则将配置对象序列化为JSON并写入文件
-        if (!File.Exists(filePath))
-        {
-            var json = JsonConvert.SerializeObject(config, Formatting.Indented); // Formatting.Indented：格式化JSON（易读）
-            File.WriteAllText(filePath, json, System.Text.Encoding.UTF8);
-
-            Console.WriteLine($"配置已成功保存到：{filePath}");
-        }
-    }
-
-    /// <summary>
-    /// 从JSON文件读取特殊道具车配置
-    /// </summary>
-    /// <param name="filePath">配置文件路径</param>
-    /// <returns>特殊道具车配置对象（SpecialKartConfig）</returns>
-    public static SpecialKartConfig LoadConfigFromFile(string filePath)
-    {
-        // 1. 检查文件是否存在
-        if (!File.Exists(filePath))
-        {
-            throw new FileNotFoundException("特殊道具车配置文件不存在", filePath);
-        }
-
-        // 2. 读取JSON文本
-        string json = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
-
-        // 3. 反序列化为配置对象
-        var config = JsonConvert.DeserializeObject<SpecialKartConfig>(json);
-        if (config == null)
-        {
-            throw new Exception("配置文件解析失败，可能是JSON格式错误");
-        }
-
-        Console.WriteLine($"道具车特性配置已成功从 {filePath} 读取");
-        return config;
     }
 }
-
-
