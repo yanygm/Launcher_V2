@@ -1574,11 +1574,13 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetUserWaitingJoinClubPacket"))
                         {
-                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
+                        ProfileService.ProfileConfig.Rider.ClubMark_LOGO = 2;
+                        ProfileService.Save();
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckCreateClubConditionPacket", 0))
@@ -1873,6 +1875,8 @@ namespace KartRider
                             outPacket.WriteInt(ClubID);
                             this.Parent.Client.Send(outPacket);
                         }
+                        ProfileService.ProfileConfig.Rider.ClubMark_LOGO = 0;
+                        ProfileService.Save();
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubAutoJoinStatePacket", 0))
