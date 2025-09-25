@@ -2024,7 +2024,7 @@ namespace KartRider
                         short Lottery_Item = iPacket.ReadShort();
                         byte Unk = iPacket.ReadByte();
                         int Type = iPacket.ReadInt();
-                        if (Lottery_Item == 1175 || Lottery_Item == 1176 || Lottery_Item == 1177)
+                        if (Bingo.BingoLotteryIDs.Contains(Lottery_Item))
                         {
                             Bingo.SpRpLotteryPacket();
                         }
