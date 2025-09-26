@@ -342,7 +342,7 @@ namespace KartRider
 
         static bool ApplyUpdate(string filePath, string Update_FilePath)
         {
-            string Update_Bat = Path.GetDirectoryName(Update_FilePath) + @"\Update.bat";
+            string Update_Bat = Path.Combine(Path.GetDirectoryName(Update_FilePath), "Update.bat");
             try
             {
                 string script = @$"@echo off{Environment.NewLine}timeout /t 3 /nobreak{Environment.NewLine}del {"\"" + filePath + "\""}{Environment.NewLine}move {"\"" + Update_FilePath + "\""} {"\"" + filePath + "\""}{Environment.NewLine}start {"\"\" \"" + filePath + "\""}{Environment.NewLine}del %0";
@@ -439,4 +439,5 @@ namespace KartRider
         }
     }
 }
+
 
