@@ -114,10 +114,15 @@ namespace KartRider
                     try
                     {
                         Console.WriteLine("当前游戏路径: " + RootDirectory);
-                        Console.WriteLine("开始读取游戏Data数据...");
+                        Console.WriteLine("开始读取游戏Data内文件...");
                         Console.WriteLine("==============================");
-                        KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
-                        KartRhoFile.packFolderManager.Reset();
+                        var packFolderManager = KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
+                        if (packFolderManager == null)
+                        {
+                            LauncherSystem.MessageBoxType4();
+                            return;
+                        }
+                        packFolderManager.Reset();
 
                         if (!File.Exists(FileName.Load_Console))
                         {

@@ -11,7 +11,6 @@ using System.IO;
 
 namespace KartLibrary.File
 {
-    [Obsolete("Rho5 class is deprecated. Use Rho5Archive instead.")]
     public class Rho5 : IDisposable
     {
         public byte PackageVersion { get; set; }

@@ -11,7 +11,6 @@ using KartLibrary.Consts;
 
 namespace KartLibrary.File
 {
-    [Obsolete("PackFolderManager class is deprecated. Use RhoStorageSystem instead.")]
     public class PackFolderManager
     {
         public bool Initizated { get; private set; } = false;

@@ -265,9 +265,8 @@ namespace KartRider
             Console.WriteLine($"ClientVersion: {val.Header.MinorVersion}");
             ProfileService.Save();
             ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
-            var time = CompileTime.Time;
-            Console.WriteLine($"程序编译时间: {time}");
-            VersionLabel.Text = time;
+            Console.WriteLine($"程序编译时间: {CompileTime.Time}");
+            VersionLabel.Text = CompileTime.Time;
             Console.WriteLine("Process: {0}", KartRider);
             try
             {
@@ -774,7 +773,3 @@ namespace KartRider
         }
     }
 }
-
-
-
-

@@ -9,7 +9,6 @@ using Ionic.Zlib;
 
 namespace KartLibrary.File
 {
-    [Obsolete("Rho5FileInfo class is deprecated. Use Rho5File instead.")]
     public class Rho5FileInfo
     {
         internal Rho5 BaseRho5 { get; init; }

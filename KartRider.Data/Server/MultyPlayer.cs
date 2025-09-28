@@ -401,10 +401,8 @@ namespace KartRider
                         //oPacket.WriteInt(channeldata1);
                         oPacket.WriteInt(4);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        //RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
                         RouterListener.MySession.Client.Send(oPacket);
                     }
-                    //GameSupport.OnDisconnect();
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
                 }
@@ -415,10 +413,8 @@ namespace KartRider
                         oPacket.WriteInt(0);
                         oPacket.WriteInt(4);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        //RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
                         RouterListener.MySession.Client.Send(oPacket);
                     }
-                    //GameSupport.OnDisconnect();
                     StartGameData.StartTimeAttack_SpeedType = 4;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
                 }

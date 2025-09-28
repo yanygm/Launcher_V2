@@ -8,7 +8,6 @@ using System.IO;
 
 namespace KartLibrary.File
 {
-    [Obsolete("RhoDirectory class is deprecated. Use RhoFolder instead.")]
     public class RhoDirectory
     {
         public static Dictionary<RhoFileProperty, Dictionary<string, int>> counter = new Dictionary<RhoFileProperty, Dictionary<string, int>>();

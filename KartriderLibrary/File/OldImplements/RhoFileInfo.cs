@@ -8,7 +8,6 @@ using KartLibrary.File;
 
 namespace KartLibrary.File
 {
-    [Obsolete("RhoFileInfo class is deprecated. Use RhoFile instead.")]
     public class RhoFileInfo
     {
         public Rho BaseRho { get; set; }

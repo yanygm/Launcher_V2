@@ -11,7 +11,6 @@ using KartLibrary.File;
 
 namespace KartLibrary.File
 {
-    [Obsolete("Rho class is deprecated. Use RhoArchive instead.")]
     public class Rho : IDisposable
     {
         public Stream baseStream;
