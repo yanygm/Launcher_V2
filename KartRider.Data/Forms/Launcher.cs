@@ -268,8 +268,8 @@ namespace KartRider
             #pragma warning disable CS0103
             var time = CompileTime.Time;
             #pragma warning restore CS0103
-            Console.WriteLine($"程序编译时间: {CompileTime.Time}");
-            VersionLabel.Text = CompileTime.Time;
+            Console.WriteLine($"程序编译时间: {time}");
+            VersionLabel.Text = time;
             Console.WriteLine("Process: {0}", KartRider);
             try
             {
@@ -776,4 +776,5 @@ namespace KartRider
         }
     }
 }
+
 
