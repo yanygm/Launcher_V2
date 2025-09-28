@@ -265,9 +265,7 @@ namespace KartRider
             Console.WriteLine($"ClientVersion: {val.Header.MinorVersion}");
             ProfileService.Save();
             ClientVersion.Text = ProfileService.ProfileConfig.GameOption.Version.ToString();
-            #pragma warning disable CS0246
             var time = CompileTime.Time;
-            #pragma warning restore CS0246
             Console.WriteLine($"程序编译时间: {time}");
             VersionLabel.Text = time;
             Console.WriteLine("Process: {0}", KartRider);
@@ -776,6 +774,7 @@ namespace KartRider
         }
     }
 }
+
 
 
 
