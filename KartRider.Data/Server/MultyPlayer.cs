@@ -36,7 +36,7 @@ namespace KartRider
         public static SpecialKartConfig kartConfig = new SpecialKartConfig();
         public static byte gameType = 0;
         public static float gauge = 0;
-        public static int[] teamPoints = { 0, 10, 8, 6, 5, 4, 3, 2, 1 };
+        public static int[] teamPoints = { 10, 8, 6, 5, 4, 3, 2, 1 };
 
         public static void milTime(uint time)
         {
@@ -128,16 +128,6 @@ namespace KartRider
                     && !e.Name.LocalName.Equals("ItemSpec"))  // 筛选条件
                     .OrderBy(e => e.Name.LocalName);  // 按名称排序
                 }
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(1);
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-                outPacket.WriteInt(1); // player count
-                outPacket.WriteInt();
                 if (AiTimeData.Count < aiNodes.Count())
                 {
                     // 如果 AiTimeData 中的 AI 数量少于 aiNodes，则填充缺失的 AI 时间数据
@@ -154,7 +144,6 @@ namespace KartRider
                 TimeData = AiTimeData;
                 if (FinishTime == 0)
                 {
-                    outPacket.WriteHexString("FFFFFFFF");
                     if (!TimeData.ContainsKey(0))
                     {
                         TimeData.Add(0, 4294967295);
@@ -162,16 +151,65 @@ namespace KartRider
                 }
                 else
                 {
-                    outPacket.WriteUInt(FinishTime);
                     if (!TimeData.ContainsKey(0))
                     {
                         TimeData.Add(0, FinishTime);
                     }
                 }
+                Ranking = GetAllRanks();
+                int redTeam = 0;
+                int blueTeam = 0;
+                byte firstTeam = 0;
+                if (Ranking.First(kv => kv.Value == 0).Key < 4)
+                {
+                    firstTeam = 2;
+                }
+                else
+                {
+                    firstTeam = 1;
+                }
+                foreach (var time in TimeData)
+                {
+                    if (time.Value != 4294967295)
+                    {
+                        if (time.Key < 4)
+                        {
+                            blueTeam += teamPoints[Ranking[time.Key]];
+                        }
+                        else
+                        {
+                            redTeam += teamPoints[Ranking[time.Key]];
+                        }
+                    }
+                }
+                if (gameType == 3)
+                {
+                    if (redTeam == blueTeam)
+                    {
+                        outPacket.WriteByte(firstTeam);
+                    }
+                    else
+                    {
+                        outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
+                    }
+                }
+                else if (gameType == 4)
+                {
+                    outPacket.WriteByte(firstTeam);
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
+                outPacket.WriteInt(1); // player count
+                outPacket.WriteInt();
+                outPacket.WriteUInt(TimeData[0]);
                 outPacket.WriteByte();
                 outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
-                Ranking = GetAllRanks();
-                outPacket.WriteInt(Ranking[0]);
+                int ranking = Ranking[0];
+                int point = teamPoints[ranking];
+                Console.WriteLine("Player {0} 排名 {1} 得分 {2}", 0, ranking, point);
+                outPacket.WriteInt(ranking);
                 outPacket.WriteShort();
                 outPacket.WriteByte();
                 outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP += 10000);
@@ -187,7 +225,7 @@ namespace KartRider
                     }
                     else
                     {
-                        outPacket.WriteInt(teamPoints[Ranking[0]]);
+                        outPacket.WriteInt(point);
                     }
                     outPacket.WriteByte(2); // Team
                 }
@@ -229,15 +267,18 @@ namespace KartRider
                     // 获取 kart 属性值
                     short kart = ParseShort(node.Attribute("kart"));
                     outPacket.WriteShort(kart);
-                    outPacket.WriteInt(Ranking[numberPart]);
+                    int AiRanking = Ranking[numberPart];
+                    int AiPoint = teamPoints[AiRanking];
+                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", numberPart, AiRanking, AiPoint);
+                    outPacket.WriteInt(AiRanking);
                     outPacket.WriteHexString("A0 60");
                     if (gameType == 3 || gameType == 4)
                     {
-                        if (numberPart == 1 || numberPart == 2 || numberPart == 3)
+                        if (numberPart < 4)
                         {
                             outPacket.WriteByte(2); // Team
                         }
-                        else if (numberPart == 4 || numberPart == 5 || numberPart == 6 || numberPart == 7)
+                        else
                         {
                             outPacket.WriteByte(1); // Team
                         }
@@ -247,7 +288,7 @@ namespace KartRider
                         }
                         else
                         {
-                            outPacket.WriteInt(teamPoints[Ranking[numberPart]]);
+                            outPacket.WriteInt(AiPoint);
                         }
                     }
                     else
@@ -256,6 +297,7 @@ namespace KartRider
                         outPacket.WriteInt(0);
                     }
                 }
+                Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
                 outPacket.WriteBytes(new byte[34]);
                 outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
                 RouterListener.MySession.Client.Send(outPacket);

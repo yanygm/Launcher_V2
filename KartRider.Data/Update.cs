@@ -25,6 +25,11 @@ namespace KartRider
         /// 发布版本下的所有资产文件（如exe、zip）
         /// </summary>
         public GitHubReleaseAsset[] Assets { get; set; }
+
+        /// <summary>
+        /// 发布版本的说明（如版本号、发布日期、更新内容等）
+        /// </summary>
+        public string body { get; set; }
     }
 
     /// <summary>
@@ -116,6 +121,8 @@ namespace KartRider
                     Console.WriteLine("找到目标文件：" + name);
                     Console.WriteLine($"Digest: {launcherExeAsset.Digest}");
                     Console.WriteLine($"Browser_Download_Url: {launcherExeAsset.Browser_Download_Url}");
+                    Console.WriteLine($"更新说明: {releaseData.body}");
+                    Console.WriteLine("==============================");
                     if (launcherExeAsset.Digest != sha256Hash)
                     {
                         Console.WriteLine($"发现新版本, 请问是否需要更新? (Y/n)");

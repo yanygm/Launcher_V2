@@ -413,7 +413,7 @@ namespace KartRider
                     if (!hasSpeedSpec)
                     {
                         XElement speedSpecElement = new XElement("SpeedSpec");
-                        speedSpecElement.SetAttributeValue("a", "1");
+                        speedSpecElement.SetAttributeValue("a", "0.8");
                         speedSpecElement.SetAttributeValue("b", "2500");
                         speedSpecElement.SetAttributeValue("c", "2970");
                         speedSpecElement.SetAttributeValue("d", "1.5");
@@ -436,7 +436,7 @@ namespace KartRider
                     if (!hasItemSpec)
                     {
                         XElement itemSpecElement = new XElement("ItemSpec");
-                        itemSpecElement.SetAttributeValue("a", "0.8");
+                        itemSpecElement.SetAttributeValue("a", "0.6");
                         itemSpecElement.SetAttributeValue("b", "2500");
                         itemSpecElement.SetAttributeValue("c", "2970");
                         itemSpecElement.SetAttributeValue("d", "1.5");
@@ -467,7 +467,7 @@ namespace KartRider
                         // SpeedAI元素及其内容
                         new XElement("SpeedAI",
                             new XElement("SpeedSpec",
-                                new XAttribute("a", "1"),
+                                new XAttribute("a", "0.8"),
                                 new XAttribute("b", "2500"),
                                 new XAttribute("c", "2970"),
                                 new XAttribute("d", "1.5"),
@@ -478,7 +478,7 @@ namespace KartRider
                         // ItemAI元素及其内容
                         new XElement("ItemAI",
                             new XElement("ItemSpec",
-                                new XAttribute("a", "0.8"),
+                                new XAttribute("a", "0.6"),
                                 new XAttribute("b", "2500"),
                                 new XAttribute("c", "2970"),
                                 new XAttribute("d", "1.5"),
