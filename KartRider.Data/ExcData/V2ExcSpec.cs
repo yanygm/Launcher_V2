@@ -253,11 +253,7 @@ namespace ExcData
 					Kart.chargeBoostBySpeedAdded = 0f;
 					Kart.driftGaugeFactor = 0f;
 
-					Random random = new Random();
-					int index = random.Next(KartExcData.itemProb_indi.Count);
-					short skill = KartExcData.itemProb_indi[index];
-					skill = GameSupport.GetItemSkill(skill);
-					Kart.startItemId = (int)(skill);
+					Kart.startItemId = GameSupport.RandomItemSkill(2);
 				}
 				if (Kart.defaultExceedType == 2)//S
 				{

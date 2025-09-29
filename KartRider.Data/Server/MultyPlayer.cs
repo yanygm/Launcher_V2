@@ -32,7 +32,11 @@ namespace KartRider
         static uint FinishTime = 0;
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
+        public static Dictionary<int, int> Ranking = new Dictionary<int, int>();
         public static SpecialKartConfig kartConfig = new SpecialKartConfig();
+        public static byte gameType = 0;
+        public static float gauge = 0;
+        public static int[] teamPoints = { 0, 10, 8, 6, 5, 4, 3, 2, 1 };
 
         public static void milTime(uint time)
         {
@@ -96,7 +100,7 @@ namespace KartRider
             //SettleTicks = EndTicks + 3100;
             using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
             {
-                outPacket.WriteByte(1);
+                outPacket.WriteByte(gameType);
                 outPacket.WriteInt();
                 outPacket.WriteInt();
                 RouterListener.MySession.Client.Send(outPacket);
@@ -124,8 +128,15 @@ namespace KartRider
                     && !e.Name.LocalName.Equals("ItemSpec"))  // 筛选条件
                     .OrderBy(e => e.Name.LocalName);  // 按名称排序
                 }
-                outPacket.WriteByte();
-                outPacket.WriteInt(1);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(1);
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
+                outPacket.WriteInt(1); // player count
                 outPacket.WriteInt();
                 if (AiTimeData.Count < aiNodes.Count())
                 {
@@ -159,15 +170,33 @@ namespace KartRider
                 }
                 outPacket.WriteByte();
                 outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
-                var ranks = GetAllRanks();
-                outPacket.WriteInt(ranks[0]);
+                Ranking = GetAllRanks();
+                outPacket.WriteInt(Ranking[0]);
                 outPacket.WriteShort();
                 outPacket.WriteByte();
                 outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP += 10000);
-                outPacket.WriteInt(10000); //Earned RP
-                outPacket.WriteInt(10000); //Earned Lucci
+                outPacket.WriteInt(10000); // Earned RP
+                outPacket.WriteInt(10000); // Earned Lucci
                 outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci += 10000);
-                outPacket.WriteBytes(new byte[46]);
+                outPacket.WriteBytes(new byte[29]);
+                if (gameType == 3 || gameType == 4)
+                {
+                    if (TimeData[0] == 4294967295)
+                    {
+                        outPacket.WriteInt(0);
+                    }
+                    else
+                    {
+                        outPacket.WriteInt(teamPoints[Ranking[0]]);
+                    }
+                    outPacket.WriteByte(2); // Team
+                }
+                else
+                {
+                    outPacket.WriteInt(0);
+                    outPacket.WriteByte(0);
+                }
+                outPacket.WriteBytes(new byte[12]);
                 outPacket.WriteInt(1);
                 outPacket.WriteByte(0);
                 outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Character);
@@ -180,7 +209,6 @@ namespace KartRider
                 outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
                 outPacket.WriteBytes(new byte[39]);
                 outPacket.WriteInt(aiNodes.Count()); // AI count
-                int index = 0;
                 foreach (var node in aiNodes)
                 {
                     // 提取 Ai 后的数值部分（例如："Ai2" → "2"）
@@ -201,11 +229,32 @@ namespace KartRider
                     // 获取 kart 属性值
                     short kart = ParseShort(node.Attribute("kart"));
                     outPacket.WriteShort(kart);
-                    outPacket.WriteInt(ranks[numberPart]);
+                    outPacket.WriteInt(Ranking[numberPart]);
                     outPacket.WriteHexString("A0 60");
-                    outPacket.WriteByte();
-                    outPacket.WriteInt();
-                    index++;
+                    if (gameType == 3 || gameType == 4)
+                    {
+                        if (numberPart == 1 || numberPart == 2 || numberPart == 3)
+                        {
+                            outPacket.WriteByte(2); // Team
+                        }
+                        else if (numberPart == 4 || numberPart == 5 || numberPart == 6 || numberPart == 7)
+                        {
+                            outPacket.WriteByte(1); // Team
+                        }
+                        if (AiTimeData[numberPart] == 4294967295)
+                        {
+                            outPacket.WriteInt(0);
+                        }
+                        else
+                        {
+                            outPacket.WriteInt(teamPoints[Ranking[numberPart]]);
+                        }
+                    }
+                    else
+                    {
+                        outPacket.WriteByte(0);
+                        outPacket.WriteInt(0);
+                    }
                 }
                 outPacket.WriteBytes(new byte[34]);
                 outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
@@ -247,10 +296,7 @@ namespace KartRider
                     iPacket.ReadByte();
                     iPacket.ReadShort();
                     byte[] data3 = iPacket.ReadBytes(29);
-                    Random random = new Random();
-                    int index = random.Next(KartExcData.itemProb_indi.Count);
-                    short skill = KartExcData.itemProb_indi[index];
-                    skill = GameSupport.GetItemSkill(skill);
+                    short skill = GameSupport.RandomItemSkill(gameType);
                     using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                     {
                         oPacket.WriteInt();
@@ -393,7 +439,7 @@ namespace KartRider
                 channeldata1 = 1;
                 channeldata2 = 4;
                 //StartGameRacing.GameRacing_SpeedType = 4;
-                if (channel == 72 || channel == 55)
+                if (channel == 72 || channel == 55 || channel == 63)
                 {
                     using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
                     {
@@ -405,6 +451,21 @@ namespace KartRider
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
+                    gameType = 1;
+                }
+                else if (channel == 73)
+                {
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(0);
+                        //oPacket.WriteInt(channeldata1);
+                        oPacket.WriteInt(3);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    StartGameData.StartTimeAttack_SpeedType = 7;
+                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
+                    gameType = 3;
                 }
                 else if (channel == 25)
                 {
@@ -417,8 +478,22 @@ namespace KartRider
                     }
                     StartGameData.StartTimeAttack_SpeedType = 4;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
+                    gameType = 1;
                 }
-                else if (channel == 70 || channel == 57)
+                else if (channel == 26)
+                {
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteInt(3);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    StartGameData.StartTimeAttack_SpeedType = 4;
+                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
+                    gameType = 3;
+                }
+                else if (channel == 70 || channel == 57 || channel == 64)
                 {
                     using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
                     {
@@ -429,6 +504,20 @@ namespace KartRider
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 1;
+                    gameType = 2;
+                }
+                else if (channel == 71)
+                {
+                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteInt(1);
+                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
+                        RouterListener.MySession.Client.Send(oPacket);
+                    }
+                    StartGameData.StartTimeAttack_SpeedType = 7;
+                    StartGameData.StartTimeAttack_RandomTrackGameType = 1;
+                    gameType = 4;
                 }
                 else
                 {
@@ -492,8 +581,9 @@ namespace KartRider
                 byte AiSwitch = iPacket.ReadByte();
                 using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
                 {
-                    oPacket.WriteShort(1);
-                    oPacket.WriteByte((byte)Playernum);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(2);
                     oPacket.WriteByte(unk1);
                     RouterListener.MySession.Client.Send(oPacket);
                 }
@@ -823,6 +913,42 @@ namespace KartRider
                 }
                 return;
             }
+            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameTeamBoosterRequestAddGaugePacket"))
+            {
+                var team = iPacket.ReadByte();
+                var value = iPacket.ReadFloat();
+                Console.WriteLine("GameTeamBoosterRequestAddGaugePacket, teams = {0}, value = {1}", team, value);
+                gauge += (value / 8000f);
+                if (gauge > 1f) gauge = 1f;
+                using (OutPacket oPacket = new OutPacket("GameTeamBoosterSetGaugePacket"))
+                {
+                    oPacket.WriteByte(team);
+                    oPacket.WriteFloat(gauge);
+                    RouterListener.MySession.Client.Send(oPacket);
+                }
+                if (gauge == 1f) gauge = 0f;
+                return;
+            }
+            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTeamPacket"))
+            {
+                var team = iPacket.ReadByte();
+                using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
+                {
+                    oPacket.WriteInt();
+                    oPacket.WriteByte(team);
+                    if (team == 1)
+                    {
+                        //oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFFFFFFFFFF");
+                        oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                    }
+                    else if (team == 2)
+                    {
+                        oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                    }
+                    RouterListener.MySession.Client.Send(oPacket);
+                }
+                return;
+            }
         }
 
         static void GrSlotDataPacket()
@@ -850,7 +976,7 @@ namespace KartRider
             for (int i = 0; i < 4; i++) outPacket.WriteInt();
 
             /* ---- One/First player ---- */
-            outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = ? , 7 = AI
+            outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = Preparing , 7 = AI
             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
 
             outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
@@ -867,7 +993,14 @@ namespace KartRider
             outPacket.WriteShort(0);
             outPacket.WriteString(ProfileService.ProfileConfig.Rider.Card);
             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
-            outPacket.WriteByte();
+            if (gameType == 3 || gameType == 4)
+            {
+                outPacket.WriteByte(2); //Team
+            }
+            else
+            {
+                outPacket.WriteByte();
+            }
             outPacket.WriteByte();
             outPacket.WriteByte();
             for (int i = 0; i < 8; i++) outPacket.WriteInt();
@@ -947,7 +1080,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(2); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -963,7 +1103,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(2); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -979,7 +1126,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(2); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -995,7 +1149,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(1); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -1011,7 +1172,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(1); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -1027,7 +1195,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(1); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -1043,7 +1218,14 @@ namespace KartRider
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
                 outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
-                outPacket.WriteByte(0);
+                if (gameType == 3 || gameType == 4)
+                {
+                    outPacket.WriteByte(1); //Team
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
             }
             else
             {
@@ -1144,22 +1326,11 @@ namespace KartRider
         {
             outPacket.WriteString(RoomName);
             outPacket.WriteInt(0);
-            outPacket.WriteByte((byte)(StartGameData.StartTimeAttack_RandomTrackGameType + 1));
+            outPacket.WriteByte(gameType);
             outPacket.WriteByte(StartGameData.StartTimeAttack_SpeedType); //7
             outPacket.WriteInt(0);
-            if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-            {
-                outPacket.WriteHexString("083483D162");
-            }
-            else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-            {
-                outPacket.WriteHexString("0802176848"); //08 24 72 F5 9E
-            }
-            else
-            {
-                outPacket.WriteHexString("0000000000"); //08 24 72 F5 9E
-            }
-            //outPacket.WriteHexString("083483D162"); //08 24 72 F5 9E
+            outPacket.WriteByte(8);
+            outPacket.WriteInt(0);
             outPacket.WriteInt(0);
             outPacket.WriteByte(0);
             outPacket.WriteByte(0);

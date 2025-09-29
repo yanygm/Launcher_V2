@@ -285,6 +285,27 @@ namespace KartRider
             }
         }
 
+        public static short RandomItemSkill(byte gameType)
+        {
+            if (gameType == 2)
+            {
+                Random random = new Random();
+                int index = random.Next(KartExcData.itemProb_indi.Count);
+                short skill = KartExcData.itemProb_indi[index];
+                skill = GameSupport.GetItemSkill(skill);
+                return skill;
+            }
+            else if (gameType == 4)
+            {
+                Random random = new Random();
+                int index = random.Next(KartExcData.itemProb_team.Count);
+                short skill = KartExcData.itemProb_team[index];
+                skill = GameSupport.GetItemSkill(skill);
+                return skill;
+            }
+            return 0;
+        }
+
         public static short GetItemSkill(short skill)
         {
             List<short> skills = V2Spec.GetSkills();
