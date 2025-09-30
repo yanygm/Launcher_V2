@@ -14,7 +14,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -815,6 +814,11 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetMaxGiftIdPacket", 0))
                     {
+                        using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelSpecialSlotUpdate", 0))
@@ -3504,15 +3508,6 @@ namespace KartRider
                                 outPacket.WriteShort(id);
                                 outPacket.WriteHexString("00000000003BB007260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
                             }
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        return;
-                    }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetMaxGiftIdPacket", 0))
-                    {
-                        using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
-                        {
-                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
