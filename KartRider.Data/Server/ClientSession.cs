@@ -1289,7 +1289,7 @@ namespace KartRider
                         for (int i = 0; i < tracks; i++)
                         {
                             short theme = iPacket.ReadShort(); //主题代码
-                            int track = iPacket.ReadInt(); //赛道代码
+                            uint track = iPacket.ReadUInt(); //赛道代码
                             byte Add_Del = iPacket.ReadByte(); //1添加，2删除
                             if (Add_Del == 1)
                             {
