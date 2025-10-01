@@ -42,43 +42,47 @@ namespace KartRider
 		{
 			if (StartGameData.StartTimeAttack_Track == 0)
 			{
-				RandomTrack.SetRandomTrack = "allRandom";
+				RandomTrack.SetRandomTrack = "all";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 1)
 			{
-				RandomTrack.SetRandomTrack = "leagueRandom";
+				RandomTrack.SetRandomTrack = "clubSpeed";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 3)
 			{
-				RandomTrack.SetRandomTrack = "hot1Random";
+				RandomTrack.SetRandomTrack = "hot1";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 4)
 			{
-				RandomTrack.SetRandomTrack = "hot2Random";
+				RandomTrack.SetRandomTrack = "hot2";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 5)
 			{
-				RandomTrack.SetRandomTrack = "hot3Random";
+				RandomTrack.SetRandomTrack = "hot3";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 6)
 			{
-				RandomTrack.SetRandomTrack = "hot4Random";
+				RandomTrack.SetRandomTrack = "hot4";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 7)
 			{
-				RandomTrack.SetRandomTrack = "hot5Random";
+				RandomTrack.SetRandomTrack = "hot5";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 8)
 			{
-				RandomTrack.SetRandomTrack = "newRandom";
+				RandomTrack.SetRandomTrack = "new";
+			}
+			else if (StartGameData.StartTimeAttack_Track == 23)
+			{
+				RandomTrack.SetRandomTrack = "crazy";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 30)
 			{
-				RandomTrack.SetRandomTrack = "reverseRandom";
+				RandomTrack.SetRandomTrack = "reverse";
 			}
 			else if (StartGameData.StartTimeAttack_Track == 40)
 			{
-				RandomTrack.SetRandomTrack = "speedAllRandom";
+				RandomTrack.SetRandomTrack = "speedAll";
 			}
 			else
 			{
