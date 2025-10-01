@@ -88,6 +88,34 @@ namespace RHOParser
                                         }
                                     }
                                 }
+                                XmlNodeList track_crzParams = trackLocale.GetElementsByTagName("track_crz");
+                                if (track_crzParams.Count > 0)
+                                {
+                                    foreach (XmlNode xn in track_crzParams)
+                                    {
+                                        XmlElement xe = (XmlElement)xn;
+                                        string track = xe.GetAttribute("id") + "_crz";
+                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
+                                        if (!(KartExcData.track.ContainsKey(id)))
+                                        {
+                                            KartExcData.track.Add(id, track);
+                                        }
+                                    }
+                                }
+                                XmlNodeList track_rvsParams = trackLocale.GetElementsByTagName("track_rvs");
+                                if (track_rvsParams.Count > 0)
+                                {
+                                    foreach (XmlNode xn in track_rvsParams)
+                                    {
+                                        XmlElement xe = (XmlElement)xn;
+                                        string track = xe.GetAttribute("id") + "_rvs";
+                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
+                                        if (!(KartExcData.track.ContainsKey(id)))
+                                        {
+                                            KartExcData.track.Add(id, track);
+                                        }
+                                    }
+                                }
                             }
                         }
                         if (fullName == "track/common/trackLocale@" + regionCode + ".bml")
