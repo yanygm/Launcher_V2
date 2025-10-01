@@ -1161,6 +1161,7 @@ namespace KartRider
             outPacket.WriteShort(0);
             doc.Load(FileName.AI_LoadFile);
             string parentNodePath = "";
+            byte ai4Team = 0;
             if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
             {
                 parentNodePath = "//SpeedAI";
@@ -1258,6 +1259,7 @@ namespace KartRider
                 if (gameType == 3 || gameType == 4)
                 {
                     outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
+                    ai4Team = byte.Parse(xe.GetAttribute("team") ?? "0");
                 }
                 else
                 {
@@ -1338,8 +1340,6 @@ namespace KartRider
                 outPacket.WriteInt(0);
             }
             outPacket.WriteBytes(new byte[32]);
-            XmlElement xe4 = (XmlElement)ai4;
-            var ai4Team = byte.Parse(xe4.GetAttribute("team") ?? "0");
             if (ProfileService.ProfileConfig.Rider.Team == 1 && ai4Team != 1)
             {
                 outPacket.WriteInt(4);
