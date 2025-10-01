@@ -1,6 +1,7 @@
 ﻿using System;
 using KartRider.Common.Utilities;
 using ExcData;
+using RiderData;
 using System.Xml;
 using System.Xml.Linq;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace KartRider
 	public class RandomTrack
 	{
 		public static string GameType = "item";
-		public static string SetRandomTrack = "allRandom";
+		public static string SetRandomTrack = "all";
 		public static string GameTrack = "village_R01";
 
 		public static string GetTrackName(uint trackId)
@@ -93,220 +94,53 @@ namespace KartRider
 
 		public static void RandomTrackSetList()
 		{
-			if (RandomTrack.SetRandomTrack == "allRandom")
+			if (RandomTrack.SetRandomTrack == "all" || RandomTrack.SetRandomTrack == "speedAll")
 			{
-				if (RandomTrack.GameType == "item")
+				Random random = new Random();
+				if (FavoriteItem.FavoriteTrackList.Count > 0)
 				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
+					int randomIndex = random.Next(FavoriteItem.FavoriteTrackList.Count);
+					StartGameData.StartTimeAttack_Track = uint.Parse(FavoriteItem.FavoriteTrackList[randomIndex][1]);
 				}
-				else if (RandomTrack.GameType == "speed")
+				else
 				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
+					int randomIndex = random.Next(KartExcData.track.Count);
+					RandomTrack.GameTrack = KartExcData.track.ElementAt(randomIndex).Value;
+					StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
 				}
 			}
-			else if (RandomTrack.SetRandomTrack == "leagueRandom")
+			else if (RandomTrack.SetRandomTrack == "Unknown")
 			{
-				XDocument doc = KartExcData.randomTrack;
-				var speedTrackSets = doc.Descendants("RandomTrackSet")
-						  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "clubSpeed");
-				if (speedTrackSets != null)
+				if (!KartExcData.track.ContainsKey(StartGameData.StartTimeAttack_Track))
 				{
-					Random random = new Random();
-					var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-					RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
+					StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
 				}
-			}
-			else if (RandomTrack.SetRandomTrack == "hot1Random")
-			{
-				if (RandomTrack.GameType == "item")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item" && (string)rts.Attribute("randomType") == "hot1");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-				else if (RandomTrack.GameType == "speed")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "hot1");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "hot2Random")
-			{
-				if (RandomTrack.GameType == "item")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item" && (string)rts.Attribute("randomType") == "hot2");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-				else if (RandomTrack.GameType == "speed")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "hot2");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "hot3Random")
-			{
-				if (RandomTrack.GameType == "item")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item" && (string)rts.Attribute("randomType") == "hot3");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-				else if (RandomTrack.GameType == "speed")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "hot3");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "hot4Random")
-			{
-				if (RandomTrack.GameType == "item")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item" && (string)rts.Attribute("randomType") == "hot4");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-				else if (RandomTrack.GameType == "speed")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "hot4");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "hot5Random")
-			{
-				if (RandomTrack.GameType == "item")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var itemTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "item" && (string)rts.Attribute("randomType") == "hot5");
-					if (itemTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-				else if (RandomTrack.GameType == "speed")
-				{
-					XDocument doc = KartExcData.randomTrack;
-					var speedTrackSets = doc.Descendants("RandomTrackSet")
-							  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "hot5");
-					if (speedTrackSets != null)
-					{
-						Random random = new Random();
-						var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-					}
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "newRandom")
-			{
-				XDocument doc = KartExcData.randomTrack;
-				var itemTrackSets = doc.Descendants("RandomTrackList")
-						  .FirstOrDefault(rts => (string)rts.Attribute("randomType") == "new");
-				if (itemTrackSets != null)
-				{
-					Random random = new Random();
-					var randomTrack = itemTrackSets.Descendants("track").ElementAt(random.Next(itemTrackSets.Descendants("track").Count()));
-					RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "reverseRandom")
-			{
-				XDocument doc = KartExcData.randomTrack;
-				var reverseTrackSets = doc.Descendants("RandomTrackList")
-						  .FirstOrDefault(rts => (string)rts.Attribute("randomType") == "reverse");
-				if (reverseTrackSets != null)
-				{
-					Random random = new Random();
-					var randomTrack = reverseTrackSets.Descendants("track").ElementAt(random.Next(reverseTrackSets.Descendants("track").Count()));
-					RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-				}
-			}
-			else if (RandomTrack.SetRandomTrack == "speedAllRandom")
-			{
-				XDocument doc = KartExcData.randomTrack;
-				var speedTrackSets = doc.Descendants("RandomTrackSet")
-						  .FirstOrDefault(rts => (string)rts.Attribute("gameType") == "speed" && (string)rts.Attribute("randomType") == "clubSpeed");
-				if (speedTrackSets != null)
-				{
-					Random random = new Random();
-					var randomTrack = speedTrackSets.Descendants("track").ElementAt(random.Next(speedTrackSets.Descendants("track").Count()));
-					RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
-				}
-			}
-			if (RandomTrack.SetRandomTrack != "Unknown")
-			{
-				StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
 				Console.WriteLine("RandomTrack: {0} / {1} / {2}", RandomTrack.GameType, RandomTrack.SetRandomTrack, RandomTrack.GameTrack);
+			}
+			else
+			{
+				XDocument doc = KartExcData.randomTrack;
+				var TrackSet = doc.Descendants("RandomTrackSet")
+					.FirstOrDefault(rts => (string)rts.Attribute("gameType") == RandomTrack.GameType && (string)rts.Attribute("randomType") == RandomTrack.SetRandomTrack);
+				if (TrackSet != null)
+				{
+					Random random = new Random();
+					var randomTrack = TrackSet.Descendants("track").ElementAt(random.Next(TrackSet.Descendants("track").Count()));
+					RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
+					StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
+				}
+				else
+				{
+					var TrackList = doc.Descendants("RandomTrackList")
+						.FirstOrDefault(rts => (string)rts.Attribute("randomType") == RandomTrack.SetRandomTrack);
+					if (TrackList != null)
+					{
+						Random random = new Random();
+						var randomTrack = TrackList.Descendants("track").ElementAt(random.Next(TrackList.Descendants("track").Count()));
+						RandomTrack.GameTrack = (string)randomTrack.Attribute("id");
+						StartGameData.StartTimeAttack_Track = Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
+					}
+				}
 			}
 			SpeedType.SpeedTypeData();
 		}
