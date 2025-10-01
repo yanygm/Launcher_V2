@@ -179,7 +179,7 @@ namespace RiderData
 			}
 		}
 
-		public static void Favorite_Track_Add(short theme, int track)
+		public static void Favorite_Track_Add(short theme, uint track)
 		{
 			var existingTrack = FavoriteTrackList.FirstOrDefault(list => list[0] == "theme" + theme.ToString() && list[1] == track.ToString());
 			if (existingTrack == null)
@@ -190,7 +190,7 @@ namespace RiderData
 			}
 		}
 
-		public static void Favorite_Track_Del(short theme, int track)
+		public static void Favorite_Track_Del(short theme, uint track)
 		{
 			var trackToRemove = FavoriteTrackList.FirstOrDefault(list => list[0] == "theme" + theme.ToString() && list[1] == track.ToString());
 			if (trackToRemove != null)
