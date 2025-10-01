@@ -158,24 +158,36 @@ namespace KartRider
                 Ranking = GetAllRanks();
                 int redTeam = 0;
                 int blueTeam = 0;
-                byte firstTeam = 0;
-                if (Ranking.First(kv => kv.Value == 0).Key < 4)
+                var firstId = Ranking.First(kv => kv.Value == 0).Key;
+                byte firstTeam;
+                if (firstId == 0)
                 {
-                    firstTeam = 2;
+                    firstTeam = ProfileService.ProfileConfig.Rider.Team;
                 }
                 else
                 {
-                    firstTeam = 1;
+                    firstTeam = byte.Parse(aiNodes?.FirstOrDefault(e => e.Name.LocalName == "Ai" + firstId.ToString())?.Attribute("team")?.Value);
                 }
+                Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
                 foreach (var time in TimeData)
                 {
                     if (time.Value != 4294967295)
                     {
-                        if (time.Key < 4)
+                        byte aiTeam = 0;
+                        if (time.Key == 0)
+                        {
+                            aiTeam = ProfileService.ProfileConfig.Rider.Team;
+                        }
+                        else
+                        {
+                            aiTeam = byte.Parse(aiNodes?.FirstOrDefault(e => e.Name.LocalName == "Ai" + time.Key.ToString())?.Attribute("team")?.Value);
+                        }
+                        Console.WriteLine("ID: {0} Team: {1}", time.Key, aiTeam);
+                        if (aiTeam == 2)
                         {
                             blueTeam += teamPoints[Ranking[time.Key]];
                         }
-                        else
+                        else if (aiTeam == 1)
                         {
                             redTeam += teamPoints[Ranking[time.Key]];
                         }
@@ -201,14 +213,14 @@ namespace KartRider
                     outPacket.WriteByte(0);
                 }
                 outPacket.WriteInt(1); // player count
-                outPacket.WriteInt();
+                outPacket.WriteInt(0); // player id
                 outPacket.WriteUInt(TimeData[0]);
                 outPacket.WriteByte();
                 outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
-                int ranking = Ranking[0];
-                int point = teamPoints[ranking];
-                Console.WriteLine("Player {0} 排名 {1} 得分 {2}", 0, ranking, point);
-                outPacket.WriteInt(ranking);
+                int playerRanking = Ranking[0];
+                int playerPoint = teamPoints[playerRanking];
+                Console.WriteLine("Player {0} 排名 {1} 得分 {2}", 0, playerRanking, playerPoint);
+                outPacket.WriteInt(playerRanking);
                 outPacket.WriteShort();
                 outPacket.WriteByte();
                 outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP += 10000);
@@ -224,9 +236,9 @@ namespace KartRider
                     }
                     else
                     {
-                        outPacket.WriteInt(point);
+                        outPacket.WriteInt(playerPoint);
                     }
-                    outPacket.WriteByte(2); // Team
+                    outPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team); // Team
                 }
                 else
                 {
@@ -273,14 +285,8 @@ namespace KartRider
                     outPacket.WriteHexString("A0 60");
                     if (gameType == 3 || gameType == 4)
                     {
-                        if (numberPart < 4)
-                        {
-                            outPacket.WriteByte(2); // Team
-                        }
-                        else
-                        {
-                            outPacket.WriteByte(1); // Team
-                        }
+                        var aiTeam = byte.Parse(node.Attribute("team").Value ?? "0");
+                        outPacket.WriteByte(aiTeam); // Team
                         if (AiTimeData[numberPart] == 4294967295)
                         {
                             outPacket.WriteInt(0);
@@ -883,6 +889,14 @@ namespace KartRider
                                         existing.Attributes["balloon"].Value = (balloonId ?? 0).ToString();
                                         existing.Attributes["headBand"].Value = (headbandId ?? 0).ToString();
                                         existing.Attributes["goggle"].Value = (goggleId ?? 0).ToString();
+                                        if (unk1 < 4)
+                                        {
+                                            existing.Attributes["team"].Value = "2";
+                                        }
+                                        else
+                                        {
+                                            existing.Attributes["team"].Value = "1";
+                                        }
                                         Console.WriteLine("Ai" + unk1.ToString() + "元素已成功更新");
                                     }
                                     else
@@ -894,6 +908,14 @@ namespace KartRider
                                         aiElement.SetAttribute("balloon", (balloonId ?? 0).ToString());
                                         aiElement.SetAttribute("headBand", (headbandId ?? 0).ToString());
                                         aiElement.SetAttribute("goggle", (goggleId ?? 0).ToString());
+                                        if (unk1 < 4)
+                                        {
+                                            aiElement.SetAttribute("team", "2");
+                                        }
+                                        else
+                                        {
+                                            aiElement.SetAttribute("team", "1");
+                                        }
                                         AiNode.AppendChild(aiElement);
                                         Console.WriteLine("Ai" + unk1.ToString() + "元素已成功添加");
                                     }
@@ -972,21 +994,65 @@ namespace KartRider
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTeamPacket"))
             {
-                var team = iPacket.ReadByte();
+                ProfileService.ProfileConfig.Rider.Team = iPacket.ReadByte();
+                ProfileService.Save();
                 using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
                 {
-                    oPacket.WriteInt();
-                    oPacket.WriteByte(team);
-                    if (team == 1)
-                    {
-                        //oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFFFFFFFFFF");
-                        oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                    }
-                    else if (team == 2)
-                    {
-                        oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                    }
+                    oPacket.WriteInt(0);
+                    oPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team);
+                    oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                     RouterListener.MySession.Client.Send(oPacket);
+                }
+                try
+                {
+                    // 加载 XML 文件（替换为实际文件路径）
+                    XDocument doc = XDocument.Load(FileName.AI_LoadFile);
+                    string parentNodePath = "";
+                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+                    {
+                        parentNodePath = "SpeedAI";
+                    }
+                    else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
+                    {
+                        parentNodePath = "ItemAI";
+                    }
+                    // 定位到 AI 下的 Ai4 元素
+                    var ai4Element = doc.Root?
+                               .Element(parentNodePath)?
+                               .Element("Ai4");
+
+                    if (ai4Element != null)
+                    {
+                        byte ai4Team = (byte)(3 - ProfileService.ProfileConfig.Rider.Team);
+                        // 修改 team 属性值为 "1"
+                        ai4Element.SetAttributeValue("team", ai4Team.ToString());
+
+                        // 保存修改到文件
+                        doc.Save(FileName.AI_LoadFile);
+                        Console.WriteLine($"{parentNodePath} 中 Ai4 的 team 已修改为 {ai4Team.ToString()}");
+                        using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
+                        {
+                            oPacket.WriteInt(4);
+                            oPacket.WriteByte(ai4Team);
+                            if (ai4Team == 1)
+                            {
+                                oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFF04000000FFFFFFFFFFFFFFFFFFFFFFFF");
+                            }
+                            else if (ai4Team == 2)
+                            {
+                                oPacket.WriteHexString("04000000FFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFFFFFFFFFF");
+                            }
+                            RouterListener.MySession.Client.Send(oPacket);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"未找到 {parentNodePath} 中的 Ai4 元素");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"修改失败：{ex.Message}");
                 }
                 return;
             }
@@ -1011,9 +1077,8 @@ namespace KartRider
             outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
             outPacket.WriteShort(0); // 797
             outPacket.WriteByte(0);
-            var unk1 = 0;
-            outPacket.WriteInt(unk1);
-            //for (int i = 0; i < unk1; i++) outPacket.WriteByte();
+            var unk1 = 4;
+            for (int i = 0; i < unk1; i++) outPacket.WriteByte();
             for (int i = 0; i < 4; i++) outPacket.WriteInt();
 
             /* ---- One/First player ---- */
@@ -1023,8 +1088,8 @@ namespace KartRider
             outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
             //outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
             //outPacket.WriteHexString("3a 16 01 31 7d 48");
-            outPacket.WriteInt();
-            outPacket.WriteShort();
+            outPacket.WriteInt(0);
+            outPacket.WriteShort(0);
 
             outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
             outPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem1);
@@ -1036,7 +1101,7 @@ namespace KartRider
             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
             if (gameType == 3 || gameType == 4)
             {
-                outPacket.WriteByte(2); //Team
+                outPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team); //Team
             }
             else
             {
@@ -1115,15 +1180,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai1;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(2); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1138,15 +1203,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai2;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(2); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1161,15 +1226,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai3;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(2); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1184,15 +1249,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai4;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(1); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1207,15 +1272,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai5;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(1); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1230,15 +1295,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai6;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(1); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1253,15 +1318,15 @@ namespace KartRider
             {
                 outPacket.WriteInt(7);
                 XmlElement xe = (XmlElement)ai7;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand")));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle")));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
+                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
                 if (gameType == 3 || gameType == 4)
                 {
-                    outPacket.WriteByte(1); //Team
+                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
                 }
                 else
                 {
@@ -1272,7 +1337,17 @@ namespace KartRider
             {
                 outPacket.WriteInt(0);
             }
-            outPacket.WriteBytes(new byte[36]);
+            outPacket.WriteBytes(new byte[32]);
+            XmlElement xe4 = (XmlElement)ai4;
+            var ai4Team = byte.Parse(xe4.GetAttribute("team") ?? "0");
+            if (ProfileService.ProfileConfig.Rider.Team == 1 && ai4Team != 1)
+            {
+                outPacket.WriteInt(4);
+            }
+            else
+            {
+                outPacket.WriteInt(0);
+            }
             if (ai1 != null)
             {
                 outPacket.WriteInt(1);
@@ -1299,7 +1374,14 @@ namespace KartRider
             }
             if (ai4 != null)
             {
-                outPacket.WriteInt(4);
+                if (ProfileService.ProfileConfig.Rider.Team == 1 && ai4Team == 2)
+                {
+                    outPacket.WriteInt(0);
+                }
+                else
+                {
+                    outPacket.WriteInt(4);
+                }
             }
             else
             {
@@ -1424,6 +1506,7 @@ namespace KartRider
                     }
 
                     string nodeName = $"Ai{i + 1}";
+                    string team = ((i + 1) < 4) ? "2" : "1";
 
                     // 添加属性
                     targetParent.Add(new XElement(nodeName,
@@ -1432,7 +1515,8 @@ namespace KartRider
                     new XAttribute("kart", targetKartId.ToString()),
                     new XAttribute("balloon", balloonId?.ToString() ?? "0"),
                     new XAttribute("headBand", headbandId?.ToString() ?? "0"),
-                    new XAttribute("goggle", goggleId?.ToString() ?? "0")
+                    new XAttribute("goggle", goggleId?.ToString() ?? "0"),
+                    new XAttribute("team", team)
                     ));
                 }
             }

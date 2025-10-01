@@ -48,9 +48,10 @@ namespace Profile
         public uint TcCash { get; set; } = 10000;
         public int Premium { get; set; } = 5;//100
         public byte Ranker { get; set; } = 0;
-        public ushort SlotChanger { get; set; } = 32766;
+        public ushort SlotChanger { get; set; } = (ushort)short.MaxValue;
         public uint pmap { get; set; } = 0;//3130 //1068 //2520
         public byte IdentificationType { get; set; } = 1;
+        public byte Team { get; set; } = 2;
     }
     public class RiderItemData
     {
