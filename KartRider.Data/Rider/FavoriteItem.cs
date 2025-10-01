@@ -146,9 +146,9 @@ namespace RiderData
 								foreach (XmlNode xn in lis)
 								{
 									XmlElement xe = (XmlElement)xn;
-									int track = int.Parse(xe.GetAttribute("track"));
+									uint track = uint.Parse(xe.GetAttribute("track"));
 									outPacket.WriteShort(short.Parse(theme)); //主题代码
-									outPacket.WriteInt(track); //赛道代码
+									outPacket.WriteUInt(track); //赛道代码
 									outPacket.WriteByte(0);
 								}
 							}
