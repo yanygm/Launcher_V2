@@ -500,7 +500,7 @@ namespace KartRider
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
                     gameType = 1;
                 }
-                else if (channel == 73)
+                else if (channel == 73 || channel == 35)
                 {
                     using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
                     {
@@ -553,7 +553,7 @@ namespace KartRider
                     StartGameData.StartTimeAttack_RandomTrackGameType = 1;
                     gameType = 2;
                 }
-                else if (channel == 71)
+                else if (channel == 71 || channel == 38)
                 {
                     using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
                     {
