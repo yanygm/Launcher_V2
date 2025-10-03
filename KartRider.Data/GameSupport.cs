@@ -7,28 +7,49 @@ using Profile;
 
 namespace KartRider
 {
+    public class Keys
+    {
+        public uint first_val { get; set; }
+        public uint second_val { get; set; }
+        public string key1 { get; set; }
+        public string key2 { get; set; }
+    }
+
     public static class GameSupport
     {
+        public static Keys[] keys = new Keys[]
+        {
+            new Keys { first_val = 2919676295, second_val = 263300380, key1 = "QyvKvO60jogWDupzJ7gm0kRQdooFjWRjSjlq0gu/x2k=", key2 = "GXQstj1A95XiHvjrOGuPkzdyL+7qxETl/cPlUZk2KA4=" },
+            new Keys { first_val = 3595571486, second_val = 2168420743, key1 = "+B1K8NAOvJd3cXFieRWTkRNj2rlv2qVmALSUdXFpNl0=", key2 = "TwKtPFLx+3AuKg5PFa021r3hKyFDK2sFBzQJJCI26wA=" },
+            new Keys { first_val = 3059596768, second_val = 1772034572, key1 = "DI5gSCYZrEcZjR4fma5gSevvLBGSzKMoOPl7ZHDmfgA=", key2 = "bLV2VEcHkS8SrZVuPwitWN+I2851xwVEr+UBEzcYz+8=" },
+            new Keys { first_val = 1412439591, second_val = 684842217, key1 = "nd65IIry0ZcguC7Ra8Ufby5xJmqMaXNXojL3OidbrsE=", key2 = "EmEHRGaDmK6Yz0GxPOVtloXvzSdYyNaQdIA/OWQez/U=" },
+            new Keys { first_val = 1183929409, second_val = 4001694798, key1 = "jQre/0PRqRZ0oFW1u4jx1rj41LP+clRw2EhJ96Tfo0I=", key2 = "Hkk73+2YbVVquYu44C5jzbUwQ9XiBAs9QOdarBWspwE=" },
+            new Keys { first_val = 2031112783, second_val = 2190302224, key1 = "5wpYhubc/NxIqTklY0UoZNu7ZaCRr8Zypw32i1PiHfs=", key2 = "HxjlBMdgLG97tWeLkzJ/1eWpNfDLz56z3FQTl72AecU=" },
+            new Keys { first_val = 3640782532, second_val = 2489762877, key1 = "ComjZh2R0y82PVv25nzqrcqnusvQbGfngimO69PO7bc=", key2 = "pQ04kPHlUS67of2l4D3rukfTsJrSB15G4NtoAx+X8ec=" },
+            new Keys { first_val = 912740103, second_val = 3754337362, key1 = "A7H8oUUAoWg65+rFF8h9xcr/aiYwecEfNQyGNF5WHhs=", key2 = "ycsTsKSzTxbOraG5PrjtBWP81YCor02tCxJquIl+5NM=" }
+        };
+
         public static void PcFirstMessage()
         {
-            uint first_val = 2130265355;
-            uint second_val = 3323984468;
+            Random random = new Random();
+            int index = random.Next(keys.Length);
+            Keys key = keys[index];
             using (OutPacket outPacket = new OutPacket("PcFirstMessage"))
             {
                 outPacket.WriteUShort(SessionGroup.usLocale);
                 outPacket.WriteUShort(1);
                 outPacket.WriteUShort(ProfileService.ProfileConfig.GameOption.Version);
-                outPacket.WriteString("http://kartupdate.tiancity.cn/patch/MNUDSNRSVQBBFYM");
-                outPacket.WriteUInt(first_val);
-                outPacket.WriteUInt(second_val);
+                outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
+                outPacket.WriteUInt(key.first_val);
+                outPacket.WriteUInt(key.second_val);
                 outPacket.WriteByte(SessionGroup.nClientLoc);
-                outPacket.WriteString("yzwh4TvSQK8knRdV6FqXJfUFXw7VXWvK9Tm+4hPGbmE=");
+                outPacket.WriteString(key.key1);
                 outPacket.WriteBytes(new byte[31]);
-                outPacket.WriteString("Tkd+Hpj7uDwGwHYB+klvMh2Hmg7D38i5RqXuE4pFVhc=");
+                outPacket.WriteString(key.key2);
                 RouterListener.MySession.Client.Send(outPacket);
             }
-            RouterListener.MySession.Client._RIV = first_val ^ second_val;
-            RouterListener.MySession.Client._SIV = first_val ^ second_val;
+            RouterListener.MySession.Client._RIV = key.first_val ^ key.second_val;
+            RouterListener.MySession.Client._SIV = key.first_val ^ key.second_val;
             return;
         }
 
