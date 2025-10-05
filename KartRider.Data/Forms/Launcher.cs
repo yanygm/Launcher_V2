@@ -328,24 +328,8 @@ namespace KartRider
                     File.WriteAllBytes(pinFile, val.GetEncryptedData());
                     Start_Button.Enabled = true;
                     Launcher.GetKart = false;
-                    ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
-                    {
-                        WorkingDirectory = Path.GetFullPath(this.kartRiderDirectory),
-                        UseShellExecute = true,
-                        Verb = "runas"
-                    };
-                    try
-                    {
-                        Process.Start(startInfo);
-                        Thread.Sleep(1000);
-                        Start_Button.Enabled = true;
-                        Launcher.GetKart = true;
-                    }
-                    catch (System.ComponentModel.Win32Exception ex)
-                    {
-                        // 用户取消了UAC提示或没有权限
-                        Console.WriteLine(ex.Message);
-                    }
+                    var modifier = new MemoryModifier();
+                    modifier.LaunchAndModifyMemory(kartRiderDirectory);
                 })).Start();
             }
         }

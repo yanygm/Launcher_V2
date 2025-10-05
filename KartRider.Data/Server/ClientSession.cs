@@ -235,7 +235,7 @@ namespace KartRider
                         ProfileService.ProfileConfig.RiderItem.Set_FlyingPet = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Aura = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_SkidMark = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        ProfileService.ProfileConfig.RiderItem.Set_SpecialKit = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_RidColor = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_BonusCard = iPacket.ReadShort();
                         iPacket.ReadShort();
@@ -244,7 +244,7 @@ namespace KartRider
                         short Set_KartPlant3 = iPacket.ReadShort();
                         short Set_KartPlant4 = iPacket.ReadShort();
                         iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        ProfileService.ProfileConfig.RiderItem.Set_FishingPole = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Tachometer = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Dye = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_KartSN = iPacket.ReadShort();
@@ -3498,16 +3498,121 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetSlotDataList", 0))
                     {
+                        ItemPresetsService.Load();
                         using (OutPacket outPacket = new OutPacket("PrItemPresetSlotDataList"))
                         {
-                            outPacket.WriteInt(3);
-                            for (int i = 0; i < 3; i++)
+                            outPacket.WriteInt(ItemPresetsService.ItemPresetConfig.ItemPresets.Count);
+                            foreach (var ItemPreset in ItemPresetsService.ItemPresetConfig.ItemPresets)
                             {
-                                short id = (short)(i + 1);
-                                outPacket.WriteShort(id);
-                                outPacket.WriteShort(id);
-                                outPacket.WriteHexString("00000000003BB007260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+                                outPacket.WriteShort(ItemPreset.ID);
+                                outPacket.WriteShort(ItemPreset.ID);
+                                outPacket.WriteInt(ItemPreset.Badge);
+                                outPacket.WriteHexString("00 44 B0 46 23 00");
+                                outPacket.WriteString(ItemPreset.Name);
+                                outPacket.WriteShort(ItemPreset.Character);
+                                outPacket.WriteShort(ItemPreset.Paint);
+                                outPacket.WriteShort(ItemPreset.Kart);
+                                outPacket.WriteShort(ItemPreset.Plate);
+                                outPacket.WriteShort(ItemPreset.Goggle);
+                                outPacket.WriteShort(ItemPreset.Balloon);
+                                outPacket.WriteShort(ItemPreset.Unknown1);
+                                outPacket.WriteShort(ItemPreset.HeadBand);
+                                outPacket.WriteShort(ItemPreset.HeadPhone);
+                                outPacket.WriteShort(ItemPreset.HandGearL);
+                                outPacket.WriteShort(ItemPreset.Unknown2);
+                                outPacket.WriteShort(ItemPreset.Uniform);
+                                outPacket.WriteShort(ItemPreset.Decal);
+                                outPacket.WriteShort(ItemPreset.Pet);
+                                outPacket.WriteShort(ItemPreset.FlyingPet);
+                                outPacket.WriteShort(ItemPreset.Aura);
+                                outPacket.WriteShort(ItemPreset.SkidMark);
+                                outPacket.WriteShort(ItemPreset.SpecialKit);
+                                outPacket.WriteShort(ItemPreset.RidColor);
+                                outPacket.WriteShort(ItemPreset.BonusCard);
+                                outPacket.WriteShort(ItemPreset.Unknown3);
+                                outPacket.WriteShort(ItemPreset.KartPlant1);
+                                outPacket.WriteShort(ItemPreset.KartPlant2);
+                                outPacket.WriteShort(ItemPreset.KartPlant3);
+                                outPacket.WriteShort(ItemPreset.KartPlant4);
+                                outPacket.WriteShort(ItemPreset.Unknown4);
+                                outPacket.WriteShort(ItemPreset.FishingPole);
+                                outPacket.WriteShort(ItemPreset.Tachometer);
+                                outPacket.WriteShort(ItemPreset.Dye);
+                                outPacket.WriteShort(ItemPreset.KartSN);
+                                outPacket.WriteByte(ItemPreset.Unknown5);
+                                outPacket.WriteShort(ItemPreset.KartCoating);
+                                outPacket.WriteShort(ItemPreset.KartTailLamp);
+                                outPacket.WriteShort(ItemPreset.slotBg);
+                                outPacket.WriteShort(ItemPreset.KartCoating12);
+                                outPacket.WriteShort(ItemPreset.KartTailLamp12);
+                                outPacket.WriteShort(ItemPreset.KartBoosterEffect12);
+                                outPacket.WriteShort(ItemPreset.Unknown6);
                             }
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetUpdateSlotData", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrItemPresetUpdateSlotData"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        iPacket.ReadInt();
+                        short id1 = iPacket.ReadShort();
+                        short id2 = iPacket.ReadShort();
+                        var ItemPreset = ItemPresetsService.ItemPresetConfig.ItemPresets.FirstOrDefault(ItemPreset => ItemPreset.ID == id1 && ItemPreset.ID == id2);
+                        ItemPreset.Badge = iPacket.ReadInt();
+                        iPacket.ReadBytes(6);
+                        ItemPreset.Name = iPacket.ReadString();
+                        ItemPreset.Character = iPacket.ReadShort();
+                        ItemPreset.Paint = iPacket.ReadShort();
+                        ItemPreset.Kart = iPacket.ReadShort();
+                        ItemPreset.Plate = iPacket.ReadShort();
+                        ItemPreset.Goggle = iPacket.ReadShort();
+                        ItemPreset.Balloon = iPacket.ReadShort();
+                        ItemPreset.Unknown1 = iPacket.ReadShort();
+                        ItemPreset.HeadBand = iPacket.ReadShort();
+                        ItemPreset.HeadPhone = iPacket.ReadShort();
+                        ItemPreset.HandGearL = iPacket.ReadShort();
+                        ItemPreset.Unknown2 = iPacket.ReadShort();
+                        ItemPreset.Uniform = iPacket.ReadShort();
+                        ItemPreset.Decal = iPacket.ReadShort();
+                        ItemPreset.Pet = iPacket.ReadShort();
+                        ItemPreset.FlyingPet = iPacket.ReadShort();
+                        ItemPreset.Aura = iPacket.ReadShort();
+                        ItemPreset.SkidMark = iPacket.ReadShort();
+                        ItemPreset.SpecialKit = iPacket.ReadShort();
+                        ItemPreset.RidColor = iPacket.ReadShort();
+                        ItemPreset.BonusCard = iPacket.ReadShort();
+                        ItemPreset.Unknown3 = iPacket.ReadShort();
+                        ItemPreset.KartPlant1 = iPacket.ReadShort();
+                        ItemPreset.KartPlant2 = iPacket.ReadShort();
+                        ItemPreset.KartPlant3 = iPacket.ReadShort();
+                        ItemPreset.KartPlant4 = iPacket.ReadShort();
+                        ItemPreset.Unknown4 = iPacket.ReadShort();
+                        ItemPreset.FishingPole = iPacket.ReadShort();
+                        ItemPreset.Tachometer = iPacket.ReadShort();
+                        ItemPreset.Dye = iPacket.ReadShort();
+                        ItemPreset.KartSN = iPacket.ReadShort();
+                        ItemPreset.Unknown5 = iPacket.ReadByte();
+                        ItemPreset.KartCoating = iPacket.ReadShort();
+                        ItemPreset.KartTailLamp = iPacket.ReadShort();
+                        ItemPreset.slotBg = iPacket.ReadShort();
+                        ItemPreset.KartCoating12 = iPacket.ReadShort();
+                        ItemPreset.KartTailLamp12 = iPacket.ReadShort();
+                        ItemPreset.KartBoosterEffect12 = iPacket.ReadShort();
+                        ItemPreset.Unknown6 = iPacket.ReadShort();
+                        ItemPresetsService.Save();
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetUseSlotData", 0))
+                    {
+                        short id = iPacket.ReadShort();
+                        using (OutPacket outPacket = new OutPacket("PrItemPresetUseSlotData"))
+                        {
+                            outPacket.WriteInt(1);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
