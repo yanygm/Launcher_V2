@@ -10,18 +10,21 @@ namespace Profile
 {
     public class ItemPresetConfig
     {
-        // 初始化时创建 3 个预设项
+        // 初始化时创建 6 个预设项
         public ItemPresetConfig()
         {
             ItemPresets = new List<ItemPreset>
             {
                 new ItemPreset { ID = 1 },  // 第一个预设，默认 ID=1
                 new ItemPreset { ID = 2 },  // 第二个预设，默认 ID=2
-                new ItemPreset { ID = 3 }   // 第三个预设，默认 ID=3
+                new ItemPreset { ID = 3 },  // 第三个预设，默认 ID=3
+                new ItemPreset { ID = 4 },  // 第三个预设，默认 ID=4
+                new ItemPreset { ID = 5 },  // 第三个预设，默认 ID=5
+                new ItemPreset { ID = 6 }   // 第三个预设，默认 ID=6
             };
         }
 
-        // 包含 3 个 ItemPreset 的集合
+        // 包含 6 个 ItemPreset 的集合
         public List<ItemPreset> ItemPresets { get; set; }
     }
 
@@ -196,3 +199,4 @@ namespace Profile
         }
     }
 }
+
