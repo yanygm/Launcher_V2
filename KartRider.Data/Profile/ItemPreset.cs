@@ -10,21 +10,19 @@ namespace Profile
 {
     public class ItemPresetConfig
     {
-        // 初始化时创建 6 个预设项
         public ItemPresetConfig()
         {
             ItemPresets = new List<ItemPreset>
             {
-                new ItemPreset { ID = 1 },  // 第一个预设，默认 ID=1
-                new ItemPreset { ID = 2 },  // 第二个预设，默认 ID=2
-                new ItemPreset { ID = 3 },  // 第三个预设，默认 ID=3
-                new ItemPreset { ID = 4 },  // 第三个预设，默认 ID=4
-                new ItemPreset { ID = 5 },  // 第三个预设，默认 ID=5
-                new ItemPreset { ID = 6 }   // 第三个预设，默认 ID=6
+                new ItemPreset { ID = 1 },
+                new ItemPreset { ID = 2 },
+                new ItemPreset { ID = 3 },
+                new ItemPreset { ID = 4 },
+                new ItemPreset { ID = 5 },
+                new ItemPreset { ID = 6 }
             };
         }
 
-        // 包含 6 个 ItemPreset 的集合
         public List<ItemPreset> ItemPresets { get; set; }
     }
 
@@ -32,7 +30,9 @@ namespace Profile
     {
         public short ID { get; set; }
 
-        public int Badge { get; set; }
+        public byte Badge { get; set; }
+
+        public byte Enable { get; set; }
 
         public string Name { get; set; } = "";
 
@@ -115,7 +115,6 @@ namespace Profile
 
     public class ItemPresetsService
     {
-        // 静态配置实例，默认包含 3 个预设
         public static ItemPresetConfig ItemPresetConfig { get; set; } = new ItemPresetConfig();
 
         /// <summary>
@@ -125,11 +124,9 @@ namespace Profile
         {
             try
             {
-                var jsonSettings = new JsonSerializerSettings
+                var jsonSettings = new Newtonsoft.Json.JsonSerializerSettings
                 {
-                    Formatting = Formatting.Indented,
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    NullValueHandling = NullValueHandling.Ignore
+                    Formatting = Newtonsoft.Json.Formatting.Indented,
                 };
 
                 // 确保目录存在
@@ -139,11 +136,10 @@ namespace Profile
                     Directory.CreateDirectory(directory);
                 }
 
-                // 序列化并写入文件（包含 3 个预设）
+                // 序列化并写入文件
                 using (var streamWriter = new StreamWriter(FileName.ItemPresetsConfig, false, Encoding.UTF8))
                 {
-                    string json = JsonConvert.SerializeObject(ItemPresetConfig, jsonSettings);
-                    streamWriter.Write(json);
+                    streamWriter.Write(Newtonsoft.Json.JsonConvert.SerializeObject(ItemPresetConfig, jsonSettings));
                 }
             }
             catch (Exception ex)
@@ -153,7 +149,7 @@ namespace Profile
         }
 
         /// <summary>
-        /// 从文件加载配置（确保加载后仍有 3 个预设）
+        /// 从文件加载配置
         /// </summary>
         public static void Load()
         {
@@ -161,42 +157,41 @@ namespace Profile
             {
                 if (File.Exists(FileName.ItemPresetsConfig))
                 {
-                    string configStr = File.ReadAllText(FileName.ItemPresetsConfig, Encoding.UTF8);
-                    var loadedConfig = JsonConvert.DeserializeObject<ItemPresetConfig>(configStr);
+                    string configStr = System.IO.File.ReadAllText(FileName.ItemPresetsConfig, Encoding.UTF8);
+                    var loadedConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<ItemPresetConfig>(configStr);
 
-                    // 确保加载后集合不为空且有 3 个元素（防止文件损坏导致数据不完整）
                     if (loadedConfig?.ItemPresets != null)
                     {
-                        // 不足 3 个则补全
-                        while (loadedConfig.ItemPresets.Count < 3)
+                        int count = loadedConfig.ItemPresets.Count;
+
+                        int defaultCount = new ItemPresetConfig().ItemPresets.Count;
+
+                        if (count < defaultCount)
                         {
-                            loadedConfig.ItemPresets.Add(new ItemPreset());
+                            loadedConfig = new ItemPresetConfig();
                         }
-                        // 超过 3 个则截断
-                        if (loadedConfig.ItemPresets.Count > 3)
+
+                        if (count > defaultCount)
                         {
-                            loadedConfig.ItemPresets = loadedConfig.ItemPresets.Take(3).ToList();
+                            loadedConfig.ItemPresets = loadedConfig.ItemPresets.Skip(count - defaultCount).ToList();
                         }
                         ItemPresetConfig = loadedConfig;
                     }
                     else
                     {
-                        // 配置无效时使用默认（3 个预设）
-                        ItemPresetConfig = new ItemPresetConfig();
+                        Save();
                     }
                 }
                 else
                 {
-                    // 文件不存在时创建默认配置（含 3 个预设）
                     Save();
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"加载配置失败：{ex.Message}");
-                ItemPresetConfig = new ItemPresetConfig(); // 异常时使用默认
+                ItemPresetConfig = new ItemPresetConfig();
             }
         }
     }
 }
-

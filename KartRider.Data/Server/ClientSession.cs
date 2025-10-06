@@ -2275,7 +2275,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
                     {
                         int stockId = iPacket.ReadInt();
                         int unk = iPacket.ReadInt();
@@ -2288,15 +2288,6 @@ namespace KartRider
                             outPacket.WriteHexString("00 00 00 00");
                             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
                             outPacket.WriteHexString("00 00 00 00 00");
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        return;
-                    }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
-                    {
-                        using (OutPacket outPacket = new OutPacket("SpRepBuyItemPacket"))
-                        {
-                            outPacket.WriteHexString("01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3539,8 +3530,18 @@ namespace KartRider
                             {
                                 outPacket.WriteShort(ItemPreset.ID);
                                 outPacket.WriteShort(ItemPreset.ID);
-                                outPacket.WriteInt(ItemPreset.Badge);
-                                outPacket.WriteHexString("00 44 B0 46 23 00");
+                                outPacket.WriteByte(ItemPreset.Badge);
+                                if (ItemPreset.ID < 4)
+                                {
+                                    outPacket.WriteInt(0);
+                                    outPacket.WriteHexString("44 B0 46 23");
+                                }
+                                else
+                                {
+                                    outPacket.WriteInt(27125 + ItemPreset.ID);
+                                    outPacket.WriteHexString("44 B0 46 23");
+                                }
+                                outPacket.WriteByte(ItemPreset.Enable);
                                 outPacket.WriteString(ItemPreset.Name);
                                 outPacket.WriteShort(ItemPreset.Character);
                                 outPacket.WriteShort(ItemPreset.Paint);
@@ -3596,48 +3597,52 @@ namespace KartRider
                         short id1 = iPacket.ReadShort();
                         short id2 = iPacket.ReadShort();
                         var ItemPreset = ItemPresetsService.ItemPresetConfig.ItemPresets.FirstOrDefault(ItemPreset => ItemPreset.ID == id1 && ItemPreset.ID == id2);
-                        ItemPreset.Badge = iPacket.ReadInt();
-                        iPacket.ReadBytes(6);
-                        ItemPreset.Name = iPacket.ReadString();
-                        ItemPreset.Character = iPacket.ReadShort();
-                        ItemPreset.Paint = iPacket.ReadShort();
-                        ItemPreset.Kart = iPacket.ReadShort();
-                        ItemPreset.Plate = iPacket.ReadShort();
-                        ItemPreset.Goggle = iPacket.ReadShort();
-                        ItemPreset.Balloon = iPacket.ReadShort();
-                        ItemPreset.Unknown1 = iPacket.ReadShort();
-                        ItemPreset.HeadBand = iPacket.ReadShort();
-                        ItemPreset.HeadPhone = iPacket.ReadShort();
-                        ItemPreset.HandGearL = iPacket.ReadShort();
-                        ItemPreset.Unknown2 = iPacket.ReadShort();
-                        ItemPreset.Uniform = iPacket.ReadShort();
-                        ItemPreset.Decal = iPacket.ReadShort();
-                        ItemPreset.Pet = iPacket.ReadShort();
-                        ItemPreset.FlyingPet = iPacket.ReadShort();
-                        ItemPreset.Aura = iPacket.ReadShort();
-                        ItemPreset.SkidMark = iPacket.ReadShort();
-                        ItemPreset.SpecialKit = iPacket.ReadShort();
-                        ItemPreset.RidColor = iPacket.ReadShort();
-                        ItemPreset.BonusCard = iPacket.ReadShort();
-                        ItemPreset.BossModeCard = iPacket.ReadShort();
-                        ItemPreset.KartPlant1 = iPacket.ReadShort();
-                        ItemPreset.KartPlant2 = iPacket.ReadShort();
-                        ItemPreset.KartPlant3 = iPacket.ReadShort();
-                        ItemPreset.KartPlant4 = iPacket.ReadShort();
-                        ItemPreset.Unknown3 = iPacket.ReadShort();
-                        ItemPreset.FishingPole = iPacket.ReadShort();
-                        ItemPreset.Tachometer = iPacket.ReadShort();
-                        ItemPreset.Dye = iPacket.ReadShort();
-                        ItemPreset.KartSN = iPacket.ReadShort();
-                        ItemPreset.Unknown4 = iPacket.ReadByte();
-                        ItemPreset.KartCoating = iPacket.ReadShort();
-                        ItemPreset.KartTailLamp = iPacket.ReadShort();
-                        ItemPreset.slotBg = iPacket.ReadShort();
-                        ItemPreset.KartCoating12 = iPacket.ReadShort();
-                        ItemPreset.KartTailLamp12 = iPacket.ReadShort();
-                        ItemPreset.KartBoosterEffect12 = iPacket.ReadShort();
-                        ItemPreset.Unknown5 = iPacket.ReadShort();
-                        ItemPresetsService.Save();
+                        if (ItemPreset != null)
+                        {
+                            ItemPreset.Badge = iPacket.ReadByte();
+                            iPacket.ReadBytes(8);
+                            ItemPreset.Enable = iPacket.ReadByte();
+                            ItemPreset.Name = iPacket.ReadString();
+                            ItemPreset.Character = iPacket.ReadShort();
+                            ItemPreset.Paint = iPacket.ReadShort();
+                            ItemPreset.Kart = iPacket.ReadShort();
+                            ItemPreset.Plate = iPacket.ReadShort();
+                            ItemPreset.Goggle = iPacket.ReadShort();
+                            ItemPreset.Balloon = iPacket.ReadShort();
+                            ItemPreset.Unknown1 = iPacket.ReadShort();
+                            ItemPreset.HeadBand = iPacket.ReadShort();
+                            ItemPreset.HeadPhone = iPacket.ReadShort();
+                            ItemPreset.HandGearL = iPacket.ReadShort();
+                            ItemPreset.Unknown2 = iPacket.ReadShort();
+                            ItemPreset.Uniform = iPacket.ReadShort();
+                            ItemPreset.Decal = iPacket.ReadShort();
+                            ItemPreset.Pet = iPacket.ReadShort();
+                            ItemPreset.FlyingPet = iPacket.ReadShort();
+                            ItemPreset.Aura = iPacket.ReadShort();
+                            ItemPreset.SkidMark = iPacket.ReadShort();
+                            ItemPreset.SpecialKit = iPacket.ReadShort();
+                            ItemPreset.RidColor = iPacket.ReadShort();
+                            ItemPreset.BonusCard = iPacket.ReadShort();
+                            ItemPreset.BossModeCard = iPacket.ReadShort();
+                            ItemPreset.KartPlant1 = iPacket.ReadShort();
+                            ItemPreset.KartPlant2 = iPacket.ReadShort();
+                            ItemPreset.KartPlant3 = iPacket.ReadShort();
+                            ItemPreset.KartPlant4 = iPacket.ReadShort();
+                            ItemPreset.Unknown3 = iPacket.ReadShort();
+                            ItemPreset.FishingPole = iPacket.ReadShort();
+                            ItemPreset.Tachometer = iPacket.ReadShort();
+                            ItemPreset.Dye = iPacket.ReadShort();
+                            ItemPreset.KartSN = iPacket.ReadShort();
+                            ItemPreset.Unknown4 = iPacket.ReadByte();
+                            ItemPreset.KartCoating = iPacket.ReadShort();
+                            ItemPreset.KartTailLamp = iPacket.ReadShort();
+                            ItemPreset.slotBg = iPacket.ReadShort();
+                            ItemPreset.KartCoating12 = iPacket.ReadShort();
+                            ItemPreset.KartTailLamp12 = iPacket.ReadShort();
+                            ItemPreset.KartBoosterEffect12 = iPacket.ReadShort();
+                            ItemPreset.Unknown5 = iPacket.ReadShort();
+                            ItemPresetsService.Save();
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetUseSlotData", 0))
@@ -3648,6 +3653,18 @@ namespace KartRider
                             outPacket.WriteInt(1);
                             this.Parent.Client.Send(outPacket);
                         }
+                        foreach (var ItemPreset in ItemPresetsService.ItemPresetConfig.ItemPresets)
+                        {
+                            if (ItemPreset.ID == id)
+                            {
+                                ItemPreset.Enable = 1;
+                            }
+                            else
+                            {
+                                ItemPreset.Enable = 0;
+                            }
+                        }
+                        ItemPresetsService.Save();
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMyMsgrInfoPacket", 0))

@@ -22,7 +22,7 @@ namespace Profile
                 Formatting = Newtonsoft.Json.Formatting.Indented,
             };
 
-            using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false))
+            using (var streamWriter = new StreamWriter(FileName.config_path, false, Encoding.UTF8))
             {
                 streamWriter.Write(Newtonsoft.Json.JsonConvert.SerializeObject(ProfileConfig, jsonSettings));
             }
@@ -32,14 +32,14 @@ namespace Profile
         {
             if (File.Exists(FileName.config_path))
             {
-                string config_str = System.IO.File.ReadAllText(FileName.config_path);
+                string config_str = System.IO.File.ReadAllText(FileName.config_path, Encoding.UTF8);
                 ProfileConfig = JsonConvert.DeserializeObject<ProfileConfig>(config_str);
 
                 Loaded();
             }
             else
             {
-                using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false))
+                using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false, Encoding.UTF8))
                 {
                     streamWriter.Write(JsonConvert.SerializeObject(ProfileConfig));
                 }
