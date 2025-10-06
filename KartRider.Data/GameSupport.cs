@@ -254,10 +254,10 @@ namespace KartRider
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_FlyingPet);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Aura);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_SkidMark);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_SpecialKit);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_RidColor);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_BonusCard);
-            outPacket.WriteShort(0);//bossModeCard
+            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_BossModeCard);
             var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
             if (existingPlant != null)
             {
@@ -274,7 +274,7 @@ namespace KartRider
                 outPacket.WriteShort(0);
             }
             outPacket.WriteShort(0);
-            outPacket.WriteShort(0);
+            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_FishingPole);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Tachometer);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Dye);
             outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_KartSN);

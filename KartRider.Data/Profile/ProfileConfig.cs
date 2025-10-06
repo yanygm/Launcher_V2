@@ -122,6 +122,8 @@ namespace Profile
 
         public short Set_BonusCard { get; set; } = 0;
 
+        public short Set_BossModeCard { get; set; } = 0;
+
         public short Set_FishingPole { get; set; } = 0;
 
         public short Set_Tachometer { get; set; } = 0;

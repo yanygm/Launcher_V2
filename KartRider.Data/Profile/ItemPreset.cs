@@ -73,7 +73,7 @@ namespace Profile
 
         public short BonusCard { get; set; }
 
-        public short Unknown3 { get; set; }
+        public short BossModeCard { get; set; }
 
         public short KartPlant1 { get; set; }
 
@@ -83,7 +83,7 @@ namespace Profile
 
         public short KartPlant4 { get; set; }
 
-        public short Unknown4 { get; set; }
+        public short Unknown3 { get; set; }
 
         public short FishingPole { get; set; }
 
@@ -93,7 +93,7 @@ namespace Profile
 
         public short KartSN { get; set; }
 
-        public byte Unknown5 { get; set; }
+        public byte Unknown4 { get; set; }
 
         public short KartCoating { get; set; }
 
@@ -107,7 +107,7 @@ namespace Profile
 
         public short KartBoosterEffect12 { get; set; }
 
-        public short Unknown6 { get; set; }
+        public short Unknown5 { get; set; }
     }
 
     public class ItemPresetsService

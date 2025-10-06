@@ -224,11 +224,11 @@ namespace KartRider
                         ProfileService.ProfileConfig.RiderItem.Set_Plate = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Goggle = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Balloon = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        short Unknown1 = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_HeadBand = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_HeadPhone = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_HandGearL = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        short Unknown2 = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Uniform = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Decal = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Pet = iPacket.ReadShort();
@@ -238,24 +238,24 @@ namespace KartRider
                         ProfileService.ProfileConfig.RiderItem.Set_SpecialKit = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_RidColor = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_BonusCard = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        ProfileService.ProfileConfig.RiderItem.Set_BossModeCard = iPacket.ReadShort();
                         short Set_KartPlant1 = iPacket.ReadShort();
                         short Set_KartPlant2 = iPacket.ReadShort();
                         short Set_KartPlant3 = iPacket.ReadShort();
                         short Set_KartPlant4 = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        short Unknown3 = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_FishingPole = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Tachometer = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_Dye = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_KartSN = iPacket.ReadShort();
-                        iPacket.ReadByte();
+                        byte Unknown4 = iPacket.ReadByte();
                         short Set_KartCoating = iPacket.ReadShort();
                         short Set_KartTailLamp = iPacket.ReadShort();
                         ProfileService.ProfileConfig.RiderItem.Set_slotBg = iPacket.ReadShort();
                         short Set_KartCoating12 = iPacket.ReadShort();
                         short Set_KartTailLamp12 = iPacket.ReadShort();
                         short Set_KartBoosterEffect12 = iPacket.ReadShort();
-                        iPacket.ReadShort();
+                        short Unknown5 = iPacket.ReadShort();
                         Console.WriteLine($"Set_KartPlant1: {Set_KartPlant1}");
                         Console.WriteLine($"Set_KartPlant2: {Set_KartPlant2}");
                         Console.WriteLine($"Set_KartPlant3: {Set_KartPlant3}");
@@ -265,6 +265,11 @@ namespace KartRider
                         Console.WriteLine($"Set_KartCoating12: {Set_KartCoating12}");
                         Console.WriteLine($"Set_KartTailLamp12: {Set_KartTailLamp12}");
                         Console.WriteLine($"Set_KartBoosterEffect12: {Set_KartBoosterEffect12}");
+                        Console.WriteLine($"Unknown1: {Unknown1}");
+                        Console.WriteLine($"Unknown2: {Unknown2}");
+                        Console.WriteLine($"Unknown3: {Unknown3}");
+                        Console.WriteLine($"Unknown4: {Unknown4}");
+                        Console.WriteLine($"Unknown5: {Unknown5}");
                         ProfileService.Save();
                         StartGameData.FlyingPet_id = ProfileService.ProfileConfig.RiderItem.Set_FlyingPet;
                         StartGameData.Kart_id = ProfileService.ProfileConfig.RiderItem.Set_Kart;
@@ -817,6 +822,18 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
                         {
                             outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRepeatGetMsgrFriendList", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrRepeatGetMsgrFriendList"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteByte(1);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(4);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2258,11 +2275,25 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0))
                     {
                         int stockId = iPacket.ReadInt();
                         int unk = iPacket.ReadInt();
                         byte mode = iPacket.ReadByte();//货币类型0:电池 1:金币 3:KOIN
+                        using (OutPacket outPacket = new OutPacket("SpRepBuyItemPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
+                            outPacket.WriteHexString("00 00 00 00");
+                            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
+                            outPacket.WriteHexString("00 00 00 00 00");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
+                    {
                         using (OutPacket outPacket = new OutPacket("SpRepBuyItemPacket"))
                         {
                             outPacket.WriteHexString("01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
@@ -2956,10 +2987,12 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqTcCashEventUserInfoPacket", 0))
                     {
-                        int unk1 = iPacket.ReadInt();
+                        uint unk1 = iPacket.ReadUInt();
+                        byte unk2 = iPacket.ReadByte();
                         using (OutPacket outPacket = new OutPacket("PrTcCashEventUserInfoPacket"))
                         {
-                            outPacket.WriteInt(unk1);
+                            outPacket.WriteUInt(unk1);
+                            outPacket.WriteByte(0);
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
@@ -3529,24 +3562,24 @@ namespace KartRider
                                 outPacket.WriteShort(ItemPreset.SpecialKit);
                                 outPacket.WriteShort(ItemPreset.RidColor);
                                 outPacket.WriteShort(ItemPreset.BonusCard);
-                                outPacket.WriteShort(ItemPreset.Unknown3);
+                                outPacket.WriteShort(ItemPreset.BossModeCard);
                                 outPacket.WriteShort(ItemPreset.KartPlant1);
                                 outPacket.WriteShort(ItemPreset.KartPlant2);
                                 outPacket.WriteShort(ItemPreset.KartPlant3);
                                 outPacket.WriteShort(ItemPreset.KartPlant4);
-                                outPacket.WriteShort(ItemPreset.Unknown4);
+                                outPacket.WriteShort(ItemPreset.Unknown3);
                                 outPacket.WriteShort(ItemPreset.FishingPole);
                                 outPacket.WriteShort(ItemPreset.Tachometer);
                                 outPacket.WriteShort(ItemPreset.Dye);
                                 outPacket.WriteShort(ItemPreset.KartSN);
-                                outPacket.WriteByte(ItemPreset.Unknown5);
+                                outPacket.WriteByte(ItemPreset.Unknown4);
                                 outPacket.WriteShort(ItemPreset.KartCoating);
                                 outPacket.WriteShort(ItemPreset.KartTailLamp);
                                 outPacket.WriteShort(ItemPreset.slotBg);
                                 outPacket.WriteShort(ItemPreset.KartCoating12);
                                 outPacket.WriteShort(ItemPreset.KartTailLamp12);
                                 outPacket.WriteShort(ItemPreset.KartBoosterEffect12);
-                                outPacket.WriteShort(ItemPreset.Unknown6);
+                                outPacket.WriteShort(ItemPreset.Unknown5);
                             }
                             this.Parent.Client.Send(outPacket);
                         }
@@ -3586,24 +3619,24 @@ namespace KartRider
                         ItemPreset.SpecialKit = iPacket.ReadShort();
                         ItemPreset.RidColor = iPacket.ReadShort();
                         ItemPreset.BonusCard = iPacket.ReadShort();
-                        ItemPreset.Unknown3 = iPacket.ReadShort();
+                        ItemPreset.BossModeCard = iPacket.ReadShort();
                         ItemPreset.KartPlant1 = iPacket.ReadShort();
                         ItemPreset.KartPlant2 = iPacket.ReadShort();
                         ItemPreset.KartPlant3 = iPacket.ReadShort();
                         ItemPreset.KartPlant4 = iPacket.ReadShort();
-                        ItemPreset.Unknown4 = iPacket.ReadShort();
+                        ItemPreset.Unknown3 = iPacket.ReadShort();
                         ItemPreset.FishingPole = iPacket.ReadShort();
                         ItemPreset.Tachometer = iPacket.ReadShort();
                         ItemPreset.Dye = iPacket.ReadShort();
                         ItemPreset.KartSN = iPacket.ReadShort();
-                        ItemPreset.Unknown5 = iPacket.ReadByte();
+                        ItemPreset.Unknown4 = iPacket.ReadByte();
                         ItemPreset.KartCoating = iPacket.ReadShort();
                         ItemPreset.KartTailLamp = iPacket.ReadShort();
                         ItemPreset.slotBg = iPacket.ReadShort();
                         ItemPreset.KartCoating12 = iPacket.ReadShort();
                         ItemPreset.KartTailLamp12 = iPacket.ReadShort();
                         ItemPreset.KartBoosterEffect12 = iPacket.ReadShort();
-                        ItemPreset.Unknown6 = iPacket.ReadShort();
+                        ItemPreset.Unknown5 = iPacket.ReadShort();
                         ItemPresetsService.Save();
                         return;
                     }
