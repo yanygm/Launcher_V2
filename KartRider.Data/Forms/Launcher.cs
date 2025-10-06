@@ -326,8 +326,6 @@ namespace KartRider
                         }
                     }
                     File.WriteAllBytes(pinFile, val.GetEncryptedData());
-                    Start_Button.Enabled = true;
-                    Launcher.GetKart = false;
                     var modifier = new MemoryModifier();
                     modifier.LaunchAndModifyMemory(kartRiderDirectory);
                 })).Start();
@@ -338,10 +336,8 @@ namespace KartRider
         {
             if (Launcher.GetKart)
             {
-                //GetKart_Button.Enabled = false;
                 Program.GetKartDlg = new GetKart();
                 Program.GetKartDlg.ShowDialog();
-                //GetKart_Button.Enabled = true;
             }
         }
 
@@ -757,3 +753,4 @@ namespace KartRider
         }
     }
 }
+
