@@ -182,7 +182,7 @@ namespace KartRider
                     // 2.2 检查KartSpec字典是否存在该规格
                     if (!kartSpec.TryGetValue(Name, out var kartSpecDoc))
                     {
-                        Console.WriteLine($"[KartSpec] 警告：KartSpec中未找到名称={kartName}的规格，加载默认规格");
+                        Console.WriteLine($"[KartSpec] 警告：KartSpec中未找到名称={Name}的规格，加载默认规格");
                         ApplyDefaultSpec();
                         return;
                     }
