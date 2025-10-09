@@ -19,27 +19,6 @@ namespace ExcData
 		public static List<List<short>> PartsList = new List<List<short>>();
 		public static List<List<short>> Parts12List = new List<List<short>>();
 		public static List<List<short>> Level12List = new List<List<short>>();
-		public static List<List<short>> NewKart = new List<List<short>>();
-		public static List<List<short>> Dictionary = new List<List<short>>();
-
-		public static Dictionary<int, string> KartName = new Dictionary<int, string>();
-		public static Dictionary<string, XmlDocument> KartSpec = new Dictionary<string, XmlDocument>();
-		public static Dictionary<int, string> flyingName = new Dictionary<int, string>();
-		public static Dictionary<string, XmlDocument> flyingSpec = new Dictionary<string, XmlDocument>();
-
-		public static XDocument randomTrack = new XDocument();
-		public static List<short> emblem = new List<short>();
-		public static List<short> dictionary = new List<short>();
-		public static Dictionary<uint, string> track = new Dictionary<uint, string>();
-		public static List<int> scenario = new List<int>();
-		public static List<int> quest = new List<int>();
-		public static int seasonId = 0;
-		public static List<short> itemProb_indi = new List<short>();
-		public static List<short> itemProb_team = new List<short>();
-		public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
-		public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
-
-		public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
 
 		public static void Tune_ExcData()
 		{

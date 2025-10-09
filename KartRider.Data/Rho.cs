@@ -1,18 +1,19 @@
-using System;
-using System.IO;
-using KartLibrary.File;
-using KartLibrary.Consts;
-using System.Collections;
-using System.Collections.Generic;
-using KartLibrary.Xml;
-using System.Text;
 using ExcData;
-using RiderData;
+using KartLibrary.Consts;
+using KartLibrary.File;
+using KartLibrary.Xml;
 using KartRider;
 using KartRider.Common.Utilities;
+using Profile;
+using RiderData;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using System.Linq;
 
 namespace RHOParser
 {
@@ -25,9 +26,9 @@ namespace RHOParser
                 PackFolderManager packFolderManager = new PackFolderManager();
                 packFolderManager.OpenDataFolder(input);
                 string regionCode = packFolderManager.regionCode.ToString().ToLower();
+
                 Queue<PackFolderInfo> packFolderInfoQueue = new Queue<PackFolderInfo>();
                 packFolderInfoQueue.Enqueue(packFolderManager.GetRootFolder());
-                packFolderManager.GetRootFolder();
                 while (packFolderInfoQueue.Count > 0)
                 {
                     PackFolderInfo packFolderInfo1 = packFolderInfoQueue.Dequeue();
@@ -38,18 +39,14 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             string name = fullName.Substring(10, fullName.Length - 23);
-                            if (!(KartExcData.flyingSpec.ContainsKey(name)))
+                            if (!(FlyingPet.flyingSpec.ContainsKey(name)))
                             {
                                 byte[] data = packFileInfo.GetData();
-                                BinaryXmlDocument bxd = new BinaryXmlDocument();
-                                bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                                string output_bml = bxd.RootTag.ToString();
-                                byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                                using (MemoryStream stream = new MemoryStream(output_data))
+                                using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                                 {
                                     XmlDocument flying = new XmlDocument();
                                     flying.Load(stream);
-                                    KartExcData.flyingSpec.Add(name, flying);
+                                    FlyingPet.flyingSpec.Add(name, flying);
                                 }
                             }
                         }
@@ -57,16 +54,12 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
-                                KartExcData.randomTrack = XDocument.Load(stream);
+                                RandomTrack.randomTrack = XDocument.Load(stream);
                             }
                         }
-                        if (fullName == "track/common/trackLocale@" + regionCode + ".xml")
+                        if (fullName == "track/common/track@zz.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -74,104 +67,22 @@ namespace RHOParser
                             {
                                 XmlDocument trackLocale = new XmlDocument();
                                 trackLocale.Load(stream);
-                                XmlNodeList trackParams = trackLocale.GetElementsByTagName("track");
-                                if (trackParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in trackParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("id");
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
-                                XmlNodeList track_crzParams = trackLocale.GetElementsByTagName("track_crz");
-                                if (track_crzParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in track_crzParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("refId") + "_crz";
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
-                                XmlNodeList track_rvsParams = trackLocale.GetElementsByTagName("track_rvs");
-                                if (track_rvsParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in track_rvsParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("refId") + "_rvs";
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
+                                ProcessNodes(trackLocale.GetElementsByTagName("track"), "id");
+                                ProcessNodes(trackLocale.GetElementsByTagName("track_crz"), "refId", "crz");
+                                ProcessNodes(trackLocale.GetElementsByTagName("track_rvs"), "refId", "rvs");
                             }
                         }
-                        if (fullName == "track/common/trackLocale@" + regionCode + ".bml")
+                        if (fullName == "track/common/track@zz.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XmlDocument trackLocale = new XmlDocument();
                                 trackLocale.Load(stream);
-                                XmlNodeList trackParams = trackLocale.GetElementsByTagName("track");
-                                if (trackParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in trackParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("id");
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
-                                XmlNodeList track_crzParams = trackLocale.GetElementsByTagName("track_crz");
-                                if (track_crzParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in track_crzParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("refId") + "_crz";
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
-                                XmlNodeList track_rvsParams = trackLocale.GetElementsByTagName("track_rvs");
-                                if (track_rvsParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in track_rvsParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        string track = xe.GetAttribute("refId") + "_rvs";
-                                        uint id = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                                        if (!(KartExcData.track.ContainsKey(id)))
-                                        {
-                                            KartExcData.track.Add(id, track);
-                                        }
-                                    }
-                                }
+                                ProcessNodes(trackLocale.GetElementsByTagName("track"), "id");
+                                ProcessNodes(trackLocale.GetElementsByTagName("track_crz"), "refId", "crz");
+                                ProcessNodes(trackLocale.GetElementsByTagName("track_rvs"), "refId", "rvs");
                             }
                         }
                         if (fullName == "etc_/itemTable.kml")
@@ -189,9 +100,9 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
-                                        if (!(KartExcData.KartName.ContainsKey(id)))
+                                        if (!(KartSpec.kartName.ContainsKey(id)))
                                         {
-                                            KartExcData.KartName.Add(id, name);
+                                            KartSpec.kartName.Add(id, name);
                                         }
                                     }
                                 }
@@ -203,9 +114,9 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(flyingPet.Attribute("id").Value);
                                         string name = flyingPet.Attribute("name").Value;
-                                        if (!(KartExcData.flyingName.ContainsKey(id)))
+                                        if (!(FlyingPet.flyingName.ContainsKey(id)))
                                         {
-                                            KartExcData.flyingName.Add(id, name);
+                                            FlyingPet.flyingName.Add(id, name);
                                         }
                                     }
                                 }
@@ -225,13 +136,13 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
-                                        if (KartExcData.KartName.ContainsKey(id))
+                                        if (KartSpec.kartName.ContainsKey(id))
                                         {
-                                            KartExcData.KartName[id] = name;
+                                            KartSpec.kartName[id] = name;
                                         }
                                         else
                                         {
-                                            KartExcData.KartName.Add(id, name);
+                                            KartSpec.kartName.Add(id, name);
                                         }
                                     }
                                 }
@@ -242,13 +153,13 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(flyingPet.Attribute("id").Value);
                                         string name = flyingPet.Attribute("name").Value;
-                                        if (KartExcData.flyingName.ContainsKey(id))
+                                        if (FlyingPet.flyingName.ContainsKey(id))
                                         {
-                                            KartExcData.flyingName[id] = name;
+                                            FlyingPet.flyingName[id] = name;
                                         }
                                         else
                                         {
-                                            KartExcData.flyingName.Add(id, name);
+                                            FlyingPet.flyingName.Add(id, name);
                                         }
                                     }
                                 }
@@ -271,21 +182,21 @@ namespace RHOParser
                                         short id;
                                         if (short.TryParse(xe.GetAttribute("id"), out id))
                                         {
-                                            if (!KartExcData.emblem.Contains(id))
+                                            if (!Emblem.emblem.Contains(id))
                                             {
-                                                KartExcData.emblem.Add(id);
+                                                Emblem.emblem.Add(id);
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        if (fullName.Contains("kart_") && fullName.Contains("/param@" + regionCode + ".xml"))
+                        if (fullName.Contains("kart_") && fullName.Contains("/param@" + regionCode + ".xml") || fullName.Contains("kart_") && fullName.Contains("/param@" + regionCode + ".kml"))
                         {
                             Console.WriteLine(fullName);
                             byte[] data = ReplaceBytes(packFileInfo.GetData());
                             string name = fullName.Substring(6, fullName.Length - 19);
-                            if (!(KartExcData.KartSpec.ContainsKey(name)))
+                            if (!(KartSpec.kartSpec.ContainsKey(name)))
                             {
                                 if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
                                 {
@@ -297,7 +208,7 @@ namespace RHOParser
                                     {
                                         XmlDocument kart1 = new XmlDocument();
                                         kart1.Load(stream);
-                                        KartExcData.KartSpec.Add(name, kart1);
+                                        KartSpec.kartSpec.Add(name, kart1);
                                     }
                                 }
                                 else
@@ -306,7 +217,7 @@ namespace RHOParser
                                     {
                                         XmlDocument kart2 = new XmlDocument();
                                         kart2.Load(stream);
-                                        KartExcData.KartSpec.Add(name, kart2);
+                                        KartSpec.kartSpec.Add(name, kart2);
                                     }
                                 }
                             }
@@ -315,33 +226,29 @@ namespace RHOParser
                         {
                             string name = fullName.Substring(6, fullName.Length - 16);
                             byte[] data = ReplaceBytes(packFileInfo.GetData());
-                            bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == "kart_/" + name + "/param@" + regionCode + ".xml");
-                            if (!containsTarget)
+                            if (!(KartSpec.kartSpec.ContainsKey(name)))
                             {
-                                if (!(KartExcData.KartSpec.ContainsKey(name)))
+                                Console.WriteLine(fullName);
+                                if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
                                 {
-                                    Console.WriteLine(fullName);
-                                    if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
+                                    byte[] newBytes = new byte[data.Length - 4];
+                                    newBytes[0] = 255;
+                                    newBytes[1] = 254;
+                                    Array.Copy(data, 6, newBytes, 2, data.Length - 6);
+                                    using (MemoryStream stream = new MemoryStream(newBytes))
                                     {
-                                        byte[] newBytes = new byte[data.Length - 4];
-                                        newBytes[0] = 255;
-                                        newBytes[1] = 254;
-                                        Array.Copy(data, 6, newBytes, 2, data.Length - 6);
-                                        using (MemoryStream stream = new MemoryStream(newBytes))
-                                        {
-                                            XmlDocument kart1 = new XmlDocument();
-                                            kart1.Load(stream);
-                                            KartExcData.KartSpec.Add(name, kart1);
-                                        }
+                                        XmlDocument kart1 = new XmlDocument();
+                                        kart1.Load(stream);
+                                        KartSpec.kartSpec.Add(name, kart1);
                                     }
-                                    else
+                                }
+                                else
+                                {
+                                    using (MemoryStream stream = new MemoryStream(data))
                                     {
-                                        using (MemoryStream stream = new MemoryStream(data))
-                                        {
-                                            XmlDocument kart2 = new XmlDocument();
-                                            kart2.Load(stream);
-                                            KartExcData.KartSpec.Add(name, kart2);
-                                        }
+                                        XmlDocument kart2 = new XmlDocument();
+                                        kart2.Load(stream);
+                                        KartSpec.kartSpec.Add(name, kart2);
                                     }
                                 }
                             }
@@ -350,11 +257,7 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XmlDocument Quest = new XmlDocument();
                                 Quest.Load(stream);
@@ -365,9 +268,9 @@ namespace RHOParser
                                     {
                                         XmlElement xe = (XmlElement)xn;
                                         int id = int.Parse(xe.GetAttribute("id"));
-                                        if (!(KartExcData.quest.Contains(id)))
+                                        if (!(GameSupport.quest.Contains(id)))
                                         {
-                                            KartExcData.quest.Add(id);
+                                            GameSupport.quest.Add(id);
                                         }
                                     }
                                 }
@@ -377,26 +280,18 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XDocument doc = XDocument.Load(stream);
                                 XElement questInfo = doc.Descendants("kartPassQuestInfo").First();
-                                KartExcData.seasonId = int.Parse(questInfo.Attribute("seasonId").Value);
+                                GameSupport.seasonId = int.Parse(questInfo.Attribute("seasonId").Value);
                             }
                         }
                         if (fullName == "zeta/" + regionCode + "/scenario/scenario.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XmlDocument Scenario = new XmlDocument();
                                 Scenario.Load(stream);
@@ -407,9 +302,9 @@ namespace RHOParser
                                     {
                                         XmlElement xe = (XmlElement)xn;
                                         int id = int.Parse(xe.GetAttribute("id"));
-                                        if (!(KartExcData.scenario.Contains(id)))
+                                        if (!(GameSupport.scenario.Contains(id)))
                                         {
-                                            KartExcData.scenario.Add(id);
+                                            GameSupport.scenario.Add(id);
                                         }
                                     }
                                 }
@@ -419,11 +314,7 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XDocument doc = XDocument.Load(stream);
                                 foreach (var item in doc.Descendants("item"))
@@ -434,7 +325,7 @@ namespace RHOParser
                                     // 验证并转换为 short 类型
                                     if (short.TryParse(idxValue, out short idx))
                                     {
-                                        KartExcData.itemProb_indi.Add(idx);
+                                        MultyPlayer.itemProb_indi.Add(idx);
                                     }
                                     else
                                     {
@@ -447,11 +338,7 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
-                            BinaryXmlDocument bxd = new BinaryXmlDocument();
-                            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                            string output_bml = bxd.RootTag.ToString();
-                            byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
-                            using (MemoryStream stream = new MemoryStream(output_data))
+                            using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XDocument doc = XDocument.Load(stream);
                                 foreach (var item in doc.Descendants("item"))
@@ -462,7 +349,7 @@ namespace RHOParser
                                     // 验证并转换为 short 类型
                                     if (short.TryParse(idxValue, out short idx))
                                     {
-                                        KartExcData.itemProb_team.Add(idx);
+                                        MultyPlayer.itemProb_team.Add(idx);
                                     }
                                     else
                                     {
@@ -508,7 +395,7 @@ namespace RHOParser
                                             }).ToList()
                                         }
                                     );
-                                KartExcData.aiCharacterDict = aiCharacterDict;
+                                MultyPlayer.aiCharacterDict = aiCharacterDict;
 
                                 // 卡丁车Dictionary：键为short类型的卡丁车ID
                                 var aiKartDict = aiItem.Elements("kart")
@@ -521,7 +408,7 @@ namespace RHOParser
                                             Item = int.Parse(k.Attribute("item").Value),
                                         }
                                     );
-                                KartExcData.aiKartDict = aiKartDict;
+                                MultyPlayer.aiKartDict = aiKartDict;
                             }
                         }
                         if (fullName == "zeta_/" + regionCode + "/content/itemDictionary.xml")
@@ -540,7 +427,7 @@ namespace RHOParser
                                     for (int i = 0; i < valuesArray.Count(); i++)
                                     {
                                         List<short> Add = new List<short> { catId, short.Parse(valuesArray[i]) };
-                                        KartExcData.Dictionary.Add(Add);
+                                        GameSupport.Dictionary.Add(Add);
                                     }
                                 }
                             }
@@ -664,11 +551,11 @@ namespace RHOParser
                                         short itemCatId = short.Parse(xe.GetAttribute("itemCatId"));
                                         short itemId = short.Parse(xe.GetAttribute("itemId"));
                                         string itemName = xe.GetAttribute("itemName");
-                                        if (!KartExcData.items.ContainsKey(itemCatId))
+                                        if (!NewRider.items.ContainsKey(itemCatId))
                                         {
-                                            KartExcData.items[itemCatId] = new Dictionary<short, string>();
+                                            NewRider.items[itemCatId] = new Dictionary<short, string>();
                                         }
-                                        KartExcData.items[itemCatId][itemId] = itemName;
+                                        NewRider.items[itemCatId][itemId] = itemName;
                                     }
                                 }
                             }
@@ -686,7 +573,7 @@ namespace RHOParser
             }
         }
 
-        static byte[] ReplaceBytes(byte[] data)
+        private static byte[] ReplaceBytes(byte[] data)
         {
             byte[] oldBytes = new byte[] {
             0x3C, 0x00, 0x3F, 0x00, 0x78, 0x00, 0x6D, 0x00, 0x6C, 0x00, 0x20, 0x00,
@@ -752,6 +639,44 @@ namespace RHOParser
         private static string ReplacePath(string file)
         {
             return file.IndexOf(".rho") > -1 ? file.Substring(0, file.IndexOf(".rho")).Replace("_", "/") + file.Substring(file.IndexOf(".rho") + 4) : file;
+        }
+
+        private static void ProcessNodes(XmlNodeList nodes, string attributeName, string suffix = "")
+        {
+            if (nodes == null) return;
+            foreach (XmlNode xn in nodes)
+            {
+                XmlElement xe = xn as XmlElement;
+                if (xe == null) continue;
+                string attributeValue = xe.GetAttribute(attributeName);
+                if (string.IsNullOrWhiteSpace(attributeValue))
+                {
+                    Console.WriteLine($"警告：节点 {xn.Name} 缺少有效的 {attributeName} 属性");
+                    continue;
+                }
+                string trackIdentifier = string.IsNullOrEmpty(suffix) ? attributeValue : $"{attributeValue}_{suffix}";
+                uint adler32Id = Adler32Helper.GenerateAdler32_UNICODE(trackIdentifier, 0);
+                if (!RandomTrack.track.ContainsKey(adler32Id))
+                {
+                    RandomTrack.track.Add(adler32Id, trackIdentifier);
+                }
+            }
+        }
+
+        private static byte[] BmlToXml(string path, byte[] bmlData)
+        {
+            if (Path.GetExtension(path).ToLower() == ".bml")
+            {
+                BinaryXmlDocument bxd = new BinaryXmlDocument();
+                bxd.Read(Encoding.GetEncoding("UTF-16"), bmlData);
+                string output_bml = bxd.RootTag.ToString();
+                byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output_bml);
+                return output_data;
+            }
+            else
+            {
+                return bmlData;
+            }
         }
     }
 }

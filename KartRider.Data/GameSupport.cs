@@ -17,6 +17,11 @@ namespace KartRider
 
     public static class GameSupport
     {
+        public static List<List<short>> Dictionary = new List<List<short>>();
+        public static List<int> scenario = new List<int>();
+        public static List<int> quest = new List<int>();
+        public static int seasonId = 0;
+
         public static Keys[] keys = new Keys[]
         {
             new Keys { first_val = 2919676295, second_val = 263300380, key1 = "QyvKvO60jogWDupzJ7gm0kRQdooFjWRjSjlq0gu/x2k=", key2 = "GXQstj1A95XiHvjrOGuPkzdyL+7qxETl/cPlUZk2KA4=" },
@@ -215,11 +220,11 @@ namespace KartRider
 
         public static void PrQuestUX2ndPacket(OutPacket outPacket)
         {
-            int All_Quest = KartExcData.quest.Count;
+            int All_Quest = quest.Count;
             outPacket.WriteInt(1);
             outPacket.WriteInt(1);
             outPacket.WriteInt(All_Quest);
-            foreach (var item in KartExcData.quest)
+            foreach (var item in quest)
             {
                 outPacket.WriteInt(item);
                 outPacket.WriteInt(item);
@@ -311,16 +316,16 @@ namespace KartRider
             if (gameType == 2)
             {
                 Random random = new Random();
-                int index = random.Next(KartExcData.itemProb_indi.Count);
-                short skill = KartExcData.itemProb_indi[index];
+                int index = random.Next(MultyPlayer.itemProb_indi.Count);
+                short skill = MultyPlayer.itemProb_indi[index];
                 skill = GameSupport.GetItemSkill(skill);
                 return skill;
             }
             else if (gameType == 4)
             {
                 Random random = new Random();
-                int index = random.Next(KartExcData.itemProb_team.Count);
-                short skill = KartExcData.itemProb_team[index];
+                int index = random.Next(MultyPlayer.itemProb_team.Count);
+                short skill = MultyPlayer.itemProb_team[index];
                 skill = GameSupport.GetItemSkill(skill);
                 return skill;
             }

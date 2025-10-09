@@ -1,13 +1,14 @@
-﻿using System;
+﻿using ExcData;
 using KartRider.IO.Packet;
-using System.Threading;
+using Profile;
+using RiderData;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
-using ExcData;
-using System.Linq;
-using System.Collections.Generic;
-using Profile;
 
 namespace KartRider
 {
@@ -19,7 +20,7 @@ namespace KartRider
         public GetKart()
         {
             InitializeComponent();
-            foreach (var outerKey in KartExcData.items.Keys)
+            foreach (var outerKey in NewRider.items.Keys)
             {
                 ItemType.Items.Add(outerKey);
             }
@@ -39,7 +40,7 @@ namespace KartRider
                 if (GetKart.Item_Type == 3)
                 {
                     short KartSN = 2;
-                    if (KartExcData.NewKart == null)
+                    if (NewRider.NewKart == null)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
                         {
@@ -57,12 +58,12 @@ namespace KartRider
                             RouterListener.MySession.Client.Send(outPacket);
                         }
                         var newList = new List<short> { GetKart.Item_Code, KartSN };
-                        KartExcData.NewKart.Add(newList);
-                        Save_NewKartList(KartExcData.NewKart);
+                        NewRider.NewKart.Add(newList);
+                        Save_NewKartList(NewRider.NewKart);
                     }
                     else
                     {
-                        var existingItems = KartExcData.NewKart.Where(list => list[0] == GetKart.Item_Code).ToList();
+                        var existingItems = NewRider.NewKart.Where(list => list[0] == GetKart.Item_Code).ToList();
                         if (existingItems == null)
                         {
                             using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
@@ -81,8 +82,8 @@ namespace KartRider
                                 RouterListener.MySession.Client.Send(outPacket);
                             }
                             var newList = new List<short> { GetKart.Item_Code, KartSN };
-                            KartExcData.NewKart.Add(newList);
-                            Save_NewKartList(KartExcData.NewKart);
+                            NewRider.NewKart.Add(newList);
+                            Save_NewKartList(NewRider.NewKart);
                         }
                         else
                         {
@@ -103,8 +104,8 @@ namespace KartRider
                                 RouterListener.MySession.Client.Send(outPacket);
                             }
                             var newList = new List<short> { GetKart.Item_Code, KartSN };
-                            KartExcData.NewKart.Add(newList);
-                            Save_NewKartList(KartExcData.NewKart);
+                            NewRider.NewKart.Add(newList);
+                            Save_NewKartList(NewRider.NewKart);
                         }
                     }
                 }
@@ -158,7 +159,7 @@ namespace KartRider
                 GetKart.Item_Type = (short)ItemType.SelectedItem;
                 ItemID.Items.Clear();
 
-                if (KartExcData.items.TryGetValue(GetKart.Item_Type, out Dictionary<short, string> innerDictionary))
+                if (NewRider.items.TryGetValue(GetKart.Item_Type, out Dictionary<short, string> innerDictionary))
                 {
                     foreach (var innerValue in innerDictionary.Values)
                     {
@@ -175,7 +176,7 @@ namespace KartRider
                 short selectedOuterKey = (short)ItemType.SelectedItem;
                 string selectedInnerValue = ItemID.SelectedItem.ToString();
 
-                if (KartExcData.items.TryGetValue(selectedOuterKey, out Dictionary<short, string> innerDictionary))
+                if (NewRider.items.TryGetValue(selectedOuterKey, out Dictionary<short, string> innerDictionary))
                 {
                     GetKart.Item_Code = innerDictionary.FirstOrDefault(pair => pair.Value == selectedInnerValue).Key;
                     Console.WriteLine($"Add Item:{selectedInnerValue} ID:{GetKart.Item_Code}");

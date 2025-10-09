@@ -575,8 +575,8 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrChapterInfoPacket"))
                         {
-                            outPacket.WriteInt(KartExcData.scenario.Count);
-                            foreach (int id in KartExcData.scenario)
+                            outPacket.WriteInt(GameSupport.scenario.Count);
+                            foreach (int id in GameSupport.scenario)
                             {
                                 outPacket.WriteInt(id | 0x1000000);
                                 outPacket.WriteInt((int)(Math.Pow(2, 30) - 1));
@@ -1410,9 +1410,9 @@ namespace KartRider
                         // Save_RecordTimeAttack
                         {
                             string trackName = StartGameData.StartTimeAttack_Track.ToString();
-                            if (KartExcData.track.ContainsKey(StartGameData.StartTimeAttack_Track))
+                            if (RandomTrack.track.ContainsKey(StartGameData.StartTimeAttack_Track))
                             {
-                                trackName = KartExcData.track[StartGameData.StartTimeAttack_Track];
+                                trackName = RandomTrack.track[StartGameData.StartTimeAttack_Track];
                             }
                             using (StreamWriter streamWriter = new StreamWriter("TimeAttack.log", true))
                             {
@@ -2470,13 +2470,13 @@ namespace KartRider
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSyncDictionaryInfoPacket", 0))
                     {
                         int Dictionary = iPacket.ReadInt();
-                        int Count = KartExcData.Dictionary.Count;
+                        int Count = GameSupport.Dictionary.Count;
                         using (OutPacket outPacket = new OutPacket("PrSyncDictionaryInfoPacket"))
                         {
                             outPacket.WriteInt(1);
                             outPacket.WriteInt(1);
                             outPacket.WriteInt(Count);
-                            foreach (var item in KartExcData.Dictionary)
+                            foreach (var item in GameSupport.Dictionary)
                             {
                                 outPacket.WriteShort(item[0]);
                                 outPacket.WriteShort(item[1]);

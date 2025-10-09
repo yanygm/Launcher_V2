@@ -15,6 +15,9 @@ namespace KartRider
 {
     public class KartSpec
     {
+        public static Dictionary<int, string> kartName = new Dictionary<int, string>();
+        public static Dictionary<string, XmlDocument> kartSpec = new Dictionary<string, XmlDocument>();
+
         #region 常量定义（消除硬编码）
         /// <summary>布尔类型的XML属性名集合（统一管理）</summary>
         private static readonly HashSet<string> BooleanAttributes = new(StringComparer.OrdinalIgnoreCase)
@@ -167,17 +170,17 @@ namespace KartRider
                 {
                     var kartId = StartGameData.Kart_id;
                     // 2.1 检查KartName字典是否存在该ID
-                    if (!KartExcData.KartName.TryGetValue(kartId, out var kartName))
+                    if (!kartName.TryGetValue(kartId, out var Name))
                     {
                         Console.WriteLine($"[KartSpec] 警告：KartName中未找到ID={kartId}，加载默认规格");
                         ApplyDefaultSpec();
                         return;
                     }
 
-                    Console.WriteLine($"[KartSpec] 加载卡丁车：ID={kartId}，名称={kartName}");
+                    Console.WriteLine($"[KartSpec] 加载卡丁车：ID={kartId}，名称={Name}");
 
                     // 2.2 检查KartSpec字典是否存在该规格
-                    if (!KartExcData.KartSpec.TryGetValue(kartName, out var kartSpecDoc))
+                    if (!kartSpec.TryGetValue(Name, out var kartSpecDoc))
                     {
                         Console.WriteLine($"[KartSpec] 警告：KartSpec中未找到名称={kartName}的规格，加载默认规格");
                         ApplyDefaultSpec();

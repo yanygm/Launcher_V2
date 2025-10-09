@@ -29,6 +29,10 @@ namespace KartRider
         public static long BootTicksNow = 0;
         public static long StartTicks = 0;
         static uint FinishTime = 0;
+        public static List<short> itemProb_indi = new List<short>();
+        public static List<short> itemProb_team = new List<short>();
+        public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
+        public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
         public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
         public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
         public static Dictionary<int, int> Ranking = new Dictionary<int, int>();
@@ -801,19 +805,17 @@ namespace KartRider
                 int unk1 = iPacket.ReadInt();
                 Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
                 var selector = new DictionaryRandomSelector();
-                var charDict = KartExcData.aiCharacterDict;
-                var kartDict = KartExcData.aiKartDict;
-                List<short> randomCharIds = selector.GetRandomCharacterIds(charDict, 1);
+                List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 1);
                 List<short> randomKartIds = new List<short>();
                 string AiXml = "";
                 if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
                 {
-                    randomKartIds = selector.GetRandomKartIds(kartDict, 1, true, false);
+                    randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, true, false);
                     AiXml = "SpeedAI";
                 }
                 else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
                 {
-                    randomKartIds = selector.GetRandomKartIds(kartDict, 1, false, true);
+                    randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, false, true);
                     AiXml = "ItemAI";
                 }
                 XmlDocument xmlDoc = new XmlDocument();
@@ -840,7 +842,7 @@ namespace KartRider
                 {
                     short targetCharId = randomCharIds[0];
                     short targetKartId = randomKartIds[0];
-                    if (charDict.TryGetValue(targetCharId, out var targetChar))
+                    if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
                     {
                         short? ridIndex = selector.GetRandomRidIndex(targetChar);
                         short? balloonId = 0;
@@ -1476,23 +1478,21 @@ namespace KartRider
         static void AddAiNodes(XElement targetParent, int count)
         {
             var selector = new DictionaryRandomSelector();
-            var charDict = KartExcData.aiCharacterDict;
-            var kartDict = KartExcData.aiKartDict;
-            List<short> randomCharIds = selector.GetRandomCharacterIds(charDict, count);
+            List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, count);
             List<short> randomKartIds = null;
             if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
             {
-                randomKartIds = selector.GetRandomKartIds(kartDict, count, true, false);
+                randomKartIds = selector.GetRandomKartIds(aiKartDict, count, true, false);
             }
             else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
             {
-                randomKartIds = selector.GetRandomKartIds(kartDict, count, false, true);
+                randomKartIds = selector.GetRandomKartIds(aiKartDict, count, false, true);
             }
             for (int i = 0; i < randomCharIds.Count; i++)
             {
                 short targetCharId = randomCharIds[i];
                 short targetKartId = randomKartIds[i];
-                if (charDict.TryGetValue(targetCharId, out var targetChar))
+                if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
                 {
                     short? ridIndex = selector.GetRandomRidIndex(targetChar);
                     short? balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);

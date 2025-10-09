@@ -1,27 +1,28 @@
+using ExcData;
+using KartLibrary.File;
+using KartRider;
+using KartRider.Common.Data;
+using KartRider.Common.Data;
+using KartRider.Common.Utilities;
+using KartRider.IO.Packet;
+using Launcher.Properties;
+using LoggerLibrary;
+using Newtonsoft.Json;
+using Profile;
+using RHOParser;
+using RiderData;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
-using ExcData;
-using Launcher.Properties;
-using KartRider.Common.Data;
 using System.Xml.Linq;
-using RHOParser;
-using KartRider;
-using KartRider.IO.Packet;
-using KartRider.Common.Utilities;
-using KartLibrary.File;
-using KartRider.Common.Data;
-using System.Collections;
-using System.Reflection;
-using System.Linq;
 using System.Xml.XPath;
-using Newtonsoft.Json;
-using Profile;
-using LoggerLibrary;
 
 namespace KartRider
 {
@@ -356,7 +357,7 @@ namespace KartRider
 
             EnsureDefaultDataFileExists(FileName.AI_LoadFile, CreateAIDefaultData);
 
-            KartExcData.NewKart = LoadKartData(FileName.NewKart_LoadFile, LoadNewKart);
+            NewRider.NewKart = LoadKartData(FileName.NewKart_LoadFile, LoadNewKart);
             KartExcData.TuneList = LoadKartData(FileName.TuneData_LoadFile, LoadTuneData);
             KartExcData.PlantList = LoadKartData(FileName.PlantData_LoadFile, LoadPlantData);
             KartExcData.LevelList = LoadKartData(FileName.LevelData_LoadFile, LoadLevelData);
