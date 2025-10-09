@@ -35,7 +35,7 @@ namespace RHOParser
                     foreach (PackFileInfo packFileInfo in packFolderInfo1.GetFilesInfo())
                     {
                         string fullName = ReplacePath(packFileInfo.FullName);
-                        if (fullName.Contains("flyingPet") && fullName.Contains("param@" + regionCode + ".bml"))
+                        if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.bml"))
                         {
                             Console.WriteLine(fullName);
                             string name = fullName.Substring(10, fullName.Length - 23);
@@ -50,7 +50,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "track/common/randomTrack@" + regionCode + ".bml")
+                        if (fullName == $"track/common/randomTrack@{regionCode}.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -59,7 +59,7 @@ namespace RHOParser
                                 RandomTrack.randomTrack = XDocument.Load(stream);
                             }
                         }
-                        if (fullName == "track/common/track@zz.xml")
+                        if (fullName == $"track/common/trackLocale@{regionCode}.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -72,7 +72,7 @@ namespace RHOParser
                                 ProcessNodes(trackLocale.GetElementsByTagName("track_rvs"), "refId", "rvs");
                             }
                         }
-                        if (fullName == "track/common/track@zz.bml")
+                        if (fullName == $"track/common/trackLocale@{regionCode}.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -122,7 +122,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "etc_/itemTable@" + regionCode + ".xml")
+                        if (fullName == $"etc_/itemTable@{regionCode}.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -165,7 +165,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "etc_/emblem/emblem@" + regionCode + ".xml")
+                        if (fullName == $"etc_/emblem/emblem@{regionCode}.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -191,13 +191,13 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName.Contains("kart_") && fullName.Contains("/param@" + regionCode + ".xml") || fullName.Contains("kart_") && fullName.Contains("/param@" + regionCode + ".kml"))
+                        if (fullName.Contains("kart_") && fullName.Contains($"/param@{regionCode}.xml"))
                         {
                             Console.WriteLine(fullName);
-                            byte[] data = ReplaceBytes(packFileInfo.GetData());
                             string name = fullName.Substring(6, fullName.Length - 19);
                             if (!(KartSpec.kartSpec.ContainsKey(name)))
                             {
+                                byte[] data = ReplaceBytes(packFileInfo.GetData());
                                 if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
                                 {
                                     byte[] newBytes = new byte[data.Length - 4];
@@ -218,42 +218,81 @@ namespace RHOParser
                                         XmlDocument kart2 = new XmlDocument();
                                         kart2.Load(stream);
                                         KartSpec.kartSpec.Add(name, kart2);
+                                    }
+                                }
+                            }
+                        }
+                        if (fullName.Contains("kart_") && fullName.Contains($"/param@{regionCode}.kml"))
+                        {
+                            Console.WriteLine(fullName);
+                            string name = fullName.Substring(6, fullName.Length - 19);
+                            bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
+                            if (!containsTarget)
+                            {
+                                if (!(KartSpec.kartSpec.ContainsKey(name)))
+                                {
+                                    byte[] data = ReplaceBytes(packFileInfo.GetData());
+                                    if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
+                                    {
+                                        byte[] newBytes = new byte[data.Length - 4];
+                                        newBytes[0] = 255;
+                                        newBytes[1] = 254;
+                                        Array.Copy(data, 6, newBytes, 2, data.Length - 6);
+                                        using (MemoryStream stream = new MemoryStream(newBytes))
+                                        {
+                                            XmlDocument kart1 = new XmlDocument();
+                                            kart1.Load(stream);
+                                            KartSpec.kartSpec.Add(name, kart1);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        using (MemoryStream stream = new MemoryStream(data))
+                                        {
+                                            XmlDocument kart2 = new XmlDocument();
+                                            kart2.Load(stream);
+                                            KartSpec.kartSpec.Add(name, kart2);
+                                        }
                                     }
                                 }
                             }
                         }
                         if (fullName.Contains("kart_") && fullName.Contains("/param.xml"))
                         {
+                            Console.WriteLine(fullName);
                             string name = fullName.Substring(6, fullName.Length - 16);
-                            byte[] data = ReplaceBytes(packFileInfo.GetData());
-                            if (!(KartSpec.kartSpec.ContainsKey(name)))
+                            bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
+                            if (!containsTarget)
                             {
-                                Console.WriteLine(fullName);
-                                if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
+                                if (!(KartSpec.kartSpec.ContainsKey(name)))
                                 {
-                                    byte[] newBytes = new byte[data.Length - 4];
-                                    newBytes[0] = 255;
-                                    newBytes[1] = 254;
-                                    Array.Copy(data, 6, newBytes, 2, data.Length - 6);
-                                    using (MemoryStream stream = new MemoryStream(newBytes))
+                                    byte[] data = ReplaceBytes(packFileInfo.GetData());
+                                    if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
                                     {
-                                        XmlDocument kart1 = new XmlDocument();
-                                        kart1.Load(stream);
-                                        KartSpec.kartSpec.Add(name, kart1);
+                                        byte[] newBytes = new byte[data.Length - 4];
+                                        newBytes[0] = 255;
+                                        newBytes[1] = 254;
+                                        Array.Copy(data, 6, newBytes, 2, data.Length - 6);
+                                        using (MemoryStream stream = new MemoryStream(newBytes))
+                                        {
+                                            XmlDocument kart1 = new XmlDocument();
+                                            kart1.Load(stream);
+                                            KartSpec.kartSpec.Add(name, kart1);
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    using (MemoryStream stream = new MemoryStream(data))
+                                    else
                                     {
-                                        XmlDocument kart2 = new XmlDocument();
-                                        kart2.Load(stream);
-                                        KartSpec.kartSpec.Add(name, kart2);
+                                        using (MemoryStream stream = new MemoryStream(data))
+                                        {
+                                            XmlDocument kart2 = new XmlDocument();
+                                            kart2.Load(stream);
+                                            KartSpec.kartSpec.Add(name, kart2);
+                                        }
                                     }
                                 }
                             }
                         }
-                        if (fullName == "zeta/" + regionCode + "/quest/QuestAutomation.bml")
+                        if (fullName == $"zeta/{regionCode}/quest/QuestAutomation.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -276,7 +315,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "zeta/" + regionCode + "/quest/kartPassQuestAutomation.bml")
+                        if (fullName == $"zeta/{regionCode}/quest/kartPassQuestAutomation.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -287,7 +326,7 @@ namespace RHOParser
                                 GameSupport.seasonId = int.Parse(questInfo.Attribute("seasonId").Value);
                             }
                         }
-                        if (fullName == "zeta/" + regionCode + "/scenario/scenario.bml")
+                        if (fullName == $"zeta/{regionCode}/scenario/scenario.bml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -358,7 +397,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/content/basicAI.xml")
+                        if (fullName == $"zeta_/{regionCode}/content/basicAI.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -411,7 +450,7 @@ namespace RHOParser
                                 MultyPlayer.aiKartDict = aiKartDict;
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/content/itemDictionary.xml")
+                        if (fullName == $"zeta_/{regionCode}/content/itemDictionary.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -432,7 +471,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackMission.xml")
+                        if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackMission.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -471,7 +510,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitive.xml")
+                        if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackCompetitive.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -483,7 +522,7 @@ namespace RHOParser
                                 FavoriteItem.Competitive = extractor.GetCurrentWeekTrackIds(doc);
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/content/timeAttack/timeAttackCompetitiveData.xml")
+                        if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackCompetitiveData.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -495,7 +534,7 @@ namespace RHOParser
                                 FavoriteItem.TrackDictionary = calculator.LoadFromXml(doc);
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/lottery/lottery.xml")
+                        if (fullName == $"zeta_/{regionCode}/lottery/lottery.xml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
@@ -534,7 +573,7 @@ namespace RHOParser
                                 }
                             }
                         }
-                        if (fullName == "zeta_/" + regionCode + "/shop/data/item.kml")
+                        if (fullName == $"zeta_/{regionCode}/shop/data/item.kml")
                         {
                             Console.WriteLine(fullName);
                             byte[] data = packFileInfo.GetData();
