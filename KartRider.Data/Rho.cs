@@ -224,11 +224,11 @@ namespace RHOParser
                         }
                         if (fullName.Contains("kart_") && fullName.Contains($"/param@{regionCode}.kml"))
                         {
-                            Console.WriteLine(fullName);
                             string name = fullName.Substring(6, fullName.Length - 19);
                             bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
                             if (!containsTarget)
                             {
+                                Console.WriteLine(fullName);
                                 if (!(KartSpec.kartSpec.ContainsKey(name)))
                                 {
                                     byte[] data = ReplaceBytes(packFileInfo.GetData());
@@ -259,12 +259,11 @@ namespace RHOParser
                         }
                         if (fullName.Contains("kart_") && fullName.Contains("/param.xml"))
                         {
-                            Console.WriteLine(fullName);
                             string name = fullName.Substring(6, fullName.Length - 16);
-                            bool containsTarget1 = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
-                            bool containsTarget2 = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.kml");
-                            if (!containsTarget1 && !containsTarget2)
+                            bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml" || ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.kml");
+                            if (!containsTarget)
                             {
+                                Console.WriteLine(fullName);
                                 if (!(KartSpec.kartSpec.ContainsKey(name)))
                                 {
                                     byte[] data = ReplaceBytes(packFileInfo.GetData());
