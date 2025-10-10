@@ -261,8 +261,9 @@ namespace RHOParser
                         {
                             Console.WriteLine(fullName);
                             string name = fullName.Substring(6, fullName.Length - 16);
-                            bool containsTarget = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
-                            if (!containsTarget)
+                            bool containsTarget1 = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.xml");
+                            bool containsTarget2 = packFolderInfo1.GetFilesInfo().Any(PackFileInfo => ReplacePath(PackFileInfo.FullName) == $"kart_/{name}/param@{regionCode}.kml");
+                            if (!containsTarget1 && !containsTarget2)
                             {
                                 if (!(KartSpec.kartSpec.ContainsKey(name)))
                                 {
