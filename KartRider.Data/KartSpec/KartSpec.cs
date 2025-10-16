@@ -24,7 +24,8 @@ namespace KartRider
         {
             "UseTransformBooster", "motorcycleType", "BikeRearWheel", "UseExtendedAfterBooster",
             "dualBoosterSetAuto", "PartsEngineLock", "PartsWheelLock", "PartsSteeringLock",
-            "PartsBoosterLock", "PartsCoatingLock", "PartsTailLampLock", "useExtendedAfterBoosterMore"
+            "PartsBoosterLock", "PartsCoatingLock", "PartsTailLampLock", "PartsBoosterEffectLock",
+            "useExtendedAfterBoosterMore"
         };
 
         /// <summary>部件默认类型（EngineType/HandleType等的默认值1）</summary>
@@ -124,6 +125,7 @@ namespace KartRider
             new("PartsBoosterLock", 0M, 0M, 1M, val => Kart.PartsBoosterLock = (byte)val),
             new("PartsCoatingLock", 0M, 0M, 1M, val => Kart.PartsCoatingLock = (byte)val),
             new("PartsTailLampLock", 0M, 0M, 1M, val => Kart.PartsTailLampLock = (byte)val),
+            new("PartsBoosterEffectLock", 0M, 0M, 1M, val => Kart.PartsBoosterEffectLock = (byte)val),
             new("chargeInstAccelGaugeByBoost", 0M, 0.02M, 1M, val => Kart.chargeInstAccelGaugeByBoost = (float)val),
             new("chargeInstAccelGaugeByGrip", 0M, 0.02M, 1M, val => Kart.chargeInstAccelGaugeByGrip = (float)val),
             new("chargeInstAccelGaugeByWall", 0M, 0.2M, 1M, val => Kart.chargeInstAccelGaugeByWall = (float)val),

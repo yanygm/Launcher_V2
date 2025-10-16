@@ -34,7 +34,7 @@ namespace KartRider
             new Keys { first_val = 912740103, second_val = 3754337362, key1 = "A7H8oUUAoWg65+rFF8h9xcr/aiYwecEfNQyGNF5WHhs=", key2 = "ycsTsKSzTxbOraG5PrjtBWP81YCor02tCxJquIl+5NM=" }
         };
 
-        public static void PcFirstMessage()
+        public static uint PcFirstMessage()
         {
             Random random = new Random();
             int index = random.Next(keys.Length);
@@ -53,9 +53,9 @@ namespace KartRider
                 outPacket.WriteString(key.key2);
                 RouterListener.MySession.Client.Send(outPacket);
             }
-            RouterListener.MySession.Client._RIV = key.first_val ^ key.second_val;
-            RouterListener.MySession.Client._SIV = key.first_val ^ key.second_val;
-            return;
+            //RouterListener.MySession.Client._RIV = key.first_val ^ key.second_val;
+            //RouterListener.MySession.Client._SIV = key.first_val ^ key.second_val;
+            return key.first_val ^ key.second_val;
         }
 
         public static void OnDisconnect()

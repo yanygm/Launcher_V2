@@ -496,7 +496,7 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("RmSlotDataPacket"))
                         {
                             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
-                            outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
+                            outPacket.WriteEndPoint(RouterListener.client);
                             outPacket.WriteInt();
                             outPacket.WriteShort();
                             outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
