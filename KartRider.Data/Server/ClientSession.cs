@@ -208,7 +208,7 @@ namespace KartRider
                             outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
-                        NewRider.LoadItemData();
+                        NewRider.LoadItemData(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqGetRiderItemPacket", 0))
@@ -348,7 +348,7 @@ namespace KartRider
                                 outPacket.WriteByte(0);
                                 outPacket.WriteByte(0);
                                 outPacket.WriteByte(0);
-                                RouterListener.MySession.Client.Send(outPacket);
+                                this.Parent.Client.Send(outPacket);
                             }
                         }
                         else
@@ -425,7 +425,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetGameOption", 0))
                     {
-                        GameSupport.PrGetGameOption();
+                        GameSupport.PrGetGameOption(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqVipInfo", 0))
@@ -474,7 +474,7 @@ namespace KartRider
                         {
                             GameType.EnterMyRoomType = 5;
                         }
-                        GameSupport.ChRpEnterMyRoomPacket();
+                        GameSupport.ChRpEnterMyRoomPacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRqEnterMyRoomPacket", 0))
@@ -488,12 +488,12 @@ namespace KartRider
                         {
                             GameType.EnterMyRoomType = 3;
                         }
-                        GameSupport.ChRpEnterMyRoomPacket();
+                        GameSupport.ChRpEnterMyRoomPacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmFirstRequestPacket", 0))
                     {
-                        IPEndPoint clientEndPoint = RouterListener.MySession.Client.Socket.RemoteEndPoint as IPEndPoint;
+                        IPEndPoint clientEndPoint = this.Parent.Client.Socket.RemoteEndPoint as IPEndPoint;
                         using (OutPacket outPacket = new OutPacket("RmSlotDataPacket"))
                         {
                             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
@@ -528,7 +528,7 @@ namespace KartRider
                         ProfileService.ProfileConfig.MyRoom.MyRoomKart1 = iPacket.ReadShort();
                         ProfileService.ProfileConfig.MyRoom.MyRoomKart2 = iPacket.ReadShort();
                         ProfileService.Save();
-                        GameSupport.RmNotiMyRoomInfoPacket();
+                        GameSupport.RmNotiMyRoomInfoPacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRqSecedeMyRoomPacket", 0))
@@ -568,8 +568,8 @@ namespace KartRider
                         StartGameData.Kart_id = iPacket.ReadShort();
                         StartGameData.FlyingPet_id = iPacket.ReadShort();
                         GameType.StartType = 1;
-                        SpeedType.SpeedTypeData();
-                        StartGameData.Start_KartSpac();
+                        SpeedType.SpeedTypeData(this.Parent);
+                        StartGameData.Start_KartSpac(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChapterInfoPacket", 0))
@@ -628,8 +628,8 @@ namespace KartRider
                         StartGameData.Kart_id = iPacket.ReadShort();
                         StartGameData.FlyingPet_id = iPacket.ReadShort();
                         GameType.StartType = 2;
-                        SpeedType.SpeedTypeData();
-                        StartGameData.Start_KartSpac();
+                        SpeedType.SpeedTypeData(this.Parent);
+                        StartGameData.Start_KartSpac(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCompleteChallenger", 0))
@@ -661,7 +661,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExChangePacket", 0))
                     {
-                        GameSupport.OnDisconnect();
+                        GameSupport.OnDisconnect(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelPointClear", 0))
@@ -1352,8 +1352,8 @@ namespace KartRider
                         }
                         Console.WriteLine("StartTimeAttack: {0} / {1} / {2} / {3} / {4} / {5} / {6} / {7}", StartGameData.StartTimeAttack_SpeedType, StartGameData.StartTimeAttack_GameType, StartGameData.Kart_id, StartGameData.FlyingPet_id, RandomTrack.GetTrackName(StartGameData.StartTimeAttack_Track), StartGameData.StartTimeAttack_StartType, StartGameData.StartTimeAttack_RankingTimaAttackType, StartGameData.StartTimeAttack_TimaAttackMpdeType);
                         GameType.StartType = 3;
-                        RandomTrack.SetGameType();
-                        StartGameData.Start_KartSpac();
+                        RandomTrack.SetGameType(this.Parent);
+                        StartGameData.Start_KartSpac(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFinishTimeAttack", 0))
@@ -1580,7 +1580,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckMyClubStatePacket", 0))
                     {
-                        GameSupport.PrCheckMyClubStatePacket();
+                        GameSupport.PrCheckMyClubStatePacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckMyLeaveDatePacket", 0))
@@ -2052,11 +2052,11 @@ namespace KartRider
                         int Type = iPacket.ReadInt();
                         if (Bingo.BingoLotteryIDs.Contains(Lottery_Item))
                         {
-                            Bingo.SpRpLotteryPacket();
+                            Bingo.SpRpLotteryPacket(this.Parent);
                         }
                         else
                         {
-                            GameSupport.SpRpLotteryPacket();
+                            GameSupport.SpRpLotteryPacket(this.Parent);
                         }
                         return;
                     }
@@ -2068,7 +2068,7 @@ namespace KartRider
                         {
                             EventBuyCount.ShopItem[i] = iPacket.ReadInt();
                         }
-                        EventBuyCount.PrEventBuyCount();
+                        EventBuyCount.PrEventBuyCount(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderTaskContext", 0))
@@ -2100,7 +2100,7 @@ namespace KartRider
                             outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
                             outPacket.WriteInt(0);
                             outPacket.WriteByte(0);
-                            RouterListener.MySession.Client.Send(outPacket);
+                            this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
@@ -2144,13 +2144,13 @@ namespace KartRider
                             oPacket.WriteInt(0);
                             oPacket.WriteInt(0);
                             oPacket.WriteInt(0);
-                            RouterListener.MySession.Client.Send(oPacket);
+                            this.Parent.Client.Send(oPacket);
                         }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartRiderSchool", 0))
                     {
-                        RiderSchool.PrStartRiderSchool();
+                        RiderSchool.PrStartRiderSchool(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRiderSchoolExpiredCheck", 0))
@@ -2184,12 +2184,12 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRequestChStaticRequestPacket", 0))
                     {
-                        GameSupport.ChRequestChStaticReplyPacket();
+                        GameSupport.ChRequestChStaticReplyPacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqDynamicCommand", 0))
                     {
-                        GameSupport.PrDynamicCommand();
+                        GameSupport.PrDynamicCommand(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPubCommandPacket", 0))
@@ -2223,7 +2223,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteTrackMapGet", 0))
                     {
-                        FavoriteItem.Favorite_Track();
+                        FavoriteItem.Favorite_Track(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetFavoriteChannel", 0))
@@ -2452,7 +2452,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRequestEmblemsPacket", 0))
                     {
-                        Emblem.RmOwnerEmblemPacket();
+                        Emblem.RmOwnerEmblemPacket(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRqUpdateMainEmblemPacket", 0))
@@ -2655,7 +2655,7 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteItemGet", 0)) //즐겨 찾기 목록
                     {
-                        FavoriteItem.Favorite_Item();
+                        FavoriteItem.Favorite_Item(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteItemUpdate", 0))
@@ -2833,7 +2833,7 @@ namespace KartRider
                         TestServer.Type = iPacket.ReadShort();
                         TestServer.ItemID = iPacket.ReadShort();
                         TestServer.Amount = iPacket.ReadShort();
-                        TestServer.TestServerAddItem();
+                        TestServer.TestServerAddItem(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerTime", 0))
@@ -2951,7 +2951,7 @@ namespace KartRider
                             outPacket.WriteByte(0);
                             outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Set_screen);
                             outPacket.WriteByte(ProfileService.ProfileConfig.Rider.IdentificationType);
-                            RouterListener.MySession.Client.Send(outPacket);
+                            this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
@@ -3721,7 +3721,7 @@ namespace KartRider
                     }
                     else
                     {
-                        MultyPlayer.Clientsession(hash, iPacket);
+                        MultyPlayer.Clientsession(this.Parent, hash, iPacket);
                         return;
                     }
                 }

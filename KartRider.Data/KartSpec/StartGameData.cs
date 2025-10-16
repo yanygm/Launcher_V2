@@ -23,38 +23,38 @@ namespace KartRider
         public static int StartTimeAttack_TimaAttackMpde = 0;
         public static byte StartTimeAttack_RandomTrackGameType = 0;
 
-        public static void Start_KartSpac()
+        public static void Start_KartSpac(SessionGroup Parent)
         {
             Console.WriteLine("SpeedType: {0}, Kart_id: {1}, FlyingPet_id: {2}", StartGameData.StartTimeAttack_SpeedType, StartGameData.Kart_id, StartGameData.FlyingPet_id);
             if (GameType.StartType == 1)
             {
                 Console.WriteLine("故事模式");
-                StartGameData.PrKartSpec();
+                StartGameData.PrKartSpec(Parent);
             }
             else if (GameType.StartType == 2)
             {
                 Console.WriteLine("挑战者");
-                StartGameData.PrchallengerKartSpec();
+                StartGameData.PrchallengerKartSpec(Parent);
             }
             else if (GameType.StartType == 3)
             {
                 Console.WriteLine("排行计时");
                 if (StartGameData.StartTimeAttack_StartType == 0)
                 {
-                    StartGameData.PrStartTimeAttack();
+                    StartGameData.PrStartTimeAttack(Parent);
                 }
                 else
                 {
-                    StartGameData.PrStartTimeAttack_QuestType();
+                    StartGameData.PrStartTimeAttack_QuestType(Parent);
                 }
             }
             else
             {
-                GameSupport.OnDisconnect();
+                GameSupport.OnDisconnect(Parent);
             }
         }
 
-        public static void PrStartTimeAttack()
+        public static void PrStartTimeAttack(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
@@ -67,12 +67,12 @@ namespace KartRider
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
                 oPacket.WriteUInt(StartGameData.StartTimeAttack_Track);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
             StartGameData.KartSpecLog();
         }
 
-        public static void PrchallengerKartSpec()
+        public static void PrchallengerKartSpec(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("PrchallengerKartSpec"))
             {
@@ -81,23 +81,23 @@ namespace KartRider
                 GetKartSpac(oPacket);
                 oPacket.WriteInt(0);
                 oPacket.WriteByte(0);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
             StartGameData.KartSpecLog();
         }
 
-        public static void PrKartSpec()
+        public static void PrKartSpec(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("PrKartSpec"))
             {
                 oPacket.WriteByte(1);
                 GetDefaultSpac(oPacket);
                 oPacket.WriteByte(0);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void PrStartTimeAttack_QuestType()
+        public static void PrStartTimeAttack_QuestType(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
@@ -110,7 +110,7 @@ namespace KartRider
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Koin);
                 oPacket.WriteUInt(StartGameData.StartTimeAttack_Track);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 

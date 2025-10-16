@@ -34,7 +34,7 @@ namespace KartRider
             new Keys { first_val = 912740103, second_val = 3754337362, key1 = "A7H8oUUAoWg65+rFF8h9xcr/aiYwecEfNQyGNF5WHhs=", key2 = "ycsTsKSzTxbOraG5PrjtBWP81YCor02tCxJquIl+5NM=" }
         };
 
-        public static uint PcFirstMessage()
+        public static uint PcFirstMessage(SessionGroup Parent)
         {
             Random random = new Random();
             int index = random.Next(keys.Length);
@@ -51,28 +51,26 @@ namespace KartRider
                 outPacket.WriteString(key.key1);
                 outPacket.WriteBytes(new byte[31]);
                 outPacket.WriteString(key.key2);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
-            //RouterListener.MySession.Client._RIV = key.first_val ^ key.second_val;
-            //RouterListener.MySession.Client._SIV = key.first_val ^ key.second_val;
             return key.first_val ^ key.second_val;
         }
 
-        public static void OnDisconnect()
+        public static void OnDisconnect(SessionGroup Parent)
         {
-            RouterListener.MySession.Client.Disconnect();
+            Parent.Client.Disconnect();
         }
 
-        public static void SpRpLotteryPacket()
+        public static void SpRpLotteryPacket(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
             {
                 outPacket.WriteHexString("05 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void PrGetGameOption()
+        public static void PrGetGameOption(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("PrGetGameOption"))
             {
@@ -106,11 +104,11 @@ namespace KartRider
                 outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Set_screen);
                 outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.HideCompetitiveRank);
                 outPacket.WriteBytes(new byte[79]);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void ChRpEnterMyRoomPacket()
+        public static void ChRpEnterMyRoomPacket(SessionGroup Parent)
         {
             if (GameType.EnterMyRoomType == 0)
             {
@@ -129,7 +127,7 @@ namespace KartRider
                     outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.ItemPwd);
                     outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart1);
                     outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart2);
-                    RouterListener.MySession.Client.Send(outPacket);
+                    Parent.Client.Send(outPacket);
                 }
             }
             else
@@ -149,12 +147,12 @@ namespace KartRider
                     outPacket.WriteString("");//ItemPwd 
                     outPacket.WriteShort(0);
                     outPacket.WriteShort(0);
-                    RouterListener.MySession.Client.Send(outPacket);
+                    Parent.Client.Send(outPacket);
                 }
             }
         }
 
-        public static void RmNotiMyRoomInfoPacket()
+        public static void RmNotiMyRoomInfoPacket(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("RmNotiMyRoomInfoPacket"))
             {
@@ -169,11 +167,11 @@ namespace KartRider
                 outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.ItemPwd);
                 outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart1);
                 outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart2);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void PrCheckMyClubStatePacket()
+        public static void PrCheckMyClubStatePacket(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("PrCheckMyClubStatePacket"))
             {
@@ -196,25 +194,25 @@ namespace KartRider
                 outPacket.WriteInt(1);//ClubMember
                 outPacket.WriteByte(5);//Level
                 outPacket.WriteHexString("A2 0E 90 AB 9A 99");
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void ChRequestChStaticReplyPacket()
+        public static void ChRequestChStaticReplyPacket(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("ChRequestChStaticReplyPacket"))
             {
                 outPacket.WriteHexString("014E0300005301A499DF77F90E000078DAA556F957D34010FEE42A2D6DD38B533C51BC2F3C100F40EEAA1C0FF8DD4769409E81F2DA28FADF3BB3E9DAA40CD92DBEBC97ECEE7C73EE646636017C72E855470D7BA862011EADF6F103DFD0C0295C7AAA486608D2DA967142EF23AC104B033EBA58C2112D5C1C6383DE67040976BBF4DEA36FF7C5102DADA76894A215F6168DD234B42F19315D4B4A24458FFA33225A0B4BE562C9AE7A0FE462831580D2790B4953C8E42D644D213B680C5D705A21940B67D018BE303CE788B686217947B4330C2970580EF193369E224AEA8BA908A825B19425C23EBE2BCDA744AE918A06B6E9FB87CE3C0CF611A0424B9F1E8F7886F8E080E8C724CE23C270BF3AE0E5E13F2746C287DAEC51F906F97B40DF1365FC989C0B51D0D55428D21AB24A4CE37981B04C5C818F274461D8B501510993AE3BB119C4901B058B2463E0CDAC0A7B5D69AED2419D6CFB4D25405B78CBB900D0927EBB6884E8404E98A1DAD63B63D652A391BF3B6A7049CEFBC9CED8B499F7F22AFB6A54372B2ADD8275BBF4FB23B130D9A407F1B2B5090F4745D88E214E8F4C6C72623FEEC4132DE249C1D2C4A7054BA39EC9756747FD4455623AC373F93F09435E0C19A544BD9F1A32CA8C32BC4C1083A7C2A1A5BF6A1D69FED7E95051586F326BFC1B89A839A7D9205FD5D93A11B90A722161D0A1F8B3BCB565D01A66C66319E2FFAA779761D69ADFC7337B0AC63DC31532E903FBF94BB13608D220013522B84A6B0059543DA2A2F62E3EE62F60D8A25D70C6E6CEF6A87EE4D1B682B96C68B34DD6EC2B05AD20CE674480F67B81F9ABCA0F9F3C6BF9A843B018E4B0AFB69E02B5877829770E723E1ACB05A1EB9455B7719B55CF570C2BE171AD2C066AD5116445216B721F8D82CA721F8D823E972C3A32DF549DE85F4A169D5983BF66436E2CD105D5DA54AF47EB8704D9480BD1DA6DF6D7CDE0EE79C06ED0536B2697866D312F8F31BE0A7E30D8E89C6347AEC01CE855422009F39CC6B14617CCB7BBC2C06ED8DC4D99A13DB0B9EB3586F6C266BCE2B6843ED80C593C222081CE6660BE76F4A3B34998E38614CCC32E17110CA07D26656D48431A4487999441B8ACCCF25116A6E232C73007F125669E413974DA26A6992D8FFFA9FD332CA280B834DF624811971BBD2699B904FB91728219FE0286D899A5");
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void PrDynamicCommand()
+        public static void PrDynamicCommand(SessionGroup Parent)
         {
             using (OutPacket outPacket = new OutPacket("PrDynamicCommand"))
             {
                 outPacket.WriteByte(0);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
 
@@ -351,7 +349,7 @@ namespace KartRider
             return skill;
         }
 
-        public static void AddItemSkill(short skill)
+        public static void AddItemSkill(SessionGroup Parent, short skill)
         {
             skill = GameSupport.GetItemSkill(skill);
             using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
@@ -366,11 +364,11 @@ namespace KartRider
                 oPacket.WriteByte(2);
                 oPacket.WriteShort(skill);
                 oPacket.WriteBytes(new byte[5]);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void AttackedSkill(byte type, byte uni, short skill)
+        public static void AttackedSkill(SessionGroup Parent, byte type, byte uni, short skill)
         {
             skill = GameSupport.GetItemSkill(skill);
             using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
@@ -385,7 +383,7 @@ namespace KartRider
                 oPacket.WriteByte(2);
                 oPacket.WriteShort(skill);
                 oPacket.WriteBytes(new byte[5]);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
     }

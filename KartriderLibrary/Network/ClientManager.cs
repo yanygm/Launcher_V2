@@ -37,7 +37,7 @@ public static class ClientManager
         ClientGroup clientGroup1 = new ClientGroup { ClientID = clientId, RIV = 0, SIV = 0 };
         ClientGroups.Add(clientGroup1);
 
-        uint IV = GameSupport.PcFirstMessage();
+        uint IV = GameSupport.PcFirstMessage(session);
         var clientGroup2 = ClientManager.ClientGroups.FirstOrDefault(cg => cg.ClientID == clientId);
         clientGroup2.RIV = IV;
         clientGroup2.SIV = IV;

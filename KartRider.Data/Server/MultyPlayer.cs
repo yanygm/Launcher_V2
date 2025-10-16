@@ -90,16 +90,16 @@ namespace KartRider
             return ranks;
         }
 
-        static void Set_settleTrigger()
+        static void Set_settleTrigger(SessionGroup Parent)
         {
             var onceTimer = new System.Timers.Timer();
             onceTimer.Interval = 10000;
-            onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(s, _event));
+            onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(Parent, s, _event));
             onceTimer.AutoReset = false;
             onceTimer.Start();
         }
 
-        static void settleTrigger(object sender, System.Timers.ElapsedEventArgs e)
+        static void settleTrigger(SessionGroup Parent, object sender, System.Timers.ElapsedEventArgs e)
         {
             //SettleTicks = EndTicks + 3100;
             using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
@@ -107,7 +107,7 @@ namespace KartRider
                 outPacket.WriteByte(gameType);
                 outPacket.WriteInt();
                 outPacket.WriteInt();
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
             using (OutPacket outPacket = new OutPacket("GameResultPacket"))
             {
@@ -310,14 +310,14 @@ namespace KartRider
                 Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
                 outPacket.WriteBytes(new byte[34]);
                 outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
             using (OutPacket outPacket = new OutPacket("GameControlPacket"))
             {
                 outPacket.WriteInt(4);
                 outPacket.WriteByte(0);
                 outPacket.WriteLong(EndTicks + 5000);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
                 Console.WriteLine("EndTicks = {0}", EndTicks + 5000);
             }
             //Console.WriteLine("GameSlotPacket, Settle. Ticks = {0}", SettleTicks);
@@ -332,7 +332,7 @@ namespace KartRider
             return result;
         }
 
-        public static void Clientsession(uint hash, InPacket iPacket)
+        public static void Clientsession(SessionGroup Parent, uint hash, InPacket iPacket)
         {
             if (hash == Adler32Helper.GenerateAdler32_ASCII("GameSlotPacket", 0))
             {
@@ -361,7 +361,7 @@ namespace KartRider
                         oPacket.WriteByte(2);
                         oPacket.WriteShort(skill);
                         oPacket.WriteBytes(data3);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                 }
                 if (type == 11)
@@ -371,13 +371,13 @@ namespace KartRider
                     List<short> skills = V2Spec.GetSkills();
                     if (skills.Contains(13) && skill == 3)
                     {
-                        GameSupport.AttackedSkill(type, uni, 10);
+                        GameSupport.AttackedSkill(Parent, type, uni, 10);
                     }
                     if (kartConfig.SkillAttacked.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
-                            GameSupport.AttackedSkill(type, uni, targetSkill);
+                            GameSupport.AttackedSkill(Parent, type, uni, targetSkill);
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Attacked. Skill = {0}", skill);
@@ -391,13 +391,13 @@ namespace KartRider
                     List<short> skills = V2Spec.GetSkills();
                     if (skills.Contains(14) && skill == 5)
                     {
-                        GameSupport.AddItemSkill(6);
+                        GameSupport.AddItemSkill(Parent, 6);
                     }
                     if (kartConfig.SkillMappings.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
                     {
                         if (kartSkills.TryGetValue(skill, out var targetSkill))
                         {
-                            GameSupport.AddItemSkill(targetSkill);
+                            GameSupport.AddItemSkill(Parent, targetSkill);
                         }
                     }
                     Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
@@ -429,14 +429,14 @@ namespace KartRider
                     using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
                     {
                         oPacket.WriteInt();
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
                         oPacket.WriteInt(1);
                         oPacket.WriteByte(0);
                         oPacket.WriteLong(StartTicks);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     AiTimeData = new Dictionary<int, uint>();
                     FinishTime = 0;
@@ -451,7 +451,7 @@ namespace KartRider
                     {
                         oPacket.WriteInt();
                         oPacket.WriteUInt(FinishTime);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
@@ -462,7 +462,7 @@ namespace KartRider
                     }
                     //Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
                     //Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
-                    Set_settleTrigger();
+                    Set_settleTrigger(Parent);
                 }
                 return;
             }
@@ -474,7 +474,7 @@ namespace KartRider
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -499,7 +499,7 @@ namespace KartRider
                         //oPacket.WriteInt(channeldata1);
                         oPacket.WriteInt(4);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
@@ -513,7 +513,7 @@ namespace KartRider
                         //oPacket.WriteInt(channeldata1);
                         oPacket.WriteInt(3);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
@@ -526,7 +526,7 @@ namespace KartRider
                         oPacket.WriteInt(0);
                         oPacket.WriteInt(4);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 4;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
@@ -539,7 +539,7 @@ namespace KartRider
                         oPacket.WriteInt(0);
                         oPacket.WriteInt(3);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 4;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 0;
@@ -552,7 +552,7 @@ namespace KartRider
                         oPacket.WriteInt(1);
                         oPacket.WriteInt(2);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 1;
@@ -565,7 +565,7 @@ namespace KartRider
                         oPacket.WriteInt(0);
                         oPacket.WriteInt(1);
                         oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     StartGameData.StartTimeAttack_SpeedType = 7;
                     StartGameData.StartTimeAttack_RandomTrackGameType = 1;
@@ -581,7 +581,7 @@ namespace KartRider
                         outPacket.WriteInt(0);
                         outPacket.WriteInt(0);
                         outPacket.WriteByte(0);
-                        RouterListener.MySession.Client.Send(outPacket);
+                        Parent.Client.Send(outPacket);
                     }
                 }
                 //GameSupport.OnDisconnect();
@@ -595,7 +595,7 @@ namespace KartRider
                     oPacket.WriteByte(1);
                     oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39311);
                     oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39312);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -613,7 +613,7 @@ namespace KartRider
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(109);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -637,7 +637,7 @@ namespace KartRider
                     oPacket.WriteByte(1);
                     oPacket.WriteByte(2);
                     oPacket.WriteByte(unk1);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 if (Playernum > 0 && AiSwitch == 6)
                 {
@@ -670,9 +670,9 @@ namespace KartRider
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrFirstRequestPacket"))
             {
-                GrSessionDataPacket();
+                GrSessionDataPacket(Parent);
                 //Thread.Sleep(10);
-                GrSlotDataPacket();
+                GrSlotDataPacket(Parent);
                 return;
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTrackPacket"))
@@ -686,9 +686,9 @@ namespace KartRider
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestSetSlotStatePacket"))
             {
                 int Data = iPacket.ReadInt();
-                GrSlotDataPacket();
+                GrSlotDataPacket(Parent);
                 //GrSlotStatePacket(Data);
-                GrReplySetSlotStatePacket(Data);
+                GrReplySetSlotStatePacket(Parent, Data);
                 return;
             }
             else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestClosePacket"))
@@ -702,7 +702,7 @@ namespace KartRider
                     oPacket.WriteInt(7);
                     oPacket.WriteInt(0);
                     oPacket.WriteInt(0);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -711,18 +711,18 @@ namespace KartRider
                 using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
                 {
                     oPacket.WriteInt(0);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
                 {
                     StartGameData.StartTimeAttack_Track = track;
-                    RandomTrack.SetGameType();
+                    RandomTrack.SetGameType(Parent);
 
                     oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSessionDataPacket")));
-                    GrSessionDataPacket(oPacket);
+                    GrSessionDataPacket(Parent, oPacket);
 
                     oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSlotDataPacket")));
-                    GrSlotDataPacket(oPacket);
+                    GrSlotDataPacket(Parent, oPacket);
 
                     //kart data
                     StartGameData.GetKartSpac(oPacket);
@@ -782,7 +782,7 @@ namespace KartRider
                     oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("MissionInfo")));
                     oPacket.WriteHexString("00000000000000000000FFFFFFFF000000000000000000");
                     //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 //StartGameRacing.KartSpecLog();
                 Console.WriteLine("Track : {0}", RandomTrack.GetTrackName(StartGameData.StartTimeAttack_Track));
@@ -797,7 +797,7 @@ namespace KartRider
                 using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
                 {
                     oPacket.WriteByte(1);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -830,7 +830,7 @@ namespace KartRider
                         oPacket.WriteByte(1);
                         oPacket.WriteInt(unk1);
                         oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     XmlNode parentNode = ai.ParentNode;
                     if (parentNode != null)
@@ -870,7 +870,7 @@ namespace KartRider
                             oPacket.WriteShort(0);
                             oPacket.WriteByte(0);
                             oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                            RouterListener.MySession.Client.Send(oPacket);
+                            Parent.Client.Send(oPacket);
                         }
                         try
                         {
@@ -944,7 +944,7 @@ namespace KartRider
                 {
                     oPacket.WriteByte(1);
                     oPacket.WriteHexString("2CFB6605");
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 return;
             }
@@ -956,7 +956,7 @@ namespace KartRider
                 {
                     oPacket.WriteInt(AiNum);
                     oPacket.WriteUInt(AiTime);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                     Console.WriteLine("AiTime = {0}", AiTime);
                 }
                 if (AiTimeData.Count == 0 && FinishTime == 0)
@@ -967,11 +967,11 @@ namespace KartRider
                         oPacket.WriteInt(3);
                         oPacket.WriteByte(0);
                         oPacket.WriteLong(EndTicks);
-                        RouterListener.MySession.Client.Send(oPacket);
+                        Parent.Client.Send(oPacket);
                     }
                     //Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
                     //Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
-                    Set_settleTrigger();
+                    Set_settleTrigger(Parent);
                 }
                 if (!AiTimeData.ContainsKey(AiNum))
                 {
@@ -990,7 +990,7 @@ namespace KartRider
                 {
                     oPacket.WriteByte(team);
                     oPacket.WriteFloat(gauge);
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 if (gauge == 1f) gauge = 0f;
                 return;
@@ -1004,7 +1004,7 @@ namespace KartRider
                     oPacket.WriteInt(0);
                     oPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team);
                     oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
                 try
                 {
@@ -1045,7 +1045,7 @@ namespace KartRider
                             {
                                 oPacket.WriteHexString("04000000FFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFFFFFFFFFF");
                             }
-                            RouterListener.MySession.Client.Send(oPacket);
+                            Parent.Client.Send(oPacket);
                         }
                     }
                     else
@@ -1061,16 +1061,16 @@ namespace KartRider
             }
         }
 
-        static void GrSlotDataPacket()
+        static void GrSlotDataPacket(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("GrSlotDataPacket"))
             {
-                GrSlotDataPacket(oPacket);
-                RouterListener.MySession.Client.Send(oPacket);
+                GrSlotDataPacket(Parent, oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        static void GrSlotDataPacket(OutPacket outPacket)
+        static void GrSlotDataPacket(SessionGroup Parent, OutPacket outPacket)
         {
             outPacket.WriteUInt(track); // track name hash
             outPacket.WriteInt(0);
@@ -1088,7 +1088,7 @@ namespace KartRider
             outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = Preparing , 7 = AI
             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
 
-            IPEndPoint clientEndPoint = RouterListener.MySession.Client.Socket.RemoteEndPoint as IPEndPoint;
+            IPEndPoint clientEndPoint = Parent.Client.Socket.RemoteEndPoint as IPEndPoint;
             outPacket.WriteEndPoint(clientEndPoint);
             //outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
             //outPacket.WriteHexString("3a 16 01 31 7d 48");
@@ -1418,17 +1418,17 @@ namespace KartRider
             outPacket.WriteInt(0);
         }
 
-        static void GrSlotStatePacket(int Data)
+        static void GrSlotStatePacket(SessionGroup Parent, int Data)
         {
             using (OutPacket oPacket = new OutPacket("GrSlotStatePacket"))
             {
                 oPacket.WriteInt(Data);
                 oPacket.WriteBytes(new byte[60]);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        static void GrReplySetSlotStatePacket(int Data)
+        static void GrReplySetSlotStatePacket(SessionGroup Parent, int Data)
         {
             using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
             {
@@ -1436,20 +1436,20 @@ namespace KartRider
                 oPacket.WriteInt(1);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(Data);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        static void GrSessionDataPacket()
+        static void GrSessionDataPacket(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("GrSessionDataPacket"))
             {
-                GrSessionDataPacket(oPacket);
-                RouterListener.MySession.Client.Send(oPacket);
+                GrSessionDataPacket(Parent, oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        static void GrSessionDataPacket(OutPacket outPacket)
+        static void GrSessionDataPacket(SessionGroup Parent, OutPacket outPacket)
         {
             outPacket.WriteString(RoomName);
             outPacket.WriteInt(0);

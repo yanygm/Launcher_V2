@@ -183,7 +183,7 @@ namespace KartRider
             }
         }
 
-        public static void SpRpLotteryPacket()
+        public static void SpRpLotteryPacket(SessionGroup Parent)
         {
             int stock1 = LotteryManager.GetRandomStockIds(1)[0];
             Random random = new Random();
@@ -209,7 +209,7 @@ namespace KartRider
                 outPacket.WriteByte(0);
                 outPacket.WriteByte(BingoNum);
                 outPacket.WriteBytes(new byte[11]);
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
             if (BingoNums.ContainsKey(BingoNum) && BingoNumsList.Contains(BingoNum))
             {

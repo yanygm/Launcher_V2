@@ -11,7 +11,7 @@ namespace RiderData
     {
         public static List<short> emblem = new List<short>();
 
-        public static void RmOwnerEmblemPacket()
+        public static void RmOwnerEmblemPacket(SessionGroup Parent)
         {
             int All_Emblem = emblem.Count;
             using (OutPacket outPacket = new OutPacket("RmOwnerEmblemPacket"))
@@ -23,7 +23,7 @@ namespace RiderData
                 {
                     outPacket.WriteShort(item);
                 }
-                RouterListener.MySession.Client.Send(outPacket);
+                Parent.Client.Send(outPacket);
             }
         }
     }

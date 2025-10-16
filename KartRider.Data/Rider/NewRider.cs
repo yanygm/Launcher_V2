@@ -17,33 +17,33 @@ namespace RiderData
         private static readonly HashSet<short> excludedKeys = new HashSet<short>{ 3, 6, 10, 15, 19, 24, 25, 29, 33, 34, 35, 40, 41, 47, 48, 50, 51, 56, 57, 58, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
         private static readonly HashSet<short> ValidItemCatIds = new HashSet<short> { 1, 2, 4, 8, 11, 12, 13, 14, 16, 18, 20, 21, 26, 27, 28, 31, 52, 61, 70, 71 };
 
-        public static void LoadItemData()
+        public static void LoadItemData(SessionGroup Parent)
         {
-            KartExcData.Tune_ExcData();
-            KartExcData.Plant_ExcData();
-            KartExcData.Level_ExcData();
-            KartExcData.Parts_ExcData();
-            KartExcData.Level12_ExcData();
-            KartExcData.Parts12_ExcData();
-            NewRider.XUniquePartsData();
-            NewRider.XLegendPartsData();
-            NewRider.XRarePartsData();
-            NewRider.XNormalPartsData();
-            NewRider.V1UniquePartsData();
-            NewRider.V1LegendPartsData();
-            NewRider.V1RarePartsData();
-            NewRider.V1NormalPartsData();
-            NewRider.partsEngine12();
-            NewRider.partsHandle12();
-            NewRider.partsWheel12();
-            NewRider.partsBooster12();
-            NewRider.Items();
-            NewRider.NewKart1();
-            NewRider.NewKart2();
-            NewRider.NewRiderData();//라이더 인식
+            KartExcData.Tune_ExcData(Parent);
+            KartExcData.Plant_ExcData(Parent);
+            KartExcData.Level_ExcData(Parent);
+            KartExcData.Parts_ExcData(Parent);
+            KartExcData.Level12_ExcData(Parent);
+            KartExcData.Parts12_ExcData(Parent);
+            NewRider.XUniquePartsData(Parent);
+            NewRider.XLegendPartsData(Parent);
+            NewRider.XRarePartsData(Parent);
+            NewRider.XNormalPartsData(Parent);
+            NewRider.V1UniquePartsData(Parent);
+            NewRider.V1LegendPartsData(Parent);
+            NewRider.V1RarePartsData(Parent);
+            NewRider.V1NormalPartsData(Parent);
+            NewRider.partsEngine12(Parent);
+            NewRider.partsHandle12(Parent);
+            NewRider.partsWheel12(Parent);
+            NewRider.partsBooster12(Parent);
+            NewRider.Items(Parent);
+            NewRider.NewKart1(Parent);
+            NewRider.NewKart2(Parent);
+            NewRider.NewRiderData(Parent);//라이더 인식
         }
 
-        public static void NewRiderData()
+        public static void NewRiderData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("PrGetRider"))
             {
@@ -61,11 +61,11 @@ namespace RiderData
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
                 oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
                 oPacket.WriteBytes(new byte[94]);
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void NewKart1()
+        public static void NewKart1(SessionGroup Parent)
         {
             short sn = 1;
             int range = 100;//分批次数
@@ -93,13 +93,13 @@ namespace RiderData
                             outPacket.WriteShort(0);
                             outPacket.WriteShort(0);
                         }
-                        RouterListener.MySession.Client.Send(outPacket);
+                        Parent.Client.Send(outPacket);
                     }
                 }
             }
         }
 
-        public static void NewKart2()
+        public static void NewKart2(SessionGroup Parent)
         {
             int range = 100;//分批次数
             int times = NewKart.Count / range + (NewKart.Count % range > 0 ? 1 : 0);
@@ -123,12 +123,12 @@ namespace RiderData
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(0);
                     }
-                    RouterListener.MySession.Client.Send(outPacket);
+                    Parent.Client.Send(outPacket);
                 }
             }
         }
 
-        public static void Items()
+        public static void Items(SessionGroup Parent)
         {
             foreach (var category in items)
             {
@@ -193,12 +193,12 @@ namespace RiderData
                             items.Add(add);
                         }
                     }
-                    LoRpGetRiderItemPacket(itemCatId, items);
+                    LoRpGetRiderItemPacket(Parent, itemCatId, items);
                 }
             }
         }
 
-        public static void partsEngine12()
+        public static void partsEngine12(SessionGroup Parent)
         {
             if (items.TryGetValue(72, out Dictionary<short, string> resultDict))
             {
@@ -238,12 +238,12 @@ namespace RiderData
                         }
                         oPacket.WriteShort(V2Spec.Get12Parts(id));
                     }
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsHandle12()
+        public static void partsHandle12(SessionGroup Parent)
         {
             if (items.TryGetValue(73, out Dictionary<short, string> resultDict))
             {
@@ -283,12 +283,12 @@ namespace RiderData
                         }
                         oPacket.WriteShort(V2Spec.Get12Parts(id));
                     }
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsWheel12()
+        public static void partsWheel12(SessionGroup Parent)
         {
             if (items.TryGetValue(74, out Dictionary<short, string> resultDict))
             {
@@ -328,12 +328,12 @@ namespace RiderData
                         }
                         oPacket.WriteShort(V2Spec.Get12Parts(id));
                     }
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsBooster12()
+        public static void partsBooster12(SessionGroup Parent)
         {
             if (items.TryGetValue(75, out Dictionary<short, string> resultDict))
             {
@@ -373,12 +373,12 @@ namespace RiderData
                         }
                         oPacket.WriteShort(V2Spec.Get12Parts(id));
                     }
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void XUniquePartsData()
+        public static void XUniquePartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -443,11 +443,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void XLegendPartsData()
+        public static void XLegendPartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -512,11 +512,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void XRarePartsData()
+        public static void XRarePartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -581,11 +581,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void XNormalPartsData()
+        public static void XNormalPartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -650,12 +650,12 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
         //-----------------------------------------------------------------------------------------------V1 파츠 관련
-        public static void V1UniquePartsData()
+        public static void V1UniquePartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -720,11 +720,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void V1LegendPartsData()
+        public static void V1LegendPartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -789,11 +789,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void V1RarePartsData()
+        public static void V1RarePartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -858,11 +858,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void V1NormalPartsData()
+        public static void V1NormalPartsData(SessionGroup Parent)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -927,11 +927,11 @@ namespace RiderData
                     oPacket.WriteByte(Grade);
                     oPacket.WriteShort(i);
                 }
-                RouterListener.MySession.Client.Send(oPacket);
+                Parent.Client.Send(oPacket);
             }
         }
 
-        public static void LoRpGetRiderItemPacket(short itemCat, List<List<ushort>> item)
+        public static void LoRpGetRiderItemPacket(SessionGroup Parent, short itemCat, List<List<ushort>> item)
         {
             int range = 100;//分批次数
             int times = item.Count / range + (item.Count % range > 0 ? 1 : 0);
@@ -957,7 +957,7 @@ namespace RiderData
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(0);
                     }
-                    RouterListener.MySession.Client.Send(oPacket);
+                    Parent.Client.Send(oPacket);
                 }
             }
         }

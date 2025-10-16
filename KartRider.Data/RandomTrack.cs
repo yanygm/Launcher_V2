@@ -30,7 +30,7 @@ namespace KartRider
             }
         }
 
-        public static void SetGameType()
+        public static void SetGameType(SessionGroup Parent)
         {
             if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
             {
@@ -40,10 +40,10 @@ namespace KartRider
             {
                 RandomTrack.GameType = "item";
             }
-            RandomTrack.SetRandomType();
+            RandomTrack.SetRandomType(Parent);
         }
 
-        public static void SetRandomType()
+        public static void SetRandomType(SessionGroup Parent)
         {
             if (StartGameData.StartTimeAttack_Track == 0)
             {
@@ -93,10 +93,10 @@ namespace KartRider
             {
                 RandomTrack.SetRandomTrack = "Unknown";
             }
-            RandomTrack.RandomTrackSetList();
+            RandomTrack.RandomTrackSetList(Parent);
         }
 
-        public static void RandomTrackSetList()
+        public static void RandomTrackSetList(SessionGroup Parent)
         {
             if (RandomTrack.SetRandomTrack == "all" || RandomTrack.SetRandomTrack == "speedAll")
             {
@@ -146,7 +146,7 @@ namespace KartRider
                     }
                 }
             }
-            SpeedType.SpeedTypeData();
+            SpeedType.SpeedTypeData(Parent);
         }
     }
 }
