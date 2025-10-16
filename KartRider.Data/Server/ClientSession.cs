@@ -493,10 +493,11 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmFirstRequestPacket", 0))
                     {
+                        IPEndPoint clientEndPoint = RouterListener.MySession.Client.Socket.RemoteEndPoint as IPEndPoint;
                         using (OutPacket outPacket = new OutPacket("RmSlotDataPacket"))
                         {
                             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
-                            outPacket.WriteEndPoint(RouterListener.client);
+                            outPacket.WriteEndPoint(clientEndPoint);
                             outPacket.WriteInt();
                             outPacket.WriteShort();
                             outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
