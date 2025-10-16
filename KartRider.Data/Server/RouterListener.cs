@@ -13,8 +13,6 @@ namespace KartRider
 
         public static ushort port;
 
-        public static IPEndPoint client;
-
         public static System.Net.IPEndPoint CurrentUDPServer { get; set; }
 
         public static TcpListener Listener { get; private set; }

@@ -276,12 +276,12 @@ namespace KartRider
         /// </summary>
         public static byte PartsCoatingLock;
 
-        public static byte PartsBoosterEffectLock;
-
         /// <summary>
         /// 鎖定尾燈欄位
         /// </summary>
         public static byte PartsTailLampLock;
+
+        public static byte PartsBoosterEffectLock;
 
         /// <summary>
         /// 超越推進器能量累積比例 - 開氣

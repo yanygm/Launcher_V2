@@ -1,5 +1,6 @@
 using ExcData;
 using KartLibrary.IO;
+using KartRider.Common.Network;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
 using KartRider_PacketName;
@@ -1071,11 +1072,11 @@ namespace KartRider
 
         static void GrSlotDataPacket(OutPacket outPacket)
         {
-            outPacket.WriteUInt(track); //track name hash
+            outPacket.WriteUInt(track); // track name hash
             outPacket.WriteInt(0);
             outPacket.WriteBytes(RoomUnkBytes);
-            outPacket.WriteInt(0); //RoomMaster 
-            outPacket.WriteInt(2);
+            outPacket.WriteInt(0); // RoomMaster 
+            outPacket.WriteInt(0); // 2
             outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
             outPacket.WriteShort(0); // 797
             outPacket.WriteByte(0);
@@ -1087,7 +1088,8 @@ namespace KartRider
             outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = Preparing , 7 = AI
             outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
 
-            outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.client.Address.ToString()), (ushort)RouterListener.client.Port);
+            IPEndPoint clientEndPoint = RouterListener.MySession.Client.Socket.RemoteEndPoint as IPEndPoint;
+            outPacket.WriteEndPoint(clientEndPoint);
             //outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
             //outPacket.WriteHexString("3a 16 01 31 7d 48");
             outPacket.WriteInt(0);
@@ -1118,7 +1120,7 @@ namespace KartRider
             outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
             outPacket.WriteInt(5); //outPacket.WriteInt(5);
 
-            outPacket.WriteHexString("FF 00 00 00");
+            outPacket.WriteHexString("FF 00 00 01"); //"FF 00 00 00"
 
             outPacket.WriteByte(3); //3
             if (ProfileService.ProfileConfig.Rider.ClubMark_LOGO == 0)
@@ -1136,6 +1138,7 @@ namespace KartRider
             outPacket.WriteInt();
             outPacket.WriteByte();
             outPacket.WriteInt();
+            outPacket.WriteShort(0);
 
             /*---- One/First player ----*/
             /*
@@ -1160,7 +1163,6 @@ namespace KartRider
 
             // AI Data
             XmlDocument doc = new XmlDocument();
-            outPacket.WriteShort(0);
             doc.Load(FileName.AI_LoadFile);
             string parentNodePath = "";
             byte ai4Team = 0;
