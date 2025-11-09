@@ -43,7 +43,7 @@ namespace KartRider
             {
                 outPacket.WriteUShort(SessionGroup.usLocale);
                 outPacket.WriteUShort(1);
-                outPacket.WriteUShort(ProfileService.ProfileConfig.GameOption.Version);
+                outPacket.WriteUShort(ProfileService.SettingConfig.ClientVersion);
                 outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
                 outPacket.WriteUInt(key.first_val);
                 outPacket.WriteUInt(key.second_val);
@@ -70,63 +70,63 @@ namespace KartRider
             }
         }
 
-        public static void PrGetGameOption(SessionGroup Parent)
+        public static void PrGetGameOption(SessionGroup Parent, string Nickname)
         {
             using (OutPacket outPacket = new OutPacket("PrGetGameOption"))
             {
-                outPacket.WriteFloat(ProfileService.ProfileConfig.GameOption.Set_BGM);
-                outPacket.WriteFloat(ProfileService.ProfileConfig.GameOption.Set_Sound);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Main_BGM);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Sound_effect);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Full_screen);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowMirror);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowOtherPlayerNames);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowOutlines);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowShadows);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.HighLevelEffect);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.MotionBlurEffect);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.MotionDistortionEffect);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.HighEndOptimization);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.AutoReady);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.PropDescription);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.VideoQuality);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.BGM_Check);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Sound_Check);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowHitInfo);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.AutoBoost);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.GameType);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.SetGhost);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.SpeedType);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.RoomChat);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.DrivingChat);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowAllPlayerHitInfo);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.ShowTeamColor);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.Set_screen);
-                outPacket.WriteByte(ProfileService.ProfileConfig.GameOption.HideCompetitiveRank);
+                outPacket.WriteFloat(ProfileService.ProfileConfigs[Nickname].GameOption.Set_BGM);
+                outPacket.WriteFloat(ProfileService.ProfileConfigs[Nickname].GameOption.Set_Sound);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Main_BGM);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Sound_effect);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Full_screen);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowMirror);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowOtherPlayerNames);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowOutlines);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowShadows);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.HighLevelEffect);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.MotionBlurEffect);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.MotionDistortionEffect);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.HighEndOptimization);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.AutoReady);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.PropDescription);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.VideoQuality);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.BGM_Check);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Sound_Check);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowHitInfo);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.AutoBoost);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.GameType);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.SetGhost);
+                outPacket.WriteByte(ProfileService.SettingConfig.SpeedType);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.RoomChat);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.DrivingChat);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowAllPlayerHitInfo);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowTeamColor);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Set_screen);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.HideCompetitiveRank);
                 outPacket.WriteBytes(new byte[79]);
                 Parent.Client.Send(outPacket);
             }
         }
 
-        public static void ChRpEnterMyRoomPacket(SessionGroup Parent)
+        public static void ChRpEnterMyRoomPacket(SessionGroup Parent, string Nickname)
         {
-            if (GameType.EnterMyRoomType == 0)
+            if (ProfileService.ProfileConfigs[Nickname].Rider.EnterMyRoomType == 0)
             {
                 using (OutPacket outPacket = new OutPacket("ChRpEnterMyRoomPacket"))
                 {
-                    outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                    outPacket.WriteString(Nickname);
                     outPacket.WriteByte(0);
-                    outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoom);
-                    outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.MyRoomBGM);
-                    outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.UseRoomPwd);
+                    outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoom);
+                    outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomBGM);
+                    outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.UseRoomPwd);
                     outPacket.WriteByte(0);
-                    outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.UseItemPwd);
-                    outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.TalkLock);
-                    outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.RoomPwd);
+                    outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.UseItemPwd);
+                    outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.TalkLock);
+                    outPacket.WriteString(ProfileService.ProfileConfigs[Nickname].MyRoom.RoomPwd);
                     outPacket.WriteString("");
-                    outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.ItemPwd);
-                    outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart1);
-                    outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart2);
+                    outPacket.WriteString(ProfileService.ProfileConfigs[Nickname].MyRoom.ItemPwd);
+                    outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomKart1);
+                    outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomKart2);
                     Parent.Client.Send(outPacket);
                 }
             }
@@ -135,7 +135,7 @@ namespace KartRider
                 using (OutPacket outPacket = new OutPacket("ChRpEnterMyRoomPacket"))
                 {
                     outPacket.WriteString("");
-                    outPacket.WriteByte(GameType.EnterMyRoomType);
+                    outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].Rider.EnterMyRoomType);
                     outPacket.WriteShort(0);
                     outPacket.WriteByte(0);
                     outPacket.WriteByte(0);
@@ -152,30 +152,30 @@ namespace KartRider
             }
         }
 
-        public static void RmNotiMyRoomInfoPacket(SessionGroup Parent)
+        public static void RmNotiMyRoomInfoPacket(SessionGroup Parent, string Nickname)
         {
             using (OutPacket outPacket = new OutPacket("RmNotiMyRoomInfoPacket"))
             {
-                outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoom);
-                outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.MyRoomBGM);
-                outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.UseRoomPwd);
+                outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoom);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomBGM);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.UseRoomPwd);
                 outPacket.WriteByte(0);
-                outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.UseItemPwd);
-                outPacket.WriteByte(ProfileService.ProfileConfig.MyRoom.TalkLock);
-                outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.RoomPwd);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.UseItemPwd);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].MyRoom.TalkLock);
+                outPacket.WriteString(ProfileService.ProfileConfigs[Nickname].MyRoom.RoomPwd);
                 outPacket.WriteString("");
-                outPacket.WriteString(ProfileService.ProfileConfig.MyRoom.ItemPwd);
-                outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart1);
-                outPacket.WriteShort(ProfileService.ProfileConfig.MyRoom.MyRoomKart2);
+                outPacket.WriteString(ProfileService.ProfileConfigs[Nickname].MyRoom.ItemPwd);
+                outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomKart1);
+                outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].MyRoom.MyRoomKart2);
                 Parent.Client.Send(outPacket);
             }
         }
 
-        public static void PrCheckMyClubStatePacket(SessionGroup Parent)
+        public static void PrCheckMyClubStatePacket(SessionGroup Parent, string Nickname)
         {
             using (OutPacket outPacket = new OutPacket("PrCheckMyClubStatePacket"))
             {
-                if (ProfileService.ProfileConfig.Rider.ClubMark_LOGO == 0)
+                if (ProfileService.ProfileConfigs[Nickname].Rider.ClubMark_LOGO == 0)
                 {
                     outPacket.WriteInt(0);
                     outPacket.WriteString("");
@@ -184,13 +184,13 @@ namespace KartRider
                 }
                 else
                 {
-                    outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubCode);
-                    outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
-                    outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
-                    outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LINE);
+                    outPacket.WriteInt(ProfileService.ProfileConfigs[Nickname].Rider.ClubCode);
+                    outPacket.WriteString(ProfileService.ProfileConfigs[Nickname].Rider.ClubName);
+                    outPacket.WriteInt(ProfileService.ProfileConfigs[Nickname].Rider.ClubMark_LOGO);
+                    outPacket.WriteInt(ProfileService.ProfileConfigs[Nickname].Rider.ClubMark_LINE);
                 }
                 outPacket.WriteShort(5);//Grade
-                outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                outPacket.WriteString(Nickname);
                 outPacket.WriteInt(1);//ClubMember
                 outPacket.WriteByte(5);//Level
                 outPacket.WriteHexString("A2 0E 90 AB 9A 99");
@@ -237,86 +237,56 @@ namespace KartRider
             }
         }
 
-        public static void GetRider(OutPacket outPacket)
+        public static void GetRider(SessionGroup Parent, string Nickname, OutPacket outPacket)
         {
-            var KartAndSN = new { Kart = ProfileService.ProfileConfig.RiderItem.Set_Kart, SN = ProfileService.ProfileConfig.RiderItem.Set_KartSN };
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Character);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Paint);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Plate);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Goggle);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Balloon);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_HeadBand);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_HeadPhone);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_HandGearL);
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Uniform);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Decal);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Pet);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_FlyingPet);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Aura);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_SkidMark);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_SpecialKit);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_RidColor);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_BonusCard);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_BossModeCard);
-            var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
-            if (existingPlant != null)
-            {
-                outPacket.WriteShort(existingPlant[3]);
-                outPacket.WriteShort(existingPlant[7]);
-                outPacket.WriteShort(existingPlant[5]);
-                outPacket.WriteShort(existingPlant[9]);
-            }
-            else
-            {
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-            }
-            outPacket.WriteShort(0);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_FishingPole);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Tachometer);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Dye);
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_KartSN);
-            outPacket.WriteByte(0);
-            var existingParts = KartExcData.PartsList.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
-            if (existingParts != null)
-            {
-                outPacket.WriteShort(existingParts[14]);
-                outPacket.WriteShort(existingParts[15]);
-            }
-            else
-            {
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-            }
-            outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_slotBg);
-            var existingParts12 = KartExcData.Parts12List.FirstOrDefault(list => list[0] == KartAndSN.Kart && list[1] == KartAndSN.SN);
-            if (existingParts12 != null)
-            {
-                outPacket.WriteShort(existingParts12[14]);
-                outPacket.WriteShort(existingParts12[15]);
-                outPacket.WriteShort(existingParts12[16]);
-            }
-            else
-            {
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-            }
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Character);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Paint);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Plate);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Goggle);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Balloon);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown1);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_HeadBand);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_HeadPhone);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_HandGearL);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown2);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Uniform);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Decal);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Pet);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_FlyingPet);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Aura);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_SkidMark);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_SpecialKit);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_RidColor);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_BonusCard);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_BossModeCard);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartPlant1);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartPlant2);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartPlant3);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartPlant4);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown3);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_FishingPole);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Tachometer);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Dye);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartSN);
+            outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown4);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartCoating);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartTailLamp);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_slotBg);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartCoating12);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartTailLamp12);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartBoosterEffect12);
+            outPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown5);
         }
 
-        public static short RandomItemSkill(byte gameType)
+        public static short RandomItemSkill(string Nickname, byte gameType)
         {
             if (gameType == 2)
             {
                 Random random = new Random();
                 int index = random.Next(MultyPlayer.itemProb_indi.Count);
                 short skill = MultyPlayer.itemProb_indi[index];
-                skill = GameSupport.GetItemSkill(skill);
+                skill = GameSupport.GetItemSkill(Nickname, skill);
                 return skill;
             }
             else if (gameType == 4)
@@ -324,24 +294,24 @@ namespace KartRider
                 Random random = new Random();
                 int index = random.Next(MultyPlayer.itemProb_team.Count);
                 short skill = MultyPlayer.itemProb_team[index];
-                skill = GameSupport.GetItemSkill(skill);
+                skill = GameSupport.GetItemSkill(Nickname, skill);
                 return skill;
             }
             return 0;
         }
 
-        public static short GetItemSkill(short skill)
+        public static short GetItemSkill(string Nickname, short skill)
         {
-            List<short> skills = V2Spec.GetSkills();
+            List<short> skills = V2Specs.GetSkills(Nickname);
             for (int i = 0; i < skills.Count; i++)
             {
-                if (V2Spec.itemSkill.TryGetValue(skills[i], out var Level) &&
+                if (V2Specs.itemSkill.TryGetValue(skills[i], out var Level) &&
                     Level.TryGetValue(skill, out var LevelSkill))
                 {
                     return LevelSkill;
                 }
             }
-            if (MultyPlayer.kartConfig.SkillChange.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var changes) &&
+            if (MultyPlayer.kartConfig.SkillChange.TryGetValue(ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart, out var changes) &&
                 changes.TryGetValue(skill, out var changesSkill))
             {
                 return changesSkill;
@@ -349,9 +319,9 @@ namespace KartRider
             return skill;
         }
 
-        public static void AddItemSkill(SessionGroup Parent, short skill)
+        public static void AddItemSkill(SessionGroup Parent, string Nickname, short skill)
         {
-            skill = GameSupport.GetItemSkill(skill);
+            skill = GameSupport.GetItemSkill(Nickname, skill);
             using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
             {
                 oPacket.WriteInt();
@@ -368,9 +338,9 @@ namespace KartRider
             }
         }
 
-        public static void AttackedSkill(SessionGroup Parent, byte type, byte uni, short skill)
+        public static void AttackedSkill(SessionGroup Parent, string Nickname, byte type, byte uni, short skill)
         {
-            skill = GameSupport.GetItemSkill(skill);
+            skill = GameSupport.GetItemSkill(Nickname, skill);
             using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
             {
                 oPacket.WriteInt();

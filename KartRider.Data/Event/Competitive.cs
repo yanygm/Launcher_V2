@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using KartRider;
 using KartRider.Common.Utilities;
 using Profile;
 
@@ -14,8 +15,8 @@ namespace RHOParser
         public uint Track { get; set; }
         public short Kart { get; set; }
         public uint Time { get; set; }
-        public short Boooster { get; set; }
-        public uint BooosterPoint { get; set; }
+        public short Booster { get; set; }
+        public uint BoosterPoint { get; set; }
         public short Crash { get; set; }
         public uint CrashPoint { get; set; }
         public uint Point { get; set; }
@@ -23,95 +24,62 @@ namespace RHOParser
 
     public class CompetitiveDataManager
     {
-        public CompetitiveDataManager()
-        {
-            // 如果文件不存在则创建
-            if (!File.Exists(FileName.Competitive_LoadFile))
-            {
-                CreateNewFile();
-            }
-        }
-
-        // 创建新的XML文件
-        private void CreateNewFile()
-        {
-            XDocument doc = new XDocument(
-                new XDeclaration("1.0", "utf-8", "yes"),
-                new XElement("CompetitiveDataList")
-            );
-            doc.Save(FileName.Competitive_LoadFile);
-        }
-
         // 保存数据，如果Track重复则比较Time，Time小则替换
-        public void SaveData(CompetitiveData data)
+        public void SaveData(string Nickname, CompetitiveData data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
 
-            XDocument doc = XDocument.Load(FileName.Competitive_LoadFile);
-            var root = doc.Root;
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            var CompetitiveList = new List<CompetitiveData>();
+            if (File.Exists(filename.Competitive_LoadFile))
+            {
+                CompetitiveList = JsonHelper.DeserializeNoBom<List<CompetitiveData>>(filename.Competitive_LoadFile);
+            }
 
             // 查找是否存在相同的Track
-            var existingElement = root.Elements("Data")
-                .FirstOrDefault(e => (uint)e.Attribute("Track") == data.Track);
-
-            if (existingElement != null)
+            var existingData = CompetitiveList.FirstOrDefault(Competitive => Competitive.Track == data.Track);
+            if (existingData != null)
             {
                 // 存在相同Track，比较Time
-                uint existingTime = (uint)existingElement.Attribute("Time");
-                if (data.Time < existingTime)
+                if (data.Time < existingData.Time)
                 {
                     // Time更小，替换数据
-                    existingElement.Attribute("Track").SetValue(data.Track);
-                    existingElement.Attribute("Kart").SetValue(data.Kart);
-                    existingElement.Attribute("Time").SetValue(data.Time);
-                    existingElement.Attribute("Boooster").SetValue(data.Boooster);
-                    existingElement.Attribute("BooosterPoint").SetValue(data.BooosterPoint);
-                    existingElement.Attribute("Crash").SetValue(data.Crash);
-                    existingElement.Attribute("CrashPoint").SetValue(data.CrashPoint);
-                    existingElement.Attribute("Point").SetValue(data.Point);
+                    existingData.Track = data.Track;
+                    existingData.Kart = data.Kart;
+                    existingData.Time = data.Time;
+                    existingData.Booster = data.Booster;
+                    existingData.BoosterPoint = data.BoosterPoint;
+                    existingData.Crash = data.Crash;
+                    existingData.CrashPoint = data.CrashPoint;
+                    existingData.Point = data.Point;
                 }
-                // 如果Time不更小则不做处理
             }
             else
             {
                 // 不存在相同Track，添加新数据
-                root.Add(new XElement("Data",
-                    new XAttribute("Track", data.Track),
-                    new XAttribute("Kart", data.Kart),
-                    new XAttribute("Time", data.Time),
-                    new XAttribute("Boooster", data.Boooster),
-                    new XAttribute("BooosterPoint", data.BooosterPoint),
-                    new XAttribute("Crash", data.Crash),
-                    new XAttribute("CrashPoint", data.CrashPoint),
-                    new XAttribute("Point", data.Point)
-                ));
+                CompetitiveList.Add(data);
             }
-
-            doc.Save(FileName.Competitive_LoadFile);
+            // 保存更新后的列表
+            File.WriteAllText(filename.Competitive_LoadFile, JsonHelper.Serialize(CompetitiveList));
         }
 
         // 读取所有数据
-        public List<CompetitiveData> LoadAllData()
+        public List<CompetitiveData> LoadAllData(string Nickname)
         {
-            if (!File.Exists(FileName.Competitive_LoadFile))
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            if (!File.Exists(filename.Competitive_LoadFile))
                 return new List<CompetitiveData>();
 
-            XDocument doc = XDocument.Load(FileName.Competitive_LoadFile);
-
-            return doc.Root.Elements("Data")
-                .Select(e => new CompetitiveData
-                {
-                    Track = (uint)e.Attribute("Track"),
-                    Kart = (short)e.Attribute("Kart"),
-                    Time = (uint)e.Attribute("Time"),
-                    Boooster = e.Attribute("Boooster") != null ? (short)e.Attribute("Boooster") : (short)0,
-                    BooosterPoint = e.Attribute("BooosterPoint") != null ? (uint)e.Attribute("BooosterPoint") : 0u,
-                    Crash = e.Attribute("Crash") != null ? (short)e.Attribute("Crash") : (short)0,
-                    CrashPoint = e.Attribute("CrashPoint") != null ? (uint)e.Attribute("CrashPoint") : 0u,
-                    Point = e.Attribute("Point") != null ? (uint)e.Attribute("Point") : 0u
-                })
-                .ToList();
+            return JsonHelper.DeserializeNoBom<List<CompetitiveData>>(filename.Competitive_LoadFile);
         }
     }
 
@@ -280,7 +248,7 @@ namespace RHOParser
         private uint CalculateBoostScore(List<DriveBonus> bonuses, short actualBoostCount)
         {
             uint score = 0;
-            foreach (var bonus in bonuses.Where(b => b.Type == "boooster"))
+            foreach (var bonus in bonuses.Where(b => b.Type == "booster"))
             {
                 if (actualBoostCount > bonus.Count)
                 {

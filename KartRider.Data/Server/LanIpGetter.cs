@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -35,5 +36,29 @@ public class LanIpGetter
 
         // 如果没有找到有效IP，返回回环地址
         return "127.0.0.1";
+    }
+
+    public static List<string> GetAllLocalLanIps()
+    {
+        List<string> ips = new List<string>();
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+        foreach (var iface in interfaces)
+        {
+            if (iface.OperationalStatus != OperationalStatus.Up ||
+                iface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+
+            IPInterfaceProperties properties = iface.GetIPProperties();
+            foreach (var address in properties.UnicastAddresses)
+            {
+                if (address.Address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(address.Address))
+                {
+                    ips.Add(address.Address.ToString());
+                }
+            }
+        }
+        return ips;
     }
 }

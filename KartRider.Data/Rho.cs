@@ -100,9 +100,9 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
-                                        if (!(KartSpec.kartName.ContainsKey(id)))
+                                        if (!(Kart.kartName.ContainsKey(id)))
                                         {
-                                            KartSpec.kartName.Add(id, name);
+                                            Kart.kartName.Add(id, name);
                                         }
                                     }
                                 }
@@ -136,13 +136,13 @@ namespace RHOParser
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
-                                        if (KartSpec.kartName.ContainsKey(id))
+                                        if (Kart.kartName.ContainsKey(id))
                                         {
-                                            KartSpec.kartName[id] = name;
+                                            Kart.kartName[id] = name;
                                         }
                                         else
                                         {
-                                            KartSpec.kartName.Add(id, name);
+                                            Kart.kartName.Add(id, name);
                                         }
                                     }
                                 }
@@ -191,11 +191,72 @@ namespace RHOParser
                                 }
                             }
                         }
+                        if (fullName == $"etc_/riderSchool/riderSchoolLocale@{regionCode}.xml")
+                        {
+                            Console.WriteLine(fullName);
+                            byte[] data = packFileInfo.GetData();
+                            using (MemoryStream stream = new MemoryStream(data))
+                            {
+                                XDocument xdoc = XDocument.Load(stream);
+
+                                var validCatLevels = xdoc.Descendants("category")
+                                    // 获取 catLevel 属性值，过滤掉 null 或空值
+                                    .Select(c => c.Attribute("catLevel")?.Value)
+                                    .Where(levelStr => !string.IsNullOrEmpty(levelStr))
+                                    // 尝试转换为整数，过滤掉转换失败的（如非数字格式）
+                                    .Select(levelStr =>
+                                    {
+                                        byte.TryParse(levelStr, out byte level);
+                                        return level;
+                                    })
+                                    // 过滤掉转换后为 0 的无效值（默认转换失败返回 0）
+                                    .Where(level => level > 0);
+
+                                if (validCatLevels.Any())
+                                {
+                                    RiderSchool.catLevel = validCatLevels.Max();
+                                }
+
+                                // 筛选 catLevel='6' 的 category 节点
+                                var targetCategory = xdoc.Descendants("category")
+                                    .FirstOrDefault(c => c.Attribute("catLevel")?.Value == RiderSchool.catLevel.ToString());
+
+                                if (targetCategory != null)
+                                {
+                                    List<byte> validSteps = targetCategory.Descendants("item")
+                                       .Select(item => item.Attribute("step")?.Value)
+                                       .Where(stepStr => !string.IsNullOrEmpty(stepStr))
+                                       .Select(stepStr =>
+                                       {
+                                           byte.TryParse(stepStr, out byte step);
+                                           return step;
+                                       })
+                                       .Where(step => step != 0) // 过滤转换失败的无效值
+                                       .OrderBy(step => step)   // 升序排序
+                                       .ToList();
+
+                                    if (validSteps.Any())
+                                    {
+                                        RiderSchool.maxStep = validSteps.Max();
+
+                                        // 按索引拆分：偶数列（索引 0、2、4...）
+                                        RiderSchool.evenProStep = validSteps
+                                            .Where((step, index) => index % 2 == 0) // 索引%2==0 → 偶索引
+                                            .ToList();
+
+                                        // 按索引拆分：奇数列（索引 1、3、5...）
+                                        RiderSchool.oddProStep = validSteps
+                                            .Where((step, index) => index % 2 != 0) // 索引%2!=0 → 奇索引
+                                            .ToList();
+                                    }
+                                }
+                            }
+                        }
                         if (fullName.Contains("kart_") && fullName.Contains($"/param@{regionCode}.xml"))
                         {
                             Console.WriteLine(fullName);
                             string name = fullName.Substring(6, fullName.Length - 19);
-                            if (!(KartSpec.kartSpec.ContainsKey(name)))
+                            if (!(Kart.kartSpec.ContainsKey(name)))
                             {
                                 byte[] data = ReplaceBytes(packFileInfo.GetData());
                                 if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
@@ -208,7 +269,7 @@ namespace RHOParser
                                     {
                                         XmlDocument kart1 = new XmlDocument();
                                         kart1.Load(stream);
-                                        KartSpec.kartSpec.Add(name, kart1);
+                                        Kart.kartSpec.Add(name, kart1);
                                     }
                                 }
                                 else
@@ -217,7 +278,7 @@ namespace RHOParser
                                     {
                                         XmlDocument kart2 = new XmlDocument();
                                         kart2.Load(stream);
-                                        KartSpec.kartSpec.Add(name, kart2);
+                                        Kart.kartSpec.Add(name, kart2);
                                     }
                                 }
                             }
@@ -229,7 +290,7 @@ namespace RHOParser
                             if (!containsTarget)
                             {
                                 Console.WriteLine(fullName);
-                                if (!(KartSpec.kartSpec.ContainsKey(name)))
+                                if (!(Kart.kartSpec.ContainsKey(name)))
                                 {
                                     byte[] data = ReplaceBytes(packFileInfo.GetData());
                                     if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
@@ -242,7 +303,7 @@ namespace RHOParser
                                         {
                                             XmlDocument kart1 = new XmlDocument();
                                             kart1.Load(stream);
-                                            KartSpec.kartSpec.Add(name, kart1);
+                                            Kart.kartSpec.Add(name, kart1);
                                         }
                                     }
                                     else
@@ -251,7 +312,7 @@ namespace RHOParser
                                         {
                                             XmlDocument kart2 = new XmlDocument();
                                             kart2.Load(stream);
-                                            KartSpec.kartSpec.Add(name, kart2);
+                                            Kart.kartSpec.Add(name, kart2);
                                         }
                                     }
                                 }
@@ -264,7 +325,7 @@ namespace RHOParser
                             if (!containsTarget)
                             {
                                 Console.WriteLine(fullName);
-                                if (!(KartSpec.kartSpec.ContainsKey(name)))
+                                if (!(Kart.kartSpec.ContainsKey(name)))
                                 {
                                     byte[] data = ReplaceBytes(packFileInfo.GetData());
                                     if (data[2] == 13 && data[3] == 0 && data[4] == 10 && data[5] == 0)
@@ -277,7 +338,7 @@ namespace RHOParser
                                         {
                                             XmlDocument kart1 = new XmlDocument();
                                             kart1.Load(stream);
-                                            KartSpec.kartSpec.Add(name, kart1);
+                                            Kart.kartSpec.Add(name, kart1);
                                         }
                                     }
                                     else
@@ -286,7 +347,7 @@ namespace RHOParser
                                         {
                                             XmlDocument kart2 = new XmlDocument();
                                             kart2.Load(stream);
-                                            KartSpec.kartSpec.Add(name, kart2);
+                                            Kart.kartSpec.Add(name, kart2);
                                         }
                                     }
                                 }
@@ -500,13 +561,13 @@ namespace RHOParser
                                     .Where(trackId => !string.IsNullOrEmpty(trackId))
                                     .ToList();
 
-                                if (FavoriteItem.MissionList.Count == 0)
+                                if (TimeAttack.MissionList.Count == 0)
                                 {
-                                    FavoriteItem.MissionList = currentMissionList;
+                                    TimeAttack.MissionList = currentMissionList;
                                 }
-                                if (FavoriteItem.MissionList.Count > 0)
+                                if (TimeAttack.MissionList.Count > 0)
                                 {
-                                    Console.WriteLine(string.Join(", ", FavoriteItem.MissionList));
+                                    Console.WriteLine(string.Join(", ", TimeAttack.MissionList));
                                 }
                             }
                         }
@@ -519,7 +580,7 @@ namespace RHOParser
                                 // 加载文档并解析任务
                                 XDocument doc = XDocument.Load(stream);
                                 var extractor = new TrackIdExtractor();
-                                FavoriteItem.Competitive = extractor.GetCurrentWeekTrackIds(doc);
+                                TimeAttack.Competitive = extractor.GetCurrentWeekTrackIds(doc);
                             }
                         }
                         if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackCompetitiveData.xml")
@@ -531,7 +592,7 @@ namespace RHOParser
                                 // 加载文档并解析任务
                                 XDocument doc = XDocument.Load(stream);
                                 CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
-                                FavoriteItem.TrackDictionary = calculator.LoadFromXml(doc);
+                                TimeAttack.TrackDictionary = calculator.LoadFromXml(doc);
                             }
                         }
                         if (fullName == $"zeta_/{regionCode}/lottery/lottery.xml")

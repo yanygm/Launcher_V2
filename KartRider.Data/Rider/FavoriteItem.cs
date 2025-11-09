@@ -12,346 +12,221 @@ namespace RiderData
 {
     public static class FavoriteItem
     {
-        public static List<List<short>> FavoriteItemList = new List<List<short>>();
-        public static List<List<string>> FavoriteTrackList = new List<List<string>>();
-        public static List<string> MissionList = new List<string>();
-        public static List<string> Competitive = new List<string>();
-        public static Dictionary<uint, TrackData> TrackDictionary = new Dictionary<uint, TrackData>();
+        public static Dictionary<string, List<Favorite_Item>> FavoriteItemLists = new Dictionary<string, List<Favorite_Item>>();
+        public static Dictionary<string, Favorite_Track> FavoriteTrackLists = new Dictionary<string, Favorite_Track>();
 
-        public static void Favorite_Item(SessionGroup Parent)
+        public static void Favorite_Item(SessionGroup Parent, string Nickname)
         {
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            var FavoriteItemList = new List<Favorite_Item>();
+            if (File.Exists(filename.Favorite_LoadFile))
+            {
+                FavoriteItemList = JsonHelper.DeserializeNoBom<List<Favorite_Item>>(filename.Favorite_LoadFile);
+            }
+            FavoriteItemLists.TryAdd(Nickname, FavoriteItemList);
             using (OutPacket outPacket = new OutPacket("PrFavoriteItemGet"))
             {
-                if (File.Exists(FileName.Favorite_LoadFile))
+                outPacket.WriteInt(FavoriteItemList.Count);
+                foreach (Favorite_Item FavoriteItem in FavoriteItemList)
                 {
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(FileName.Favorite_LoadFile);
-                    FavoriteItemList = new List<List<short>>();
-                    XmlNodeList lis = doc.GetElementsByTagName("Title");
-                    if (lis.Count > 0)
-                    {
-                        outPacket.WriteInt(lis.Count);
-                        foreach (XmlNode xn in lis)
-                        {
-                            XmlElement xe = (XmlElement)xn;
-                            short item = short.Parse(xe.GetAttribute("item"));
-                            short id = short.Parse(xe.GetAttribute("id"));
-                            short sn = short.Parse(xe.GetAttribute("sn"));
-                            outPacket.WriteShort(item);
-                            outPacket.WriteShort(id);
-                            outPacket.WriteShort(sn);
-                            outPacket.WriteByte(0);
-                            List<short> AddList = new List<short>();
-                            AddList.Add(item);
-                            AddList.Add(id);
-                            AddList.Add(sn);
-                            FavoriteItemList.Add(AddList);
-                        }
-                    }
-                    else
-                    {
-                        outPacket.WriteInt(0);
-                    }
-                }
-                else
-                {
-                    outPacket.WriteInt(0);
+                    outPacket.WriteShort(FavoriteItem.ItemCatID);
+                    outPacket.WriteShort(FavoriteItem.ItemID);
+                    outPacket.WriteShort(FavoriteItem.ItemSN);
+                    outPacket.WriteByte(0);
                 }
                 Parent.Client.Send(outPacket);
             }
         }
 
-        public static void Favorite_Item_Add(short item, short id, short sn)
+        public static void Favorite_Item_Add(string Nickname, short itemCatID, short itemID, short itemSN)
         {
-            var existingItem = FavoriteItemList.FirstOrDefault(list => list[0] == item && list[1] == id && list[2] == sn);
+            FavoriteItemLists.TryAdd(Nickname, new List<Favorite_Item>());
+            var FavoriteItemList = FavoriteItemLists[Nickname];
+            var existingItem = FavoriteItemList.FirstOrDefault(item => item.ItemCatID == itemCatID && item.ItemID == itemID && item.ItemSN == itemSN);
             if (existingItem == null)
             {
-                var newList = new List<short> { item, id, sn };
-                FavoriteItemList.Add(newList);
-                Save_ItemList(FavoriteItemList);
+                var newItem = new Favorite_Item { ItemCatID = itemCatID, ItemID = itemID, ItemSN = itemSN };
+                FavoriteItemList.Add(newItem);
+                Save_ItemList(Nickname, FavoriteItemList);
             }
         }
 
-        public static void Favorite_Item_Del(short item, short id, short sn)
+        public static void Favorite_Item_Del(string Nickname, short itemCatID, short itemID, short itemSN)
         {
-            var itemToRemove = FavoriteItemList.FirstOrDefault(list => list[0] == item && list[1] == id && list[2] == sn);
-            if (itemToRemove != null)
+            if (FavoriteItemLists.ContainsKey(Nickname))
             {
-                FavoriteItemList.Remove(itemToRemove);
-                Save_ItemList(FavoriteItemList);
-            }
-        }
-
-        public static void Save_ItemList(List<List<short>> SaveFavorite)
-        {
-            File.Delete(FileName.Favorite_LoadFile);
-            XmlTextWriter writer = new XmlTextWriter(FileName.Favorite_LoadFile, System.Text.Encoding.UTF8);
-            writer.Formatting = Formatting.Indented;
-            writer.WriteStartDocument();
-            writer.WriteStartElement("Favorite");
-            writer.WriteEndElement();
-            writer.Close();
-            for (var i = 0; i < SaveFavorite.Count; i++)
-            {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(FileName.Favorite_LoadFile);
-                XmlNode root = xmlDoc.SelectSingleNode("Favorite");
-                XmlElement xe1 = xmlDoc.CreateElement("Title");
-                xe1.SetAttribute("item", SaveFavorite[i][0].ToString());
-                xe1.SetAttribute("id", SaveFavorite[i][1].ToString());
-                xe1.SetAttribute("sn", SaveFavorite[i][2].ToString());
-                root.AppendChild(xe1);
-                xmlDoc.Save(FileName.Favorite_LoadFile);
-            }
-        }
-
-        public static void Favorite_Track(SessionGroup Parent)
-        {
-            if (File.Exists(FileName.FavoriteTrack_LoadFile))
-            {
-                XmlDocument doc = new XmlDocument();
-                doc.Load(FileName.FavoriteTrack_LoadFile);
-                if (!(doc.DocumentElement == null))
+                var itemToRemove = FavoriteItemLists[Nickname].FirstOrDefault(item => item.ItemCatID == itemCatID && item.ItemID == itemID && item.ItemSN == itemSN);
+                if (itemToRemove != null)
                 {
-                    XmlNode rootNode = doc.DocumentElement;
-                    HashSet<string> uniqueNames = new HashSet<string>();
-                    FavoriteTrackList = new List<List<string>>();
-                    foreach (XmlNode node in rootNode.ChildNodes)
+                    FavoriteItemLists[Nickname].Remove(itemToRemove);
+                    Save_ItemList(Nickname, FavoriteItemLists[Nickname]);
+                }
+            }
+        }
+
+        public static void Save_ItemList<T>(string Nickname, T obj)
+        {
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            File.WriteAllText(filename.Favorite_LoadFile, JsonHelper.Serialize(obj));
+        }
+
+        public static void Favorite_Track(SessionGroup Parent, string Nickname)
+        {
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            var FavoriteTrackList = new Favorite_Track();
+            if (File.Exists(filename.FavoriteTrack_LoadFile))
+            {
+                FavoriteTrackList = JsonHelper.DeserializeNoBom<Favorite_Track>(filename.FavoriteTrack_LoadFile);
+            }
+            FavoriteTrackLists.TryAdd(Nickname, FavoriteTrackList);
+            using (OutPacket outPacket = new OutPacket("PrFavoriteTrackMapGet"))
+            {
+                var ThemesList = FavoriteTrackList.GetTheme();
+                outPacket.WriteInt(ThemesList.Count); //主题数量
+                foreach (short theme in ThemesList)
+                {
+                    outPacket.WriteInt(theme); //主题代码
+                    var Tracks = FavoriteTrackList.GetTracks(theme);
+                    outPacket.WriteInt(Tracks.Count); //赛道数量
+                    foreach (uint Track in Tracks)
                     {
-                        XmlElement xe = node as XmlElement;
-                        if (xe != null)
-                        {
-                            List<string> addList = new List<string>();
-                            addList.Add(node.Name);
-                            addList.Add(xe.GetAttribute("track"));
-                            FavoriteTrackList.Add(addList);
-                            if (!uniqueNames.Contains(node.Name))
-                            {
-                                uniqueNames.Add(node.Name);
-                            }
-                        }
-                    }
-                    List<string> Name = uniqueNames.ToList<string>();
-                    using (OutPacket outPacket = new OutPacket("PrFavoriteTrackMapGet"))
-                    {
-                        outPacket.WriteInt(Name.Count); //主题数量
-                        for (int i = 0; i < Name.Count; i++)
-                        {
-                            XmlNodeList lis = doc.GetElementsByTagName(Name[i]);
-                            if (lis.Count > 0)
-                            {
-                                string theme = Name[i].Replace("theme", "");
-                                outPacket.WriteInt(int.Parse(theme)); //主题代码
-                                outPacket.WriteInt(lis.Count); //赛道数量
-                                foreach (XmlNode xn in lis)
-                                {
-                                    XmlElement xe = (XmlElement)xn;
-                                    uint track = uint.Parse(xe.GetAttribute("track"));
-                                    outPacket.WriteShort(short.Parse(theme)); //主题代码
-                                    outPacket.WriteUInt(track); //赛道代码
-                                    outPacket.WriteByte(0);
-                                }
-                            }
-                            else
-                            {
-                                outPacket.WriteInt(0);
-                            }
-                        }
-                        Parent.Client.Send(outPacket);
+                        outPacket.WriteShort(theme); //主题代码
+                        outPacket.WriteUInt(Track); //赛道代码
+                        outPacket.WriteByte(0);
                     }
                 }
-                else
-                {
-                    using (OutPacket outPacket = new OutPacket("PrFavoriteTrackMapGet"))
-                    {
-                        outPacket.WriteInt(0);
-                        Parent.Client.Send(outPacket);
-                    }
-                }
-            }
-            else
-            {
-                using (OutPacket outPacket = new OutPacket("PrFavoriteTrackMapGet"))
-                {
-                    outPacket.WriteInt(0);
-                    Parent.Client.Send(outPacket);
-                }
+                Parent.Client.Send(outPacket);
             }
         }
 
-        public static void Favorite_Track_Add(short theme, uint track)
+        public static void Favorite_Track_Add(string Nickname, short theme, uint track)
         {
-            var existingTrack = FavoriteTrackList.FirstOrDefault(list => list[0] == "theme" + theme.ToString() && list[1] == track.ToString());
-            if (existingTrack == null)
+            FavoriteTrackLists.TryAdd(Nickname, new Favorite_Track());
+            var FavoriteTrackList = FavoriteTrackLists[Nickname];
+            FavoriteTrackList.AddTrack(theme, track);
+            Save_TrackList(Nickname, FavoriteTrackList);
+        }
+
+        public static void Favorite_Track_Del(string Nickname, short theme, uint track)
+        {
+            FavoriteTrackLists.TryAdd(Nickname, new Favorite_Track());
+            var FavoriteTrackList = FavoriteTrackLists[Nickname];
+            FavoriteTrackList.RemoveTrack(theme, track);
+            Save_TrackList(Nickname, FavoriteTrackList);
+        }
+
+        public static void Save_TrackList<T>(string Nickname, T obj)
+        {
+            if (!FileName.FileNames.ContainsKey(Nickname))
             {
-                var newList = new List<string> { "theme" + theme.ToString(), track.ToString() };
-                FavoriteTrackList.Add(newList);
-                Save_TrackList(FavoriteTrackList);
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            File.WriteAllText(filename.FavoriteTrack_LoadFile, JsonHelper.Serialize(obj));
+        }
+    }
+
+    public class Favorite_Item
+    {
+        public short ItemCatID { get; set; } = 0;
+        public short ItemID { get; set; } = 0;
+        public short ItemSN { get; set; } = 0;
+    }
+
+    public class Favorite_Track
+    {
+        // 内部存储：键=Theme(short)，值=该Theme对应的Tracks列表(List<short>)
+        private Dictionary<short, List<uint>> _themeTracks = new Dictionary<short, List<uint>>();
+
+        // 公共属性（用于序列化/反序列化）
+        public Dictionary<short, List<uint>> ThemeTracks
+        {
+            get => _themeTracks;
+            set => _themeTracks = value;
+        }
+
+        // 获取所有Theme（所有键）
+        public List<short> GetTheme()
+        {
+            return _themeTracks.Keys.ToList();
+        }
+
+        // 根据Theme获取对应的所有Tracks（若Theme不存在，返回空列表）
+        public List<uint> GetTracks(short theme)
+        {
+            return _themeTracks.TryGetValue(theme, out var tracks) ? new List<uint>(tracks) : new List<uint>();
+        }
+
+        /// <summary>
+        /// 给指定Theme添加单个Track（若Theme不存在则自动创建）
+        /// </summary>
+        /// <param name="theme">主题</param>
+        /// <param name="track">要添加的赛道</param>
+        public void AddTrack(short theme, uint track)
+        {
+            // 若Theme不存在，先创建并初始化空列表
+            if (!_themeTracks.ContainsKey(theme))
+            {
+                _themeTracks[theme] = new List<uint>();
+            }
+
+            // 避免重复添加同一个track（如果需要允许重复，可删除此判断）
+            if (!_themeTracks[theme].Contains(track))
+            {
+                _themeTracks[theme].Add(track);
             }
         }
 
-        public static void Favorite_Track_Del(short theme, uint track)
+        /// <summary>
+        /// 从指定Theme中删除单个Track（若删除后列表为空，则自动删除Theme）
+        /// </summary>
+        /// <param name="theme">主题</param>
+        /// <param name="track">要删除的赛道</param>
+        /// <returns>是否删除成功（true：存在并删除；false：Theme或Track不存在）</returns>
+        public bool RemoveTrack(short theme, uint track)
         {
-            var trackToRemove = FavoriteTrackList.FirstOrDefault(list => list[0] == "theme" + theme.ToString() && list[1] == track.ToString());
-            if (trackToRemove != null)
+            // 若Theme不存在，直接返回失败
+            if (!_themeTracks.TryGetValue(theme, out var tracks))
             {
-                FavoriteTrackList.Remove(trackToRemove);
-                Save_TrackList(FavoriteTrackList);
+                return false;
             }
+
+            // 从列表中删除指定track
+            bool isTrackRemoved = tracks.Remove(track);
+
+            // 若删除后列表为空，则删除整个Theme
+            if (isTrackRemoved && tracks.Count == 0)
+            {
+                _themeTracks.Remove(theme);
+            }
+
+            return isTrackRemoved;
         }
 
-        public static void Save_TrackList(List<List<string>> SaveFavorite)
+        /// <summary>
+        /// 获取所有主题下的所有Tracks
+        /// </summary>
+        /// <returns>包含所有Track的List<uint></returns>
+        public List<uint> GetAllTracks()
         {
-            File.Delete(FileName.FavoriteTrack_LoadFile);
-            XmlTextWriter writer = new XmlTextWriter(FileName.FavoriteTrack_LoadFile, System.Text.Encoding.UTF8);
-            writer.Formatting = Formatting.Indented;
-            writer.WriteStartDocument();
-            writer.WriteStartElement("FavoriteTrack");
-            writer.WriteEndElement();
-            writer.Close();
-            for (var i = 0; i < SaveFavorite.Count; i++)
+            var allTracks = new List<uint>();
+            foreach (var tracks in _themeTracks.Values)
             {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(FileName.FavoriteTrack_LoadFile);
-                XmlNode root = xmlDoc.SelectSingleNode("FavoriteTrack");
-                XmlElement xe1 = xmlDoc.CreateElement(SaveFavorite[i][0]);
-                xe1.SetAttribute("track", SaveFavorite[i][1]);
-                root.AppendChild(xe1);
-                xmlDoc.Save(FileName.FavoriteTrack_LoadFile);
+                allTracks.AddRange(tracks);
             }
-        }
-
-        public static byte GetTrackLevel(uint track)
-        {
-            try
-            {
-                if (!File.Exists(FileName.TrainingMission_LoadFile))
-                {
-                    return 0;
-                }
-
-                XmlDocument doc = new XmlDocument();
-                doc.Load(FileName.TrainingMission_LoadFile);
-
-                // 获取根元素
-                XmlElement root = doc.DocumentElement;
-
-                // 查找指定Track
-                foreach (XmlNode node in root.ChildNodes)
-                {
-                    if (node.NodeType == XmlNodeType.Element && 
-                        node.Name == "TrainingMission" && 
-                        uint.TryParse(node.Attributes["Track"]?.Value, out uint existingTrack) &&
-                        existingTrack == track)
-                    {
-                        if (byte.TryParse(node.Attributes["Level"]?.Value, out byte level))
-                        {
-                            return level;
-                        }
-                        else
-                        {
-                            return 0;
-                        }
-                    }
-                }
-                return 0; // 未找到指定Track
-            }
-            catch
-             {
-                return 0; // 发生错误时返回0
-            }
-        }
-
-        public static byte TrainingMission(uint Track)
-        {
-            try
-            {
-                // 检查文件是否存在
-                if (!File.Exists(FileName.TrainingMission_LoadFile))
-                {
-                    CreateXmlFile(Track);
-                    return 1;
-                }
-                else
-                {
-                    byte Level = ProcessExistingFile(Track);
-                    return Level;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"处理文件时发生错误: {ex.Message}");
-                return 0; // 返回0表示发生错误
-            }
-        }
-
-        public static void CreateXmlFile(uint Track)
-        {
-            XmlDocument doc = new XmlDocument();
-            // 创建XML声明
-            XmlDeclaration xmlDeclaration = doc.CreateXmlDeclaration("1.0", "utf-8", null);
-            doc.AppendChild(xmlDeclaration);
-
-            // 创建根元素
-            XmlElement root = doc.CreateElement("TrainingMission");
-            doc.AppendChild(root);
-
-            // 添加Track
-            XmlElement track1 = doc.CreateElement("TrainingMission");
-            track1.SetAttribute("Track", Track.ToString());
-            track1.SetAttribute("Level", "1");
-            root.AppendChild(track1);
-
-            // 保存文件
-            doc.Save(FileName.TrainingMission_LoadFile);
-        }
-
-        public static byte ProcessExistingFile(uint Track)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(FileName.TrainingMission_LoadFile);
-
-            // 获取根元素
-            XmlElement root = doc.DocumentElement;
-
-            // 查找Track
-            XmlNode track1Node = null;
-            foreach (XmlNode node in root.ChildNodes)
-            {
-                if (node.NodeType == XmlNodeType.Element &&
-                    node.Name == "TrainingMission" &&
-                    node.Attributes["Track"]?.Value == Track.ToString())
-                {
-                    track1Node = node;
-                    break;
-                }
-            }
-
-            if (track1Node == null)
-            {
-                // Track不存在，添加它
-                XmlElement newTrack1 = doc.CreateElement("TrainingMission");
-                newTrack1.SetAttribute("Track", Track.ToString());
-                newTrack1.SetAttribute("Level", "1");
-                root.AppendChild(newTrack1);
-                doc.Save(FileName.TrainingMission_LoadFile);
-                return 1;
-            }
-            else
-            {
-                // Track存在，增加Level
-                if (byte.TryParse(track1Node.Attributes["Level"]?.Value, out byte currentLevel))
-                {
-                    byte newLevel = (byte)(currentLevel + 1);
-                    track1Node.Attributes["Level"].Value = newLevel.ToString();
-                    doc.Save(FileName.TrainingMission_LoadFile);
-                    return newLevel;
-                }
-                else
-                {
-                    return 0; // 返回0表示发生错误
-                }
-            }
+            return allTracks;
         }
     }
 }

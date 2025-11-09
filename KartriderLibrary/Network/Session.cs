@@ -16,10 +16,6 @@ namespace KartRider.Common.Network
     {
         private readonly System.Net.Sockets.Socket _socket;
 
-        //public uint _RIV;
-
-        //public uint _SIV;
-
         private const int DEFAULT_SIZE = 65536;
 
         private byte[] mBuffer = new byte[65536];
@@ -132,7 +128,9 @@ namespace KartRider.Common.Network
                 else if ((int)next.Buffer.Length >= next.Length)
                 {
                     IPEndPoint clientEndPoint = this._socket.RemoteEndPoint as IPEndPoint;
-                    var clientGroup = ClientManager.ClientGroups.FirstOrDefault(cg => cg.ClientID == ClientManager.GetClientId(clientEndPoint));
+                    if (clientEndPoint == null) return;
+                    string clientId = ClientManager.GetClientId(clientEndPoint);
+                    var clientGroup = ClientManager.ClientGroups[clientId];
                     byte[] buffer = next.Buffer;
                     byte[] numArray = new byte[(int)buffer.Length + (clientGroup.SIV != 0 ? 8 : 4)];
                     if (clientGroup.SIV != 0)
@@ -231,7 +229,9 @@ namespace KartRider.Common.Network
                             if (this.mCursor >= 4)
                             {
                                 IPEndPoint clientEndPoint = this._socket.RemoteEndPoint as IPEndPoint;
-                                var clientGroup = ClientManager.ClientGroups.FirstOrDefault(cg => cg.ClientID == ClientManager.GetClientId(clientEndPoint));
+                                if (clientEndPoint == null) return;
+                                string clientId = ClientManager.GetClientId(clientEndPoint);
+                                var clientGroup = ClientManager.ClientGroups[clientId];
                                 uint num1 = BitConverter.ToUInt32(this.mBuffer, 0);
                                 if (clientGroup.RIV != 0)
                                 {
@@ -367,7 +367,13 @@ namespace KartRider.Common.Network
 
         public void Send(OutPacket pPacket)
         {
-            Console.WriteLine((PacketName)BitConverter.ToUInt32(pPacket.ToArray(), 0) + "：" + BitConverter.ToString(pPacket.ToArray()).Replace("-", ""));
+            IPEndPoint clientEndPoint = this._socket.RemoteEndPoint as IPEndPoint;
+            if (clientEndPoint == null) return;
+            string clientId = ClientManager.GetClientId(clientEndPoint);
+            var clientGroup = ClientManager.ClientGroups[clientId];
+            var nickname = clientGroup.Nickname;
+            string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Console.WriteLine($"[{currentTime}][{nickname}] " + (PacketName)BitConverter.ToUInt32(pPacket.ToArray(), 0) + ": " + BitConverter.ToString(pPacket.ToArray()).Replace("-", " "));
             try
             {
                 if (this.mDisconnected == 0)

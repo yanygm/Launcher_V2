@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Profile;
 
 namespace KartRider;
 
@@ -57,14 +58,20 @@ class MemoryModifier
     // 进程内存操作权限（读取+写入+查询内存信息）
     private const uint PROCESS_ACCESS_FLAGS = 0x0010 | 0x0020 | 0x0008; // PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION
 
-
     public void LaunchAndModifyMemory(string kartRiderDirectory)
     {
+        DataPacket packet = new DataPacket
+        {
+            Nickname = ProfileService.SettingConfig.Name,
+            TimeTicks = MultyPlayer.GetUpTime()
+        };
+
         Process process = null;
         try
         {
             // 1. 启动目标进程
-            ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", "TGC -region:3 -passport:aHR0cHM6Ly9naXRodWIuY29tL3lhbnlnbS9MYXVuY2hlcl9WMi9yZWxlYXNlcw==")
+            string passport = Base64Helper.Encode(JsonHelper.Serialize(packet));
+            ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", $"TGC -region:3 -passport:{passport}")
             {
                 WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
                 UseShellExecute = true,
@@ -115,11 +122,11 @@ class MemoryModifier
     private bool ModifyMemory(int processId, byte[] searchBytes, byte[] replaceBytes)
     {
         if (searchBytes.Length != replaceBytes.Length)
-            throw new ArgumentException("查找和替换的字节长度必须一致");
+            Console.WriteLine("查找和替换的字节长度必须一致");
 
         IntPtr hProcess = OpenProcess(PROCESS_ACCESS_FLAGS, false, processId);
         if (hProcess == IntPtr.Zero)
-            throw new Exception("无法打开进程，可能权限不足");
+            Console.WriteLine("无法打开进程，可能权限不足");
 
         try
         {
@@ -154,7 +161,7 @@ class MemoryModifier
                             }
                             else
                             {
-                                throw new Exception("写入内存失败，可能没有写入权限");
+                                Console.WriteLine("写入内存失败，可能没有写入权限");
                             }
                         }
                     }

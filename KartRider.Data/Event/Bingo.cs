@@ -179,7 +179,7 @@ namespace KartRider
             foreach (byte num in uniqueNumbers)
             {
                 BingoNumsList.Add(num);
-                BingoNums.Add(num, 0);
+                BingoNums.TryAdd(num, 0);
             }
         }
 
@@ -197,7 +197,7 @@ namespace KartRider
                     foreach (int stock in srocks)
                     {
                         BingoItemsList.Add(stock);
-                        BingoItems.Add(stock, 0);
+                        BingoItems.TryAdd(stock, 0);
                     }
                 }
             }

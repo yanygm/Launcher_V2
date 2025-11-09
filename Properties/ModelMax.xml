@@ -1,69 +1,69 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ModelMax>
     <!-- R8-中国龙 V1 -->
-    <id1470 modelMaxX='0.83' modelMaxY='1.122' />
+    <id ID='1470' modelMaxX='0.83' modelMaxY='1.122' />
     <!-- 红旗 V1 -->
-    <id1476 modelMaxX='0.773429' modelMaxY='1.095391' />
+    <id ID='1476' modelMaxX='0.773429' modelMaxY='1.095391' />
     <!-- 黄金骑士 V1 -->
-    <id1485 modelMaxX='0.83' modelMaxY='1.122' />
+    <id ID='1485' modelMaxX='0.83' modelMaxY='1.122' />
     <!-- 阿特密斯 V1 -->
-    <id1486 modelMaxX='0.75796' modelMaxY='1.073483' />
+    <id ID='1486' modelMaxX='0.75796' modelMaxY='1.073483' />
     <!-- 天翊 V1 -->
-    <id1490 modelMaxX='0.83141' modelMaxY='1.44114' />
+    <id ID='1490' modelMaxX='0.83141' modelMaxY='1.44114' />
     <!-- SWORD V1 -->
-    <id1492 modelMaxX='0.831644' modelMaxY='1.220663' />
+    <id ID='1492' modelMaxX='0.831644' modelMaxY='1.220663' />
     <!-- 黄金游侠 V1 -->
-    <id1495 modelMaxX='0.7556404' modelMaxY='1.158996' />
+    <id ID='1495' modelMaxX='0.7556404' modelMaxY='1.158996' />
     <!-- 猎犬 V1 -->
-    <id1498 modelMaxX='0.773429' modelMaxY='1.095391' />
+    <id ID='1498' modelMaxX='0.773429' modelMaxY='1.095391' />
     <!-- 机械青龙 V1 -->
-    <id1499 modelMaxX='0.833404' modelMaxY='1.115986' />
+    <id ID='1499' modelMaxX='0.833404' modelMaxY='1.115986' />
     <!-- 敞篷跑车 V1 -->
-    <id1501 modelMaxX='0.767086' modelMaxY='1.318437' />
+    <id ID='1501' modelMaxX='0.767086' modelMaxY='1.318437' />
     <!-- 黑色甲虫 V1 -->
-    <id1503 modelMaxX='0.753635' modelMaxY='1.072198' />
+    <id ID='1503' modelMaxX='0.753635' modelMaxY='1.072198' />
     <!-- 毒刺 V1 -->
-    <id1504 modelMaxX='0.83' modelMaxY='1.122' />
+    <id ID='1504' modelMaxX='0.83' modelMaxY='1.122' />
     <!-- 克洛诺斯 V1 -->
-    <id1508 modelMaxX='0.766525' modelMaxY='1.036763' />
+    <id ID='1508' modelMaxX='0.766525' modelMaxY='1.036763' />
     <!-- 怪物 V1 -->
-    <id1515 modelMaxX='0.79099' modelMaxY='1.10517' />
+    <id ID='1515' modelMaxX='0.79099' modelMaxY='1.10517' />
     <!-- 仙界四不像 迅 -->
-    <id1523 modelMaxX='0.773709' modelMaxY='1.29294' />
+    <id ID='1523' modelMaxX='0.773709' modelMaxY='1.29294' />
     <!-- 爆烈 迅 -->
-    <id1528 modelMaxX='0.8003274' modelMaxY='1.049711' />
+    <id ID='1528' modelMaxX='0.8003274' modelMaxY='1.049711' />
     <!-- 精英爆烈 迅 -->
-    <id1530 modelMaxX='0.8003274' modelMaxY='1.049711' />
+    <id ID='1530' modelMaxX='0.8003274' modelMaxY='1.049711' />
     <!-- 雷霆爆烈 迅 -->
-    <id1531 modelMaxX='0.8003274' modelMaxY='1.049711' />
+    <id ID='1531' modelMaxX='0.8003274' modelMaxY='1.049711' />
     <!-- 合金 迅 -->
-    <id1532 modelMaxX='0.8232' modelMaxY='1.041413' />
+    <id ID='1532' modelMaxX='0.8232' modelMaxY='1.041413' />
     <!-- 精英合金 迅 -->
-    <id1534 modelMaxX='0.8134' modelMaxY='1.030677' />
+    <id ID='1534' modelMaxX='0.8134' modelMaxY='1.030677' />
     <!-- 钢铁合金 迅 -->
-    <id1535 modelMaxX='0.8134' modelMaxY='1.030677' />
+    <id ID='1535' modelMaxX='0.8134' modelMaxY='1.030677' />
     <!-- 野马敞篷跑车 迅 -->
-    <id1537 modelMaxX='0.773879' modelMaxY='1.095391' />
+    <id ID='1537' modelMaxX='0.773879' modelMaxY='1.095391' />
     <!-- 鲲鹏之势 迅 -->
-    <id1538 modelMaxX='0.831644' modelMaxY='1.123067' />
+    <id ID='1538' modelMaxX='0.831644' modelMaxY='1.123067' />
     <!-- 马拉松 迅 -->
-    <id1539 modelMaxX='0.8439705' modelMaxY='0.963268' />
+    <id ID='1539' modelMaxX='0.8439705' modelMaxY='0.963268' />
     <!-- 精英马拉松 迅 -->
-    <id1541 modelMaxX='0.8439705' modelMaxY='0.963268' />
+    <id ID='1541' modelMaxX='0.8439705' modelMaxY='0.963268' />
     <!-- 烈焰马拉松 迅 -->
-    <id1542 modelMaxX='0.8355308' modelMaxY='0.9536353' />
+    <id ID='1542' modelMaxX='0.8355308' modelMaxY='0.9536353' />
     <!-- 尖锋 迅 -->
-    <id1544 modelMaxX='0.77347' modelMaxY='0.981104' />
+    <id ID='1544' modelMaxX='0.77347' modelMaxY='0.981104' />
     <!-- 精英尖锋 迅 -->
-    <id1546 modelMaxX='0.765735' modelMaxY='0.971293' />
+    <id ID='1546' modelMaxX='0.765735' modelMaxY='0.971293' />
     <!-- 圣光天启尖锋 迅 -->
-    <id1547 modelMaxX='0.765735' modelMaxY='0.971293' />
+    <id ID='1547' modelMaxX='0.765735' modelMaxY='0.971293' />
     <!-- 先驱者 迅 -->
-    <id1549 modelMaxX='0.765396' modelMaxY='1.03144' />
+    <id ID='1549' modelMaxX='0.765396' modelMaxY='1.03144' />
     <!-- 魔界四不像 迅 -->
-    <id1562 modelMaxX='0.773709' modelMaxY='1.29294' />
+    <id ID='1562' modelMaxX='0.773709' modelMaxY='1.29294' />
     <!-- 诛仙四剑 迅 -->
-    <id1564 modelMaxX='0.77347' modelMaxY='0.981104' />
+    <id ID='1564' modelMaxX='0.77347' modelMaxY='0.981104' />
     <!-- 黑骑士 迅 -->
-    <id1574 modelMaxX='0.7339' modelMaxY='1.1108' />
+    <id ID='1574' modelMaxX='0.7339' modelMaxY='1.1108' />
 </ModelMax>

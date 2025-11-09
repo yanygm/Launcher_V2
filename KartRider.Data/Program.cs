@@ -40,6 +40,7 @@ namespace KartRider
 
         public static Launcher LauncherDlg;
         public static GetKart GetKartDlg;
+        public static Setting SettingDlg;
         public static bool SpeedPatch;
         public static bool PreventItem;
         public static Encoding targetEncoding = Encoding.UTF8;
@@ -146,6 +147,11 @@ namespace KartRider
                         Launcher.KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
                         Launcher.pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
                         Launcher.pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
+                        if (File.Exists(Launcher.pinFileBak))
+                        {
+                            File.Delete(Launcher.pinFile);
+                            File.Move(Launcher.pinFileBak, Launcher.pinFile);
+                        }
                         Application.Run(StartLauncher);
                     }
                     catch (Exception ex)
@@ -247,7 +253,6 @@ namespace KartRider
                             encodea(arg, arg);
                             var parent = Path.GetDirectoryName(arg);
                             files = Directory.GetFiles(parent, "*.rho");
-                            AAAC(parent, files);
                         }
                     }
                 }

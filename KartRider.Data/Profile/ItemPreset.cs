@@ -1,10 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using KartRider;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Profile
 {
@@ -115,31 +114,32 @@ namespace Profile
 
     public class ItemPresetsService
     {
-        public static ItemPresetConfig ItemPresetConfig { get; set; } = new ItemPresetConfig();
+        public static Dictionary<string, ItemPresetConfig> ItemPresetConfigs { get; set; } = new Dictionary<string, ItemPresetConfig>();
 
         /// <summary>
         /// 保存配置到文件
         /// </summary>
-        public static void Save()
+        public static void Save(string Nickname)
         {
             try
             {
-                var jsonSettings = new Newtonsoft.Json.JsonSerializerSettings
+                if (!FileName.FileNames.ContainsKey(Nickname))
                 {
-                    Formatting = Newtonsoft.Json.Formatting.Indented,
-                };
+                    FileName.Load(Nickname);
+                }
+                var filename = FileName.FileNames[Nickname];
 
                 // 确保目录存在
-                string directory = Path.GetDirectoryName(FileName.ItemPresetsConfig);
+                string directory = Path.GetDirectoryName(filename.ItemPresetsConfig);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
                 // 序列化并写入文件
-                using (var streamWriter = new StreamWriter(FileName.ItemPresetsConfig, false, Encoding.UTF8))
+                if (ItemPresetConfigs.ContainsKey(Nickname))
                 {
-                    streamWriter.Write(Newtonsoft.Json.JsonConvert.SerializeObject(ItemPresetConfig, jsonSettings));
+                    File.WriteAllText(filename.ItemPresetsConfig, JsonHelper.Serialize(ItemPresetConfigs[Nickname]));
                 }
             }
             catch (Exception ex)
@@ -151,14 +151,19 @@ namespace Profile
         /// <summary>
         /// 从文件加载配置
         /// </summary>
-        public static void Load()
+        public static void Load(string Nickname)
         {
             try
             {
-                if (File.Exists(FileName.ItemPresetsConfig))
+                if (!FileName.FileNames.ContainsKey(Nickname))
                 {
-                    string configStr = System.IO.File.ReadAllText(FileName.ItemPresetsConfig, Encoding.UTF8);
-                    var loadedConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<ItemPresetConfig>(configStr);
+                    FileName.Load(Nickname);
+                }
+                var filename = FileName.FileNames[Nickname];
+
+                if (File.Exists(filename.ItemPresetsConfig))
+                {
+                    var loadedConfig = JsonHelper.DeserializeNoBom<ItemPresetConfig>(filename.ItemPresetsConfig);
 
                     if (loadedConfig?.ItemPresets != null)
                     {
@@ -175,22 +180,25 @@ namespace Profile
                         {
                             loadedConfig.ItemPresets = loadedConfig.ItemPresets.Skip(count - defaultCount).ToList();
                         }
-                        ItemPresetConfig = loadedConfig;
+                        ItemPresetConfigs.TryAdd(Nickname, loadedConfig);
                     }
                     else
                     {
-                        Save();
+                        ItemPresetConfigs.TryAdd(Nickname, new Profile.ItemPresetConfig());
+                        Save(Nickname);
                     }
                 }
                 else
                 {
-                    Save();
+                    ItemPresetConfigs.TryAdd(Nickname, new Profile.ItemPresetConfig());
+                    Save(Nickname);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"加载配置失败：{ex.Message}");
-                ItemPresetConfig = new ItemPresetConfig();
+                ItemPresetConfigs.TryAdd(Nickname, new Profile.ItemPresetConfig());
+                Save(Nickname);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using Launcher.Properties;
+using Launcher.Properties;
 
 namespace KartRider
 {
@@ -53,7 +53,7 @@ namespace KartRider
             label1.Location = new System.Drawing.Point(10, 16);
             label1.Name = "label1";
             label1.Size = new System.Drawing.Size(35, 12);
-            label1.TabIndex = 362;
+            label1.TabIndex = 1;
             label1.Text = "类型:";
             // 
             // label2
@@ -62,7 +62,7 @@ namespace KartRider
             label2.Location = new System.Drawing.Point(10, 55);
             label2.Name = "label2";
             label2.Size = new System.Drawing.Size(35, 12);
-            label2.TabIndex = 363;
+            label2.TabIndex = 2;
             label2.Text = "道具:";
             // 
             // ItemType
@@ -71,7 +71,7 @@ namespace KartRider
             ItemType.Location = new System.Drawing.Point(46, 12);
             ItemType.Name = "ItemType";
             ItemType.Size = new System.Drawing.Size(121, 20);
-            ItemType.TabIndex = 364;
+            ItemType.TabIndex = 3;
             ItemType.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
             // ItemID
@@ -80,7 +80,7 @@ namespace KartRider
             ItemID.Location = new System.Drawing.Point(46, 51);
             ItemID.Name = "ItemID";
             ItemID.Size = new System.Drawing.Size(121, 20);
-            ItemID.TabIndex = 365;
+            ItemID.TabIndex = 4;
             ItemID.SelectedIndexChanged += comboBox2_SelectedIndexChanged;
             // 
             // GetKart

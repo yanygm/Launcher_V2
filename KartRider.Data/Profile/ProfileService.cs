@@ -1,54 +1,72 @@
 using KartRider;
-using Newtonsoft.Json;
 using RiderData;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Profile
 {
     public class ProfileService
     {
-        public static ProfileConfig ProfileConfig { get; set; } = new ProfileConfig();
+        public static Dictionary<string, ProfileConfig> ProfileConfigs { get; set; } = new Dictionary<string, ProfileConfig>();
+        public static Setting SettingConfig { get; set; } = new Setting();
 
-        public static void Save()
+        public static void SaveSettings()
         {
-            var jsonSettings = new Newtonsoft.Json.JsonSerializerSettings
-            {
-                Formatting = Newtonsoft.Json.Formatting.Indented,
-            };
-
-            using (var streamWriter = new StreamWriter(FileName.config_path, false, Encoding.UTF8))
-            {
-                streamWriter.Write(Newtonsoft.Json.JsonConvert.SerializeObject(ProfileConfig, jsonSettings));
-            }
+            File.WriteAllText(FileName.Load_Settings, JsonHelper.Serialize(SettingConfig));
         }
 
-        public static void Load()
+        public static void LoadSettings()
         {
-            if (File.Exists(FileName.config_path))
+            if (File.Exists(FileName.Load_Settings))
             {
-                string config_str = System.IO.File.ReadAllText(FileName.config_path, Encoding.UTF8);
-                ProfileConfig = JsonConvert.DeserializeObject<ProfileConfig>(config_str);
-
-                Loaded();
+                SettingConfig = JsonHelper.DeserializeNoBom<Setting>(FileName.Load_Settings);
             }
             else
             {
-                using (StreamWriter streamWriter = new StreamWriter(FileName.config_path, false, Encoding.UTF8))
-                {
-                    streamWriter.Write(JsonConvert.SerializeObject(ProfileConfig));
-                }
+                SettingConfig = new Setting();
+                SaveSettings();
             }
         }
 
-        private static void Loaded()
+        public static void Save(string Nickname)
         {
-            if (ProfileConfig.ServerSetting.PreventItem_Use == 0)
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            if (ProfileConfigs.ContainsKey(Nickname))
+            {
+                File.WriteAllText(filename.config_path, JsonHelper.Serialize(ProfileConfigs[Nickname]));
+            }
+        }
+
+        public static void Load(string Nickname)
+        {
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+
+            if (File.Exists(filename.config_path))
+            {
+                ProfileConfigs.TryAdd(Nickname, JsonHelper.DeserializeNoBom<ProfileConfig>(filename.config_path));
+                Loaded(Nickname);
+            }
+            else
+            {
+                ProfileConfigs.TryAdd(Nickname, new ProfileConfig());
+                Save(Nickname);
+            }
+        }
+
+        private static void Loaded(string Nickname)
+        {
+            if (ProfileConfigs[Nickname].ServerSetting.PreventItem_Use == 0)
             {
                 Program.PreventItem = false;
             }
@@ -57,7 +75,7 @@ namespace Profile
                 Program.PreventItem = true;
             }
 
-            if (ProfileConfig.ServerSetting.SpeedPatch_Use == 0)
+            if (ProfileConfigs[Nickname].ServerSetting.SpeedPatch_Use == 0)
             {
                 Program.SpeedPatch = false;
                 Program.LauncherDlg.Text = "Launcher";

@@ -2,6 +2,7 @@ using System;
 using KartRider;
 using System.Collections.Generic;
 using Profile;
+using System.Net;
 
 namespace ExcData
 {
@@ -21,227 +22,246 @@ namespace ExcData
             { "复古Pro", 14 }
         };
 
-        public static float AddSpec_TransAccelFactor = 0f;
-        public static float AddSpec_SteerConstraint = 0f;
-        public static float AddSpec_DriftEscapeForce = 0f;
+        public float AddSpec_TransAccelFactor { get; set; } = 0f;
+        public float AddSpec_SteerConstraint { get; set; } = 0f;
+        public float AddSpec_DriftEscapeForce { get; set; } = 0f;
 
-        public static float DragFactor = 0f;
-        public static float ForwardAccelForce = 0f;
-        public static float BackwardAccelForce = 0f;
-        public static float GripBrakeForce = 0f;
-        public static float SlipBrakeForce = 0f;
-        public static float SteerConstraint = 0f;
-        public static float DriftEscapeForce = 0f;
-        public static float CornerDrawFactor = 0f;
-        public static float DriftMaxGauge = 0f;
-        public static float TransAccelFactor = 0f;
-        public static float BoostAccelFactor = 0f;
-        public static float StartForwardAccelForceItem = 0f;
-        public static float StartForwardAccelForceSpeed = 0f;
+        public float DragFactor { get; set; } = 0f;
+        public float ForwardAccelForce { get; set; } = 0f;
+        public float BackwardAccelForce { get; set; } = 0f;
+        public float GripBrakeForce { get; set; } = 0f;
+        public float SlipBrakeForce { get; set; } = 0f;
+        public float SteerConstraint { get; set; } = 0f;
+        public float DriftEscapeForce { get; set; } = 0f;
+        public float CornerDrawFactor { get; set; } = 0f;
+        public float DriftMaxGauge { get; set; } = 0f;
+        public float TransAccelFactor { get; set; } = 0f;
+        public float BoostAccelFactor { get; set; } = 0f;
+        public float StartForwardAccelForceItem { get; set; } = 0f;
+        public float StartForwardAccelForceSpeed { get; set; } = 0f;
 
-        public static void SpeedTypeData(SessionGroup Parent)
+        public void SpeedTypeData(byte SpeedType)
         {
-            if (ProfileService.ProfileConfig.GameOption.SpeedType == 3)//S0 보통
+            if (SpeedType == 3)//S0 보통
             {
-                SpeedType.AddSpec_SteerConstraint = -0.3f;
-                SpeedType.AddSpec_DriftEscapeForce = -350f;
-                SpeedType.AddSpec_TransAccelFactor = -0.015f;
-                SpeedType.DragFactor = -0.05f;
-                SpeedType.ForwardAccelForce = -530f;
-                SpeedType.BackwardAccelForce = -225f;
-                SpeedType.GripBrakeForce = -570f;
-                SpeedType.SlipBrakeForce = -215f;
-                SpeedType.SteerConstraint = -2.25f;
-                SpeedType.DriftEscapeForce = -750f;
-                SpeedType.CornerDrawFactor = -0.05f;
-                SpeedType.DriftMaxGauge = 750f;
-                SpeedType.TransAccelFactor = -0.2155f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = -530f;
-                SpeedType.StartForwardAccelForceSpeed = -950f;
                 Console.WriteLine("SpeedType:S0");
+                AddSpec_SteerConstraint = -0.3f;
+                AddSpec_DriftEscapeForce = -350f;
+                AddSpec_TransAccelFactor = -0.015f;
+                DragFactor = -0.05f;
+                ForwardAccelForce = -530f;
+                BackwardAccelForce = -225f;
+                GripBrakeForce = -570f;
+                SlipBrakeForce = -215f;
+                SteerConstraint = -2.25f;
+                DriftEscapeForce = -750f;
+                CornerDrawFactor = -0.05f;
+                DriftMaxGauge = 750f;
+                TransAccelFactor = -0.2155f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = -530f;
+                StartForwardAccelForceSpeed = -950f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 0)//S1 빠름
+            else if (SpeedType == 0)//S1 빠름
             {
-                SpeedType.AddSpec_SteerConstraint = 1.7f;
-                SpeedType.AddSpec_DriftEscapeForce = 150f;
-                SpeedType.AddSpec_TransAccelFactor = 0.199f;
-                SpeedType.DragFactor = -0.015f;
-                SpeedType.ForwardAccelForce = -200f;
-                SpeedType.BackwardAccelForce = -225f;
-                SpeedType.GripBrakeForce = -270f;
-                SpeedType.SlipBrakeForce = -165f;
-                SpeedType.SteerConstraint = -0.25f;
-                SpeedType.DriftEscapeForce = -250f;
-                SpeedType.CornerDrawFactor = -0.03f;
-                SpeedType.DriftMaxGauge = -330f;
-                SpeedType.TransAccelFactor = -0.0015f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = -200f;
-                SpeedType.StartForwardAccelForceSpeed = -360f;
                 Console.WriteLine("SpeedType:S1");
+                AddSpec_SteerConstraint = 1.7f;
+                AddSpec_DriftEscapeForce = 150f;
+                AddSpec_TransAccelFactor = 0.199f;
+                DragFactor = -0.015f;
+                ForwardAccelForce = -200f;
+                BackwardAccelForce = -225f;
+                GripBrakeForce = -270f;
+                SlipBrakeForce = -165f;
+                SteerConstraint = -0.25f;
+                DriftEscapeForce = -250f;
+                CornerDrawFactor = -0.03f;
+                DriftMaxGauge = -330f;
+                TransAccelFactor = -0.0015f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = -200f;
+                StartForwardAccelForceSpeed = -360f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 1)//S2 매우빠름
+            else if (SpeedType == 1)//S2 매우빠름
             {
-                SpeedType.AddSpec_SteerConstraint = 2.2f;
-                SpeedType.AddSpec_DriftEscapeForce = 1100f;
-                SpeedType.AddSpec_TransAccelFactor = 0.202f;
-                SpeedType.DragFactor = 0.0121f;
-                SpeedType.ForwardAccelForce = 200f;
-                SpeedType.BackwardAccelForce = 225f;
-                SpeedType.GripBrakeForce = 270f;
-                SpeedType.SlipBrakeForce = 165f;
-                SpeedType.SteerConstraint = 0.25f;
-                SpeedType.DriftEscapeForce = 700f;
-                SpeedType.CornerDrawFactor = 0f;
-                SpeedType.DriftMaxGauge = 580f;
-                SpeedType.TransAccelFactor = 0.0015f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 200f;
-                SpeedType.StartForwardAccelForceSpeed = 360f;
                 Console.WriteLine("SpeedType:S2");
+                AddSpec_SteerConstraint = 2.2f;
+                AddSpec_DriftEscapeForce = 1100f;
+                AddSpec_TransAccelFactor = 0.202f;
+                DragFactor = 0.0121f;
+                ForwardAccelForce = 200f;
+                BackwardAccelForce = 225f;
+                GripBrakeForce = 270f;
+                SlipBrakeForce = 165f;
+                SteerConstraint = 0.25f;
+                DriftEscapeForce = 700f;
+                CornerDrawFactor = 0f;
+                DriftMaxGauge = 580f;
+                TransAccelFactor = 0.0015f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 200f;
+                StartForwardAccelForceSpeed = 360f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 2)//S3 가장빠름
+            else if (SpeedType == 2)//S3 가장빠름
             {
-                SpeedType.AddSpec_SteerConstraint = 2.7f;
-                SpeedType.AddSpec_DriftEscapeForce = 1500f;
-                SpeedType.AddSpec_TransAccelFactor = 0.2f;
-                SpeedType.DragFactor = 0.04f;
-                SpeedType.ForwardAccelForce = 750f;
-                SpeedType.BackwardAccelForce = 450f;
-                SpeedType.GripBrakeForce = 540f;
-                SpeedType.SlipBrakeForce = 325f;
-                SpeedType.SteerConstraint = 0.75f;
-                SpeedType.DriftEscapeForce = 1100f;
-                SpeedType.CornerDrawFactor = -0.02f;
-                SpeedType.DriftMaxGauge = 1700f;
-                SpeedType.TransAccelFactor = -0.0005f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 750f;
-                SpeedType.StartForwardAccelForceSpeed = 1350f;
                 Console.WriteLine("SpeedType:S3");
+                AddSpec_SteerConstraint = 2.7f;
+                AddSpec_DriftEscapeForce = 1500f;
+                AddSpec_TransAccelFactor = 0.2f;
+                DragFactor = 0.04f;
+                ForwardAccelForce = 750f;
+                BackwardAccelForce = 450f;
+                GripBrakeForce = 540f;
+                SlipBrakeForce = 325f;
+                SteerConstraint = 0.75f;
+                DriftEscapeForce = 1100f;
+                CornerDrawFactor = -0.02f;
+                DriftMaxGauge = 1700f;
+                TransAccelFactor = -0.0005f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 750f;
+                StartForwardAccelForceSpeed = 1350f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 4 || ProfileService.ProfileConfig.GameOption.SpeedType == 6 || ProfileService.ProfileConfig.GameOption.SpeedType == 7)//무부, 통합
+            else if (SpeedType == 4 || SpeedType == 6 || SpeedType == 7)//무부, 통합
             {
-                SpeedType.AddSpec_SteerConstraint = 1.95f;
-                SpeedType.AddSpec_DriftEscapeForce = 400f;
-                SpeedType.AddSpec_TransAccelFactor = 0.2005f;
-                SpeedType.DragFactor = 0f;
-                SpeedType.ForwardAccelForce = 0f;
-                SpeedType.BackwardAccelForce = 0f;
-                SpeedType.GripBrakeForce = 0f;
-                SpeedType.SlipBrakeForce = 0f;
-                SpeedType.SteerConstraint = 0f;
-                SpeedType.DriftEscapeForce = 0f;
-                SpeedType.CornerDrawFactor = 0f;
-                SpeedType.DriftMaxGauge = 0f;
-                SpeedType.TransAccelFactor = 0f;
-                SpeedType.BoostAccelFactor = 0f;
-                SpeedType.StartForwardAccelForceItem = 0f;
-                SpeedType.StartForwardAccelForceSpeed = 0f;
                 Console.WriteLine("SpeedType:Integration");
+                AddSpec_SteerConstraint = 1.95f;
+                AddSpec_DriftEscapeForce = 400f;
+                AddSpec_TransAccelFactor = 0.2005f;
+                DragFactor = 0f;
+                ForwardAccelForce = 0f;
+                BackwardAccelForce = 0f;
+                GripBrakeForce = 0f;
+                SlipBrakeForce = 0f;
+                SteerConstraint = 0f;
+                DriftEscapeForce = 0f;
+                CornerDrawFactor = 0f;
+                DriftMaxGauge = 0f;
+                TransAccelFactor = 0f;
+                BoostAccelFactor = 0f;
+                StartForwardAccelForceItem = 0f;
+                StartForwardAccelForceSpeed = 0f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 10)//Rookie, S1
+            else if (SpeedType == 10)//Rookie, S1
             {
-                SpeedType.AddSpec_SteerConstraint = 0f;
-                SpeedType.AddSpec_DriftEscapeForce = 0f;
-                SpeedType.AddSpec_TransAccelFactor = 0f;
-                SpeedType.DragFactor = -0.01f;
-                SpeedType.ForwardAccelForce = -150f;
-                SpeedType.BackwardAccelForce = -225f;
-                SpeedType.GripBrakeForce = -270f;
-                SpeedType.SlipBrakeForce = -215f;
-                SpeedType.SteerConstraint = -0.25f;
-                SpeedType.DriftEscapeForce = -100f;
-                SpeedType.CornerDrawFactor = 0.02f;
-                SpeedType.DriftMaxGauge = -300f;
-                SpeedType.TransAccelFactor = 0.0045f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = -270f;
-                SpeedType.StartForwardAccelForceSpeed = -270f;
+                Console.WriteLine("SpeedType:Rookie");
+                AddSpec_SteerConstraint = 0f;
+                AddSpec_DriftEscapeForce = 0f;
+                AddSpec_TransAccelFactor = 0f;
+                DragFactor = -0.01f;
+                ForwardAccelForce = -150f;
+                BackwardAccelForce = -225f;
+                GripBrakeForce = -270f;
+                SlipBrakeForce = -215f;
+                SteerConstraint = -0.25f;
+                DriftEscapeForce = -100f;
+                CornerDrawFactor = 0.02f;
+                DriftMaxGauge = -300f;
+                TransAccelFactor = 0.0045f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = -270f;
+                StartForwardAccelForceSpeed = -270f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 11)//L3, S2
+            else if (SpeedType == 11)//L3, S2
             {
-                SpeedType.AddSpec_SteerConstraint = 0f;
-                SpeedType.AddSpec_DriftEscapeForce = 0f;
-                SpeedType.AddSpec_TransAccelFactor = 0f;
-                SpeedType.DragFactor = 0.013f;
-                SpeedType.ForwardAccelForce = 250f;
-                SpeedType.BackwardAccelForce = 225f;
-                SpeedType.GripBrakeForce = 270f;
-                SpeedType.SlipBrakeForce = 145f;
-                SpeedType.SteerConstraint = 0.55f;
-                SpeedType.DriftEscapeForce = 700f;
-                SpeedType.CornerDrawFactor = 0.02f;
-                SpeedType.DriftMaxGauge = 700f;
-                SpeedType.TransAccelFactor = 0.0045f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 450f;
-                SpeedType.StartForwardAccelForceSpeed = 450f;
+                Console.WriteLine("SpeedType:L3");
+                AddSpec_SteerConstraint = 0f;
+                AddSpec_DriftEscapeForce = 0f;
+                AddSpec_TransAccelFactor = 0f;
+                DragFactor = 0.013f;
+                ForwardAccelForce = 250f;
+                BackwardAccelForce = 225f;
+                GripBrakeForce = 270f;
+                SlipBrakeForce = 145f;
+                SteerConstraint = 0.55f;
+                DriftEscapeForce = 700f;
+                CornerDrawFactor = 0.02f;
+                DriftMaxGauge = 700f;
+                TransAccelFactor = 0.0045f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 450f;
+                StartForwardAccelForceSpeed = 450f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 12)//L2
+            else if (SpeedType == 12)//L2
             {
-                SpeedType.AddSpec_SteerConstraint = 0f;
-                SpeedType.AddSpec_DriftEscapeForce = 0f;
-                SpeedType.AddSpec_TransAccelFactor = 0f;
-                SpeedType.DragFactor = -0.007f;
-                SpeedType.ForwardAccelForce = 350f;
-                SpeedType.BackwardAccelForce = 375f;
-                SpeedType.GripBrakeForce = 330f;
-                SpeedType.SlipBrakeForce = 195f;
-                SpeedType.SteerConstraint = 0.57f;
-                SpeedType.DriftEscapeForce = 800f;
-                SpeedType.CornerDrawFactor = 0.02f;
-                SpeedType.DriftMaxGauge = 800f;
-                SpeedType.TransAccelFactor = 0.0045f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 400f;
-                SpeedType.StartForwardAccelForceSpeed = 400f;
+                Console.WriteLine("SpeedType:L2");
+                AddSpec_SteerConstraint = 0f;
+                AddSpec_DriftEscapeForce = 0f;
+                AddSpec_TransAccelFactor = 0f;
+                DragFactor = -0.007f;
+                ForwardAccelForce = 350f;
+                BackwardAccelForce = 375f;
+                GripBrakeForce = 330f;
+                SlipBrakeForce = 195f;
+                SteerConstraint = 0.57f;
+                DriftEscapeForce = 800f;
+                CornerDrawFactor = 0.02f;
+                DriftMaxGauge = 800f;
+                TransAccelFactor = 0.0045f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 400f;
+                StartForwardAccelForceSpeed = 400f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 13)//L1, S3
+            else if (SpeedType == 13)//L1, S3
             {
-                SpeedType.AddSpec_SteerConstraint = 0f;
-                SpeedType.AddSpec_DriftEscapeForce = 0f;
-                SpeedType.AddSpec_TransAccelFactor = 0f;
-                SpeedType.DragFactor = 0.051f;
-                SpeedType.ForwardAccelForce = 750f;
-                SpeedType.BackwardAccelForce = 450f;
-                SpeedType.GripBrakeForce = 540f;
-                SpeedType.SlipBrakeForce = 325f;
-                SpeedType.SteerConstraint = 0.75f;
-                SpeedType.DriftEscapeForce = 1100f;
-                SpeedType.CornerDrawFactor = 0.02f;
-                SpeedType.DriftMaxGauge = 1700f;
-                SpeedType.TransAccelFactor = 0.0045f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 1350f;
-                SpeedType.StartForwardAccelForceSpeed = 1350f;
+                Console.WriteLine("SpeedType:L1");
+                AddSpec_SteerConstraint = 0f;
+                AddSpec_DriftEscapeForce = 0f;
+                AddSpec_TransAccelFactor = 0f;
+                DragFactor = 0.051f;
+                ForwardAccelForce = 750f;
+                BackwardAccelForce = 450f;
+                GripBrakeForce = 540f;
+                SlipBrakeForce = 325f;
+                SteerConstraint = 0.75f;
+                DriftEscapeForce = 1100f;
+                CornerDrawFactor = 0.02f;
+                DriftMaxGauge = 1700f;
+                TransAccelFactor = 0.0045f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 1350f;
+                StartForwardAccelForceSpeed = 1350f;
             }
-            else if (ProfileService.ProfileConfig.GameOption.SpeedType == 14)//Pro
+            else if (SpeedType == 14)//Pro
             {
-                SpeedType.AddSpec_SteerConstraint = 0f;
-                SpeedType.AddSpec_DriftEscapeForce = 0f;
-                SpeedType.AddSpec_TransAccelFactor = 0f;
-                SpeedType.DragFactor = 0.06f;
-                SpeedType.ForwardAccelForce = 1650f;
-                SpeedType.BackwardAccelForce = 1125f;
-                SpeedType.GripBrakeForce = 1350f;
-                SpeedType.SlipBrakeForce = 865f;
-                SpeedType.SteerConstraint = 1.15f;
-                SpeedType.DriftEscapeForce = 2100f;
-                SpeedType.CornerDrawFactor = 0.02f;
-                SpeedType.DriftMaxGauge = 3700f;
-                SpeedType.TransAccelFactor = 0.0045f;
-                SpeedType.BoostAccelFactor = 0.006f;
-                SpeedType.StartForwardAccelForceItem = 1800f;
-                SpeedType.StartForwardAccelForceSpeed = 1800f;
+                Console.WriteLine("SpeedType:Pro");
+                AddSpec_SteerConstraint = 0f;
+                AddSpec_DriftEscapeForce = 0f;
+                AddSpec_TransAccelFactor = 0f;
+                DragFactor = 0.06f;
+                ForwardAccelForce = 1650f;
+                BackwardAccelForce = 1125f;
+                GripBrakeForce = 1350f;
+                SlipBrakeForce = 865f;
+                SteerConstraint = 1.15f;
+                DriftEscapeForce = 2100f;
+                CornerDrawFactor = 0.02f;
+                DriftMaxGauge = 3700f;
+                TransAccelFactor = 0.0045f;
+                BoostAccelFactor = 0.006f;
+                StartForwardAccelForceItem = 1800f;
+                StartForwardAccelForceSpeed = 1800f;
             }
             else
             {
-                GameSupport.OnDisconnect(Parent);
-                Console.WriteLine("SpeedType:null");
+                Console.WriteLine("SpeedType:Integration");
+                AddSpec_SteerConstraint = 1.95f;
+                AddSpec_DriftEscapeForce = 400f;
+                AddSpec_TransAccelFactor = 0.2005f;
+                DragFactor = 0f;
+                ForwardAccelForce = 0f;
+                BackwardAccelForce = 0f;
+                GripBrakeForce = 0f;
+                SlipBrakeForce = 0f;
+                SteerConstraint = 0f;
+                DriftEscapeForce = 0f;
+                CornerDrawFactor = 0f;
+                DriftMaxGauge = 0f;
+                TransAccelFactor = 0f;
+                BoostAccelFactor = 0f;
+                StartForwardAccelForceItem = 0f;
+                StartForwardAccelForceSpeed = 0f;
             }
-            FlyingPet.FlyingPet_Spec();
         }
     }
 }

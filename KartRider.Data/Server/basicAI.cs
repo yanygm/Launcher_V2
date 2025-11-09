@@ -8,7 +8,7 @@ namespace KartRider
     // 配件类（气球/头带/护目镜）
     public class AIAccessory
     {
-        public short Id { get; set; }      // ID改为short
+        public short Id { get; set; }
         public int Speed { get; set; }
         public int Item { get; set; }
     }
@@ -86,7 +86,7 @@ namespace KartRider
         /// <param name="count">需要的数量</param>
         /// <returns>不重复的卡丁车ID列表（short）</returns>
         public List<short> GetRandomKartIds(Dictionary<short, AIKart> kartDict, int count,
-                                           bool requireSpeed = false, bool requireItem = false)
+            bool requireSpeed = false, bool requireItem = false)
         {
             if (kartDict == null || kartDict.Count == 0 || count <= 0)
                 return new List<short>();
@@ -110,6 +110,30 @@ namespace KartRider
 
             // 随机排序并取前count个
             return validIdList.OrderBy(_ => _random.Next()).Take(count).ToList();
+        }
+    }
+
+    public class AI
+    {
+        public static List<float> GetAISpec(byte GameType)
+        {
+            Random random = new Random();
+            var b = (float)random.Next(2000, 3001);
+            var c = (float)random.Next(2500, 3501);
+            var d = Enumerable.Range(0, 11).Select(i => 1.0f + i * 0.1f).ToArray()[random.Next(11)];
+            var e = (float)random.Next(500, 1501);
+            var f = (float)random.Next(1000, 2001);
+            if (GameType == 0)
+            {
+                var a = Enumerable.Range(0, 5).Select(i => 0.7f + i * 0.05f).ToArray()[random.Next(5)];
+                return new List<float>() { a, b, c, d, e, f };
+            }
+            else if (GameType == 1)
+            {
+                var a = Enumerable.Range(0, 5).Select(i => 0.5f + i * 0.05f).ToArray()[random.Next(5)];
+                return new List<float>() { a, b, c, d, e, f };
+            }
+            return null;
         }
     }
 }

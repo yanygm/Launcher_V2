@@ -4,7 +4,6 @@ using System.IO;
 using KartRider.IO.Packet;
 using KartRider;
 using ExcData;
-using System.Xml;
 using System.Linq;
 using Profile;
 
@@ -13,53 +12,51 @@ namespace RiderData
     public static class NewRider
     {
         public static Dictionary<short, Dictionary<short, string>> items = new Dictionary<short, Dictionary<short, string>>();
-        public static List<List<short>> NewKart = new List<List<short>>();
         private static readonly HashSet<short> excludedKeys = new HashSet<short>{ 3, 6, 10, 15, 19, 24, 25, 29, 33, 34, 35, 40, 41, 47, 48, 50, 51, 56, 57, 58, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
         private static readonly HashSet<short> ValidItemCatIds = new HashSet<short> { 1, 2, 4, 8, 11, 12, 13, 14, 16, 18, 20, 21, 26, 27, 28, 31, 52, 61, 70, 71 };
 
-        public static void LoadItemData(SessionGroup Parent)
+        public static void LoadItemData(SessionGroup Parent, string Nickname)
         {
-            KartExcData.Tune_ExcData(Parent);
-            KartExcData.Plant_ExcData(Parent);
-            KartExcData.Level_ExcData(Parent);
-            KartExcData.Parts_ExcData(Parent);
-            KartExcData.Level12_ExcData(Parent);
-            KartExcData.Parts12_ExcData(Parent);
-            NewRider.XUniquePartsData(Parent);
-            NewRider.XLegendPartsData(Parent);
-            NewRider.XRarePartsData(Parent);
-            NewRider.XNormalPartsData(Parent);
-            NewRider.V1UniquePartsData(Parent);
-            NewRider.V1LegendPartsData(Parent);
-            NewRider.V1RarePartsData(Parent);
-            NewRider.V1NormalPartsData(Parent);
-            NewRider.partsEngine12(Parent);
-            NewRider.partsHandle12(Parent);
-            NewRider.partsWheel12(Parent);
-            NewRider.partsBooster12(Parent);
-            NewRider.Items(Parent);
+            KartExcData.Tune_ExcData(Parent, Nickname);
+            KartExcData.Plant_ExcData(Parent, Nickname);
+            KartExcData.Level_ExcData(Parent, Nickname);
+            KartExcData.Parts_ExcData(Parent, Nickname);
+            KartExcData.Level12_ExcData(Parent, Nickname);
+            KartExcData.Parts12_ExcData(Parent, Nickname);
+            NewRider.XUniquePartsData(Parent, Nickname);
+            NewRider.XLegendPartsData(Parent, Nickname);
+            NewRider.XRarePartsData(Parent, Nickname);
+            NewRider.XNormalPartsData(Parent, Nickname);
+            NewRider.V1UniquePartsData(Parent, Nickname);
+            NewRider.V1LegendPartsData(Parent, Nickname);
+            NewRider.V1RarePartsData(Parent, Nickname);
+            NewRider.V1NormalPartsData(Parent, Nickname);
+            NewRider.partsEngine12(Parent, Nickname);
+            NewRider.partsHandle12(Parent, Nickname);
+            NewRider.partsWheel12(Parent, Nickname);
+            NewRider.partsBooster12(Parent, Nickname);
+            NewRider.Items(Parent, Nickname);
             NewRider.NewKart1(Parent);
             NewRider.NewKart2(Parent);
-            NewRider.NewRiderData(Parent);//라이더 인식
+            NewRider.NewRiderData(Parent, Nickname);//라이더 인식
         }
 
-        public static void NewRiderData(SessionGroup Parent)
+        public static void NewRiderData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("PrGetRider"))
             {
                 oPacket.WriteByte(1);
                 oPacket.WriteByte(0);
-                oPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
+                oPacket.WriteString(Nickname);
                 oPacket.WriteShort(0);
                 oPacket.WriteShort(0);
-                oPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem1);
-                oPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem2);
+                oPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].Rider.Emblem1);
+                oPacket.WriteShort(ProfileService.ProfileConfigs[Nickname].Rider.Emblem2);
                 oPacket.WriteShort(0);
-                GameSupport.GetRider(oPacket);
-                oPacket.WriteShort(0);
-                oPacket.WriteString(ProfileService.ProfileConfig.Rider.Card);
-                oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci);
-                oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
+                GameSupport.GetRider(Parent, Nickname, oPacket);
+                oPacket.WriteString(ProfileService.ProfileConfigs[Nickname].Rider.Card);
+                oPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.Lucci);
+                oPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.RP);
                 oPacket.WriteBytes(new byte[94]);
                 Parent.Client.Send(oPacket);
             }
@@ -101,11 +98,18 @@ namespace RiderData
 
         public static void NewKart2(SessionGroup Parent)
         {
+            var newList = new List<NewKart>();
+
+            if (File.Exists(FileName.NewKart_LoadFile))
+            {
+                newList = JsonHelper.DeserializeNoBom<List<NewKart>>(FileName.NewKart_LoadFile);
+            }
+
             int range = 100;//分批次数
-            int times = NewKart.Count / range + (NewKart.Count % range > 0 ? 1 : 0);
+            int times = newList.Count / range + (newList.Count % range > 0 ? 1 : 0);
             for (int i = 0; i < times; i++)
             {
-                var tempList = NewKart.GetRange(i * range, (i + 1) * range > NewKart.Count ? (NewKart.Count - i * range) : range);
+                var tempList = newList.GetRange(i * range, (i + 1) * range > newList.Count ? (newList.Count - i * range) : range);
                 int Count = tempList.Count;
                 using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
                 {
@@ -114,8 +118,8 @@ namespace RiderData
                     foreach (var Kart in tempList)
                     {
                         outPacket.WriteShort(3);
-                        outPacket.WriteShort(Kart[0]);
-                        outPacket.WriteShort(Kart[1]);
+                        outPacket.WriteShort(Kart.KartID);
+                        outPacket.WriteShort(Kart.KartSN);
                         outPacket.WriteShort(1);//数量
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(-1);
@@ -128,7 +132,7 @@ namespace RiderData
             }
         }
 
-        public static void Items(SessionGroup Parent)
+        public static void Items(SessionGroup Parent, string Nickname)
         {
             foreach (var category in items)
             {
@@ -139,7 +143,7 @@ namespace RiderData
                     foreach (var item in category.Value)
                     {
                         short sn = 0;
-                        ushort num = ProfileService.ProfileConfig.Rider.SlotChanger;
+                        ushort num = ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger;
                         short id = item.Key;
                         if (ValidItemCatIds.Contains(itemCatId))
                         {
@@ -198,7 +202,7 @@ namespace RiderData
             }
         }
 
-        public static void partsEngine12(SessionGroup Parent)
+        public static void partsEngine12(SessionGroup Parent, string Nickname)
         {
             if (items.TryGetValue(72, out Dictionary<short, string> resultDict))
             {
@@ -214,7 +218,7 @@ namespace RiderData
                         oPacket.WriteShort(72);
                         oPacket.WriteShort(id);
                         oPacket.WriteShort(0);
-                        oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                        oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                         oPacket.WriteByte(0);
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(-1);
@@ -236,14 +240,14 @@ namespace RiderData
                         {
                             oPacket.WriteByte(1);
                         }
-                        oPacket.WriteShort(V2Spec.Get12Parts(id));
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
                     }
                     Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsHandle12(SessionGroup Parent)
+        public static void partsHandle12(SessionGroup Parent, string Nickname)
         {
             if (items.TryGetValue(73, out Dictionary<short, string> resultDict))
             {
@@ -259,7 +263,7 @@ namespace RiderData
                         oPacket.WriteShort(73);
                         oPacket.WriteShort(id);
                         oPacket.WriteShort(0);
-                        oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                        oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                         oPacket.WriteByte(0);
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(-1);
@@ -281,14 +285,14 @@ namespace RiderData
                         {
                             oPacket.WriteByte(1);
                         }
-                        oPacket.WriteShort(V2Spec.Get12Parts(id));
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
                     }
                     Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsWheel12(SessionGroup Parent)
+        public static void partsWheel12(SessionGroup Parent, string Nickname)
         {
             if (items.TryGetValue(74, out Dictionary<short, string> resultDict))
             {
@@ -304,7 +308,7 @@ namespace RiderData
                         oPacket.WriteShort(74);
                         oPacket.WriteShort(id);
                         oPacket.WriteShort(0);
-                        oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                        oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                         oPacket.WriteByte(0);
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(-1);
@@ -326,14 +330,14 @@ namespace RiderData
                         {
                             oPacket.WriteByte(1);
                         }
-                        oPacket.WriteShort(V2Spec.Get12Parts(id));
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
                     }
                     Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void partsBooster12(SessionGroup Parent)
+        public static void partsBooster12(SessionGroup Parent, string Nickname)
         {
             if (items.TryGetValue(75, out Dictionary<short, string> resultDict))
             {
@@ -349,7 +353,7 @@ namespace RiderData
                         oPacket.WriteShort(75);
                         oPacket.WriteShort(id);
                         oPacket.WriteShort(0);
-                        oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                        oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                         oPacket.WriteByte(0);
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(-1);
@@ -371,14 +375,14 @@ namespace RiderData
                         {
                             oPacket.WriteByte(1);
                         }
-                        oPacket.WriteShort(V2Spec.Get12Parts(id));
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
                     }
                     Parent.Client.Send(oPacket);
                 }
             }
         }
 
-        public static void XUniquePartsData(SessionGroup Parent)
+        public static void XUniquePartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -392,7 +396,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -406,7 +410,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -420,7 +424,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -434,7 +438,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -447,7 +451,7 @@ namespace RiderData
             }
         }
 
-        public static void XLegendPartsData(SessionGroup Parent)
+        public static void XLegendPartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -461,7 +465,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -475,7 +479,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -489,7 +493,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -503,7 +507,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -516,7 +520,7 @@ namespace RiderData
             }
         }
 
-        public static void XRarePartsData(SessionGroup Parent)
+        public static void XRarePartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -530,7 +534,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -544,7 +548,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -558,7 +562,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -572,7 +576,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -585,7 +589,7 @@ namespace RiderData
             }
         }
 
-        public static void XNormalPartsData(SessionGroup Parent)
+        public static void XNormalPartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -599,7 +603,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -613,7 +617,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -627,7 +631,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -641,7 +645,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(1);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -655,7 +659,7 @@ namespace RiderData
         }
 
         //-----------------------------------------------------------------------------------------------V1 파츠 관련
-        public static void V1UniquePartsData(SessionGroup Parent)
+        public static void V1UniquePartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -669,7 +673,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -683,7 +687,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -697,7 +701,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -711,7 +715,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -724,7 +728,7 @@ namespace RiderData
             }
         }
 
-        public static void V1LegendPartsData(SessionGroup Parent)
+        public static void V1LegendPartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -738,7 +742,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -752,7 +756,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -766,7 +770,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -780,7 +784,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -793,7 +797,7 @@ namespace RiderData
             }
         }
 
-        public static void V1RarePartsData(SessionGroup Parent)
+        public static void V1RarePartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -807,7 +811,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -821,7 +825,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -835,7 +839,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -849,7 +853,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -862,7 +866,7 @@ namespace RiderData
             }
         }
 
-        public static void V1NormalPartsData(SessionGroup Parent)
+        public static void V1NormalPartsData(SessionGroup Parent, string Nickname)
         {
             using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
             {
@@ -876,7 +880,7 @@ namespace RiderData
                     oPacket.WriteShort(63);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -890,7 +894,7 @@ namespace RiderData
                     oPacket.WriteShort(64);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -904,7 +908,7 @@ namespace RiderData
                     oPacket.WriteShort(65);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);
@@ -918,7 +922,7 @@ namespace RiderData
                     oPacket.WriteShort(66);
                     oPacket.WriteShort(2);
                     oPacket.WriteShort(0);
-                    oPacket.WriteUShort(ProfileService.ProfileConfig.Rider.SlotChanger);
+                    oPacket.WriteUShort(ProfileService.ProfileConfigs[Nickname].Rider.SlotChanger);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(-1);

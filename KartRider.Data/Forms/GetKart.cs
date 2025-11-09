@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
-using System.Xml;
 
 namespace KartRider
 {
@@ -40,85 +39,30 @@ namespace KartRider
                 if (GetKart.Item_Type == 3)
                 {
                     short KartSN = 2;
-                    if (NewRider.NewKart == null)
+
+                    var newList = new List<NewKart>();
+
+                    if (File.Exists(FileName.NewKart_LoadFile))
                     {
-                        using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-                        {
-                            outPacket.WriteByte(1);
-                            outPacket.WriteInt(1);
-                            outPacket.WriteShort(GetKart.Item_Type);
-                            outPacket.WriteShort(GetKart.Item_Code);
-                            outPacket.WriteShort(KartSN);
-                            outPacket.WriteShort(1);//수량
-                            outPacket.WriteShort(0);
-                            outPacket.WriteShort(-1);
-                            outPacket.WriteShort(0);
-                            outPacket.WriteShort(0);
-                            outPacket.WriteShort(0);
-                            RouterListener.MySession.Client.Send(outPacket);
-                        }
-                        var newList = new List<short> { GetKart.Item_Code, KartSN };
-                        NewRider.NewKart.Add(newList);
-                        Save_NewKartList(NewRider.NewKart);
+                        newList = JsonHelper.DeserializeNoBom<List<NewKart>>(FileName.NewKart_LoadFile);
                     }
-                    else
+
+                    // 查找合适的KartSN
+                    short currentSN = KartSN;
+                    // 循环检查当前SN是否已存在相同KartID的记录
+                    while (newList.Any(kart => kart.KartID == GetKart.Item_Code && kart.KartSN == currentSN))
                     {
-                        var existingItems = NewRider.NewKart.Where(list => list[0] == GetKart.Item_Code).ToList();
-                        if (existingItems == null)
-                        {
-                            using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-                            {
-                                outPacket.WriteByte(1);
-                                outPacket.WriteInt(1);
-                                outPacket.WriteShort(GetKart.Item_Type);
-                                outPacket.WriteShort(GetKart.Item_Code);
-                                outPacket.WriteShort(KartSN);
-                                outPacket.WriteShort(1);//수량
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(-1);
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(0);
-                                RouterListener.MySession.Client.Send(outPacket);
-                            }
-                            var newList = new List<short> { GetKart.Item_Code, KartSN };
-                            NewRider.NewKart.Add(newList);
-                            Save_NewKartList(NewRider.NewKart);
-                        }
-                        else
-                        {
-                            KartSN = (short)(existingItems.Count + (int)KartSN);
-                            using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-                            {
-                                outPacket.WriteByte(1);
-                                outPacket.WriteInt(1);
-                                outPacket.WriteShort(GetKart.Item_Type);
-                                outPacket.WriteShort(GetKart.Item_Code);
-                                outPacket.WriteShort(KartSN);
-                                outPacket.WriteShort(1);//수량
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(-1);
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(0);
-                                outPacket.WriteShort(0);
-                                RouterListener.MySession.Client.Send(outPacket);
-                            }
-                            var newList = new List<short> { GetKart.Item_Code, KartSN };
-                            NewRider.NewKart.Add(newList);
-                            Save_NewKartList(NewRider.NewKart);
-                        }
+                        currentSN++; // 存在则SN+1继续检查
                     }
-                }
-                else
-                {
+
                     using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
                     {
                         outPacket.WriteByte(1);
                         outPacket.WriteInt(1);
                         outPacket.WriteShort(GetKart.Item_Type);
                         outPacket.WriteShort(GetKart.Item_Code);
-                        outPacket.WriteShort(0);
-                        outPacket.WriteUShort(1);//수량
+                        outPacket.WriteShort(currentSN);
+                        outPacket.WriteShort(1);//수량
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(-1);
                         outPacket.WriteShort(0);
@@ -126,30 +70,22 @@ namespace KartRider
                         outPacket.WriteShort(0);
                         RouterListener.MySession.Client.Send(outPacket);
                     }
+
+                    // 添加新记录
+                    newList.Add(new NewKart
+                    {
+                        KartID = GetKart.Item_Code,
+                        KartSN = currentSN
+                    });
+
+                    Save_NewKartList(newList);
                 }
             })).Start();
         }
 
-        public static void Save_NewKartList(List<List<short>> NewKart)
+        public static void Save_NewKartList(List<NewKart> NewKart)
         {
-            File.Delete(FileName.NewKart_LoadFile);
-            XmlTextWriter writer = new XmlTextWriter(FileName.NewKart_LoadFile, System.Text.Encoding.UTF8);
-            writer.Formatting = Formatting.Indented;
-            writer.WriteStartDocument();
-            writer.WriteStartElement("NewKart");
-            writer.WriteEndElement();
-            writer.Close();
-            for (var i = 0; i < NewKart.Count; i++)
-            {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(FileName.NewKart_LoadFile);
-                XmlNode root = xmlDoc.SelectSingleNode("NewKart");
-                XmlElement xe1 = xmlDoc.CreateElement("Kart");
-                xe1.SetAttribute("id", NewKart[i][0].ToString());
-                xe1.SetAttribute("sn", NewKart[i][1].ToString());
-                root.AppendChild(xe1);
-                xmlDoc.Save(FileName.NewKart_LoadFile);
-            }
+            File.WriteAllText(FileName.NewKart_LoadFile, JsonHelper.Serialize(NewKart));
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -183,5 +119,11 @@ namespace KartRider
                 }
             }
         }
+    }
+
+    public class NewKart
+    {
+        public short KartID { get; set; } = 0;
+        public short KartSN { get; set; } = 0;
     }
 }

@@ -1,4 +1,3 @@
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,8 +48,7 @@ public class SpecialKartConfig
         if (File.Exists(filePath))
         {
             // 3.1 读取现有配置
-            var existingJson = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
-            var existingConfig = JsonConvert.DeserializeObject<SpecialKartConfig>(existingJson) ?? new SpecialKartConfig();
+            var existingConfig = JsonHelper.DeserializeNoBom<SpecialKartConfig>(filePath);
 
             // 3.2 初始化现有配置的字典（避免null引用）
             existingConfig.SkillChange ??= new Dictionary<short, Dictionary<short, short>>();
@@ -130,8 +128,7 @@ public class SpecialKartConfig
         }
 
         // 5. 写入最终配置
-        var json = JsonConvert.SerializeObject(finalConfig, Formatting.Indented);
-        File.WriteAllText(filePath, json, System.Text.Encoding.UTF8);
+        File.WriteAllText(filePath, JsonHelper.Serialize(finalConfig));
     }
 
     /// <summary>
@@ -146,8 +143,7 @@ public class SpecialKartConfig
             throw new FileNotFoundException("特殊道具车配置文件不存在", filePath);
         }
 
-        string json = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
-        var config = JsonConvert.DeserializeObject<SpecialKartConfig>(json);
+        var config = JsonHelper.DeserializeNoBom<SpecialKartConfig>(filePath);
         if (config == null)
         {
             throw new Exception("配置文件解析失败，可能是JSON格式错误");

@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,6 +29,14 @@ namespace KartRider
         /// 发布版本的说明（如版本号、发布日期、更新内容等）
         /// </summary>
         public string body { get; set; }
+    }
+
+    class IpInfo
+    {
+        public string Ip { get; set; }
+        public string City { get; set; }
+        public string Region { get; set; }
+        public string Country { get; set; }
     }
 
     /// <summary>
@@ -383,8 +390,9 @@ namespace KartRider
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();
-                        JObject data = JObject.Parse(json);
-                        string country = data["country"]?.ToString();
+                        IpInfo data = JsonSerializer.Deserialize<IpInfo>(json,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        string country = data.Country;
                         return country;
                     }
                     else

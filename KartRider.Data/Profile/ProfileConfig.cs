@@ -1,11 +1,42 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Profile
 {
+    public class Setting
+    {
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Name { get; set; } = "Yany";
+
+        /// <summary>
+        /// 服务器IP
+        /// </summary>
+        public string ServerIP { get; set; } = "127.0.0.1";
+
+        /// <summary>
+        /// 服务器端口
+        /// </summary>
+        public ushort ServerPort { get; set; } = 39312;
+
+        /// <summary>
+        /// 速度类型
+        /// </summary>
+        public byte SpeedType { get; set; } = 7;
+
+        /// <summary>
+        /// 客户端版本
+        /// </summary>
+        public ushort ClientVersion { get; set; }
+
+        public bool NgsOn { get; set; } = false;
+    }
+
     public class ProfileConfig
     {
         public ProfileConfig()
@@ -39,19 +70,13 @@ namespace Profile
     {
         public int ClubCode { get; set; } = 10000;
 
-        public int ClubMark_LOGO { get; set; } = 2;//343 베로
+        public int ClubMark_LOGO { get; set; } = 2; //343 베로
 
         public int ClubMark_LINE { get; set; } = 0;
 
         public string ClubName { get; set; } = "TCCstar";
 
         public string ClubIntro { get; set; } = "跑跑卡丁车交流群：84338611\n单机启动器下载地址：https://github.com/yanygm/Launcher_V2/releases";
-
-        public string UserID { get; set; } = "Yany";
-
-        public uint UserNO { get; set; } = 1982596588;
-
-        public string Nickname { get; set; } = "Yany";
 
         public string RiderIntro { get; set; } = "";
 
@@ -71,17 +96,25 @@ namespace Profile
 
         public uint TcCash { get; set; } = 10000;
 
-        public int Premium { get; set; } = 5;//100
+        public int Premium { get; set; } = 5; //100
 
         public byte Ranker { get; set; } = 0;
 
         public ushort SlotChanger { get; set; } = (ushort)short.MaxValue;
 
-        public uint pmap { get; set; } = 0;//3130 //1068 //2520
+        public uint pmap { get; set; } = 0; //3130 //1068 //2520
 
         public byte IdentificationType { get; set; } = 1;
 
-        public byte Team { get; set; } = 2;
+        public byte EnterMyRoomType { get; set; } = 0;
+
+        public int ScenarioType { get; set; } = 0;
+
+        public byte AttackType { get; set; } = 0;
+
+        public uint Track { get; set; } = 0;
+
+        public string Client { get; set; } = "";
     }
 
     public class RiderItemData
@@ -98,11 +131,15 @@ namespace Profile
 
         public short Set_Balloon { get; set; } = 0;
 
+        public short Set_Unknown1 { get; set; } = 0;
+
         public short Set_HeadBand { get; set; } = 0;
 
         public short Set_HeadPhone { get; set; } = 0;
 
         public short Set_HandGearL { get; set; } = 0;
+
+        public short Set_Unknown2 { get; set; } = 0;
 
         public short Set_Uniform { get; set; } = 0;
 
@@ -124,6 +161,16 @@ namespace Profile
 
         public short Set_BossModeCard { get; set; } = 0;
 
+        public short Set_KartPlant1 { get; set; } = 0;
+
+        public short Set_KartPlant2 { get; set; } = 0;
+
+        public short Set_KartPlant3 { get; set; } = 0;
+
+        public short Set_KartPlant4 { get; set; } = 0;
+
+        public short Set_Unknown3 { get; set; } = 0;
+
         public short Set_FishingPole { get; set; } = 0;
 
         public short Set_Tachometer { get; set; } = 0;
@@ -132,7 +179,21 @@ namespace Profile
 
         public short Set_KartSN { get; set; } = 0;
 
+        public byte Set_Unknown4 { get; set; } = 0;
+
+        public short Set_KartCoating { get; set; } = 0;
+
+        public short Set_KartTailLamp { get; set; } = 0;
+
         public short Set_slotBg { get; set; } = 0;
+
+        public short Set_KartCoating12 { get; set; } = 0;
+
+        public short Set_KartTailLamp12 { get; set; } = 0;
+
+        public short Set_KartBoosterEffect12 { get; set; } = 0;
+
+        public short Set_Unknown5 { get; set; } = 0;
     }
 
     public class MyRoomData
@@ -158,8 +219,6 @@ namespace Profile
 
     public class GameOptionData
     {
-        public ushort Version { get; set; }
-
         public float Set_BGM { get; set; } = 1f;
 
         public float Set_Sound { get; set; } = 1f;
@@ -260,11 +319,6 @@ namespace Profile
         /// 幽灵设置
         /// </summary>
         public byte SetGhost { get; set; } = 1;
-
-        /// <summary>
-        /// 速度类型
-        /// </summary>
-        public byte SpeedType { get; set; } = 7;
 
         /// <summary>
         /// 查看房间内聊天内容

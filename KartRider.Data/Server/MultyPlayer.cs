@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -17,262 +18,224 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace KartRider
+namespace KartRider;
+
+public static class MultyPlayer
 {
-    public static class MultyPlayer
+    static string Nickname;
+    public static List<short> itemProb_indi = new List<short>();
+    public static List<short> itemProb_team = new List<short>();
+    public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
+    public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
+    public static Dictionary<string, RoomList> roomList = new Dictionary<string, RoomList>();
+    public static SpecialKartConfig kartConfig = new SpecialKartConfig();
+    public static Dictionary<string, long> diff = new Dictionary<string, long>();
+    public static int[] teamPoints = { 10, 8, 6, 5, 4, 3, 2, 1 };
+
+    public static void milTime(uint time)
     {
-        static string RoomName;
-        static byte[] RoomUnkBytes;
-        static long EndTicks = 0;
-        static int channeldata2 = 0;
-        //static uint track = Adler32Helper.GenerateAdler32_UNICODE("village_R01", 0);
-        static uint track = 0;
-        public static long BootTicksNow = 0;
-        public static long StartTicks = 0;
-        static uint FinishTime = 0;
-        public static List<short> itemProb_indi = new List<short>();
-        public static List<short> itemProb_team = new List<short>();
-        public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
-        public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
-        public static Dictionary<int, uint> AiTimeData = new Dictionary<int, uint>();
-        public static Dictionary<int, uint> TimeData = new Dictionary<int, uint>();
-        public static Dictionary<int, int> Ranking = new Dictionary<int, int>();
-        public static SpecialKartConfig kartConfig = new SpecialKartConfig();
-        public static byte gameType = 0;
-        public static float gauge = 0;
-        public static int[] teamPoints = { 10, 8, 6, 5, 4, 3, 2, 1 };
+        uint min = time / 60000;
+        uint sec = time - min * 60000;
+        sec = sec / 1000;
+        uint mil = time % 1000;
+        Console.WriteLine($"成绩: {min}:{sec}:{mil}");
+    }
 
-        public static void milTime(uint time)
+    public static long GetUpTime()
+    {
+        var Time = Environment.TickCount64;
+        Console.WriteLine($"系统已运行总毫秒数: {Time} ms");
+        return Time;
+    }
+
+    public static Dictionary<int, int> GetAllRanks(Dictionary<int, uint> timeData)
+    {
+        if (timeData.Count == 0)
+            return new Dictionary<int, int>();
+
+        // 按值降序排序（值越大排名越靠前）
+        var sortedItems = timeData
+            .OrderBy(item => item.Value)
+            .ToList();
+
+        var ranks = new Dictionary<int, int>();
+
+        // 排名从0开始，逐个分配（相同值也会依次+1）
+        for (int i = 0; i < sortedItems.Count; i++)
         {
-            GameType.min = time / 60000;
-            uint sec = time - GameType.min * 60000;
-            GameType.sec = sec / 1000;
-            GameType.mil = time % 1000;
+            ranks[sortedItems[i].Key] = i; // 直接使用索引作为排名
         }
 
-        public static long GetUpTime()
+        return ranks;
+    }
+
+    static void Set_settleTrigger(SessionGroup Parent, string nickname, fileName filename)
+    {
+        var onceTimer = new System.Timers.Timer();
+        onceTimer.Interval = 10000;
+        onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(Parent, nickname, filename, s, _event));
+        onceTimer.AutoReset = false;
+        onceTimer.Start();
+    }
+
+    static void settleTrigger(SessionGroup Parent, string nickname, fileName filename, object sender, System.Timers.ElapsedEventArgs e)
+    {
+        int roomId = RoomManager.TryGetRoomId(nickname);
+        var room = RoomManager.GetRoom(roomId);
+        if (room == null)
         {
-            long Time = 0;
-            try
-            {
-                Time = Environment.TickCount64;
-                TimeSpan uptime = TimeSpan.FromMilliseconds(Time);
-                Console.WriteLine($"系统已运行总毫秒数: {Time} ms");
-                Console.WriteLine($"运行时间: {uptime.Days}天 {uptime.Hours}小时 {uptime.Minutes}分钟 {uptime.Seconds}秒");
-                return Time;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"获取系统运行时间失败: {ex.Message}");
-                return Time;
-            }
-            return Time;
+            Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
         }
-
-        public static Dictionary<int, int> GetAllRanks()
+        using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
         {
-            if (TimeData.Count == 0)
-                return new Dictionary<int, int>();
-
-            // 按值降序排序（值越大排名越靠前）
-            var sortedItems = TimeData
-                .OrderBy(item => item.Value)
-                .ToList();
-
-            var ranks = new Dictionary<int, int>();
-
-            // 排名从0开始，逐个分配（相同值也会依次+1）
-            for (int i = 0; i < sortedItems.Count; i++)
-            {
-                ranks[sortedItems[i].Key] = i; // 直接使用索引作为排名
-            }
-
-            return ranks;
+            outPacket.WriteByte(room.GameType);
+            outPacket.WriteInt();
+            outPacket.WriteInt();
+            Parent.Client.Send(outPacket);
         }
-
-        static void Set_settleTrigger(SessionGroup Parent)
+        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
         {
-            var onceTimer = new System.Timers.Timer();
-            onceTimer.Interval = 10000;
-            onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(Parent, s, _event));
-            onceTimer.AutoReset = false;
-            onceTimer.Start();
-        }
-
-        static void settleTrigger(SessionGroup Parent, object sender, System.Timers.ElapsedEventArgs e)
-        {
-            //SettleTicks = EndTicks + 3100;
-            using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
+            if (room.TimeData.Count < room.GetCount())
             {
-                outPacket.WriteByte(gameType);
-                outPacket.WriteInt();
-                outPacket.WriteInt();
-                Parent.Client.Send(outPacket);
+                for (int i = 0; i < 8; i++)
+                {
+                    if (RoomManager.TryGetSlotStatus(roomId, (byte)i) != SlotStatus.Empty)
+                    {
+                        var Object = RoomManager.TryGetSlotDetail(roomId, (byte)i);
+                        if (Object is Player player)
+                        {
+                            if (!room.TimeData.ContainsKey(player.ID))
+                            {
+                                room.TimeData[player.ID] = 4294967295;
+                            }
+                        }
+                        else if (Object is Ai ai)
+                        {
+                            if (!room.TimeData.ContainsKey(ai.ID))
+                            {
+                                room.TimeData[ai.ID] = 4294967295;
+                            }
+                        }
+                    }
+                }
             }
-            using (OutPacket outPacket = new OutPacket("GameResultPacket"))
+            room.Ranking = GetAllRanks(room.TimeData);
+            int redTeam = 0;
+            int blueTeam = 0;
+            var firstId = room.Ranking.First(kv => kv.Value == 0).Key;
+            byte firstTeam = 0;
+            if (RoomManager.TryGetSlotDetail(roomId, (byte)firstId) is Player p)
             {
-                // 加载 XML 文件
-                XDocument doc = XDocument.Load(FileName.AI_LoadFile);
-                IOrderedEnumerable<XElement> aiNodes = null;
-                if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+                firstTeam = p.Team;
+            }
+            else if (RoomManager.TryGetSlotDetail(roomId, (byte)firstId) is Ai ai)
+            {
+                firstTeam = ai.Team;
+            }
+            Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
+            for (int i = 0; i < 8; i++)
+            {
+                if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player p2)
                 {
-                    aiNodes = doc.Root
-                    ?.Element("SpeedAI")  // 指定父节点（如ItemAI、SpeedAI等）
-                    ?.Elements()        // 获取该父节点下的所有直接子元素
-                    .Where(e => e.Name.LocalName.StartsWith("Ai")
-                    && !e.Name.LocalName.Equals("SpeedSpec"))  // 筛选条件
-                    .OrderBy(e => e.Name.LocalName);  // 按名称排序
-                }
-                else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                {
-                    aiNodes = doc.Root
-                    ?.Element("ItemAI")  // 指定父节点（如ItemAI、SpeedAI等）
-                    ?.Elements()        // 获取该父节点下的所有直接子元素
-                    .Where(e => e.Name.LocalName.StartsWith("Ai")
-                    && !e.Name.LocalName.Equals("ItemSpec"))  // 筛选条件
-                    .OrderBy(e => e.Name.LocalName);  // 按名称排序
-                }
-                if (AiTimeData.Count < aiNodes.Count())
-                {
-                    // 如果 AiTimeData 中的 AI 数量少于 aiNodes，则填充缺失的 AI 时间数据
-                    foreach (var node in aiNodes)
+                    if (p2.Team == 2)
                     {
-                        string nodeName = node.Name.LocalName;
-                        int numberPart = int.Parse(nodeName.Substring(2)); // 从索引2开始截取（跳过"Ai"）
-                        if (!AiTimeData.ContainsKey(numberPart))
-                        {
-                            AiTimeData[numberPart] = 4294967295;
-                        }
+                        blueTeam += teamPoints[room.Ranking[i]];
+                    }
+                    else if (p2.Team == 1)
+                    {
+                        redTeam += teamPoints[room.Ranking[i]];
                     }
                 }
-                TimeData = AiTimeData;
-                if (FinishTime == 0)
+                if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a2)
                 {
-                    if (!TimeData.ContainsKey(0))
+                    if (a2.Team == 2)
                     {
-                        TimeData.Add(0, 4294967295);
+                        blueTeam += teamPoints[room.Ranking[i]];
+                    }
+                    else if (a2.Team == 1)
+                    {
+                        redTeam += teamPoints[room.Ranking[i]];
                     }
                 }
-                else
-                {
-                    if (!TimeData.ContainsKey(0))
-                    {
-                        TimeData.Add(0, FinishTime);
-                    }
-                }
-                Ranking = GetAllRanks();
-                int redTeam = 0;
-                int blueTeam = 0;
-                var firstId = Ranking.First(kv => kv.Value == 0).Key;
-                byte firstTeam;
-                if (firstId == 0)
-                {
-                    firstTeam = ProfileService.ProfileConfig.Rider.Team;
-                }
-                else
-                {
-                    firstTeam = byte.Parse(aiNodes?.FirstOrDefault(e => e.Name.LocalName == "Ai" + firstId.ToString())?.Attribute("team")?.Value);
-                }
-                Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
-                foreach (var time in TimeData)
-                {
-                    if (time.Value != 4294967295)
-                    {
-                        byte aiTeam = 0;
-                        if (time.Key == 0)
-                        {
-                            aiTeam = ProfileService.ProfileConfig.Rider.Team;
-                        }
-                        else
-                        {
-                            aiTeam = byte.Parse(aiNodes?.FirstOrDefault(e => e.Name.LocalName == "Ai" + time.Key.ToString())?.Attribute("team")?.Value);
-                        }
-                        Console.WriteLine("ID: {0} Team: {1}", time.Key, aiTeam);
-                        if (aiTeam == 2)
-                        {
-                            blueTeam += teamPoints[Ranking[time.Key]];
-                        }
-                        else if (aiTeam == 1)
-                        {
-                            redTeam += teamPoints[Ranking[time.Key]];
-                        }
-                    }
-                }
-                if (gameType == 3)
-                {
-                    if (redTeam == blueTeam)
-                    {
-                        outPacket.WriteByte(firstTeam);
-                    }
-                    else
-                    {
-                        outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
-                    }
-                }
-                else if (gameType == 4)
+            }
+            if (room.GameType == 3)
+            {
+                if (redTeam == blueTeam)
                 {
                     outPacket.WriteByte(firstTeam);
                 }
                 else
                 {
-                    outPacket.WriteByte(0);
+                    outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
                 }
-                outPacket.WriteInt(1); // player count
-                outPacket.WriteInt(0); // player id
-                outPacket.WriteUInt(TimeData[0]);
-                outPacket.WriteByte();
-                outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Kart);
-                int playerRanking = Ranking[0];
-                int playerPoint = teamPoints[playerRanking];
-                Console.WriteLine("Player {0} 排名 {1} 得分 {2}", 0, playerRanking, playerPoint);
-                outPacket.WriteInt(playerRanking);
-                outPacket.WriteShort();
-                outPacket.WriteByte();
-                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP += 10000);
-                outPacket.WriteInt(10000); // Earned RP
-                outPacket.WriteInt(10000); // Earned Lucci
-                outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.Lucci += 10000);
-                outPacket.WriteBytes(new byte[29]);
-                if (gameType == 3 || gameType == 4)
+            }
+            else if (room.GameType == 4)
+            {
+                outPacket.WriteByte(firstTeam);
+            }
+            else
+            {
+                outPacket.WriteByte(0);
+            }
+
+            outPacket.WriteInt(room.GetPlayerCount()); // player count
+            for (int i = 0; i < 8; i++)
+            {
+                if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player p3)
                 {
-                    if (TimeData[0] == 4294967295)
+                    outPacket.WriteInt(p3.ID); // player id
+                    outPacket.WriteUInt(room.TimeData[p3.ID]);
+                    outPacket.WriteByte();
+                    outPacket.WriteShort(ProfileService.ProfileConfigs[p3.Nickname].RiderItem.Set_Kart);
+                    int playerRanking = room.Ranking[i];
+                    int playerPoint = teamPoints[playerRanking];
+                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.ID, playerRanking, playerPoint);
+                    outPacket.WriteInt(playerRanking);
+                    outPacket.WriteShort();
+                    outPacket.WriteByte();
+                    outPacket.WriteUInt(ProfileService.ProfileConfigs[p3.Nickname].Rider.RP += 10000);
+                    outPacket.WriteInt(10000); // Earned RP
+                    outPacket.WriteInt(10000); // Earned Lucci
+                    outPacket.WriteUInt(ProfileService.ProfileConfigs[p3.Nickname].Rider.Lucci += 10000);
+                    outPacket.WriteBytes(new byte[29]);
+                    if (room.GameType == 3 || room.GameType == 4)
                     {
-                        outPacket.WriteInt(0);
+                        if (room.TimeData[p3.ID] == 4294967295)
+                        {
+                            outPacket.WriteInt(0);
+                        }
+                        else
+                        {
+                            outPacket.WriteInt(playerPoint);
+                        }
+                        outPacket.WriteByte(p3.Team); // Team
                     }
                     else
                     {
-                        outPacket.WriteInt(playerPoint);
+                        outPacket.WriteInt(0);
+                        outPacket.WriteByte(0);
                     }
-                    outPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team); // Team
-                }
-                else
-                {
-                    outPacket.WriteInt(0);
+                    outPacket.WriteBytes(new byte[12]);
+                    outPacket.WriteInt(1);
                     outPacket.WriteByte(0);
+                    outPacket.WriteShort(ProfileService.ProfileConfigs[p3.Nickname].RiderItem.Set_Character);
+                    outPacket.WriteBytes(new byte[49]);
+                    outPacket.WriteHexString("FF");
+                    outPacket.WriteHexString("00 00 00 00 00 00 00 E3 23 07 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                    outPacket.WriteInt(ProfileService.ProfileConfigs[p3.Nickname].Rider.ClubMark_LOGO);
+                    outPacket.WriteBytes(new byte[39]);
                 }
-                outPacket.WriteBytes(new byte[12]);
-                outPacket.WriteInt(1);
-                outPacket.WriteByte(0);
-                outPacket.WriteShort(ProfileService.ProfileConfig.RiderItem.Set_Character);
-                outPacket.WriteByte(0);
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(12 - aiNodes.Count());
-                outPacket.WriteBytes(new byte[40]);
-                outPacket.WriteHexString("FF");
-                outPacket.WriteHexString("00 00 00 00 00 00 00 E3 23 07 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
-                outPacket.WriteBytes(new byte[39]);
-                outPacket.WriteInt(aiNodes.Count()); // AI count
-                foreach (var node in aiNodes)
-                {
-                    // 提取 Ai 后的数值部分（例如："Ai2" → "2"）
-                    string nodeName = node.Name.LocalName;
-                    int numberPart = int.Parse(nodeName.Substring(2)); // 从索引2开始截取（跳过"Ai"）
-                    outPacket.WriteInt(numberPart);
+            }
 
-                    if (AiTimeData.ContainsKey(numberPart) && AiTimeData[numberPart] > 0)
+            outPacket.WriteInt(room.GetAiCount()); // AI count
+            for (int i = 0; i < 8; i++)
+            {
+                if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a3)
+                {
+                    outPacket.WriteInt(a3.ID);
+                    if (room.TimeData.ContainsKey(a3.ID) && room.TimeData[a3.ID] > 0)
                     {
-                        outPacket.WriteUInt(AiTimeData[numberPart]);
+                        outPacket.WriteUInt(room.TimeData[a3.ID]);
                     }
                     else
                     {
@@ -281,18 +244,16 @@ namespace KartRider
                     outPacket.WriteByte();
 
                     // 获取 kart 属性值
-                    short kart = ParseShort(node.Attribute("kart"));
-                    outPacket.WriteShort(kart);
-                    int AiRanking = Ranking[numberPart];
+                    outPacket.WriteShort(a3.Kart);
+                    int AiRanking = room.Ranking[a3.ID];
                     int AiPoint = teamPoints[AiRanking];
-                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", numberPart, AiRanking, AiPoint);
+                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.ID, AiRanking, AiPoint);
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteHexString("A0 60");
-                    if (gameType == 3 || gameType == 4)
+                    if (room.GameType == 3 || room.GameType == 4)
                     {
-                        var aiTeam = byte.Parse(node.Attribute("team").Value ?? "0");
-                        outPacket.WriteByte(aiTeam); // Team
-                        if (AiTimeData[numberPart] == 4294967295)
+                        outPacket.WriteByte(a3.Team); // Team
+                        if (room.TimeData[a3.ID] == 4294967295)
                         {
                             outPacket.WriteInt(0);
                         }
@@ -307,1221 +268,1004 @@ namespace KartRider
                         outPacket.WriteInt(0);
                     }
                 }
-                Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
-                outPacket.WriteBytes(new byte[34]);
-                outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-                Parent.Client.Send(outPacket);
             }
-            using (OutPacket outPacket = new OutPacket("GameControlPacket"))
-            {
-                outPacket.WriteInt(4);
-                outPacket.WriteByte(0);
-                outPacket.WriteLong(EndTicks + 5000);
-                Parent.Client.Send(outPacket);
-                Console.WriteLine("EndTicks = {0}", EndTicks + 5000);
-            }
-            //Console.WriteLine("GameSlotPacket, Settle. Ticks = {0}", SettleTicks);
+            Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
+            outPacket.WriteBytes(new byte[34]);
+            outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
+            Parent.Client.Send(outPacket);
         }
-
-        static short ParseShort(XAttribute attribute)
+        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
         {
-            if (attribute == null || !short.TryParse(attribute.Value, out short result))
-            {
-                return 0; // 默认值或错误处理
-            }
-            return result;
+            outPacket.WriteInt(4);
+            outPacket.WriteByte(0);
+            outPacket.WriteLong(room.EndTicks + 5000);
+            Parent.Client.Send(outPacket);
         }
+        Console.WriteLine("EndTicks = {0}", room.EndTicks + 5000);
+    }
 
-        public static void Clientsession(SessionGroup Parent, uint hash, InPacket iPacket)
+    static short ParseShort(XAttribute attribute)
+    {
+        if (attribute == null || !short.TryParse(attribute.Value, out short result))
         {
-            if (hash == Adler32Helper.GenerateAdler32_ASCII("GameSlotPacket", 0))
+            return 0; // 默认值或错误处理
+        }
+        return result;
+    }
+
+    public static void Clientsession(SessionGroup Parent, string nickname, uint hash, InPacket iPacket)
+    {
+        fileName filename = new fileName();
+        if (nickname != "")
+        {
+            if (!FileName.FileNames.ContainsKey(nickname))
             {
-                iPacket.ReadInt();
-                uint item = iPacket.ReadUInt();
-                byte type = iPacket.ReadByte();
-                if (item == 4294967295 && iPacket.Length == 77)
+                FileName.Load(nickname);
+            }
+            filename = FileName.FileNames[nickname];
+        }
+        if (hash == Adler32Helper.GenerateAdler32_ASCII("GameSlotPacket", 0))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            iPacket.ReadInt();
+            uint item = iPacket.ReadUInt();
+            byte type = iPacket.ReadByte();
+            if (item == 0 && type == 12)
+            {
+                iPacket.ReadBytes(11);
+                var GopCourseHash = iPacket.ReadUInt();
+                var GoCourseHash = iPacket.ReadUInt();
+                if (GopCourseHash == Adler32Helper.GenerateAdler32_ASCII("GopCourse", 0) && GoCourseHash == Adler32Helper.GenerateAdler32_ASCII("GoCourse", 0))
                 {
-                    byte[] data1 = iPacket.ReadBytes(25);
-                    short id1 = iPacket.ReadShort();
-                    byte unk1 = iPacket.ReadByte();
-                    byte[] data2 = iPacket.ReadBytes(4);
-                    iPacket.ReadByte();
-                    iPacket.ReadShort();
-                    byte[] data3 = iPacket.ReadBytes(29);
-                    short skill = GameSupport.RandomItemSkill(gameType);
-                    using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
+                    iPacket.ReadBytes(8);
+                    var goal = iPacket.ReadString(false);
+                    if (goal == "goal")
                     {
-                        oPacket.WriteInt();
-                        oPacket.WriteUInt(item);
-                        oPacket.WriteByte(type);
-                        oPacket.WriteBytes(data1);
-                        oPacket.WriteShort(skill);
-                        oPacket.WriteByte(1);
-                        oPacket.WriteBytes(data2);
-                        oPacket.WriteByte(2);
-                        oPacket.WriteShort(skill);
-                        oPacket.WriteBytes(data3);
-                        Parent.Client.Send(oPacket);
-                    }
-                }
-                if (type == 11)
-                {
-                    var uni = iPacket.ReadByte();
-                    var skill = iPacket.ReadShort();
-                    List<short> skills = V2Spec.GetSkills();
-                    if (skills.Contains(13) && skill == 3)
-                    {
-                        GameSupport.AttackedSkill(Parent, type, uni, 10);
-                    }
-                    if (kartConfig.SkillAttacked.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
-                    {
-                        if (kartSkills.TryGetValue(skill, out var targetSkill))
+                        var ArrivalTicks = iPacket.ReadUInt();
+                        var slotId = RoomManager.GetPlayerSlotId(roomId, nickname);
+                        if (slotId != -1)
                         {
-                            GameSupport.AttackedSkill(Parent, type, uni, targetSkill);
+                            if (room.EndTicks == 0)
+                            {
+                                room.EndTicks = ArrivalTicks + 5000;
+                                using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                                {
+                                    oPacket.WriteInt(3);
+                                    oPacket.WriteByte(0);
+                                    oPacket.WriteLong(room.EndTicks);
+                                    Parent.Client.Send(oPacket);
+                                }
+                                Set_settleTrigger(Parent, nickname, filename);
+                            }
                         }
+                        Console.WriteLine("GameSlotPacket, Arrivaled. Ticks = {0}", ArrivalTicks);
                     }
-                    Console.WriteLine("GameSlotPacket, Attacked. Skill = {0}", skill);
                 }
-                if (type == 18)
-                {
-                    var uni = iPacket.ReadByte();
-                    iPacket.ReadShort();
-                    iPacket.ReadByte();
-                    var skill = iPacket.ReadShort();
-                    List<short> skills = V2Spec.GetSkills();
-                    if (skills.Contains(14) && skill == 5)
-                    {
-                        GameSupport.AddItemSkill(Parent, 6);
-                    }
-                    if (kartConfig.SkillMappings.TryGetValue(ProfileService.ProfileConfig.RiderItem.Set_Kart, out var kartSkills))
-                    {
-                        if (kartSkills.TryGetValue(skill, out var targetSkill))
-                        {
-                            GameSupport.AddItemSkill(Parent, targetSkill);
-                        }
-                    }
-                    Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
-                }
-                // if (item == 0 && type == 12)
-                // {
-                //     iPacket.ReadBytes(7);
-                //     var nextpacketlenth = iPacket.ReadInt();
-                //     var nextpackethash = iPacket.ReadUInt();
-                //     if (nextpackethash == Adler32Helper.GenerateAdler32_ASCII("GopCourse", 0))
-                //     {
-                //         iPacket.ReadBytes(nextpacketlenth - 4 - 4);
-                //         ArrivalTicks = iPacket.ReadUInt();
-                //     }
-                //     Console.WriteLine("GameSlotPacket, Arrivaled. Ticks = {0}", ArrivalTicks);
-                // }
-                return;
             }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameControlPacket"))
+            else if (item == 4294967295 && iPacket.Length == 77)
             {
-                var state = iPacket.ReadByte();
-                //start
-                if (state == 0)
+                byte[] data1 = iPacket.ReadBytes(25);
+                short id1 = iPacket.ReadShort();
+                byte unk1 = iPacket.ReadByte();
+                byte[] data2 = iPacket.ReadBytes(4);
+                iPacket.ReadByte();
+                iPacket.ReadShort();
+                byte[] data3 = iPacket.ReadBytes(29);
+                short skill = GameSupport.RandomItemSkill(nickname, room.GameType);
+                using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                 {
-                    BootTicksNow = GetUpTime();
-                    StartTicks = BootTicksNow + 10000;
-                    //StartTicks += (StartTicks == 0) ? (BootTicksNow + 10000) : (BootTicksNow - BootTicksPrev);
-                    //BootTicksPrev = BootTicksNow;
-                    using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
-                    {
-                        oPacket.WriteInt();
-                        Parent.Client.Send(oPacket);
-                    }
-                    using (OutPacket oPacket = new OutPacket("GameControlPacket"))
-                    {
-                        oPacket.WriteInt(1);
-                        oPacket.WriteByte(0);
-                        oPacket.WriteLong(StartTicks);
-                        Parent.Client.Send(oPacket);
-                    }
-                    AiTimeData = new Dictionary<int, uint>();
-                    FinishTime = 0;
-                    Console.WriteLine("StartTicks = {0}", StartTicks);
-                }
-                //finish
-                else if (state == 2)
-                {
-                    iPacket.ReadInt();
-                    FinishTime = iPacket.ReadUInt();
-                    using (OutPacket oPacket = new OutPacket("GameRaceTimePacket"))
-                    {
-                        oPacket.WriteInt();
-                        oPacket.WriteUInt(FinishTime);
-                        Parent.Client.Send(oPacket);
-                    }
-                    using (OutPacket oPacket = new OutPacket("GameControlPacket"))
-                    {
-                        EndTicks = GetUpTime() + 10000;
-                        oPacket.WriteInt(3);
-                        oPacket.WriteByte(0);
-                        oPacket.WriteLong(EndTicks);
-                    }
-                    //Console.Write("GameControlPacket, Finish. Finish Time = {0}", FinishTime);
-                    //Console.WriteLine(" , End - Start Ticks : {0}", EndTicks - StartTicks - 15000);
-                    Set_settleTrigger(Parent);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChGetRoomListRequestPacket"))
-            {
-                using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
-                {
-                    //oPacket.WriteHexString("0300000000000000030000009D02070000002759B65B004E778DA9737E002100F603CA34010107000801B80003000000DB02070000002759B65B004E778DA9737E002100050000000001070108030000000000009A02070000002759B65B004E778DA9737E00210005000000000107010202000000000000");
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    Parent.Client.Send(oPacket);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelSwitch", 0))
-            {
-                //Console.WriteLine("Channel Switch, avaliable = {0}", iPacket.Available);
-                //Console.WriteLine(BitConverter.ToString(iPacket.ReadBytes(iPacket.Available)).Replace("-", " "));
-                //iPacket.ReadInt();
-                //iPacket.ReadBytes(14);
-                byte[] DateTime1 = iPacket.ReadBytes(18);
-                byte channel = iPacket.ReadByte();
-                Console.WriteLine("Channel Switch, channel = {0}", channel);
-                int channeldata1 = 0;
-                channeldata1 = 1;
-                channeldata2 = 4;
-                //StartGameRacing.GameRacing_SpeedType = 4;
-                if (channel == 72 || channel == 55 || channel == 63)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        //oPacket.WriteInt(channeldata1);
-                        oPacket.WriteInt(4);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 7;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
-                    gameType = 1;
-                }
-                else if (channel == 73 || channel == 35)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        //oPacket.WriteInt(channeldata1);
-                        oPacket.WriteInt(3);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 7;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
-                    gameType = 3;
-                }
-                else if (channel == 25)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(4);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 4;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
-                    gameType = 1;
-                }
-                else if (channel == 26)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(3);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 4;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 0;
-                    gameType = 3;
-                }
-                else if (channel == 70 || channel == 57 || channel == 64)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(1);
-                        oPacket.WriteInt(2);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 7;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 1;
-                    gameType = 2;
-                }
-                else if (channel == 71 || channel == 38)
-                {
-                    using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-                    {
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(1);
-                        oPacket.WriteEndPoint(IPAddress.Parse("127.0.0.1"), (ushort)RouterListener.port);
-                        Parent.Client.Send(oPacket);
-                    }
-                    StartGameData.StartTimeAttack_SpeedType = 7;
-                    StartGameData.StartTimeAttack_RandomTrackGameType = 1;
-                    gameType = 4;
-                }
-                else
-                {
-                    using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
-                    {
-                        outPacket.WriteInt(0);
-                        outPacket.WriteInt(0);
-                        outPacket.WriteInt(0);
-                        outPacket.WriteInt(0);
-                        outPacket.WriteInt(0);
-                        outPacket.WriteByte(0);
-                        Parent.Client.Send(outPacket);
-                    }
-                }
-                //GameSupport.OnDisconnect();
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelMovein", 0))
-            {
-                using (OutPacket oPacket = new OutPacket("PrChannelMoveIn"))
-                {
-                    //oPacket.WriteHexString("01 3d a4 3d 49 8f 99 3d a4 3d 49 90 99");
-                    oPacket.WriteByte(1);
-                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39311);
-                    oPacket.WriteEndPoint(IPAddress.Parse(RouterListener.sIP), 39312);
-                    Parent.Client.Send(oPacket);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendPacket", 0))
-            {
-                using (OutPacket oPacket = new OutPacket("PrMissionAttendPacket"))
-                {
-                    oPacket.WriteInt(3);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(15);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(-1);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(109);
-                    Parent.Client.Send(oPacket);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChCreateRoomRequestPacket", 0))
-            {
-                Console.Write("Avaiable = {0}", iPacket.Available);
-                RoomName = iPacket.ReadString();    //room name
-                Console.WriteLine(" RoomName = {0}, len = {1}", RoomName, RoomName.Length);
-                iPacket.ReadInt();
-                var unk1 = iPacket.ReadByte(); //7c
-                iPacket.ReadInt();
-                var Playernum = iPacket.ReadInt();
-                iPacket.ReadInt();
-                iPacket.ReadInt();
-                RoomUnkBytes = iPacket.ReadBytes(32);
-                var unk2 = iPacket.ReadBytes(29);
-                byte AiSwitch = iPacket.ReadByte();
-                using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
-                {
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte(2);
-                    oPacket.WriteByte(unk1);
-                    Parent.Client.Send(oPacket);
-                }
-                if (Playernum > 0 && AiSwitch == 6)
-                {
-                    // 读取 XML 文件
-                    XDocument doc = XDocument.Load(FileName.AI_LoadFile);
-
-                    string targetParentNode = "";
-                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-                    {
-                        targetParentNode = "SpeedAI";
-                    }
-                    else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                    {
-                        targetParentNode = "ItemAI";
-                    }
-
-                    // 获取目标父节点
-                    XElement targetParent = doc.Root?.Element(targetParentNode);
-
-                    // 清空所有 Ai* 节点（保留 Spec）
-                    RemoveAiNodes(targetParent);
-
-                    // 新增 AI 节点数量
-                    AddAiNodes(targetParent, Playernum - 1);
-
-                    // 保存修改后的 XML 文件
-                    doc.Save(FileName.AI_LoadFile);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrFirstRequestPacket"))
-            {
-                GrSessionDataPacket(Parent);
-                //Thread.Sleep(10);
-                GrSlotDataPacket(Parent);
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTrackPacket"))
-            {
-                track = iPacket.ReadUInt();
-                iPacket.ReadInt();
-                RoomUnkBytes = iPacket.ReadBytes(32);
-                Console.WriteLine("Gr Track Changed : {0}", RandomTrack.GetTrackName(track));
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestSetSlotStatePacket"))
-            {
-                int Data = iPacket.ReadInt();
-                GrSlotDataPacket(Parent);
-                //GrSlotStatePacket(Data);
-                GrReplySetSlotStatePacket(Parent, Data);
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestClosePacket"))
-            {
-                using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
-                {
-                    //oPacket.WriteHexString("ff 76 05 5d 01");
-                    oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteInt(7);
-                    oPacket.WriteInt(7);
-                    oPacket.WriteInt(0);
-                    oPacket.WriteInt(0);
-                    Parent.Client.Send(oPacket);
-                }
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestStartPacket"))
-            {
-                using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
-                {
-                    oPacket.WriteInt(0);
-                    Parent.Client.Send(oPacket);
-                }
-                using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
-                {
-                    StartGameData.StartTimeAttack_Track = track;
-                    RandomTrack.SetGameType(Parent);
-
-                    oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSessionDataPacket")));
-                    GrSessionDataPacket(Parent, oPacket);
-
-                    oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSlotDataPacket")));
-                    GrSlotDataPacket(Parent, oPacket);
-
-                    //kart data
-                    StartGameData.GetKartSpac(oPacket);
-
-                    //AI data
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(FileName.AI_LoadFile);
-                    int listCount = 0;
-                    XmlNodeList lis = null;
-                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-                    {
-                        lis = doc.SelectNodes(
-                        "//SpeedAI/*[starts-with(name(), 'Ai') " +
-                        "and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') " +
-                        "and not(contains(name(), 'spec'))]"
-                        );
-                    }
-                    else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                    {
-                        lis = doc.SelectNodes(
-                        "//ItemAI/*[starts-with(name(), 'Ai') " +
-                        "and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') " +
-                        "and not(contains(name(), 'spec'))]"
-                        );
-                    }
-                    //XmlNodeList lis = doc.SelectNodes("//*[starts-with(name(), 'Ai') and contains(translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ai') and not(contains(name(), 'data'))]");
-                    if (lis.Count > 0)
-                    {
-                        listCount = lis.Count;
-                    }
-                    oPacket.WriteInt(listCount); //AI count
-                    XmlNodeList Data = null;
-                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-                    {
-                        Data = doc.GetElementsByTagName("SpeedSpec");
-                    }
-                    else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                    {
-                        Data = doc.GetElementsByTagName("ItemSpec");
-                    }
-                    if (Data.Count > 0)
-                    {
-                        for (int i = 0; i < listCount; i++)
-                        {
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[0].Value));
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[1].Value));
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[2].Value));
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[3].Value));
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[4].Value));
-                            oPacket.WriteEncFloat(float.Parse(Data[0].Attributes[5].Value));
-                        }
-                    }
-                    oPacket.WriteUInt(StartGameData.StartTimeAttack_Track); //track name hash
-                    oPacket.WriteInt(10000);
-
                     oPacket.WriteInt();
-                    oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("MissionInfo")));
-                    oPacket.WriteHexString("00000000000000000000FFFFFFFF000000000000000000");
-                    //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
-                    Parent.Client.Send(oPacket);
-                }
-                //StartGameRacing.KartSpecLog();
-                Console.WriteLine("Track : {0}", RandomTrack.GetTrackName(StartGameData.StartTimeAttack_Track));
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("PcReportStateInGame", 0))
-            {
-                return;
-            }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChLeaveRoomRequestPacket"))
-            {
-                using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
-                {
+                    oPacket.WriteUInt(item);
+                    oPacket.WriteByte(type);
+                    oPacket.WriteBytes(data1);
+                    oPacket.WriteShort(skill);
                     oPacket.WriteByte(1);
+                    oPacket.WriteBytes(data2);
+                    oPacket.WriteByte(2);
+                    oPacket.WriteShort(skill);
+                    oPacket.WriteBytes(data3);
                     Parent.Client.Send(oPacket);
                 }
-                return;
             }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestBasicAiPacket"))
+            if (type == 11)
             {
-                int unk1 = iPacket.ReadInt();
-                Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
-                var selector = new DictionaryRandomSelector();
-                List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 1);
-                List<short> randomKartIds = new List<short>();
-                string AiXml = "";
-                if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+                var uni = iPacket.ReadByte();
+                var skill = iPacket.ReadShort();
+                List<short> skills = V2Specs.GetSkills(nickname);
+                if (skills.Contains(13) && skill == 3)
                 {
-                    randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, true, false);
-                    AiXml = "SpeedAI";
+                    GameSupport.AttackedSkill(Parent, nickname, type, uni, 10);
                 }
-                else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
+                if (kartConfig.SkillAttacked.TryGetValue(ProfileService.ProfileConfigs[nickname].RiderItem.Set_Kart, out var kartSkills))
                 {
-                    randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, false, true);
-                    AiXml = "ItemAI";
-                }
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(FileName.AI_LoadFile);
-                XmlNode ai = xmlDoc.SelectSingleNode("//" + AiXml + "/Ai" + unk1.ToString());
-                if (ai != null)
-                {
-                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    if (kartSkills.TryGetValue(skill, out var targetSkill))
                     {
-                        oPacket.WriteInt(1);
-                        oPacket.WriteByte(1);
-                        oPacket.WriteInt(unk1);
-                        oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                        Parent.Client.Send(oPacket);
-                    }
-                    XmlNode parentNode = ai.ParentNode;
-                    if (parentNode != null)
-                    {
-                        parentNode.RemoveChild(ai);
-                    }
-                    xmlDoc.Save(FileName.AI_LoadFile);
-                }
-                else
-                {
-                    short targetCharId = randomCharIds[0];
-                    short targetKartId = randomKartIds[0];
-                    if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
-                    {
-                        short? ridIndex = selector.GetRandomRidIndex(targetChar);
-                        short? balloonId = 0;
-                        short? headbandId = 0;
-                        short? goggleId = 0;
-                        if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                        {
-                            balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
-                            headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
-                            goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
-                        }
-                        using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
-                        {
-                            oPacket.WriteInt(0);
-                            oPacket.WriteByte(1);
-                            oPacket.WriteInt(unk1);
-                            oPacket.WriteShort(targetCharId);
-                            oPacket.WriteShort(ridIndex ?? 0);
-                            oPacket.WriteShort(targetKartId);
-                            oPacket.WriteShort(balloonId ?? 0);
-                            oPacket.WriteShort(headbandId ?? 0);
-                            oPacket.WriteShort(goggleId ?? 0);
-                            oPacket.WriteShort(0);
-                            oPacket.WriteShort(0);
-                            oPacket.WriteByte(0);
-                            oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                            Parent.Client.Send(oPacket);
-                        }
-                        try
-                        {
-                            // 查找根节点
-                            XmlNode rootNode = xmlDoc.DocumentElement;
-                            if (rootNode != null)
-                            {
-                                // 查找节点
-                                XmlNode AiNode = rootNode.SelectSingleNode(AiXml);
-                                if (AiNode != null)
-                                {
-                                    // 查找是否已存在Ai1元素
-                                    XmlNode existing = AiNode.SelectSingleNode("Ai" + unk1.ToString());
-                                    if (existing != null)
-                                    {
-                                        existing.Attributes["character"].Value = targetCharId.ToString();
-                                        existing.Attributes["rid"].Value = (ridIndex ?? 0).ToString();
-                                        existing.Attributes["kart"].Value = targetKartId.ToString();
-                                        existing.Attributes["balloon"].Value = (balloonId ?? 0).ToString();
-                                        existing.Attributes["headBand"].Value = (headbandId ?? 0).ToString();
-                                        existing.Attributes["goggle"].Value = (goggleId ?? 0).ToString();
-                                        if (unk1 < 4)
-                                        {
-                                            existing.Attributes["team"].Value = "2";
-                                        }
-                                        else
-                                        {
-                                            existing.Attributes["team"].Value = "1";
-                                        }
-                                        Console.WriteLine("Ai" + unk1.ToString() + "元素已成功更新");
-                                    }
-                                    else
-                                    {
-                                        XmlElement aiElement = xmlDoc.CreateElement("Ai" + unk1.ToString());
-                                        aiElement.SetAttribute("character", targetCharId.ToString());
-                                        aiElement.SetAttribute("rid", (ridIndex ?? 0).ToString());
-                                        aiElement.SetAttribute("kart", targetKartId.ToString());
-                                        aiElement.SetAttribute("balloon", (balloonId ?? 0).ToString());
-                                        aiElement.SetAttribute("headBand", (headbandId ?? 0).ToString());
-                                        aiElement.SetAttribute("goggle", (goggleId ?? 0).ToString());
-                                        if (unk1 < 4)
-                                        {
-                                            aiElement.SetAttribute("team", "2");
-                                        }
-                                        else
-                                        {
-                                            aiElement.SetAttribute("team", "1");
-                                        }
-                                        AiNode.AppendChild(aiElement);
-                                        Console.WriteLine("Ai" + unk1.ToString() + "元素已成功添加");
-                                    }
-                                    xmlDoc.Save(FileName.AI_LoadFile);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("未找到节点" + AiXml);
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("XML文档没有根节点");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("操作出错: " + ex.Message);
-                        }
+                        GameSupport.AttackedSkill(Parent, nickname, type, uni, targetSkill);
                     }
                 }
-                using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
+                Console.WriteLine("GameSlotPacket, Attacked. Skill = {0}", skill);
+            }
+            else if (type == 18)
+            {
+                var uni = iPacket.ReadByte();
+                iPacket.ReadShort();
+                iPacket.ReadByte();
+                var skill = iPacket.ReadShort();
+                List<short> skills = V2Specs.GetSkills(nickname);
+                if (skills.Contains(14) && skill == 5)
                 {
-                    oPacket.WriteByte(1);
-                    oPacket.WriteHexString("2CFB6605");
+                    GameSupport.AddItemSkill(Parent, nickname, 6);
+                }
+                if (kartConfig.SkillMappings.TryGetValue(ProfileService.ProfileConfigs[nickname].RiderItem.Set_Kart, out var kartSkills))
+                {
+                    if (kartSkills.TryGetValue(skill, out var targetSkill))
+                    {
+                        GameSupport.AddItemSkill(Parent, nickname, targetSkill);
+                    }
+                }
+                Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameControlPacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            var state = iPacket.ReadByte();
+            //start
+            long StartTicks = GetUpTime() + 10000;
+            room.StartTicks = StartTicks;
+            if (state == 0)
+            {
+                using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
+                {
+                    oPacket.WriteInt();
                     Parent.Client.Send(oPacket);
                 }
-                return;
+                using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                {
+                    oPacket.WriteInt(1);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteLong(StartTicks - MultyPlayer.diff[nickname]);
+                    Parent.Client.Send(oPacket);
+                }
+                room.TimeData = new Dictionary<int, uint>();
+                room.EndTicks = 0;
+                Console.WriteLine("StartTicks = {0}", StartTicks);
             }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameAiGoalinPacket"))
+            //finish
+            else if (state == 2)
             {
-                var AiNum = iPacket.ReadInt();
-                var AiTime = iPacket.ReadUInt();
+                iPacket.ReadInt();
+                var time = iPacket.ReadUInt();
                 using (OutPacket oPacket = new OutPacket("GameRaceTimePacket"))
                 {
-                    oPacket.WriteInt(AiNum);
-                    oPacket.WriteUInt(AiTime);
+                    oPacket.WriteInt();
+                    oPacket.WriteUInt(time);
                     Parent.Client.Send(oPacket);
-                    Console.WriteLine("AiTime = {0}", AiTime);
                 }
-                if (AiTimeData.Count == 0 && FinishTime == 0)
+                var slotId = RoomManager.GetPlayerSlotId(roomId, nickname);
+                if (slotId != -1)
                 {
-                    using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                    var player = RoomManager.GetPlayer(roomId, nickname);
+                    room.TimeData.TryAdd(player.ID, time);
+                    Console.WriteLine("GameControlPacket, slotId = {0}, Time = {1}", slotId, time);
+                }
+                if (room.EndTicks == 0)
+                {
+                    room.EndTicks = StartTicks + time + 5000;
+                    Set_settleTrigger(Parent, nickname, filename);
+                }
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChGetRoomListRequestPacket"))
+        {
+            int page = iPacket.ReadInt();
+            var rooms = RoomManager.GetRoomsByPage(page);
+            using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
+            {
+                Console.WriteLine($"Room Count: {RoomManager._rooms.Count}");
+                oPacket.WriteInt(RoomManager._rooms.Count); // 房间总数
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(rooms.Count); // 房间数量
+                foreach (var _room in rooms)
+                {
+                    oPacket.WriteShort((short)_room.Key);
+                    oPacket.WriteString(_room.Value.RoomName); // 房间名称
+                    oPacket.WriteUInt(_room.Value.track); // 赛道
+                    oPacket.WriteByte(_room.Value.Lock); // 是否上锁
+                    oPacket.WriteByte(_room.Value.GameType); // 模式
+                    oPacket.WriteByte(_room.Value.SpeedType); // 速度模式
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(8); // 房间最大人数
+                    oPacket.WriteByte((byte)_room.Value.GetCount()); // 房间人数
+                    oPacket.WriteHexString("00 00 00 00 00 00");
+                }
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelSwitch", 0))
+        {
+            Nickname = nickname;
+
+            IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
+            if (serverEndPoint == null) return;
+
+            int length = iPacket.ReadInt();
+            iPacket.ReadBytes(length);
+            byte channel = iPacket.ReadByte();
+            Console.WriteLine("Channel Switch, channel = {0}", channel);
+            //StartGameRacing.GameRacing_SpeedType = 4;
+            if (channel == 72 || channel == 55 || channel == 63)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(0);
+                    //oPacket.WriteInt(channeldata1);
+                    oPacket.WriteInt(4);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 0;
+                roomList[nickname].SpeedType = 7;
+                roomList[nickname].GameType = 1;
+            }
+            else if (channel == 73 || channel == 35)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(0);
+                    //oPacket.WriteInt(channeldata1);
+                    oPacket.WriteInt(3);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 0;
+                roomList[nickname].SpeedType = 7;
+                roomList[nickname].GameType = 3;
+            }
+            else if (channel == 25)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(0);
+                    oPacket.WriteInt(4);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 0;
+                roomList[nickname].SpeedType = 4;
+                roomList[nickname].GameType = 1;
+            }
+            else if (channel == 26)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(0);
+                    oPacket.WriteInt(3);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 0;
+                roomList[nickname].SpeedType = 4;
+                roomList[nickname].GameType = 3;
+            }
+            else if (channel == 70 || channel == 57 || channel == 64)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(2);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 1;
+                roomList[nickname].SpeedType = 7;
+                roomList[nickname].GameType = 2;
+            }
+            else if (channel == 71 || channel == 38)
+            {
+                using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
+                {
+                    oPacket.WriteInt(0);
+                    oPacket.WriteInt(1);
+                    oPacket.WriteEndPoint(serverEndPoint);
+                    Parent.Client.Send(oPacket);
+                }
+                roomList.TryAdd(nickname, new RoomList());
+                roomList[nickname].RandomTrackGameType = 1;
+                roomList[nickname].SpeedType = 7;
+                roomList[nickname].GameType = 4;
+            }
+            else
+            {
+                using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
+                {
+                    outPacket.WriteInt(0);
+                    outPacket.WriteInt(0);
+                    outPacket.WriteInt(0);
+                    outPacket.WriteInt(0);
+                    outPacket.WriteInt(0);
+                    outPacket.WriteByte(0);
+                    Parent.Client.Send(outPacket);
+                }
+            }
+            //GameSupport.OnDisconnect();
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChannelMovein", 0))
+        {
+            IPEndPoint clientEndPoint = Parent.Client.Socket.RemoteEndPoint as IPEndPoint;
+            if (clientEndPoint == null) return;
+            string clientId = ClientManager.GetClientId(clientEndPoint);
+            var ClientGroup = ClientManager.ClientGroups[clientId];
+            if (ClientGroup.Nickname == "" && Nickname != "")
+            {
+                ClientGroup.Nickname = Nickname;
+            }
+            using (OutPacket oPacket = new OutPacket("PrChannelMoveIn"))
+            {
+                //oPacket.WriteHexString("01 3d a4 3d 49 8f 99 3d a4 3d 49 90 99");
+                oPacket.WriteByte(1);
+                oPacket.WriteEndPoint(RouterListener.sIP, 39311);
+                oPacket.WriteEndPoint(RouterListener.sIP, 39312);
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendPacket", 0))
+        {
+            using (OutPacket oPacket = new OutPacket("PrMissionAttendPacket"))
+            {
+                oPacket.WriteInt(3);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(15);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(-1);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(109);
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChCreateRoomRequestPacket", 0))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            string RoomName = iPacket.ReadString();    //room name
+            Console.WriteLine("RoomName = {0}, len = {1}", RoomName, RoomName.Length);
+            string Password = iPacket.ReadString();
+            Console.WriteLine("Password = {0}, len = {1}", Password, Password.Length);
+            var unk1 = iPacket.ReadByte(); //7c
+            iPacket.ReadInt();
+            var AiCount = iPacket.ReadInt();
+            Console.WriteLine("AiCount = {0}", AiCount);
+            iPacket.ReadInt();
+            iPacket.ReadInt();
+            byte[] RoomUnkBytes = iPacket.ReadBytes(32);
+            var unk2 = iPacket.ReadBytes(29);
+            byte AiSwitch = iPacket.ReadByte();
+            Console.WriteLine("AiSwitch = {0}", AiSwitch);
+            using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
+            {
+                oPacket.WriteByte(1);
+                oPacket.WriteByte(1);
+                oPacket.WriteByte(2);
+                oPacket.WriteByte(unk1);
+                Parent.Client.Send(oPacket);
+            }
+            var roomData = roomList[nickname];
+            var RoomId = RoomManager.CreateRoom();
+            var Room = RoomManager.GetRoom(RoomId);
+            Console.WriteLine("CreateRoom = {0}", RoomId);
+            if (roomData.GameType == 3 || roomData.GameType == 4)
+            {
+                bool CreateBool = RoomManager.AddPlayer(RoomId, nickname, 2, 2);
+                if (CreateBool == false)
+                {
+                    Console.WriteLine("CreateRoom Failed");
+                }
+            }
+            else
+            {
+                bool CreateBool = RoomManager.AddPlayer(RoomId, nickname, 0, 2);
+                if (CreateBool == false)
+                {
+                    Console.WriteLine("CreateRoom Failed");
+                }
+            }
+            Room.RoomName = RoomName;
+            if (Password != "")
+            {
+                room.Lock = 1;
+            }
+            Room.LockPwd = Password;
+            Room.RoomUnkBytes = RoomUnkBytes;
+            Room.SpeedType = roomData.SpeedType;
+            Room.GameType = roomData.GameType;
+            Room.RandomTrackGameType = roomData.RandomTrackGameType;
+            if (AiCount > 0 && AiSwitch == 6)
+            {
+                // 新增 AI 数量
+                AddAi(Room, AiCount - 1, roomData.RandomTrackGameType);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrFirstRequestPacket"))
+        {
+            GrSessionDataPacket(Parent, nickname);
+            //Thread.Sleep(10);
+            GrSlotDataPacket(Parent, nickname);
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTrackPacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            room.track = iPacket.ReadUInt();
+            iPacket.ReadInt();
+            room.RoomUnkBytes = iPacket.ReadBytes(32);
+            Console.WriteLine("Gr Track Changed : {0}", RandomTrack.GetTrackName(room.track));
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestSetSlotStatePacket"))
+        {
+            int Data = iPacket.ReadInt();
+            GrSlotDataPacket(Parent, nickname);
+            //GrSlotStatePacket(Parent, Data);
+            GrReplySetSlotStatePacket(Parent, nickname, Data);
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestClosePacket"))
+        {
+            using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
+            {
+                //oPacket.WriteHexString("ff 76 05 5d 01");
+                oPacket.WriteUInt(Adler32Helper.GenerateAdler32_ASCII(nickname, 0));
+                oPacket.WriteByte(1);
+                oPacket.WriteInt(7);
+                oPacket.WriteInt(7);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestStartPacket"))
+        {
+            using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
+            {
+                oPacket.WriteInt(0);
+                Parent.Client.Send(oPacket);
+            }
+            using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
+            {
+                int roomId = RoomManager.TryGetRoomId(nickname);
+                var room = RoomManager.GetRoom(roomId);
+                if (room == null)
+                {
+                    Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+                }
+                oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSessionDataPacket")));
+                GrSessionDataPacket(Parent, nickname, oPacket);
+
+                oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSlotDataPacket")));
+                GrSlotDataPacket(Parent, nickname, oPacket);
+                oPacket.WriteInt();
+
+                //kart data
+                StartGameData.GetKartSpac(oPacket, nickname);
+
+                oPacket.WriteInt(room.GetAiCount()); //AI count
+                if (room.GetAiCount() > 0)
+                {
+                    for (int i = 0; i < room.GetAiCount(); i++)
                     {
-                        EndTicks = GetUpTime() + 10000;
-                        oPacket.WriteInt(3);
-                        oPacket.WriteByte(0);
-                        oPacket.WriteLong(EndTicks);
+                        var AiSpec = AI.GetAISpec(room.RandomTrackGameType);
+                        oPacket.WriteEncFloat(AiSpec[0]);
+                        oPacket.WriteEncFloat(AiSpec[1]);
+                        oPacket.WriteEncFloat(AiSpec[2]);
+                        oPacket.WriteEncFloat(AiSpec[3]);
+                        oPacket.WriteEncFloat(AiSpec[4]);
+                        oPacket.WriteEncFloat(AiSpec[5]);
+                    }
+                }
+                uint track = RandomTrack.GetRandomTrack(nickname, room.RandomTrackGameType, room.track);
+                oPacket.WriteUInt(track); //track name hash
+                oPacket.WriteInt(10000);
+
+                oPacket.WriteInt();
+                oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("MissionInfo")));
+                oPacket.WriteHexString("00000000000000000000FFFFFFFF000000000000000000");
+                //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
+                Console.WriteLine("Track : {0}", RandomTrack.GetTrackName(track));
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("PcReportStateInGame", 0))
+        {
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChLeaveRoomRequestPacket"))
+        {
+            using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
+            {
+                oPacket.WriteByte(1);
+                Parent.Client.Send(oPacket);
+            }
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            int slotId = RoomManager.GetPlayerSlotId(roomId, nickname);
+            if (slotId != -1)
+            {
+                RoomManager.RemovePlayer(roomId, (byte)slotId);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestBasicAiPacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            int unk1 = iPacket.ReadInt();
+            Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
+            byte team = (byte)((unk1 < 4) ? 2 : 1);
+            var selector = new DictionaryRandomSelector();
+            List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 1);
+            List<short> randomKartIds = new List<short>();
+            if (room.RandomTrackGameType == 0)
+            {
+                randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, true, false);
+            }
+            else if (room.RandomTrackGameType == 1)
+            {
+                randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, false, true);
+            }
+            if (RoomManager.TryGetSlotStatus(roomId, (byte)unk1) == SlotStatus.Ai)
+            {
+                using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                {
+                    oPacket.WriteInt(1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteInt(unk1);
+                    oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                    Parent.Client.Send(oPacket);
+                }
+                room.RemoveMember((byte)unk1, out bool DeleteAi);
+            }
+            else
+            {
+                short targetCharId = randomCharIds[0];
+                short targetKartId = randomKartIds[0];
+                if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
+                {
+                    short? ridIndex = selector.GetRandomRidIndex(targetChar);
+                    short? balloonId = 0;
+                    short? headbandId = 0;
+                    short? goggleId = 0;
+                    if (room.RandomTrackGameType == 1)
+                    {
+                        balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
+                        headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
+                        goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                    }
+                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteByte(1);
+                        oPacket.WriteInt(unk1);
+                        oPacket.WriteShort(targetCharId);
+                        oPacket.WriteShort(ridIndex ?? 0);
+                        oPacket.WriteShort(targetKartId);
+                        oPacket.WriteShort(balloonId ?? 0);
+                        oPacket.WriteShort(headbandId ?? 0);
+                        oPacket.WriteShort(goggleId ?? 0);
+                        if (room.GameType == 3 || room.GameType == 4)
+                        {
+                            oPacket.WriteByte(team);
+                        }
+                        else
+                        {
+                            oPacket.WriteByte(0);
+                        }
+                        oPacket.WriteShort(0);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
                         Parent.Client.Send(oPacket);
                     }
-                    //Console.Write("GameControlPacket, Finish. Finish Time = {0}", AiTime);
-                    //Console.WriteLine(" , End - Start Ticks : {0}", AiTime - StartTicks);
-                    Set_settleTrigger(Parent);
+                    room.TrySetAi((byte)unk1, new Ai
+                    {
+                        Character = targetCharId,
+                        Rid = ridIndex ?? 0,
+                        Kart = targetKartId,
+                        Balloon = balloonId ?? 0,
+                        HeadBand = headbandId ?? 0,
+                        Goggle = goggleId ?? 0,
+                        Team = team
+                    });
                 }
-                if (!AiTimeData.ContainsKey(AiNum))
-                {
-                    AiTimeData.Add(AiNum, AiTime);
-                }
-                return;
             }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameTeamBoosterRequestAddGaugePacket"))
+            using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
             {
-                var team = iPacket.ReadByte();
-                var value = iPacket.ReadFloat();
-                Console.WriteLine("GameTeamBoosterRequestAddGaugePacket, teams = {0}, value = {1}", team, value);
-                gauge += (value / 8000f);
-                if (gauge > 1f) gauge = 1f;
+                oPacket.WriteByte(1);
+                oPacket.WriteHexString("2CFB6605");
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameAiGoalinPacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            var Id = iPacket.ReadInt();
+            var Time = iPacket.ReadUInt();
+            using (OutPacket oPacket = new OutPacket("GameRaceTimePacket"))
+            {
+                oPacket.WriteInt(Id);
+                oPacket.WriteUInt(Time);
+                Parent.Client.Send(oPacket);
+            }
+            room.TimeData.TryAdd(Id, Time);
+            Console.WriteLine("GameAiGoalinPacket, Id = {0}, Time = {1}", Id, Time);
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameTeamBoosterRequestAddGaugePacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            var team = iPacket.ReadByte();
+            var value = iPacket.ReadFloat();
+            Console.WriteLine("GameTeamBoosterRequestAddGaugePacket, teams = {0}, value = {1}", team, value);
+            if (team == 1)
+            {
+                room.redGauge += (value / 8000f);
+                if (room.redGauge > 1f) room.redGauge = 1f;
                 using (OutPacket oPacket = new OutPacket("GameTeamBoosterSetGaugePacket"))
                 {
                     oPacket.WriteByte(team);
-                    oPacket.WriteFloat(gauge);
+                    oPacket.WriteFloat(room.redGauge);
                     Parent.Client.Send(oPacket);
                 }
-                if (gauge == 1f) gauge = 0f;
+                if (room.redGauge == 1f) room.redGauge = 0f;
+            }
+            else if (team == 2)
+            {
+                room.blueGauge += (value / 8000f);
+                if (room.blueGauge > 1f) room.blueGauge = 1f;
+                using (OutPacket oPacket = new OutPacket("GameTeamBoosterSetGaugePacket"))
+                {
+                    oPacket.WriteByte(team);
+                    oPacket.WriteFloat(room.blueGauge);
+                    Parent.Client.Send(oPacket);
+                }
+                if (room.blueGauge == 1f) room.blueGauge = 0f;
+            }
+            return;
+        }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTeamPacket"))
+        {
+            int roomId = RoomManager.TryGetRoomId(nickname);
+            var room = RoomManager.GetRoom(roomId);
+            if (room == null)
+            {
+                Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
+            }
+            var player = RoomManager.GetPlayer(roomId, nickname);
+            if (player == null)
+            {
+                Console.WriteLine("GetPlayer Failed, roomId = {0}, nickname = {1}", roomId, nickname);
                 return;
             }
-            else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrChangeTeamPacket"))
+            byte team = (byte)(3 - player.Team);
+            var Bool = RoomManager.ChangeMemberTeam(roomId, player.SlotId, team);
+            Console.WriteLine("ChangeMemberTeam, roomId = {0}, ID = {1}, Team = {2}, {3}", roomId, player.ID, team, Bool);
+            using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
             {
-                ProfileService.ProfileConfig.Rider.Team = iPacket.ReadByte();
-                ProfileService.Save();
-                using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
+                oPacket.WriteInt(player.ID);
+                oPacket.WriteByte(player.Team);
+                for (byte i = 0; i < 8; i++)
                 {
-                    oPacket.WriteInt(0);
-                    oPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team);
-                    oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                    Parent.Client.Send(oPacket);
-                }
-                try
-                {
-                    // 加载 XML 文件（替换为实际文件路径）
-                    XDocument doc = XDocument.Load(FileName.AI_LoadFile);
-                    string parentNodePath = "";
-                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+                    if (i == player.SlotId)
                     {
-                        parentNodePath = "SpeedAI";
-                    }
-                    else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-                    {
-                        parentNodePath = "ItemAI";
-                    }
-                    // 定位到 AI 下的 Ai4 元素
-                    var ai4Element = doc.Root?
-                               .Element(parentNodePath)?
-                               .Element("Ai4");
-
-                    if (ai4Element != null)
-                    {
-                        byte ai4Team = (byte)(3 - ProfileService.ProfileConfig.Rider.Team);
-                        // 修改 team 属性值为 "1"
-                        ai4Element.SetAttributeValue("team", ai4Team.ToString());
-
-                        // 保存修改到文件
-                        doc.Save(FileName.AI_LoadFile);
-                        Console.WriteLine($"{parentNodePath} 中 Ai4 的 team 已修改为 {ai4Team.ToString()}");
-                        using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
-                        {
-                            oPacket.WriteInt(4);
-                            oPacket.WriteByte(ai4Team);
-                            if (ai4Team == 1)
-                            {
-                                oPacket.WriteHexString("00000000FFFFFFFFFFFFFFFFFFFFFFFF04000000FFFFFFFFFFFFFFFFFFFFFFFF");
-                            }
-                            else if (ai4Team == 2)
-                            {
-                                oPacket.WriteHexString("04000000FFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFFFFFFFFFF");
-                            }
-                            Parent.Client.Send(oPacket);
-                        }
+                        oPacket.WriteInt(player.ID);
                     }
                     else
                     {
-                        Console.WriteLine($"未找到 {parentNodePath} 中的 Ai4 元素");
+                        oPacket.WriteHexString("FFFFFFFF");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"修改失败：{ex.Message}");
-                }
-                return;
-            }
-        }
-
-        static void GrSlotDataPacket(SessionGroup Parent)
-        {
-            using (OutPacket oPacket = new OutPacket("GrSlotDataPacket"))
-            {
-                GrSlotDataPacket(Parent, oPacket);
                 Parent.Client.Send(oPacket);
             }
+            return;
         }
+    }
 
-        static void GrSlotDataPacket(SessionGroup Parent, OutPacket outPacket)
+    static void GrSlotDataPacket(SessionGroup Parent, string nickname)
+    {
+        using (OutPacket outPacket = new OutPacket("GrSlotDataPacket"))
         {
-            outPacket.WriteUInt(track); // track name hash
-            outPacket.WriteInt(0);
-            outPacket.WriteBytes(RoomUnkBytes);
-            outPacket.WriteInt(0); // RoomMaster 
-            outPacket.WriteInt(0); // 2
-            outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
-            outPacket.WriteShort(0); // 797
-            outPacket.WriteByte(0);
-            var unk1 = 4;
-            for (int i = 0; i < unk1; i++) outPacket.WriteByte();
-            for (int i = 0; i < 4; i++) outPacket.WriteInt();
+            GrSlotDataPacket(Parent, nickname, outPacket);
+            Parent.Client.Send(outPacket);
+        }
+    }
 
-            /* ---- One/First player ---- */
-            outPacket.WriteInt(2);//Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = Preparing , 7 = AI
-            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
+    static void GrSlotDataPacket(SessionGroup Parent, string nickname, OutPacket outPacket)
+    {
+        int roomId = RoomManager.TryGetRoomId(nickname);
+        Console.WriteLine("GrSlotDataPacket, roomId = {0}", roomId);
+        var room = RoomManager.GetRoom(roomId);
+        if (room == null)
+        {
+            Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+        }
+        var player = RoomManager.GetPlayer(roomId, nickname);
+        if (player == null)
+        {
+            Console.WriteLine("GetPlayer Failed, roomId = {0}, nickname = {1}", roomId, nickname);
+        }
+        outPacket.WriteUInt(room.track); // track name hash
+        outPacket.WriteInt(0);
+        outPacket.WriteBytes(room.RoomUnkBytes);
+        outPacket.WriteInt(0); // RoomMaster
+        outPacket.WriteInt(0); // 2
+        outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);
+        outPacket.WriteShort(0); // 797
+        outPacket.WriteByte(0);
+        for (int i = 0; i < 4; i++) outPacket.WriteByte();
+        for (int i = 0; i < 4; i++) outPacket.WriteInt();
 
-            IPEndPoint clientEndPoint = Parent.Client.Socket.RemoteEndPoint as IPEndPoint;
-            outPacket.WriteEndPoint(clientEndPoint);
-            //outPacket.WriteEndPoint(IPAddress.Parse(RouterListener.forceConnect), 39311);
-            //outPacket.WriteHexString("3a 16 01 31 7d 48");
-            outPacket.WriteInt(0);
-            outPacket.WriteShort(0);
-
-            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Nickname);
-            outPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem1);
-            outPacket.WriteShort(ProfileService.ProfileConfig.Rider.Emblem2);
-            outPacket.WriteShort(0);
-            GameSupport.GetRider(outPacket);
-            outPacket.WriteShort(0);
-            outPacket.WriteString(ProfileService.ProfileConfig.Rider.Card);
-            outPacket.WriteUInt(ProfileService.ProfileConfig.Rider.RP);
-            if (gameType == 3 || gameType == 4)
+        /* ---- Player ---- */
+        Console.WriteLine("PlayerCount = {0}", room.GetPlayerCount());
+        for (int i = 0; i < 8; i++)
+        {
+            if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player p)
             {
-                outPacket.WriteByte(ProfileService.ProfileConfig.Rider.Team); //Team
-            }
-            else
-            {
+                Console.WriteLine("Player Nickname = {0}, SlotId = {1}", p.Nickname, p.SlotId);
+                outPacket.WriteInt(p.PlayerType); // Player Type, 2 = RoomMaster, 3 = AutoReady, 4 = Observer, 5 = Preparing, 7 = AI
+                outPacket.WriteUInt(Adler32Helper.GenerateAdler32_ASCII(p.Nickname, 0));
+                outPacket.WriteEndPoint(ClientManager.ClientToIPEndPoint(ProfileService.ProfileConfigs[p.Nickname].Rider.Client));
+                outPacket.WriteInt(ProfileService.ProfileConfigs[p.Nickname].Rider.ClubMark_LOGO);
+                outPacket.WriteShort(0);
+                outPacket.WriteString(p.Nickname);
+                outPacket.WriteShort(ProfileService.ProfileConfigs[p.Nickname].Rider.Emblem1);
+                outPacket.WriteShort(ProfileService.ProfileConfigs[p.Nickname].Rider.Emblem2);
+                outPacket.WriteShort(0);
+                GameSupport.GetRider(Parent, p.Nickname, outPacket);
+                outPacket.WriteString(ProfileService.ProfileConfigs[p.Nickname].Rider.Card);
+                outPacket.WriteUInt(ProfileService.ProfileConfigs[p.Nickname].Rider.RP);
+                if (room.GameType == 3 || room.GameType == 4)
+                {
+                    outPacket.WriteByte(p.Team);
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
                 outPacket.WriteByte();
-            }
-            outPacket.WriteByte();
-            outPacket.WriteByte();
-            for (int i = 0; i < 8; i++) outPacket.WriteInt();
-            outPacket.WriteInt(1500); //outPacket.WriteInt(1500);
-            outPacket.WriteInt(2512); //outPacket.WriteInt(2000);
-            outPacket.WriteInt(162); //outPacket.WriteInt();
-            outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
-            outPacket.WriteInt(5); //outPacket.WriteInt(5);
+                outPacket.WriteByte();
+                for (int j = 0; j < 8; j++) outPacket.WriteInt();
+                outPacket.WriteInt(1500); //outPacket.WriteInt(1500);
+                outPacket.WriteInt(1500); //outPacket.WriteInt(2000);
+                outPacket.WriteInt(0); //outPacket.WriteInt();
+                outPacket.WriteInt(2000); //outPacket.WriteInt(2000);
+                outPacket.WriteInt(5); //outPacket.WriteInt(5);
 
-            outPacket.WriteHexString("FF 00 00 01"); //"FF 00 00 00"
+                outPacket.WriteHexString("FF 00 00 00"); //"FF 00 00 01"
 
-            outPacket.WriteByte(3); //3
-            if (ProfileService.ProfileConfig.Rider.ClubMark_LOGO == 0)
-            {
-                outPacket.WriteString("");
-                outPacket.WriteInt(0);
-            }
-            else
-            {
-                outPacket.WriteString(ProfileService.ProfileConfig.Rider.ClubName);
-                outPacket.WriteInt(ProfileService.ProfileConfig.Rider.ClubMark_LOGO);
-            }
-            outPacket.WriteInt();
-            outPacket.WriteInt();
-            outPacket.WriteInt();
-            outPacket.WriteByte();
-            outPacket.WriteInt();
-            outPacket.WriteShort(0);
-
-            /*---- One/First player ----*/
-            /*
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteBytes(new byte[38]);
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteHexString("FFFFFFFF");
-            outPacket.WriteInt(0);
-            */
-            //outPacket.WriteHexString("030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000");
-
-            // AI Data
-            XmlDocument doc = new XmlDocument();
-            doc.Load(FileName.AI_LoadFile);
-            string parentNodePath = "";
-            byte ai4Team = 0;
-            if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-            {
-                parentNodePath = "//SpeedAI";
-            }
-            else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-            {
-                parentNodePath = "//ItemAI";
-            }
-            XmlNode ai1 = doc.SelectSingleNode(parentNodePath + "/Ai1");
-            XmlNode ai2 = doc.SelectSingleNode(parentNodePath + "/Ai2");
-            XmlNode ai3 = doc.SelectSingleNode(parentNodePath + "/Ai3");
-            XmlNode ai4 = doc.SelectSingleNode(parentNodePath + "/Ai4");
-            XmlNode ai5 = doc.SelectSingleNode(parentNodePath + "/Ai5");
-            XmlNode ai6 = doc.SelectSingleNode(parentNodePath + "/Ai6");
-            XmlNode ai7 = doc.SelectSingleNode(parentNodePath + "/Ai7");
-            if (ai1 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai1;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
+                outPacket.WriteByte(3); //3
+                if (ProfileService.ProfileConfigs[p.Nickname].Rider.ClubMark_LOGO == 0)
                 {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai2 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai2;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai3 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai3;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai4 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai4;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                    ai4Team = byte.Parse(xe.GetAttribute("team") ?? "0");
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai5 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai5;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai6 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai6;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai7 != null)
-            {
-                outPacket.WriteInt(7);
-                XmlElement xe = (XmlElement)ai7;
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("character") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("rid") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("kart") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("balloon") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("headBand") ?? "0"));
-                outPacket.WriteShort(short.Parse(xe.GetAttribute("goggle") ?? "0"));
-                if (gameType == 3 || gameType == 4)
-                {
-                    outPacket.WriteByte(byte.Parse(xe.GetAttribute("team") ?? "0")); //Team
-                }
-                else
-                {
-                    outPacket.WriteByte(0);
-                }
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            outPacket.WriteBytes(new byte[32]);
-            if (ProfileService.ProfileConfig.Rider.Team == 1 && ai4Team != 1)
-            {
-                outPacket.WriteInt(4);
-            }
-            else
-            {
-                outPacket.WriteInt(0);
-            }
-            if (ai1 != null)
-            {
-                outPacket.WriteInt(1);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai2 != null)
-            {
-                outPacket.WriteInt(2);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai3 != null)
-            {
-                outPacket.WriteInt(3);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai4 != null)
-            {
-                if (ProfileService.ProfileConfig.Rider.Team == 1 && ai4Team == 2)
-                {
+                    outPacket.WriteString("");
                     outPacket.WriteInt(0);
                 }
                 else
                 {
-                    outPacket.WriteInt(4);
+                    outPacket.WriteString(ProfileService.ProfileConfigs[p.Nickname].Rider.ClubName);
+                    outPacket.WriteInt(ProfileService.ProfileConfigs[p.Nickname].Rider.ClubMark_LOGO);
                 }
+                outPacket.WriteInt();
+                outPacket.WriteInt();
+                outPacket.WriteInt();
+                outPacket.WriteByte();
+                outPacket.WriteInt();
+                outPacket.WriteShort();
             }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai5 != null)
-            {
-                outPacket.WriteInt(5);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai6 != null)
-            {
-                outPacket.WriteInt(6);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-            if (ai7 != null)
+        }
+
+        /* ---- Ai ---- */
+        Console.WriteLine("AiCount = {0}", room.GetAiCount());
+        for (int i = 0; i < 8; i++)
+        {
+            if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a)
             {
                 outPacket.WriteInt(7);
+                outPacket.WriteShort(a.Character);
+                outPacket.WriteShort(a.Rid);
+                outPacket.WriteShort(a.Kart);
+                outPacket.WriteShort(a.Balloon);
+                outPacket.WriteShort(a.HeadBand);
+                outPacket.WriteShort(a.Goggle);
+                if (room.GameType == 3 || room.GameType == 4)
+                {
+                    outPacket.WriteByte(a.Team);
+                }
+                else
+                {
+                    outPacket.WriteByte(0);
+                }
+            }
+            else if (RoomManager.TryGetSlotStatus(roomId, (byte)i) == SlotStatus.Empty)
+            {
+                outPacket.WriteInt(0);
+            }
+        }
+        outPacket.WriteBytes(new byte[32]);
+        for (int i = 0; i < 8; i++)
+        {
+            var Object = RoomManager.TryGetSlotDetail(roomId, (byte)i);
+            if (Object is Player player2 && player2.SlotId == i)
+            {
+                outPacket.WriteInt(player2.ID);
+            }
+            else if (Object is Ai ai2 && ai2.SlotId == i)
+            {
+                outPacket.WriteInt(ai2.ID);
             }
             else
             {
                 outPacket.WriteHexString("FFFFFFFF");
             }
-            outPacket.WriteInt(0);
         }
+    }
 
-        static void GrSlotStatePacket(SessionGroup Parent, int Data)
+    static void GrSlotStatePacket(SessionGroup Parent, int Data)
+    {
+        using (OutPacket oPacket = new OutPacket("GrSlotStatePacket"))
         {
-            using (OutPacket oPacket = new OutPacket("GrSlotStatePacket"))
-            {
-                oPacket.WriteInt(Data);
-                oPacket.WriteBytes(new byte[60]);
-                Parent.Client.Send(oPacket);
-            }
+            oPacket.WriteInt(Data);
+            oPacket.WriteBytes(new byte[60]);
+            Parent.Client.Send(oPacket);
         }
+    }
 
-        static void GrReplySetSlotStatePacket(SessionGroup Parent, int Data)
+    static void GrReplySetSlotStatePacket(SessionGroup Parent, string nickname, int Data)
+    {
+        using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
         {
-            using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
-            {
-                oPacket.WriteUInt(ProfileService.ProfileConfig.Rider.UserNO);
-                oPacket.WriteInt(1);
-                oPacket.WriteByte(0);
-                oPacket.WriteInt(Data);
-                Parent.Client.Send(oPacket);
-            }
+            oPacket.WriteUInt(Adler32Helper.GenerateAdler32_ASCII(nickname, 0));
+            oPacket.WriteInt(1);
+            oPacket.WriteByte(0);
+            oPacket.WriteInt(Data);
+            Parent.Client.Send(oPacket);
         }
+    }
 
-        static void GrSessionDataPacket(SessionGroup Parent)
+    static void GrSessionDataPacket(SessionGroup Parent, string nickname)
+    {
+        using (OutPacket oPacket = new OutPacket("GrSessionDataPacket"))
         {
-            using (OutPacket oPacket = new OutPacket("GrSessionDataPacket"))
-            {
-                GrSessionDataPacket(Parent, oPacket);
-                Parent.Client.Send(oPacket);
-            }
+            GrSessionDataPacket(Parent, nickname, oPacket);
+            Parent.Client.Send(oPacket);
         }
+    }
 
-        static void GrSessionDataPacket(SessionGroup Parent, OutPacket outPacket)
+    static void GrSessionDataPacket(SessionGroup Parent, string nickname, OutPacket outPacket)
+    {
+        int roomId = RoomManager.TryGetRoomId(nickname);
+        var room = RoomManager.GetRoom(roomId);
+        if (room == null)
         {
-            outPacket.WriteString(RoomName);
-            outPacket.WriteInt(0);
-            outPacket.WriteByte(gameType);
-            outPacket.WriteByte(StartGameData.StartTimeAttack_SpeedType); //7
-            outPacket.WriteInt(0);
-            outPacket.WriteByte(8);
-            outPacket.WriteInt(0);
-            outPacket.WriteInt(0);
-            outPacket.WriteByte(0);
-            outPacket.WriteByte(0);
-            outPacket.WriteByte(0);
+            Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
         }
+        outPacket.WriteString(room.RoomName);
+        outPacket.WriteString(room.LockPwd);
+        outPacket.WriteByte(room.GameType);
+        outPacket.WriteByte(room.SpeedType); //7
+        outPacket.WriteInt(0);
+        outPacket.WriteByte(8);
+        outPacket.WriteInt(0);
+        outPacket.WriteInt(0);
+        outPacket.WriteByte(0);
+        outPacket.WriteByte(0);
+        outPacket.WriteByte(0);
+    }
 
-        // 移除所有 Ai* 节点（保留 Spec）
-        static void RemoveAiNodes(XElement targetParent)
+    // 添加指定数量的 Ai
+    static void AddAi(GameRoom room, int count, byte randomTrackGameType)
+    {
+        var selector = new DictionaryRandomSelector();
+        List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 8);
+        List<short> randomKartIds = null;
+        if (randomTrackGameType == 0)
         {
-            // 查找并删除所有以"Ai"开头的子元素
-            var aiElementsToRemove = targetParent.Elements()
-                .Where(e => e.Name.LocalName.StartsWith("Ai", StringComparison.OrdinalIgnoreCase))
-                .ToList(); // 先转换为列表避免迭代时修改集合
-
-            int removedCount = aiElementsToRemove.Count;
-            aiElementsToRemove.ForEach(e => e.Remove());
+            randomKartIds = selector.GetRandomKartIds(aiKartDict, 8, true, false);
         }
-
-        // 添加指定数量的 Ai 节点
-        static void AddAiNodes(XElement targetParent, int count)
+        else if (randomTrackGameType == 1)
         {
-            var selector = new DictionaryRandomSelector();
-            List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, count);
-            List<short> randomKartIds = null;
-            if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
+            randomKartIds = selector.GetRandomKartIds(aiKartDict, 8, false, true);
+        }
+        int aiCount = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            short targetCharId = randomCharIds[i];
+            short targetKartId = randomKartIds[i];
+            if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
             {
-                randomKartIds = selector.GetRandomKartIds(aiKartDict, count, true, false);
-            }
-            else if (StartGameData.StartTimeAttack_RandomTrackGameType == 1)
-            {
-                randomKartIds = selector.GetRandomKartIds(aiKartDict, count, false, true);
-            }
-            for (int i = 0; i < randomCharIds.Count; i++)
-            {
-                short targetCharId = randomCharIds[i];
-                short targetKartId = randomKartIds[i];
-                if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
+                short? ridIndex = selector.GetRandomRidIndex(targetChar);
+                short? balloonId = 0;
+                short? headbandId = 0;
+                short? goggleId = 0;
+                if (randomTrackGameType == 1)
                 {
-                    short? ridIndex = selector.GetRandomRidIndex(targetChar);
-                    short? balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
-                    short? headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
-                    short? goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
-                    if (StartGameData.StartTimeAttack_RandomTrackGameType == 0)
-                    {
-                        balloonId = 0;
-                        headbandId = 0;
-                        goggleId = 0;
-                    }
-
-                    string nodeName = $"Ai{i + 1}";
-                    string team = ((i + 1) < 4) ? "2" : "1";
-
-                    // 添加属性
-                    targetParent.Add(new XElement(nodeName,
-                    new XAttribute("character", targetCharId.ToString()),
-                    new XAttribute("rid", ridIndex?.ToString() ?? "0"),
-                    new XAttribute("kart", targetKartId.ToString()),
-                    new XAttribute("balloon", balloonId?.ToString() ?? "0"),
-                    new XAttribute("headBand", headbandId?.ToString() ?? "0"),
-                    new XAttribute("goggle", goggleId?.ToString() ?? "0"),
-                    new XAttribute("team", team)
-                    ));
+                    balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
+                    headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
+                    goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                }
+                byte team = (byte)((i < 4) ? 2 : 1);
+                Ai ai = new Ai
+                {
+                    Character = targetCharId,
+                    Rid = ridIndex ?? 0,
+                    Kart = targetKartId,
+                    Balloon = balloonId ?? 0,
+                    HeadBand = headbandId ?? 0,
+                    Goggle = goggleId ?? 0,
+                    Team = team
+                };
+                if (room.TrySetAi((byte)i, ai))
+                {
+                    aiCount++;
+                }
+                if (aiCount == count)
+                {
+                    break;
                 }
             }
         }
     }
+}
+
+public class RoomList
+{
+    public byte RandomTrackGameType { get; set; }
+    public byte SpeedType { get; set; }
+    public byte GameType { get; set; }
 }

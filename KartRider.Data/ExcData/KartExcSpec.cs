@@ -1,1457 +1,1165 @@
+using KartRider;
+using Profile;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace ExcData
 {
-	public class ExcSpec
-	{
-		public static float Tune_DragFactor = 0f;
-		public static float Tune_ForwardAccel = 0f;
-		public static float Tune_CornerDrawFactor = 0f;
-		public static float Tune_TeamBoosterTime = 0f;
-		public static float Tune_NormalBoosterTime = 0f;
-		public static float Tune_StartBoosterTimeSpeed = 0f;
-		public static float Tune_TransAccelFactor = 0f;
-		public static float Tune_DriftMaxGauge = 0f;
-		public static float Tune_DriftEscapeForce = 0f;
+    public class ExcSpecs
+    {
+        public float Tune_DragFactor { get; set; } = 0f;
+        public float Tune_ForwardAccel { get; set; } = 0f;
+        public float Tune_CornerDrawFactor { get; set; } = 0f;
+        public float Tune_TeamBoosterTime { get; set; } = 0f;
+        public float Tune_NormalBoosterTime { get; set; } = 0f;
+        public float Tune_StartBoosterTimeSpeed { get; set; } = 0f;
+        public float Tune_TransAccelFactor { get; set; } = 0f;
+        public float Tune_DriftMaxGauge { get; set; } = 0f;
+        public float Tune_DriftEscapeForce { get; set; } = 0f;
 
-		public static float Plant43_TransAccelFactor = 0f;
-		public static float Plant43_DragFactor = 0f;
-		public static float Plant43_StartForwardAccelSpeed = 0f;
-		public static float Plant43_ForwardAccel = 0f;
-		public static float Plant43_StartBoosterTimeSpeed = 0f;
+        public float Plant43_TransAccelFactor { get; set; } = 0f;
+        public float Plant43_DragFactor { get; set; } = 0f;
+        public float Plant43_StartForwardAccelSpeed { get; set; } = 0f;
+        public float Plant43_ForwardAccel { get; set; } = 0f;
+        public float Plant43_StartBoosterTimeSpeed { get; set; } = 0f;
 
-		public static float Plant44_SlipBrake = 0f;
-		public static float Plant44_GripBrake = 0f;
-		public static float Plant44_RearGripFactor = 0f;
-		public static float Plant44_FrontGripFactor = 0f;
-		public static float Plant44_CornerDrawFactor = 0f;
-		public static float Plant44_SteerConstraint = 0f;
+        public float Plant44_SlipBrake { get; set; } = 0f;
+        public float Plant44_GripBrake { get; set; } = 0f;
+        public float Plant44_RearGripFactor { get; set; } = 0f;
+        public float Plant44_FrontGripFactor { get; set; } = 0f;
+        public float Plant44_CornerDrawFactor { get; set; } = 0f;
+        public float Plant44_SteerConstraint { get; set; } = 0f;
 
-		public static float Plant45_DriftEscapeForce = 0f;
-		public static float Plant45_DriftMaxGauge = 0f;
-		public static float Plant45_CornerDrawFactor = 0f;
-		public static float Plant45_SlipBrake = 0f;
-		public static float Plant45_AnimalBoosterTime = 0f;
-		public static float Plant45_AntiCollideBalance = 0f;
-		public static float Plant45_DragFactor = 0f;
+        public float Plant45_DriftEscapeForce { get; set; } = 0f;
+        public float Plant45_DriftMaxGauge { get; set; } = 0f;
+        public float Plant45_CornerDrawFactor { get; set; } = 0f;
+        public float Plant45_SlipBrake { get; set; } = 0f;
+        public float Plant45_AnimalBoosterTime { get; set; } = 0f;
+        public float Plant45_AntiCollideBalance { get; set; } = 0f;
+        public float Plant45_DragFactor { get; set; } = 0f;
 
-		public static float Plant46_DriftMaxGauge = 0f;
-		public static float Plant46_NormalBoosterTime = 0f;
-		public static float Plant46_DriftSlipFactor = 0f;
-		public static float Plant46_ForwardAccel = 0f;
-		public static float Plant46_AnimalBoosterTime = 0f;
-		public static float Plant46_TeamBoosterTime = 0f;
-		public static float Plant46_StartForwardAccelSpeed = 0f;
-		public static float Plant46_StartForwardAccelItem = 0f;
-		public static float Plant46_StartBoosterTimeSpeed = 0f;
-		public static float Plant46_StartBoosterTimeItem = 0f;
-		public static byte Plant46_ItemSlotCapacity = 0;
-		public static byte Plant46_SpeedSlotCapacity = 0;
-		public static float Plant46_GripBrake = 0f;
-		public static float Plant46_SlipBrake = 0f;
+        public float Plant46_DriftMaxGauge { get; set; } = 0f;
+        public float Plant46_NormalBoosterTime { get; set; } = 0f;
+        public float Plant46_DriftSlipFactor { get; set; } = 0f;
+        public float Plant46_ForwardAccel { get; set; } = 0f;
+        public float Plant46_AnimalBoosterTime { get; set; } = 0f;
+        public float Plant46_TeamBoosterTime { get; set; } = 0f;
+        public float Plant46_StartForwardAccelSpeed { get; set; } = 0f;
+        public float Plant46_StartForwardAccelItem { get; set; } = 0f;
+        public float Plant46_StartBoosterTimeSpeed { get; set; } = 0f;
+        public float Plant46_StartBoosterTimeItem { get; set; } = 0f;
+        public byte Plant46_ItemSlotCapacity { get; set; } = 0;
+        public byte Plant46_SpeedSlotCapacity { get; set; } = 0;
+        public float Plant46_GripBrake { get; set; } = 0f;
+        public float Plant46_SlipBrake { get; set; } = 0f;
 
-		public static float KartLevel_DragFactor = 0f;
-		public static float KartLevel_ForwardAccel = 0f;
-		public static float KartLevel_CornerDrawFactor = 0f;
-		public static float KartLevel_SteerConstraint = 0f;
-		public static float KartLevel_DriftEscapeForce = 0f;
-		public static float KartLevel_TransAccelFactor = 0f;
-		public static float KartLevel_StartBoosterTimeSpeed = 0f;
-		public static float KartLevel_StartBoosterTimeItem = 0f;
-		public static float KartLevel_BoostAccelFactorOnlyItem = 0f;
+        public float KartLevel_DragFactor { get; set; } = 0f;
+        public float KartLevel_ForwardAccel { get; set; } = 0f;
+        public float KartLevel_CornerDrawFactor { get; set; } = 0f;
+        public float KartLevel_SteerConstraint { get; set; } = 0f;
+        public float KartLevel_DriftEscapeForce { get; set; } = 0f;
+        public float KartLevel_TransAccelFactor { get; set; } = 0f;
+        public float KartLevel_StartBoosterTimeSpeed { get; set; } = 0f;
+        public float KartLevel_StartBoosterTimeItem { get; set; } = 0f;
+        public float KartLevel_BoostAccelFactorOnlyItem { get; set; } = 0f;
 
-		public static float PartSpec_TransAccelFactor = 0f; //엔진
-		public static float PartSpec_SteerConstraint = 0f; //핸들
-		public static float PartSpec_DriftEscapeForce = 0f; //바퀴
-		public static float PartSpec_NormalBoosterTime = 0f; //부스터
+        public float PartSpec_TransAccelFactor { get; set; } = 0f; //엔진
+        public float PartSpec_SteerConstraint { get; set; } = 0f; //핸들
+        public float PartSpec_DriftEscapeForce { get; set; } = 0f; //바퀴
+        public float PartSpec_NormalBoosterTime { get; set; } = 0f; //부스터
+    }
 
-		public static void Reset_PartSpec_SpecData()
-		{
-			ExcSpec.PartSpec_TransAccelFactor = 0f;
-			ExcSpec.PartSpec_SteerConstraint = 0f;
-			ExcSpec.PartSpec_DriftEscapeForce = 0f;
-			ExcSpec.PartSpec_NormalBoosterTime = 0f;
-			Console.WriteLine("Part_Spec: OFF");
-		}
+    public class ExcSpec
+    {
+        public static void Use_TuneSpec(string Nickname, ExcSpecs excSpecs)
+        {
+            float[] Tune_DragFactor_List = { 0f, -0.0008f, -0.0015f, -0.0022f };
+            float[] Tune_ForwardAccel_List = { 0f, 1.5f, 2.5f, 3.5f };
+            float[] Tune_CornerDrawFactor_List = { 0f, 0.0007f, 0.0014f, 0.002f };
+            float[] Tune_TeamBoosterTime_List = { 0f, 100f, 180f, 250f };
+            float[] Tune_NormalBoosterTime_List = { 0f, 70f, 120f, 190f };
+            float[] Tune_StartBoosterTimeSpeed_List = { 0f, 200f, 400f, 800f };
+            float[] Tune_TransAccelFactor_List = { 0f, 0.006f, 0.01f, 0.018f };
+            float[] Tune_DriftMaxGauge_List = { 0f, -70f, -140f, -200f };
+            float[] Tune_DriftEscapeForce_List = { 0f, 80f, 140f, 210f };
+            KartExcData.TuneLists.TryAdd(Nickname, new List<Tune>());
+            var TuneList = KartExcData.TuneLists[Nickname];
+            short Set_Kart = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart;
+            short Set_KartSN = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartSN;
+            var existingTune = TuneList.FirstOrDefault(tune => tune.ID == Set_Kart && tune.SN == Set_KartSN);
+            if (existingTune != null)
+            {
+                if (existingTune.Tune1 == 103 || existingTune.Tune2 == 103 || existingTune.Tune3 == 103)
+                {
+                    excSpecs.Tune_DragFactor = Tune_DragFactor_List[3];
+                }
+                if (existingTune.Tune1 == 203 || existingTune.Tune2 == 203 || existingTune.Tune3 == 203)
+                {
+                    excSpecs.Tune_ForwardAccel = Tune_ForwardAccel_List[3];
+                }
+                if (existingTune.Tune1 == 303 || existingTune.Tune2 == 303 || existingTune.Tune3 == 303)
+                {
+                    excSpecs.Tune_CornerDrawFactor = Tune_CornerDrawFactor_List[3];
+                }
+                if (existingTune.Tune1 == 403 || existingTune.Tune2 == 403 || existingTune.Tune3 == 403)
+                {
+                    excSpecs.Tune_TeamBoosterTime = Tune_TeamBoosterTime_List[3];
+                }
+                if (existingTune.Tune1 == 503 || existingTune.Tune2 == 503 || existingTune.Tune3 == 503)
+                {
+                    excSpecs.Tune_NormalBoosterTime = Tune_NormalBoosterTime_List[3];
+                }
+                if (existingTune.Tune1 == 603 || existingTune.Tune2 == 603 || existingTune.Tune3 == 603)
+                {
+                    excSpecs.Tune_StartBoosterTimeSpeed = Tune_StartBoosterTimeSpeed_List[3];
+                }
+                if (existingTune.Tune1 == 703 || existingTune.Tune2 == 703 || existingTune.Tune3 == 703)
+                {
+                    excSpecs.Tune_TransAccelFactor = Tune_TransAccelFactor_List[3];
+                }
+                if (existingTune.Tune1 == 803 || existingTune.Tune2 == 803 || existingTune.Tune3 == 803)
+                {
+                    excSpecs.Tune_DriftMaxGauge = Tune_DriftMaxGauge_List[3];
+                }
+                if (existingTune.Tune1 == 903 || existingTune.Tune2 == 903 || existingTune.Tune3 == 903)
+                {
+                    excSpecs.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
+                }
+                Console.WriteLine("-------------------------------------------------------------");
+                Console.WriteLine("TuneSpec DragFactor:{0}", excSpecs.Tune_DragFactor);
+                Console.WriteLine("TuneSpec ForwardAccel:{0}", excSpecs.Tune_ForwardAccel);
+                Console.WriteLine("TuneSpec CornerDrawFactor:{0}", excSpecs.Tune_CornerDrawFactor);
+                Console.WriteLine("TuneSpec TeamBoosterTime:{0}", excSpecs.Tune_TeamBoosterTime);
+                Console.WriteLine("TuneSpec NormalBoosterTime:{0}", excSpecs.Tune_NormalBoosterTime);
+                Console.WriteLine("TuneSpec StartBoosterTimeSpeed:{0}", excSpecs.Tune_StartBoosterTimeSpeed);
+                Console.WriteLine("TuneSpec TransAccelFactor:{0}", excSpecs.Tune_TransAccelFactor);
+                Console.WriteLine("TuneSpec DriftMaxGauge:{0}", excSpecs.Tune_DriftMaxGauge);
+                Console.WriteLine("TuneSpec DriftEscapeForce:{0}", excSpecs.Tune_DriftEscapeForce);
+                Console.WriteLine("-------------------------------------------------------------");
+            }
+        }
 
-		public static void Reset_Tune_SpecData()
-		{
-			ExcSpec.Tune_DragFactor = 0f;
-			ExcSpec.Tune_ForwardAccel = 0f;
-			ExcSpec.Tune_CornerDrawFactor = 0f;
-			ExcSpec.Tune_TeamBoosterTime = 0f;
-			ExcSpec.Tune_NormalBoosterTime = 0f;
-			ExcSpec.Tune_StartBoosterTimeSpeed = 0f;
-			ExcSpec.Tune_TransAccelFactor = 0f;
-			ExcSpec.Tune_DriftMaxGauge = 0f;
-			ExcSpec.Tune_DriftEscapeForce = 0f;
-			Console.WriteLine("Tune_Type: OFF");
-		}
+        public static void Use_PlantSpec(string Nickname, ExcSpecs excSpecs)
+        {
+            KartExcData.PlantLists.TryAdd(Nickname, new List<Plant>());
+            var PlantList = KartExcData.PlantLists[Nickname];
+            short Set_Kart = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart;
+            short Set_KartSN = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartSN;
+            var existingPlant = PlantList.FirstOrDefault(plant => plant.ID == Set_Kart && plant.SN == Set_KartSN);
+            if (existingPlant != null)
+            {
+                if (existingPlant.Engine == 43)
+                {
+                    if (existingPlant.EngineID == 1)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.02f;
+                        excSpecs.Plant43_DragFactor = -0.0007f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0.02f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 2)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.02f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 2f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 3)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0.02f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 15f;
+                    }
+                    else if (existingPlant.EngineID == 4 || existingPlant.EngineID == 5)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0.04f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 6)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0021f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 7)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0014f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 8)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0.02f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 9)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0.02f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 10)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 2f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 11)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 2f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 12)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0007f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 13)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0007f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 14)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0007f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 15)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = -0.0014f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 16)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0002f;
+                        excSpecs.Plant43_DragFactor = -0.0014f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 17)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0004f;
+                        excSpecs.Plant43_DragFactor = -0.0007f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 18)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0002f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 2f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 19)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0004f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 20)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0006f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 21)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0008f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 22)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.0012f;
+                        excSpecs.Plant43_DragFactor = -0.0014f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                    else if (existingPlant.EngineID == 23)
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0.002f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 1f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 30f;
+                    }
+                    else
+                    {
+                        excSpecs.Plant43_TransAccelFactor = 0f;
+                        excSpecs.Plant43_DragFactor = 0f;
+                        excSpecs.Plant43_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant43_ForwardAccel = 0f;
+                        excSpecs.Plant43_StartBoosterTimeSpeed = 0f;
+                    }
+                }
+                if (existingPlant.Handle == 44)
+                {
+                    if (existingPlant.HandleID == 1)
+                    {
+                        excSpecs.Plant44_SlipBrake = -40f;
+                        excSpecs.Plant44_GripBrake = -40f;
+                        excSpecs.Plant44_RearGripFactor = 0.2f;
+                        excSpecs.Plant44_FrontGripFactor = 0.2f;
+                        excSpecs.Plant44_CornerDrawFactor = 0.0005f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 2)
+                    {
+                        excSpecs.Plant44_SlipBrake = -12f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0.3f;
+                        excSpecs.Plant44_FrontGripFactor = 0.3f;
+                        excSpecs.Plant44_CornerDrawFactor = 0.001f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 3)
+                    {
+                        excSpecs.Plant44_SlipBrake = -10f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0.2f;
+                        excSpecs.Plant44_FrontGripFactor = 0.2f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 4)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0.1f;
+                        excSpecs.Plant44_FrontGripFactor = 0.1f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 5)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = -20f;
+                        excSpecs.Plant44_RearGripFactor = 0.05f;
+                        excSpecs.Plant44_FrontGripFactor = 0.05f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 6)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = -20f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 7)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = -15f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 8)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0.2f;
+                    }
+                    else if (existingPlant.HandleID == 9)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0.4f;
+                    }
+                    else if (existingPlant.HandleID == 10)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0.8f;
+                    }
+                    else if (existingPlant.HandleID == 11)
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = -0.4f;
+                    }
+                    else if (existingPlant.HandleID == 12)
+                    {
+                        excSpecs.Plant44_SlipBrake = -8f;
+                        excSpecs.Plant44_GripBrake = -5f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 13)
+                    {
+                        excSpecs.Plant44_SlipBrake = -6f;
+                        excSpecs.Plant44_GripBrake = -7f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 14)
+                    {
+                        excSpecs.Plant44_SlipBrake = -4f;
+                        excSpecs.Plant44_GripBrake = -9f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else if (existingPlant.HandleID == 15)
+                    {
+                        excSpecs.Plant44_SlipBrake = -2f;
+                        excSpecs.Plant44_GripBrake = -11f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                    else
+                    {
+                        excSpecs.Plant44_SlipBrake = 0f;
+                        excSpecs.Plant44_GripBrake = 0f;
+                        excSpecs.Plant44_RearGripFactor = 0f;
+                        excSpecs.Plant44_FrontGripFactor = 0f;
+                        excSpecs.Plant44_CornerDrawFactor = 0f;
+                        excSpecs.Plant44_SteerConstraint = 0f;
+                    }
+                }
+                if (existingPlant.Wheel == 45)
+                {
+                    if (existingPlant.WheelID == 0)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 1)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 70f;
+                        excSpecs.Plant45_DriftMaxGauge = -40f;
+                        excSpecs.Plant45_CornerDrawFactor = 0.001f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 2)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -60f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = -192f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 3)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 70f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 100f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 4)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -60f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 5)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -40f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 100f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 6)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 50f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 7)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 30f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0.0005f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 8)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -40f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 9)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = -20f;
+                        excSpecs.Plant45_DriftMaxGauge = -60f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 10)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = -60f;
+                        excSpecs.Plant45_DriftMaxGauge = -100f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 11)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = -40f;
+                        excSpecs.Plant45_DriftMaxGauge = -80f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 12)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 10f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 13)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 30f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 14)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 50f;
+                        excSpecs.Plant45_DriftMaxGauge = 40f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 15)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 70f;
+                        excSpecs.Plant45_DriftMaxGauge = 60f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 16)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0.0005f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.005f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 17)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.005f;
+                        excSpecs.Plant45_DragFactor = -0.0007f;
+                    }
+                    else if (existingPlant.WheelID == 18)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -40f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.005f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 19)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.01f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 20)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = -30f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.01f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 21)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.015f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 22)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 30f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = -0.02f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else if (existingPlant.WheelID == 23)
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 90f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0.0005f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                    else
+                    {
+                        excSpecs.Plant45_DriftEscapeForce = 0f;
+                        excSpecs.Plant45_DriftMaxGauge = 0f;
+                        excSpecs.Plant45_CornerDrawFactor = 0f;
+                        excSpecs.Plant45_SlipBrake = 0f;
+                        excSpecs.Plant45_AnimalBoosterTime = 0f;
+                        excSpecs.Plant45_AntiCollideBalance = 0f;
+                        excSpecs.Plant45_DragFactor = 0f;
+                    }
+                }
+                if (existingPlant.Kit == 46)
+                {
+                    if (existingPlant.KitID == 1)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = -80f;
+                        excSpecs.Plant46_NormalBoosterTime = 120f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 2)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = -0.03f;
+                        excSpecs.Plant46_ForwardAccel = 2f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 3)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 200f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 5)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 90f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 50f;
+                        excSpecs.Plant46_TeamBoosterTime = 60f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0.02f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0.02f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 7)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 105f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 8)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 105f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 11)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 3;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 12)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 3;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 15 || existingPlant.KitID == 16)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 100f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 10f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 17)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 100f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 9f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 18)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 120f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 23)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 60f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 24)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 60f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 25)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 90f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = -30f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else if (existingPlant.KitID == 26)
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = -30f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 90f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                    else
+                    {
+                        excSpecs.Plant46_DriftMaxGauge = 0f;
+                        excSpecs.Plant46_NormalBoosterTime = 0f;
+                        excSpecs.Plant46_DriftSlipFactor = 0f;
+                        excSpecs.Plant46_ForwardAccel = 0f;
+                        excSpecs.Plant46_AnimalBoosterTime = 0f;
+                        excSpecs.Plant46_TeamBoosterTime = 0f;
+                        excSpecs.Plant46_StartForwardAccelSpeed = 0f;
+                        excSpecs.Plant46_StartForwardAccelItem = 0f;
+                        excSpecs.Plant46_StartBoosterTimeSpeed = 0f;
+                        excSpecs.Plant46_StartBoosterTimeItem = 0f;
+                        excSpecs.Plant46_ItemSlotCapacity = 0;
+                        excSpecs.Plant46_SpeedSlotCapacity = 0;
+                        excSpecs.Plant46_GripBrake = 0f;
+                        excSpecs.Plant46_SlipBrake = 0f;
+                    }
+                }
+                Console.WriteLine("-------------------------------------------------------------");
+                Console.WriteLine("Plant43 TransAccelFactor:{0}", excSpecs.Plant43_TransAccelFactor);
+                Console.WriteLine("Plant43 DragFactor:{0}", excSpecs.Plant43_DragFactor);
+                Console.WriteLine("Plant43 StartForwardAccelSpeed:{0}", excSpecs.Plant43_StartForwardAccelSpeed);
+                Console.WriteLine("Plant43 ForwardAccel:{0}", excSpecs.Plant43_ForwardAccel);
+                Console.WriteLine("Plant43 StartBoosterTimeSpeed:{0}", excSpecs.Plant43_StartBoosterTimeSpeed);
 
-		public static void Reset_Plant_SpecData()
-		{
-			ExcSpec.Plant43_TransAccelFactor = 0f;
-			ExcSpec.Plant43_DragFactor = 0f;
-			ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-			ExcSpec.Plant43_ForwardAccel = 0f;
-			ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
+                Console.WriteLine("Plant44 SlipBrake:{0}", excSpecs.Plant44_SlipBrake);
+                Console.WriteLine("Plant44 GripBrake:{0}", excSpecs.Plant44_GripBrake);
+                Console.WriteLine("Plant44 RearGripFactor:{0}", excSpecs.Plant44_RearGripFactor);
+                Console.WriteLine("Plant44 FrontGripFactor:{0}", excSpecs.Plant44_FrontGripFactor);
+                Console.WriteLine("Plant44 CornerDrawFactor:{0}", excSpecs.Plant44_CornerDrawFactor);
+                Console.WriteLine("Plant44 SteerConstraint:{0}", excSpecs.Plant44_SteerConstraint);
 
-			ExcSpec.Plant44_SlipBrake = 0f;
-			ExcSpec.Plant44_GripBrake = 0f;
-			ExcSpec.Plant44_RearGripFactor = 0f;
-			ExcSpec.Plant44_FrontGripFactor = 0f;
-			ExcSpec.Plant44_CornerDrawFactor = 0f;
-			ExcSpec.Plant44_SteerConstraint = 0f;
+                Console.WriteLine("Plant45 DriftEscapeForce:{0}", excSpecs.Plant45_DriftEscapeForce);
+                Console.WriteLine("Plant45 DriftMaxGauge:{0}", excSpecs.Plant45_DriftMaxGauge);
+                Console.WriteLine("Plant45 CornerDrawFactor:{0}", excSpecs.Plant45_CornerDrawFactor);
+                Console.WriteLine("Plant45 SlipBrake:{0}", excSpecs.Plant45_SlipBrake);
+                Console.WriteLine("Plant45 AnimalBoosterTime:{0}", excSpecs.Plant45_AnimalBoosterTime);
+                Console.WriteLine("Plant45 AntiCollideBalance:{0}", excSpecs.Plant45_AntiCollideBalance);
+                Console.WriteLine("Plant45 DragFactor:{0}", excSpecs.Plant45_DragFactor);
 
-			ExcSpec.Plant45_DriftEscapeForce = 0f;
-			ExcSpec.Plant45_DriftMaxGauge = 0f;
-			ExcSpec.Plant45_CornerDrawFactor = 0f;
-			ExcSpec.Plant45_SlipBrake = 0f;
-			ExcSpec.Plant45_AnimalBoosterTime = 0f;
-			ExcSpec.Plant45_AntiCollideBalance = 0f;
-			ExcSpec.Plant45_DragFactor = 0f;
+                Console.WriteLine("Plant46 DriftMaxGauge:{0}", excSpecs.Plant46_DriftMaxGauge);
+                Console.WriteLine("Plant46 NormalBoosterTime:{0}", excSpecs.Plant46_NormalBoosterTime);
+                Console.WriteLine("Plant46 DriftSlipFactor:{0}", excSpecs.Plant46_DriftSlipFactor);
+                Console.WriteLine("Plant46 ForwardAccel:{0}", excSpecs.Plant46_ForwardAccel);
+                Console.WriteLine("Plant46 AnimalBoosterTime:{0}", excSpecs.Plant46_AnimalBoosterTime);
+                Console.WriteLine("Plant46 TeamBoosterTime:{0}", excSpecs.Plant46_TeamBoosterTime);
+                Console.WriteLine("Plant46 StartForwardAccelSpeed:{0}", excSpecs.Plant46_StartForwardAccelSpeed);
+                Console.WriteLine("Plant46 StartForwardAccelItem:{0}", excSpecs.Plant46_StartForwardAccelItem);
+                Console.WriteLine("Plant46 StartBoosterTimeSpeed:{0}", excSpecs.Plant46_StartBoosterTimeSpeed);
+                Console.WriteLine("Plant46 StartBoosterTimeItem:{0}", excSpecs.Plant46_StartBoosterTimeItem);
+                Console.WriteLine("Plant46 ItemSlotCapacity:{0}", excSpecs.Plant46_ItemSlotCapacity);
+                Console.WriteLine("Plant46 SpeedSlotCapacity:{0}", excSpecs.Plant46_SpeedSlotCapacity);
+                Console.WriteLine("Plant46 GripBrake:{0}", excSpecs.Plant46_GripBrake);
+                Console.WriteLine("Plant46 SlipBrake:{0}", excSpecs.Plant46_SlipBrake);
+                Console.WriteLine("-------------------------------------------------------------");
+            }
+        }
 
-			ExcSpec.Plant46_DriftMaxGauge = 0f;
-			ExcSpec.Plant46_NormalBoosterTime = 0f;
-			ExcSpec.Plant46_DriftSlipFactor = 0f;
-			ExcSpec.Plant46_ForwardAccel = 0f;
-			ExcSpec.Plant46_AnimalBoosterTime = 0f;
-			ExcSpec.Plant46_TeamBoosterTime = 0f;
-			ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-			ExcSpec.Plant46_StartForwardAccelItem = 0f;
-			ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-			ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-			ExcSpec.Plant46_ItemSlotCapacity = 0;
-			ExcSpec.Plant46_SpeedSlotCapacity = 0;
-			ExcSpec.Plant46_GripBrake = 0f;
-			ExcSpec.Plant46_SlipBrake = 0f;
-			Console.WriteLine("Plant_Spec: OFF");
-		}
+        public static void Use_KartLevelSpec(string Nickname, ExcSpecs excSpecs)
+        {
+            float[] KartLevel_DragFactor = { 0f, -0.0001f, -0.0002f, -0.0003f, -0.0004f, -0.0005f, -0.0006f, -0.0007f, -0.0008f, -0.001f, -0.0012f };
+            float[] KartLevel_ForwardAccel = { 0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 1.0f, 1.5f };
+            float[] KartLevel_CornerDrawFactor = { 0f, 0.0001f, 0.0002f, 0.0003f, 0.0004f, 0.0005f, 0.0006f, 0.0007f, 0.0008f, 0.0009f, 0.001f };
+            float[] KartLevel_SteerConstraint = { 0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.08f, 0.11f, 0.15f, 0.2f };
+            float[] KartLevel_DriftEscapeForce = { 0f, 1f, 3f, 6f, 10f, 15f, 20f, 26f, 33f, 40f, 50f };
+            float[] KartLevel_TransAccelFactor = { 0f, 0.0001f, 0.0003f, 0.0006f, 0.001f, 0.0014f, 0.0019f, 0.0025f, 0.0032f, 0.004f, 0.005f };
+            float[] KartLevel_StartBoosterTimeSpeed = { 0f, 5f, 10f, 15f, 20f, 30f, 40f, 50f, 65f, 80f, 100f };
+            float[] KartLevel_StartBoosterTimeItem = { 0f, 5f, 10f, 15f, 20f, 30f, 40f, 50f, 65f, 80f, 100f };
+            float[] KartLevel_BoostAccelFactorOnlyItem = { 0f, 0.001f, 0.003f, 0.005f, 0.009f, 0.013f, 0.019f, 0.025f, 0.033f, 0.041f, 0.05f };
+            KartExcData.LevelLists.TryAdd(Nickname, new List<Level>());
+            var LevelList = KartExcData.LevelLists[Nickname];
+            short Set_Kart = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart;
+            short Set_KartSN = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartSN;
+            var existingLevel = LevelList.FirstOrDefault(level => level.ID == Set_Kart && level.SN == Set_KartSN);
+            if (existingLevel != null)
+            {
+                excSpecs.KartLevel_DragFactor = KartLevel_DragFactor[existingLevel.Level1];
+                excSpecs.KartLevel_ForwardAccel = KartLevel_ForwardAccel[existingLevel.Level1];
+                excSpecs.KartLevel_CornerDrawFactor = KartLevel_CornerDrawFactor[existingLevel.Level2];
+                excSpecs.KartLevel_SteerConstraint = KartLevel_SteerConstraint[existingLevel.Level2];
+                excSpecs.KartLevel_DriftEscapeForce = KartLevel_DriftEscapeForce[existingLevel.Level3];
+                excSpecs.KartLevel_TransAccelFactor = KartLevel_TransAccelFactor[existingLevel.Level4];
+                excSpecs.KartLevel_StartBoosterTimeSpeed = KartLevel_StartBoosterTimeSpeed[existingLevel.Level4];
+                excSpecs.KartLevel_StartBoosterTimeItem = KartLevel_StartBoosterTimeItem[existingLevel.Level4];
+                excSpecs.KartLevel_BoostAccelFactorOnlyItem = KartLevel_BoostAccelFactorOnlyItem[existingLevel.Level4];
+                Console.WriteLine("-------------------------------------------------------------");
+                Console.WriteLine("KartLevel DragFactor:{0}", excSpecs.KartLevel_DragFactor);
+                Console.WriteLine("KartLevel ForwardAccel:{0}", excSpecs.KartLevel_ForwardAccel);
+                Console.WriteLine("KartLevel CornerDrawFactor:{0}", excSpecs.KartLevel_CornerDrawFactor);
+                Console.WriteLine("KartLevel SteerConstraint:{0}", excSpecs.KartLevel_SteerConstraint);
+                Console.WriteLine("KartLevel DriftEscapeForce:{0}", excSpecs.KartLevel_DriftEscapeForce);
+                Console.WriteLine("KartLevel TransAccelFactor:{0}", excSpecs.KartLevel_TransAccelFactor);
+                Console.WriteLine("KartLevel StartBoosterTimeSpeed:{0}", excSpecs.KartLevel_StartBoosterTimeSpeed);
+                Console.WriteLine("KartLevel StartBoosterTimeItem:{0}", excSpecs.KartLevel_StartBoosterTimeItem);
+                Console.WriteLine("KartLevel BoostAccelFactorOnlyItem:{0}", excSpecs.KartLevel_BoostAccelFactorOnlyItem);
+                Console.WriteLine("-------------------------------------------------------------");
+            }
+        }
 
-		public static void Reset_KartLevel_SpecData()
-		{
-			ExcSpec.KartLevel_DragFactor = 0f;
-			ExcSpec.KartLevel_ForwardAccel = 0f;
-			ExcSpec.KartLevel_CornerDrawFactor = 0f;
-			ExcSpec.KartLevel_SteerConstraint = 0f;
-			ExcSpec.KartLevel_DriftEscapeForce = 0f;
-			ExcSpec.KartLevel_TransAccelFactor = 0f;
-			ExcSpec.KartLevel_StartBoosterTimeSpeed = 0f;
-			ExcSpec.KartLevel_StartBoosterTimeItem = 0f;
-			ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0f;
-			Console.WriteLine("Level_Spec: OFF");
-		}
-
-		public static void Use_ExcSpec(short Set_Kart, short Set_KartSN)
-		{
-			float[] Tune_DragFactor_List = { 0f, -0.0008f, -0.0015f, -0.0022f };
-			float[] Tune_ForwardAccel_List = { 0f, 1.5f, 2.5f, 3.5f };
-			float[] Tune_CornerDrawFactor_List = { 0f, 0.0007f, 0.0014f, 0.002f };
-			float[] Tune_TeamBoosterTime_List = { 0f, 100f, 180f, 250f };
-			float[] Tune_NormalBoosterTime_List = { 0f, 70f, 120f, 190f };
-			float[] Tune_StartBoosterTimeSpeed_List = { 0f, 200f, 400f, 800f };
-			float[] Tune_TransAccelFactor_List = { 0f, 0.006f, 0.01f, 0.018f };
-			float[] Tune_DriftMaxGauge_List = { 0f, -70f, -140f, -200f };
-			float[] Tune_DriftEscapeForce_List = { 0f, 80f, 140f, 210f };
-			var existingTune = KartExcData.TuneList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingTune != null)
-			{
-				ExcSpec.Reset_Tune_SpecData();
-				if (existingTune[2] == 103 || existingTune[3] == 103 || existingTune[4] == 103)
-				{
-					ExcSpec.Tune_DragFactor = Tune_DragFactor_List[3];
-				}
-				if (existingTune[2] == 203 || existingTune[3] == 203 || existingTune[4] == 203)
-				{
-					ExcSpec.Tune_ForwardAccel = Tune_ForwardAccel_List[3];
-				}
-				if (existingTune[2] == 303 || existingTune[3] == 303 || existingTune[4] == 303)
-				{
-					ExcSpec.Tune_CornerDrawFactor = Tune_CornerDrawFactor_List[3];
-				}
-				if (existingTune[2] == 403 || existingTune[3] == 403 || existingTune[4] == 403)
-				{
-					ExcSpec.Tune_TeamBoosterTime = Tune_TeamBoosterTime_List[3];
-				}
-				if (existingTune[2] == 503 || existingTune[3] == 503 || existingTune[4] == 503)
-				{
-					ExcSpec.Tune_NormalBoosterTime = Tune_NormalBoosterTime_List[3];
-				}
-				if (existingTune[2] == 603 || existingTune[3] == 603 || existingTune[4] == 603)
-				{
-					ExcSpec.Tune_StartBoosterTimeSpeed = Tune_StartBoosterTimeSpeed_List[3];
-				}
-				if (existingTune[2] == 703 || existingTune[3] == 703 || existingTune[4] == 703)
-				{
-					ExcSpec.Tune_TransAccelFactor = Tune_TransAccelFactor_List[3];
-				}
-				if (existingTune[2] == 803 || existingTune[3] == 803 || existingTune[4] == 803)
-				{
-					ExcSpec.Tune_DriftMaxGauge = Tune_DriftMaxGauge_List[3];
-				}
-				if (existingTune[2] == 903 || existingTune[3] == 903 || existingTune[4] == 903)
-				{
-					ExcSpec.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
-				}
-				Console.WriteLine("-------------------------------------------------------------");
-				Console.WriteLine("TuneSpec DragFactor:{0}", ExcSpec.Tune_DragFactor);
-				Console.WriteLine("TuneSpec ForwardAccel:{0}", ExcSpec.Tune_ForwardAccel);
-				Console.WriteLine("TuneSpec CornerDrawFactor:{0}", ExcSpec.Tune_CornerDrawFactor);
-				Console.WriteLine("TuneSpec TeamBoosterTime:{0}", ExcSpec.Tune_TeamBoosterTime);
-				Console.WriteLine("TuneSpec NormalBoosterTime:{0}", ExcSpec.Tune_NormalBoosterTime);
-				Console.WriteLine("TuneSpec StartBoosterTimeSpeed:{0}", ExcSpec.Tune_StartBoosterTimeSpeed);
-				Console.WriteLine("TuneSpec TransAccelFactor:{0}", ExcSpec.Tune_TransAccelFactor);
-				Console.WriteLine("TuneSpec DriftMaxGauge:{0}", ExcSpec.Tune_DriftMaxGauge);
-				Console.WriteLine("TuneSpec DriftEscapeForce:{0}", ExcSpec.Tune_DriftEscapeForce);
-				Console.WriteLine("-------------------------------------------------------------");
-			}
-			else
-			{
-				ExcSpec.Reset_Tune_SpecData();
-			}
-		}
-
-		public static void Use_PlantSpec(short Set_Kart, short Set_KartSN)
-		{
-			var existingPlant = KartExcData.PlantList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingPlant != null)
-			{
-				if (existingPlant[2] == 43)
-				{
-					if (existingPlant[3] == 1)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.02f;
-						ExcSpec.Plant43_DragFactor = -0.0007f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0.02f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 2)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.02f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 2f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 3)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0.02f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 15f;
-					}
-					else if (existingPlant[3] == 4 || existingPlant[3] == 5)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0.04f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 6)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0021f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 7)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0014f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 8)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0.02f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 9)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0.02f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 10)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 2f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 11)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 2f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 12)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0007f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 13)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0007f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 14)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0007f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 15)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = -0.0014f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 16)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0002f;
-						ExcSpec.Plant43_DragFactor = -0.0014f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 17)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0004f;
-						ExcSpec.Plant43_DragFactor = -0.0007f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 18)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0002f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 2f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 19)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0004f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 20)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0006f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 21)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0008f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 22)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.0012f;
-						ExcSpec.Plant43_DragFactor = -0.0014f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-					else if (existingPlant[3] == 23)
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0.002f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 1f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 30f;
-					}
-					else
-					{
-						ExcSpec.Plant43_TransAccelFactor = 0f;
-						ExcSpec.Plant43_DragFactor = 0f;
-						ExcSpec.Plant43_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant43_ForwardAccel = 0f;
-						ExcSpec.Plant43_StartBoosterTimeSpeed = 0f;
-					}
-				}
-				if (existingPlant[4] == 44)
-				{
-					if (existingPlant[5] == 1)
-					{
-						ExcSpec.Plant44_SlipBrake = -40f;
-						ExcSpec.Plant44_GripBrake = -40f;
-						ExcSpec.Plant44_RearGripFactor = 0.2f;
-						ExcSpec.Plant44_FrontGripFactor = 0.2f;
-						ExcSpec.Plant44_CornerDrawFactor = 0.0005f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 2)
-					{
-						ExcSpec.Plant44_SlipBrake = -12f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0.3f;
-						ExcSpec.Plant44_FrontGripFactor = 0.3f;
-						ExcSpec.Plant44_CornerDrawFactor = 0.001f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 3)
-					{
-						ExcSpec.Plant44_SlipBrake = -10f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0.2f;
-						ExcSpec.Plant44_FrontGripFactor = 0.2f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 4)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0.1f;
-						ExcSpec.Plant44_FrontGripFactor = 0.1f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 5)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = -20f;
-						ExcSpec.Plant44_RearGripFactor = 0.05f;
-						ExcSpec.Plant44_FrontGripFactor = 0.05f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 6)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = -20f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 7)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = -15f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 8)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0.2f;
-					}
-					else if (existingPlant[5] == 9)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0.4f;
-					}
-					else if (existingPlant[5] == 10)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0.8f;
-					}
-					else if (existingPlant[5] == 11)
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = -0.4f;
-					}
-					else if (existingPlant[5] == 12)
-					{
-						ExcSpec.Plant44_SlipBrake = -8f;
-						ExcSpec.Plant44_GripBrake = -5f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 13)
-					{
-						ExcSpec.Plant44_SlipBrake = -6f;
-						ExcSpec.Plant44_GripBrake = -7f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 14)
-					{
-						ExcSpec.Plant44_SlipBrake = -4f;
-						ExcSpec.Plant44_GripBrake = -9f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else if (existingPlant[5] == 15)
-					{
-						ExcSpec.Plant44_SlipBrake = -2f;
-						ExcSpec.Plant44_GripBrake = -11f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-					else
-					{
-						ExcSpec.Plant44_SlipBrake = 0f;
-						ExcSpec.Plant44_GripBrake = 0f;
-						ExcSpec.Plant44_RearGripFactor = 0f;
-						ExcSpec.Plant44_FrontGripFactor = 0f;
-						ExcSpec.Plant44_CornerDrawFactor = 0f;
-						ExcSpec.Plant44_SteerConstraint = 0f;
-					}
-				}
-				if (existingPlant[6] == 45)
-				{
-					if (existingPlant[7] == 0)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 1)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 70f;
-						ExcSpec.Plant45_DriftMaxGauge = -40f;
-						ExcSpec.Plant45_CornerDrawFactor = 0.001f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 2)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -60f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = -192f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 3)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 70f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 100f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 4)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -60f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 5)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -40f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 100f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 6)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 50f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 7)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 30f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0.0005f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 8)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -40f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 9)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = -20f;
-						ExcSpec.Plant45_DriftMaxGauge = -60f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 10)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = -60f;
-						ExcSpec.Plant45_DriftMaxGauge = -100f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 11)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = -40f;
-						ExcSpec.Plant45_DriftMaxGauge = -80f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 12)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 10f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 13)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 30f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 14)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 50f;
-						ExcSpec.Plant45_DriftMaxGauge = 40f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 15)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 70f;
-						ExcSpec.Plant45_DriftMaxGauge = 60f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 16)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0.0005f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.005f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 17)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.005f;
-						ExcSpec.Plant45_DragFactor = -0.0007f;
-					}
-					else if (existingPlant[7] == 18)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -40f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.005f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 19)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.01f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 20)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = -30f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.01f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 21)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.015f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 22)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 30f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = -0.02f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else if (existingPlant[7] == 23)
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 90f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0.0005f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-					else
-					{
-						ExcSpec.Plant45_DriftEscapeForce = 0f;
-						ExcSpec.Plant45_DriftMaxGauge = 0f;
-						ExcSpec.Plant45_CornerDrawFactor = 0f;
-						ExcSpec.Plant45_SlipBrake = 0f;
-						ExcSpec.Plant45_AnimalBoosterTime = 0f;
-						ExcSpec.Plant45_AntiCollideBalance = 0f;
-						ExcSpec.Plant45_DragFactor = 0f;
-					}
-				}
-				if (existingPlant[8] == 46)
-				{
-					if (existingPlant[9] == 1)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = -80f;
-						ExcSpec.Plant46_NormalBoosterTime = 120f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 2)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = -0.03f;
-						ExcSpec.Plant46_ForwardAccel = 2f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 3)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 200f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 5)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 90f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 50f;
-						ExcSpec.Plant46_TeamBoosterTime = 60f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0.02f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0.02f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 7)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 105f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 8)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 105f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 11)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 3;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 12)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 3;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 15 || existingPlant[9] == 16)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 100f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 10f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 17)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 100f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 9f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 18)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 120f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 23)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 60f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 24)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 60f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 25)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 90f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = -30f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else if (existingPlant[9] == 26)
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = -30f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 90f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-					else
-					{
-						ExcSpec.Plant46_DriftMaxGauge = 0f;
-						ExcSpec.Plant46_NormalBoosterTime = 0f;
-						ExcSpec.Plant46_DriftSlipFactor = 0f;
-						ExcSpec.Plant46_ForwardAccel = 0f;
-						ExcSpec.Plant46_AnimalBoosterTime = 0f;
-						ExcSpec.Plant46_TeamBoosterTime = 0f;
-						ExcSpec.Plant46_StartForwardAccelSpeed = 0f;
-						ExcSpec.Plant46_StartForwardAccelItem = 0f;
-						ExcSpec.Plant46_StartBoosterTimeSpeed = 0f;
-						ExcSpec.Plant46_StartBoosterTimeItem = 0f;
-						ExcSpec.Plant46_ItemSlotCapacity = 0;
-						ExcSpec.Plant46_SpeedSlotCapacity = 0;
-						ExcSpec.Plant46_GripBrake = 0f;
-						ExcSpec.Plant46_SlipBrake = 0f;
-					}
-				}
-				Console.WriteLine("-------------------------------------------------------------");
-				Console.WriteLine("Plant43 TransAccelFactor:{0}", ExcSpec.Plant43_TransAccelFactor);
-				Console.WriteLine("Plant43 DragFactor:{0}", ExcSpec.Plant43_DragFactor);
-				Console.WriteLine("Plant43 StartForwardAccelSpeed:{0}", ExcSpec.Plant43_StartForwardAccelSpeed);
-				Console.WriteLine("Plant43 ForwardAccel:{0}", ExcSpec.Plant43_ForwardAccel);
-				Console.WriteLine("Plant43 StartBoosterTimeSpeed:{0}", ExcSpec.Plant43_StartBoosterTimeSpeed);
-
-				Console.WriteLine("Plant44 SlipBrake:{0}", ExcSpec.Plant44_SlipBrake);
-				Console.WriteLine("Plant44 GripBrake:{0}", ExcSpec.Plant44_GripBrake);
-				Console.WriteLine("Plant44 RearGripFactor:{0}", ExcSpec.Plant44_RearGripFactor);
-				Console.WriteLine("Plant44 FrontGripFactor:{0}", ExcSpec.Plant44_FrontGripFactor);
-				Console.WriteLine("Plant44 CornerDrawFactor:{0}", ExcSpec.Plant44_CornerDrawFactor);
-				Console.WriteLine("Plant44 SteerConstraint:{0}", ExcSpec.Plant44_SteerConstraint);
-
-				Console.WriteLine("Plant45 DriftEscapeForce:{0}", ExcSpec.Plant45_DriftEscapeForce);
-				Console.WriteLine("Plant45 DriftMaxGauge:{0}", ExcSpec.Plant45_DriftMaxGauge);
-				Console.WriteLine("Plant45 CornerDrawFactor:{0}", ExcSpec.Plant45_CornerDrawFactor);
-				Console.WriteLine("Plant45 SlipBrake:{0}", ExcSpec.Plant45_SlipBrake);
-				Console.WriteLine("Plant45 AnimalBoosterTime:{0}", ExcSpec.Plant45_AnimalBoosterTime);
-				Console.WriteLine("Plant45 AntiCollideBalance:{0}", ExcSpec.Plant45_AntiCollideBalance);
-				Console.WriteLine("Plant45 DragFactor:{0}", ExcSpec.Plant45_DragFactor);
-
-				Console.WriteLine("Plant46 DriftMaxGauge:{0}", ExcSpec.Plant46_DriftMaxGauge);
-				Console.WriteLine("Plant46 NormalBoosterTime:{0}", ExcSpec.Plant46_NormalBoosterTime);
-				Console.WriteLine("Plant46 DriftSlipFactor:{0}", ExcSpec.Plant46_DriftSlipFactor);
-				Console.WriteLine("Plant46 ForwardAccel:{0}", ExcSpec.Plant46_ForwardAccel);
-				Console.WriteLine("Plant46 AnimalBoosterTime:{0}", ExcSpec.Plant46_AnimalBoosterTime);
-				Console.WriteLine("Plant46 TeamBoosterTime:{0}", ExcSpec.Plant46_TeamBoosterTime);
-				Console.WriteLine("Plant46 StartForwardAccelSpeed:{0}", ExcSpec.Plant46_StartForwardAccelSpeed);
-				Console.WriteLine("Plant46 StartForwardAccelItem:{0}", ExcSpec.Plant46_StartForwardAccelItem);
-				Console.WriteLine("Plant46 StartBoosterTimeSpeed:{0}", ExcSpec.Plant46_StartBoosterTimeSpeed);
-				Console.WriteLine("Plant46 StartBoosterTimeItem:{0}", ExcSpec.Plant46_StartBoosterTimeItem);
-				Console.WriteLine("Plant46 ItemSlotCapacity:{0}", ExcSpec.Plant46_ItemSlotCapacity);
-				Console.WriteLine("Plant46 SpeedSlotCapacity:{0}", ExcSpec.Plant46_SpeedSlotCapacity);
-				Console.WriteLine("Plant46 GripBrake:{0}", ExcSpec.Plant46_GripBrake);
-				Console.WriteLine("Plant46 SlipBrake:{0}", ExcSpec.Plant46_SlipBrake);
-				Console.WriteLine("-------------------------------------------------------------");
-			}
-			else
-			{
-				ExcSpec.Reset_Plant_SpecData();
-			}
-		}
-
-		public static void Use_KartLevelSpec(short Set_Kart, short Set_KartSN)
-		{
-			var existingLevel = KartExcData.LevelList.FirstOrDefault(list => list[0] == Set_Kart && list[1] == Set_KartSN);
-			if (existingLevel != null)
-			{
-				if (existingLevel[4] == 0)
-				{
-					ExcSpec.KartLevel_DragFactor = 0f;
-					ExcSpec.KartLevel_ForwardAccel = 0f;
-				}
-				else if(existingLevel[4] == 1)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0001f;
-					ExcSpec.KartLevel_ForwardAccel = 0.1f;
-				}
-				else if (existingLevel[4] == 2)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0002f;
-					ExcSpec.KartLevel_ForwardAccel = 0.2f;
-				}
-				else if (existingLevel[4] == 3)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0003f;
-					ExcSpec.KartLevel_ForwardAccel = 0.3f;
-				}
-				else if (existingLevel[4] == 4)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0004f;
-					ExcSpec.KartLevel_ForwardAccel = 0.4f;
-				}
-				else if (existingLevel[4] == 5)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0005f;
-					ExcSpec.KartLevel_ForwardAccel = 0.5f;
-				}
-				else if (existingLevel[4] == 6)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0006f;
-					ExcSpec.KartLevel_ForwardAccel = 0.6f;
-				}
-				else if (existingLevel[4] == 7)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0007f;
-					ExcSpec.KartLevel_ForwardAccel = 0.7f;
-				}
-				else if (existingLevel[4] == 8)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0008f;
-					ExcSpec.KartLevel_ForwardAccel = 0.8f;
-				}
-				else if (existingLevel[4] == 9)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.001f;
-					ExcSpec.KartLevel_ForwardAccel = 1f;
-				}
-				else if (existingLevel[4] == 10)
-				{
-					ExcSpec.KartLevel_DragFactor = -0.0012f;
-					ExcSpec.KartLevel_ForwardAccel = 1.5f;
-				}
-				if (existingLevel[5] == 0)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0f;
-					ExcSpec.KartLevel_SteerConstraint = 0f;
-				}
-				else if (existingLevel[5] == 1)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0001f;
-					ExcSpec.KartLevel_SteerConstraint = 0.01f;
-				}
-				else if (existingLevel[5] == 2)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0002f;
-					ExcSpec.KartLevel_SteerConstraint = 0.02f;
-				}
-				else if (existingLevel[5] == 3)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0003f;
-					ExcSpec.KartLevel_SteerConstraint = 0.03f;
-				}
-				else if (existingLevel[5] == 4)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0004f;
-					ExcSpec.KartLevel_SteerConstraint = 0.04f;
-				}
-				else if (existingLevel[5] == 5)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0005f;
-					ExcSpec.KartLevel_SteerConstraint = 0.05f;
-				}
-				else if (existingLevel[5] == 6)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0006f;
-					ExcSpec.KartLevel_SteerConstraint = 0.06f;
-				}
-				else if (existingLevel[5] == 7)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0007f;
-					ExcSpec.KartLevel_SteerConstraint = 0.08f;
-				}
-				else if (existingLevel[5] == 8)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0008f;
-					ExcSpec.KartLevel_SteerConstraint = 0.11f;
-				}
-				else if (existingLevel[5] == 9)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.0009f;
-					ExcSpec.KartLevel_SteerConstraint = 0.15f;
-				}
-				else if (existingLevel[5] == 10)
-				{
-					ExcSpec.KartLevel_CornerDrawFactor = 0.001f;
-					ExcSpec.KartLevel_SteerConstraint = 0.2f;
-				}
-				if (existingLevel[6] == 0)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 0f;
-				}
-				else if (existingLevel[6] == 1)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 1f;
-				}
-				else if (existingLevel[6] == 2)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 3f;
-				}
-				else if (existingLevel[6] == 3)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 6f;
-				}
-				else if (existingLevel[6] == 4)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 10f;
-				}
-				else if (existingLevel[6] == 5)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 15f;
-				}
-				else if (existingLevel[6] == 6)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 20f;
-				}
-				else if (existingLevel[6] == 7)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 26f;
-				}
-				else if (existingLevel[6] == 8)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 33f;
-				}
-				else if (existingLevel[6] == 9)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 40f;
-				}
-				else if (existingLevel[6] == 10)
-				{
-					ExcSpec.KartLevel_DriftEscapeForce = 50f;
-				}
-				if (existingLevel[7] == 0)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 0f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 0f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0f;
-				}
-				else if (existingLevel[7] == 1)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0001f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 5f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 5f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.001f;
-				}
-				else if (existingLevel[7] == 2)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0003f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 10f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 10f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.003f;
-				}
-				else if (existingLevel[7] == 3)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0006f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 15f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 15f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.005f;
-				}
-				else if (existingLevel[7] == 4)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.001f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 20f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 20f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.009f;
-				}
-				else if (existingLevel[7] == 5)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0014f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 30f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 30f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.013f;
-				}
-				else if (existingLevel[7] == 6)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0019f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 40f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 40f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.019f;
-				}
-				else if (existingLevel[7] == 7)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0025f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 50f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 50f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.025f;
-				}
-				else if (existingLevel[7] == 8)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.0032f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 65f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 65f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.033f;
-				}
-				else if (existingLevel[7] == 9)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.004f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 80f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 80f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.041f;
-				}
-				else if (existingLevel[7] == 10)
-				{
-					ExcSpec.KartLevel_TransAccelFactor = 0.005f;
-					ExcSpec.KartLevel_StartBoosterTimeSpeed = 100f;
-					ExcSpec.KartLevel_StartBoosterTimeItem = 100f;
-					ExcSpec.KartLevel_BoostAccelFactorOnlyItem = 0.05f;
-				}
-				Console.WriteLine("-------------------------------------------------------------");
-				Console.WriteLine("KartLevel DragFactor:{0}", ExcSpec.KartLevel_DragFactor);
-				Console.WriteLine("KartLevel ForwardAccel:{0}", ExcSpec.KartLevel_ForwardAccel);
-				Console.WriteLine("KartLevel CornerDrawFactor:{0}", ExcSpec.KartLevel_CornerDrawFactor);
-				Console.WriteLine("KartLevel SteerConstraint:{0}", ExcSpec.KartLevel_SteerConstraint);
-				Console.WriteLine("KartLevel DriftEscapeForce:{0}", ExcSpec.KartLevel_DriftEscapeForce);
-				Console.WriteLine("KartLevel TransAccelFactor:{0}", ExcSpec.KartLevel_TransAccelFactor);
-				Console.WriteLine("KartLevel StartBoosterTimeSpeed:{0}", ExcSpec.KartLevel_StartBoosterTimeSpeed);
-				Console.WriteLine("KartLevel StartBoosterTimeItem:{0}", ExcSpec.KartLevel_StartBoosterTimeItem);
-				Console.WriteLine("KartLevel BoostAccelFactorOnlyItem:{0}", ExcSpec.KartLevel_BoostAccelFactorOnlyItem);
-				Console.WriteLine("-------------------------------------------------------------");
-			}
-			else
-			{
-				ExcSpec.Reset_KartLevel_SpecData();
-			}
-		}
-
-		public static void Use_PartsSpec(short id, short sn)
-		{
-			var existingParts = KartExcData.PartsList.FirstOrDefault(list => list[0] == id && list[1] == sn);
-			if (existingParts != null)
-			{
-				for (short i = 63; i < 67; i++)
-				{
-					if (i == 63)
-					{
-						short Item_Id = existingParts[2];
-						short Grade = existingParts[3];
-						short PartsValue = existingParts[4];
-						if (PartsValue != 0)
-						{
-							ExcSpec.PartSpec_TransAccelFactor = (float)(((decimal)existingParts[4] * 1.0M - 800.0M) / 25000.0M + 1.85M + -0.205M);
-						}
-						else
-						{
-							ExcSpec.PartSpec_TransAccelFactor = 0f;
-						}
-					}
-					else if (i == 64)
-					{
-						short Item_Id = existingParts[5];
-						short Grade = (byte)existingParts[6];
-						short PartsValue = existingParts[7];
-						if (PartsValue != 0)
-						{
-							ExcSpec.PartSpec_SteerConstraint = (float)(((decimal)existingParts[7] * 1.0M - 800.0M) / 250.0M + 2.1M + 20.3M);
-						}
-						else
-						{
-							ExcSpec.PartSpec_SteerConstraint = 0f;
-						}
-					}
-					else if (i == 65)
-					{
-						short Item_Id = existingParts[8];
-						short Grade = (byte)existingParts[9];
-						short PartsValue = existingParts[10];
-						if (PartsValue != 0)
-						{
-							ExcSpec.PartSpec_DriftEscapeForce = (float)((decimal)existingParts[10] * 2.0M + 2200.0M);
-						}
-						else
-						{
-							ExcSpec.PartSpec_DriftEscapeForce = 0f;
-						}
-					}
-					else if (i == 66)
-					{
-						short Item_Id = existingParts[11];
-						short Grade = (byte)existingParts[12];
-						short PartsValue = existingParts[13];
-						if (PartsValue != 0)
-						{
-							ExcSpec.PartSpec_NormalBoosterTime = (float)((decimal)existingParts[13] * 1.0M - 940.0M + 3000.0M);
-						}
-						else
-						{
-							ExcSpec.PartSpec_NormalBoosterTime = 0f;
-						}
-					}
-					Console.WriteLine("-------------------------------------------------------------");
-					Console.WriteLine("PartSpec TransAccelFactor:{0}", PartSpec_TransAccelFactor);
-					Console.WriteLine("PartSpec SteerConstraint:{0}", PartSpec_SteerConstraint);
-					Console.WriteLine("PartSpec DriftEscapeForce:{0}", PartSpec_DriftEscapeForce);
-					Console.WriteLine("PartSpec NormalBoosterTime:{0}", PartSpec_NormalBoosterTime);
-					Console.WriteLine("-------------------------------------------------------------");
-				}
-			}
-			else
-			{
-				ExcSpec.Reset_PartSpec_SpecData();
-			}
-		}
-	}
+        public static void Use_PartsSpec(string Nickname, ExcSpecs excSpecs)
+        {
+            KartExcData.PartsLists.TryAdd(Nickname, new List<Parts>());
+            var PartsList = KartExcData.PartsLists[Nickname];
+            short Set_Kart = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart;
+            short Set_KartSN = ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartSN;
+            var existingParts = PartsList.FirstOrDefault(parts => parts.ID == Set_Kart && parts.SN == Set_KartSN);
+            if (existingParts != null)
+            {
+                for (short i = 63; i < 67; i++)
+                {
+                    if (i == 63)
+                    {
+                        short PartsValue = existingParts.EngineValue;
+                        if (PartsValue != 0)
+                        {
+                            excSpecs.PartSpec_TransAccelFactor = (float)(((decimal)PartsValue * 1.0M - 800.0M) / 25000.0M + 1.85M + -0.205M);
+                        }
+                        else
+                        {
+                            excSpecs.PartSpec_TransAccelFactor = 0f;
+                        }
+                    }
+                    else if (i == 64)
+                    {
+                        short PartsValue = existingParts.HandleValue;
+                        if (PartsValue != 0)
+                        {
+                            excSpecs.PartSpec_SteerConstraint = (float)(((decimal)PartsValue * 1.0M - 800.0M) / 250.0M + 2.1M + 20.3M);
+                        }
+                        else
+                        {
+                            excSpecs.PartSpec_SteerConstraint = 0f;
+                        }
+                    }
+                    else if (i == 65)
+                    {
+                        short PartsValue = existingParts.WheelValue;
+                        if (PartsValue != 0)
+                        {
+                            excSpecs.PartSpec_DriftEscapeForce = (float)((decimal)PartsValue * 2.0M + 2200.0M);
+                        }
+                        else
+                        {
+                            excSpecs.PartSpec_DriftEscapeForce = 0f;
+                        }
+                    }
+                    else if (i == 66)
+                    {
+                        short PartsValue = existingParts.BoosterValue;
+                        if (PartsValue != 0)
+                        {
+                            excSpecs.PartSpec_NormalBoosterTime = (float)((decimal)PartsValue * 1.0M - 940.0M + 3000.0M);
+                        }
+                        else
+                        {
+                            excSpecs.PartSpec_NormalBoosterTime = 0f;
+                        }
+                    }
+                }
+                Console.WriteLine("-------------------------------------------------------------");
+                Console.WriteLine("PartSpec TransAccelFactor:{0}", excSpecs.PartSpec_TransAccelFactor);
+                Console.WriteLine("PartSpec SteerConstraint:{0}", excSpecs.PartSpec_SteerConstraint);
+                Console.WriteLine("PartSpec DriftEscapeForce:{0}", excSpecs.PartSpec_DriftEscapeForce);
+                Console.WriteLine("PartSpec NormalBoosterTime:{0}", excSpecs.PartSpec_NormalBoosterTime);
+                Console.WriteLine("-------------------------------------------------------------");
+            }
+        }
+    }
 }
