@@ -125,15 +125,16 @@ namespace KartRider
             var f = (float)random.Next(1000, 2001);
             if (GameType == 0)
             {
-                var a = Enumerable.Range(0, 5).Select(i => 0.7f + i * 0.05f).ToArray()[random.Next(5)];
+                var a = new[] { 0.6f, 0.7f, 0.8f }[random.Next(3)];
                 return new List<float>() { a, b, c, d, e, f };
             }
             else if (GameType == 1)
             {
-                var a = Enumerable.Range(0, 5).Select(i => 0.5f + i * 0.05f).ToArray()[random.Next(5)];
+                var a = new[] { 0.4f, 0.5f, 0.6f }[random.Next(3)];
                 return new List<float>() { a, b, c, d, e, f };
             }
             return null;
         }
     }
 }
+
