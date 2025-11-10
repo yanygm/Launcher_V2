@@ -604,7 +604,7 @@ namespace KartRider
                         var Kart_id = iPacket.ReadShort();
                         var FlyingPet_id = iPacket.ReadShort();
                         byte StartType = 1;
-                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, 0, 0, 0);
+                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChapterInfoPacket", 0))
@@ -663,7 +663,7 @@ namespace KartRider
                         var Kart_id = iPacket.ReadShort();
                         var FlyingPet_id = iPacket.ReadShort();
                         byte StartType = 2;
-                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, 0, 0, 0);
+                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCompleteChallenger", 0))
@@ -1418,7 +1418,7 @@ namespace KartRider
                         Console.WriteLine("StartTimeAttack: {0} / {1} / {2} / {3} / {4} / {5} / {6} / {7}", StartTimeAttack_SpeedType, StartTimeAttack_GameType, Kart_id, FlyingPet_id, RandomTrack.GetTrackName(StartTimeAttack_Track), StartTimeAttack_StartType, ProfileService.ProfileConfigs[Nickname].Rider.AttackType, StartTimeAttack_TimaAttackMpdeType);
                         byte StartType = 3;
                         ProfileService.ProfileConfigs[Nickname].Rider.Track = RandomTrack.GetRandomTrack(Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
-                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, ProfileService.ProfileConfigs[Nickname].Rider.Track);
+                        StartGameData.Start_KartSpac(this.Parent, Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, ProfileService.ProfileConfigs[Nickname].Rider.Track, StartTimeAttack_SpeedType);
                         ProfileService.Save(Nickname);
                         return;
                     }
