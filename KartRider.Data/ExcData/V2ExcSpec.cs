@@ -111,19 +111,19 @@ namespace ExcData
 
                     Console.WriteLine("-------------------------------------------------------------");
 
-                    V2Parts_TransAccelFactor = (float)((Get12Parts(existingParts.Engine) * 1.0M - 800M) / 25000.0M + 0.4765M);
+                    V2Parts_TransAccelFactor = (float)((Get12Parts(existingParts.Engine < 1 ? (short)Kart.defaultEngineType : existingParts.Engine) * 1.0M - 800M) / 25000.0M + 0.4765M);
                     V2Default_TransAccelFactor = (float)((Get12Parts((short)Kart.defaultEngineType) * 1.0M - 800M) / 25000.0M + 0.4765M);
                     Console.WriteLine($"[{Nickname}]V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
 
-                    V2Parts_SteerConstraint = (float)((Get12Parts(existingParts.Handle) * 1.0M - 800M) / 250.0M + 2.7M);
+                    V2Parts_SteerConstraint = (float)((Get12Parts(existingParts.Handle < 1 ? (short)Kart.defaultHandleType : existingParts.Handle) * 1.0M - 800M) / 250.0M + 2.7M);
                     V2Default_SteerConstraint = (float)((Get12Parts((short)Kart.defaultHandleType) * 1.0M - 800M) / 250.0M + 2.7M);
                     Console.WriteLine($"[{Nickname}]V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
 
-                    V2Parts_DriftEscapeForce = (float)(Get12Parts(existingParts.Wheel) * 2.0M);
+                    V2Parts_DriftEscapeForce = (float)(Get12Parts(existingParts.Wheel < 1 ? (short)Kart.defaultWheelType : existingParts.Wheel) * 2.0M);
                     V2Default_DriftEscapeForce = (float)(Get12Parts((short)Kart.defaultWheelType) * 2.0M);
                     Console.WriteLine($"[{Nickname}]V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
 
-                    V2Parts_NormalBoosterTime = (float)(Get12Parts(existingParts.Booster) * 1.0M - 260M);
+                    V2Parts_NormalBoosterTime = (float)(Get12Parts(existingParts.Booster < 1 ? (short)Kart.defaultBoosterType : existingParts.Booster) * 1.0M - 260M);
                     V2Default_NormalBoosterTime = (float)(Get12Parts((short)Kart.defaultBoosterType) * 1.0M - 260M);
                     Console.WriteLine($"[{Nickname}]V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
 
