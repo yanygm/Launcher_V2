@@ -131,15 +131,6 @@ namespace KartRider
 
         public void Load_Data()
         {
-            string[] bossTrack = { "mechanic_K01", "mechanic_K02", "mechanic_K03" };
-            foreach(string track in bossTrack)
-            {
-                uint trackId = Adler32Helper.GenerateAdler32_UNICODE(track, 0);
-                if (!RandomTrack.track.ContainsKey(trackId))
-                {
-                    RandomTrack.track.Add(trackId, track);
-                }
-            }
             string ModelMax = Resources.ModelMax;
             if (!File.Exists(FileName.ModelMax_LoadFile))
             {
@@ -211,3 +202,4 @@ namespace KartRider
         }
     }
 }
+
