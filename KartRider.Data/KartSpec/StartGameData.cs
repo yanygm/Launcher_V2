@@ -7,28 +7,28 @@ namespace KartRider
 {
     public class StartGameData
     {
-        public static void Start_KartSpac(SessionGroup Parent, string Nickname, byte StartType, byte StartTimeAttack_StartType, int Unk1, uint Track)
+        public static void Start_KartSpac(SessionGroup Parent, string Nickname, byte StartType, byte StartTimeAttack_StartType, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
         {
             if (StartType == 1)
             {
                 Console.WriteLine("故事模式");
-                StartGameData.PrKartSpec(Parent, Nickname);
+                StartGameData.PrKartSpec(Parent, Nickname, StartTimeAttack_SpeedType);
             }
             else if (StartType == 2)
             {
                 Console.WriteLine("挑战者");
-                StartGameData.PrchallengerKartSpec(Parent, Nickname);
+                StartGameData.PrchallengerKartSpec(Parent, Nickname, StartTimeAttack_SpeedType);
             }
             else if (StartType == 3)
             {
                 Console.WriteLine("排行计时");
                 if (StartTimeAttack_StartType == 0)
                 {
-                    StartGameData.PrStartTimeAttack(Parent, Nickname, Unk1, Track);
+                    StartGameData.PrStartTimeAttack(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType);
                 }
                 else
                 {
-                    StartGameData.PrStartTimeAttack_QuestType(Parent, Nickname, Unk1, Track);
+                    StartGameData.PrStartTimeAttack_QuestType(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType);
                 }
             }
             else
@@ -37,13 +37,13 @@ namespace KartRider
             }
         }
 
-        public static void PrStartTimeAttack(SessionGroup Parent, string Nickname, int Unk1, uint Track)
+        public static void PrStartTimeAttack(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
                 oPacket.WriteInt(Unk1);
                 oPacket.WriteInt(0);
-                GetKartSpac(oPacket, Nickname);
+                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(0);
                 oPacket.WriteInt(0);
@@ -54,36 +54,36 @@ namespace KartRider
             }
         }
 
-        public static void PrchallengerKartSpec(SessionGroup Parent, string Nickname)
+        public static void PrchallengerKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType)
         {
             using (OutPacket oPacket = new OutPacket("PrchallengerKartSpec"))
             {
                 oPacket.WriteByte(1);
-                GetKartSpac(oPacket, Nickname);
+                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
                 oPacket.WriteInt(0);
                 oPacket.WriteByte(0);
                 Parent.Client.Send(oPacket);
             }
         }
 
-        public static void PrKartSpec(SessionGroup Parent, string Nickname)
+        public static void PrKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType)
         {
             using (OutPacket oPacket = new OutPacket("PrKartSpec"))
             {
                 oPacket.WriteByte(1);
-                GetDefaultSpac(oPacket, Nickname);
+                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
                 oPacket.WriteByte(0);
                 Parent.Client.Send(oPacket);
             }
         }
 
-        public static void PrStartTimeAttack_QuestType(SessionGroup Parent, string Nickname, int Unk1, uint Track)
+        public static void PrStartTimeAttack_QuestType(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
                 oPacket.WriteInt(Unk1);
                 oPacket.WriteInt(0);
-                GetDefaultSpac(oPacket, Nickname);
+                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(0);
                 oPacket.WriteInt(0);
@@ -94,7 +94,7 @@ namespace KartRider
             }
         }
 
-        public static void GetKartSpac(OutPacket oPacket, string Nickname)
+        public static void GetKartSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType)
         {
             var speedType = new SpeedType();
             byte speed = 0;
@@ -173,7 +173,7 @@ namespace KartRider
             oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + excSpecs.Tune_CornerDrawFactor + excSpecs.Plant44_CornerDrawFactor + excSpecs.Plant45_CornerDrawFactor + excSpecs.KartLevel_CornerDrawFactor + SpeedPatch.CornerDrawFactor + V2Spec.V2Level_CornerDrawFactor);
             oPacket.WriteEncFloat(Kart.DriftLeanFactor);
             oPacket.WriteEncFloat(Kart.SteerLeanFactor);
-            if (speed == 4 || speed == 6)
+            if (speed == 4 || speed == 6 || StartTimeAttack_SpeedType == 4 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S4_DriftMaxGauge);
             }
@@ -181,7 +181,7 @@ namespace KartRider
             {
                 oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + excSpecs.Tune_DriftMaxGauge + excSpecs.Plant45_DriftMaxGauge + excSpecs.Plant46_DriftMaxGauge + SpeedPatch.DriftMaxGauge + V2Spec.V2Level_DriftMaxGauge);
             }
-            if (speed == 6)
+            if (speed == 6 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S6_BoosterTime);
             }
@@ -197,7 +197,7 @@ namespace KartRider
                 }
             }
             oPacket.WriteEncFloat(Kart.ItemBoosterTime + FlyingPet.ItemBoosterTime);
-            if (speed == 6)
+            if (speed == 6 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S6_BoosterTime);
             }
@@ -275,7 +275,7 @@ namespace KartRider
             KartSpecLog(oPacket, StartPosition);
         }
 
-        public static void GetDefaultSpac(OutPacket oPacket, string Nickname)
+        public static void GetDefaultSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType)
         {
             var speedType = new SpeedType();
             speedType.SpeedTypeData(ProfileService.SettingConfig.SpeedType);
@@ -318,7 +318,7 @@ namespace KartRider
             oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + SpeedPatch.CornerDrawFactor);
             oPacket.WriteEncFloat(Kart.DriftLeanFactor);
             oPacket.WriteEncFloat(Kart.SteerLeanFactor);
-            if (ProfileService.SettingConfig.SpeedType == 4 || ProfileService.SettingConfig.SpeedType == 6)
+            if (ProfileService.SettingConfig.SpeedType == 4 || ProfileService.SettingConfig.SpeedType == 6 || StartTimeAttack_SpeedType == 4 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S4_DriftMaxGauge);
             }
@@ -326,7 +326,7 @@ namespace KartRider
             {
                 oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + SpeedPatch.DriftMaxGauge);
             }
-            if (ProfileService.SettingConfig.SpeedType == 6)
+            if (ProfileService.SettingConfig.SpeedType == 6 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S6_BoosterTime);
             }
@@ -335,7 +335,7 @@ namespace KartRider
                 oPacket.WriteEncFloat(Kart.NormalBoosterTime + FlyingPet.NormalBoosterTime + V2Spec.V2Default_NormalBoosterTime);
             }
             oPacket.WriteEncFloat(Kart.ItemBoosterTime + FlyingPet.ItemBoosterTime);
-            if (ProfileService.SettingConfig.SpeedType == 6)
+            if (ProfileService.SettingConfig.SpeedType == 6 || StartTimeAttack_SpeedType == 6)
             {
                 oPacket.WriteEncFloat(GameType.S6_BoosterTime);
             }
