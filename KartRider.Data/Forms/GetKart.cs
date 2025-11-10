@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartRider.IO.Packet;
 using Profile;
 using RiderData;
@@ -79,6 +79,24 @@ namespace KartRider
                     });
 
                     Save_NewKartList(newList);
+                }
+                else
+                {
+                    using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                    {
+                        outPacket.WriteByte(1);
+                        outPacket.WriteInt(1);
+                        outPacket.WriteShort(GetKart.Item_Type);
+                        outPacket.WriteShort(GetKart.Item_Code);
+                        outPacket.WriteShort(0);
+                        outPacket.WriteUShort(1);//수량
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(-1);
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(0);
+                        RouterListener.MySession.Client.Send(outPacket);
+                    }
                 }
             })).Start();
         }
