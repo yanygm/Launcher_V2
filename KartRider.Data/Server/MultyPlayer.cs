@@ -781,7 +781,7 @@ public static class MultyPlayer
                 oPacket.WriteInt();
 
                 //kart data
-                StartGameData.GetKartSpac(oPacket, nickname);
+                StartGameData.GetKartSpac(oPacket, nickname, room.SpeedType);
 
                 oPacket.WriteInt(room.GetAiCount()); //AI count
                 if (room.GetAiCount() > 0)
