@@ -118,14 +118,14 @@ namespace KartRider
         public static List<float> GetAISpec(byte GameType)
         {
             Random random = new Random();
-            var b = (float)random.Next(2000, 3001);
-            var c = (float)random.Next(2500, 3501);
-            var d = Enumerable.Range(0, 11).Select(i => 1.0f + i * 0.1f).ToArray()[random.Next(11)];
-            var e = (float)random.Next(500, 1501);
-            var f = (float)random.Next(1000, 2001);
+            var b = (float)random.Next(2300, 2600);
+            var c = (float)random.Next(2900, 3000);
+            var d = new[] { 1.4f, 1.5f, 1.6f }[random.Next(3)];
+            var e = 1000;
+            var f = 1500;
             if (GameType == 0)
             {
-                var a = new[] { 0.6f, 0.7f, 0.8f }[random.Next(3)];
+                var a = new[] { 0.5f, 0.6f, 0.7f, 0.8f }[random.Next(4)];
                 return new List<float>() { a, b, c, d, e, f };
             }
             else if (GameType == 1)
@@ -137,4 +137,5 @@ namespace KartRider
         }
     }
 }
+
 
