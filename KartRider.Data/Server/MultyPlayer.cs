@@ -1016,6 +1016,37 @@ public static class MultyPlayer
             }
             return;
         }
+        else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChJoinRoomRequestPacket"))
+        {
+            var roomId = iPacket.ReadByte();
+            var unk = iPacket.ReadByte();
+            var pwd = iPacket.ReadString();
+            Console.WriteLine("ChJoinRoomRequestPacket, roomId = {0}, unk = {1}, pwd = {2}", roomId, unk, pwd);
+
+            var room = RoomManager.GetRoom(roomId);
+            if (pwd == room.LockPwd)
+            {
+                using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
+                {
+                    outPacket.WriteByte(0);
+                    outPacket.WriteInt();
+                    outPacket.WriteInt();
+                    Parent.Client.Send(outPacket);
+                }
+                RoomManager.AddPlayer(roomId, nickname, 2, 2);
+            }
+            else
+            {
+                using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
+                {
+                    outPacket.WriteByte(2);
+                    outPacket.WriteInt();
+                    outPacket.WriteInt();
+                    Parent.Client.Send(outPacket);
+                }
+            }
+            return;
+        }
     }
 
     static void GrSlotDataPacket(SessionGroup Parent, string nickname)
