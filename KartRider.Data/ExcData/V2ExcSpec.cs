@@ -97,6 +97,11 @@ namespace ExcData
                 var existingParts = Parts12List.FirstOrDefault(parts => parts.ID == KartAndSN.Kart && parts.SN == KartAndSN.SN);
 
                 // Handle exceed type
+                short Engine = (short)Kart.defaultEngineType;
+                short Handle = (short)Kart.defaultHandleType;
+                short Wheel = (short)Kart.defaultWheelType;
+                short Booster = (short)Kart.defaultBoosterType;
+
                 if (existingParts != null)
                 {
                     if (existingParts.ExceedType != 0)
@@ -109,26 +114,31 @@ namespace ExcData
                     }
                     KartExcData.Save(filename.Parts12Data_LoadFile, Parts12List);
 
-                    Console.WriteLine("-------------------------------------------------------------");
-
-                    V2Parts_TransAccelFactor = (float)((Get12Parts(existingParts.Engine < 1 ? (short)Kart.defaultEngineType : existingParts.Engine) * 1.0M - 800M) / 25000.0M + 0.4765M);
-                    V2Default_TransAccelFactor = (float)((Get12Parts((short)Kart.defaultEngineType) * 1.0M - 800M) / 25000.0M + 0.4765M);
-                    Console.WriteLine($"[{Nickname}]V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
-
-                    V2Parts_SteerConstraint = (float)((Get12Parts(existingParts.Handle < 1 ? (short)Kart.defaultHandleType : existingParts.Handle) * 1.0M - 800M) / 250.0M + 2.7M);
-                    V2Default_SteerConstraint = (float)((Get12Parts((short)Kart.defaultHandleType) * 1.0M - 800M) / 250.0M + 2.7M);
-                    Console.WriteLine($"[{Nickname}]V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
-
-                    V2Parts_DriftEscapeForce = (float)(Get12Parts(existingParts.Wheel < 1 ? (short)Kart.defaultWheelType : existingParts.Wheel) * 2.0M);
-                    V2Default_DriftEscapeForce = (float)(Get12Parts((short)Kart.defaultWheelType) * 2.0M);
-                    Console.WriteLine($"[{Nickname}]V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
-
-                    V2Parts_NormalBoosterTime = (float)(Get12Parts(existingParts.Booster < 1 ? (short)Kart.defaultBoosterType : existingParts.Booster) * 1.0M - 260M);
-                    V2Default_NormalBoosterTime = (float)(Get12Parts((short)Kart.defaultBoosterType) * 1.0M - 260M);
-                    Console.WriteLine($"[{Nickname}]V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
-
-                    Console.WriteLine("-------------------------------------------------------------");
+                    Engine = existingParts.Engine < 1 ? (short)Kart.defaultEngineType : existingParts.Engine;
+                    Handle = existingParts.Handle < 1 ? (short)Kart.defaultHandleType : existingParts.Handle;
+                    Wheel = existingParts.Wheel < 1 ? (short)Kart.defaultWheelType : existingParts.Wheel;
+                    Booster = existingParts.Booster < 1 ? (short)Kart.defaultBoosterType : existingParts.Booster;
                 }
+
+                Console.WriteLine("-------------------------------------------------------------");
+
+                V2Parts_TransAccelFactor = (float)((Get12Parts(Engine) * 1.0M - 800M) / 25000.0M + 0.4765M);
+                V2Default_TransAccelFactor = (float)((Get12Parts((short)Kart.defaultEngineType) * 1.0M - 800M) / 25000.0M + 0.4765M);
+                Console.WriteLine($"[{Nickname}]V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
+
+                V2Parts_SteerConstraint = (float)((Get12Parts(Handle) * 1.0M - 800M) / 250.0M + 2.7M);
+                V2Default_SteerConstraint = (float)((Get12Parts((short)Kart.defaultHandleType) * 1.0M - 800M) / 250.0M + 2.7M);
+                Console.WriteLine($"[{Nickname}]V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
+
+                V2Parts_DriftEscapeForce = (float)(Get12Parts(Wheel) * 2.0M);
+                V2Default_DriftEscapeForce = (float)(Get12Parts((short)Kart.defaultWheelType) * 2.0M);
+                Console.WriteLine($"[{Nickname}]V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
+
+                V2Parts_NormalBoosterTime = (float)(Get12Parts(Booster) * 1.0M - 260M);
+                V2Default_NormalBoosterTime = (float)(Get12Parts((short)Kart.defaultBoosterType) * 1.0M - 260M);
+                Console.WriteLine($"[{Nickname}]V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
+
+                Console.WriteLine("-------------------------------------------------------------");
 
                 var existingLevel = Level12List.FirstOrDefault(level => level.ID == KartAndSN.Kart && level.SN == KartAndSN.SN);
                 if (existingLevel != null)
