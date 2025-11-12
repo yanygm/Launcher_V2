@@ -114,10 +114,10 @@ namespace ExcData
                     }
                     KartExcData.Save(filename.Parts12Data_LoadFile, Parts12List);
 
-                    Engine = existingParts.Engine < 1 ? (short)Kart.defaultEngineType : existingParts.Engine;
-                    Handle = existingParts.Handle < 1 ? (short)Kart.defaultHandleType : existingParts.Handle;
-                    Wheel = existingParts.Wheel < 1 ? (short)Kart.defaultWheelType : existingParts.Wheel;
-                    Booster = existingParts.Booster < 1 ? (short)Kart.defaultBoosterType : existingParts.Booster;
+                    Engine = existingParts.Engine > 1 ? existingParts.Engine : Engine;
+                    Handle = existingParts.Handle > 1 ? existingParts.Handle : Handle;
+                    Wheel = existingParts.Wheel > 1 ? existingParts.Wheel : Wheel;
+                    Booster = existingParts.Booster > 1 ? existingParts.Booster : Booster;
                 }
 
                 Console.WriteLine("-------------------------------------------------------------");
@@ -452,4 +452,5 @@ namespace ExcData
         public float V2Level_DriftMaxGauge { get; set; } = 0f;
     }
 }
+
 
