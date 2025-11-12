@@ -2759,7 +2759,12 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF 47 00 00 00 00 00 47 00 00 00 00 00 00 00 02 00 00 00");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteUInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("FF FF FF FF FF FF FF FF FF FF FF FF FF");
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2888,9 +2893,12 @@ namespace KartRider
                                 outPacket.WriteInt(0);
                             }
                             outPacket.WriteByte(0);
-                            outPacket.WriteEndPoint(serverEndPoint.Address, 39311);
-                            outPacket.WriteEndPoint(serverEndPoint.Address, 39312);
-                            outPacket.WriteInt(0);
+                            outPacket.WriteEndPoint(IPAddress.Any, 39311);
+                            outPacket.WriteEndPoint(IPAddress.Any, 39312);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(1);
+                            outPacket.WriteByte(0);
                             outPacket.WriteString("");
                             outPacket.WriteInt(0);
                             outPacket.WriteByte(1);
@@ -2971,6 +2979,13 @@ namespace KartRider
                             outPacket.WriteByte(0);
                             outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Set_screen);
                             outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].Rider.IdentificationType);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PcMsgPassport"))
+                        {
+                            outPacket.WriteString(Nickname);
+                            outPacket.WriteString(UserNO.ToString());
+                            outPacket.WriteString("fdfggphgrndpicpligmprninfjelpqdjpjnoidkrmofldfkrechgjqcfopclpmnlpjcqplgiccncclnjgjipjmpojkfilqhfqniikneoigqnghjpkiljqgjmilfjdikk", true);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;

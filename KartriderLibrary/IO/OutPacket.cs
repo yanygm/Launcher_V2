@@ -184,34 +184,45 @@ namespace KartRider.IO.Packet
 			this.Append((long)value, 2);
 		}
 
-		public void WriteString(string value)
+		public void WriteString(string value, bool ascii = false)
 		{
 			if (value == null)
 			{
 				throw new ArgumentNullException("value");
 			}
 			this.WriteInt(value.Length);
-			this.WriteString(value, value.Length);
+			this.WriteString(value, value.Length, ascii);
 		}
 
-		public void WriteString(string value, int length)
+		public void WriteString(string value, int length, bool ascii = false)
 		{
 			int i;
 			if ((value == null || length < 0 ? true : length > value.Length))
 			{
 				throw new ArgumentNullException("value");
 			}
-			byte[] bytes = Encoding.Unicode.GetBytes(value);
-			for (i = 0; i < value.Length & i < length; i++)
+			if (ascii)
 			{
-				int num = i * 2;
-				this.WriteByte(bytes[num]);
-				this.WriteByte(bytes[num + 1]);
+				byte[] bytes = Encoding.ASCII.GetBytes(value);
+				for (i = 0; i < value.Length & i < length; i++)
+				{
+					this.WriteByte(bytes[i]);
+				}
 			}
-			while (i < length)
+			else
 			{
-				this.WriteShort(0);
-				i++;
+				byte[] bytes = Encoding.Unicode.GetBytes(value);
+				for (i = 0; i < value.Length & i < length; i++)
+				{
+					int num = i * 2;
+					this.WriteByte(bytes[num]);
+					this.WriteByte(bytes[num + 1]);
+				}
+				while (i < length)
+				{
+					this.WriteShort(0);
+					i++;
+				}
 			}
 		}
 

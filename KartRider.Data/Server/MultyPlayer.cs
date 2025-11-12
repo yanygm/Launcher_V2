@@ -623,8 +623,8 @@ public static class MultyPlayer
             {
                 //oPacket.WriteHexString("01 3d a4 3d 49 8f 99 3d a4 3d 49 90 99");
                 oPacket.WriteByte(1);
-                oPacket.WriteEndPoint(RouterListener.sIP, 39311);
-                oPacket.WriteEndPoint(RouterListener.sIP, 39312);
+                oPacket.WriteEndPoint(IPAddress.Any, 39311);
+                oPacket.WriteEndPoint(IPAddress.Any, 39312);
                 Parent.Client.Send(oPacket);
             }
             return;
@@ -1074,7 +1074,7 @@ public static class MultyPlayer
         }
         outPacket.WriteUInt(room.track); // track name hash
         outPacket.WriteInt(0);
-        outPacket.WriteBytes(room.RoomUnkBytes);
+        outPacket.WriteBytes(room.RoomUnkBytes); // 32
         outPacket.WriteInt(0); // RoomMaster
         outPacket.WriteInt(0); // 2
         outPacket.WriteInt(0); // outPacket.WriteShort(); outPacket.WriteShort(3);

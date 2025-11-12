@@ -21,11 +21,6 @@ namespace KartRider
 
         public static SessionGroup MySession { get; set; }
 
-        static RouterListener()
-        {
-            RouterListener.sIP = IPAddress.Any;
-        }
-
         public static int[] DataTime()
         {
             DateTime dt = DateTime.Now;
