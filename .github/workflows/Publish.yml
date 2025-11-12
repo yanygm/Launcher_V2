@@ -4,9 +4,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.get_tag.outputs.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get tag name
+        id: get_tag
+        run: |
+          TAG_NAME=$(TZ='Asia/Shanghai' date +'%y%m%d')
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create or recreate Git tag
+        run: |
+          TAG=${{ steps.get_tag.outputs.tag_name }} 
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag -d "$TAG"
+          fi
+          if git ls-remote --tags origin | grep "refs/tags/$TAG$" >/dev/null; then
+            git push origin :refs/tags/"$TAG"
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+
+  publish-and-archive:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -14,13 +44,64 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Publish_win-x64
-      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher -o PublishedWinExe -c Release --no-self-contained
+    - name: Enter src directory
+      run: cd src
 
-    # - name: Publish_win-arm64
-    #   run: dotnet publish Launcher.csproj --runtime win-arm64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_arm64 -o PublishedWinExe -c Release --no-self-contained
+    - name: Publish x64
+      run: dotnet publish Launcher.csproj --runtime win-x64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x64 -o PublishedWinExe -c Release --no-self-contained
 
-    - uses: actions/upload-artifact@v4
+    - name: Publish x86
+      run: dotnet publish Launcher.csproj --runtime win-x86 -p:PublishSingleFile=true -p:AssemblyName=Launcher_x86 -o PublishedWinExe -c Release --no-self-contained
+
+    - name: Publish arm64
+      run: dotnet publish Launcher.csproj --runtime win-arm64 -p:PublishSingleFile=true -p:AssemblyName=Launcher_arm64 -o PublishedWinExe -c Release --no-self-contained
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
       with:
         name: Launcher
-        path: PublishedWinExe/
+        path: PublishedWinExe
+
+  release:
+    needs: [publish-and-archive, tag]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Launcher
+          path: PublishedWinExe
+
+      - name: Zip x64
+        run: |
+          cd PublishedWinExe
+          zip -j ../Launcher_x64.zip Launcher_x64.exe
+        shell: bash
+
+      - name: Zip x86
+        run: |
+          cd PublishedWinExe
+          zip -j ../Launcher_x86.zip Launcher_x86.exe
+        shell: bash
+      
+      - name: Zip arm64
+        run: |
+          cd PublishedWinExe
+          zip -j ../Launcher_arm64.zip Launcher_arm64.exe
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          draft: false
+          prerelease: false
+          files: |
+            Launcher_x64.zip
+            Launcher_x86.zip
+            Launcher_arm64.zip
+          name: ${{ needs.tag.outputs.tag_name }}
+          tag_name: ${{ needs.tag.outputs.tag_name }}
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

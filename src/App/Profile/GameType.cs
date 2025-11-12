@@ -1,0 +1,22 @@
+﻿namespace Launcher.App.Profile
+{
+    public class GameType
+    {
+        public static uint TimeAttack_RP = 0;
+        public static uint TimeAttack_Lucci = 0;
+        public static byte RewardType = 0;
+
+        //Time
+        public static uint min = 0;
+        public static uint sec = 0;
+        public static uint mil = 0;
+
+        public static float S4_DriftMaxGauge = 1f;
+        public static float S6_BoosterTime = 2000000f;
+
+        public static int ScenarioType = 0;
+        public static byte StartType = 0;
+
+        public static byte EnterMyRoomType = 0;
+    }
+}

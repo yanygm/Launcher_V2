@@ -1,0 +1,88 @@
+name: Bug report
+description: Submit a bug report
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请确保：
+        - 你正在使用最新版本的启动器。
+        - 尽可能使用较新的游戏版本，最新的启动器只对较新的游戏版本提供支持。
+        - 在删除启动器目录下的 `Profile` 文件夹并重启启动器后，仍然可以重现该 Bug。
+        - 搜索过 [Yany issues Tracker](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue) 并确认类似 Bug 未曾被报告过。
+
+        ---
+
+        Please Make sure:
+        - You are using the latest version of the launcher.
+        - Bugs can be reproduced after deleting the `Profile` folder in the launcher directory and restarting the launcher.
+        - Search the [Yany issues](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue) to check that the bug has not already been reported.
+
+  - type: textarea
+    attributes:
+      label: "问题描述 / Bug description:"
+      description: |
+        描述你所遇到的问题。
+        你可以使用 [Markdown 语法](https://guides.github.com/features/mastering-markdown/) 来格式化文本。
+        尽可能清晰且简洁地描述对于出现的异常。
+        如果可以，请提供一个[最简单的可复现问题的方法](https://stackoverflow.com/help/minimal-reproducible-example)，这将帮助开发者尽快定位问题所在。
+        如果愿意，请附上问题相关的游戏截图，以及启动器日志（点击打日志按钮，即可获取日志）。
+
+        ---
+
+        Give a clear and concise description of what happened.
+        You can use [Markdown syntax](https://guides.github.com/features/mastering-markdown/) for formatting.
+        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
+        This will help developers locate the problem ASAP.
+        If you want, please attach related game screenshots and logs (click the `打日志` button to get the logs).
+      value: |
+        Add your description here.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "启动器版本 / Launcher version:"
+      description: |
+        请提供你正在使用的启动器版本。（显示在启动器主界面，例如 251001）
+        List your current launcher version (displayed in the launcher main interface, e.g. 251001).
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "游戏版本 / Game version:"
+      description: |
+        请提供你正在使用的游戏版本。（显示在启动器主界面，例如 P3390）
+        List your current game version (displayed in the launcher main interface, e.g. P3390).
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: "Windows 系统大版本（未列出的系统版本不稳定支持） / Windows major version (Unsupported versions are not listed):"
+      description: |
+        请提供你正在使用的 Windows 系统大版本。（显示在“设置”->“关于”中，例如 Windows 11）
+        List your current Windows major version (displayed in "Settings" -> "About", e.g. Windows 11).
+      multiple: false
+      options:
+        - Windows 11 
+        - Windows 10
+        - Windows 8
+        - Windows 7
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: "系统架构（未列出的架构不支持） / System architecture (Unsupported architectures are not listed):"
+      description: |
+        请提供你正在使用的 Windows 系统架构。（显示在“设置”->“关于”中，例如 x64） 
+        List your current Windows system architecture (displayed in "Settings" -> "About", e.g. x64).
+      multiple: false
+      options:
+        - x64
+        - x86
+        - arm64
+    validations:
+      required: true

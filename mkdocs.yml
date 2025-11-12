@@ -1,0 +1,130 @@
+# Project Information
+site_name: 中国跑跑卡丁车单机启动器
+site_description: 中国跑跑卡丁车单机版启动器的使用说明文档，以及一些信息
+site_author: TheMagicFlute
+site_url: https://TheMagicFlute.github.io/Launcher_V2
+strict: true
+
+copyright: >-
+  Docs by <a href="https://github.com/TheMagicFlute/">TheMagicFlute</a>. </br>
+  Copyright &copy; 2024-2025 LAON, and other contributors. All Rights Reserved.
+
+# Repository Information
+repo_name: 'TheMagicFlute/Launcher_V2'
+repo_url: 'https://github.com/TheMagicFlute/Launcher_V2'
+edit_uri: 'https://github.com/TheMagicFlute/Launcher_V2/edit/dev/docs/'
+
+theme:
+  name: 'material'
+  static_templates:
+    - 404.html
+  language: 'zh'
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: grey
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off
+        name: Switch to system preference
+  include_search_page: true
+  search_index_only: false
+  favicon: 'favicon.ico'
+  icon:
+    logo: 'material/language-csharp'
+    annotation: material/arrow-right-circle
+  features:
+    - toc.follow
+    - announce.dismiss
+    - navigation.tracking
+    - navigation.tabs
+    - content.tabs.link
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - navigation.tabs
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.expand
+    - search.highlight
+    - search.share
+    - search.suggest
+  font:
+    text: 'Fira Sans'
+    code: 'Fira Mono'
+
+# Python Markdown Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - meta
+  - toc:
+      permalink: true
+
+  - pymdownx.inlinehilite               # Inline code highlighting    
+  - pymdownx.superfences                # Fenced code blocks
+  - pymdownx.keys                       # Keyboard keys
+  - pymdownx.snippets                   # Snippets
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+
+  - pymdownx.arithmatex:
+      generic: true                     # Enable generic math support
+  - pymdownx.highlight:
+      linenums: true                    # Enable line numbers
+      linenums_style: pymdownx.inline   # Line numbers style
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji    # Twemoji emoji index
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg # Twemoji SVG generator
+  - pymdownx.tasklist:
+      custom_checkbox: true             # Enable custom checkboxes
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: TheMagicFlute
+      repo: Launcher_V2
+
+# Extra
+extra:
+  status:
+    new: Recently added
+    deprecated: Deprecated
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/TheMagicFlute/Launcher_V2
+      name: 'Repository on GitHub'
+
+# Plugins
+plugins:
+  - search
+
+nav:
+  - 主页: index.md
+  - 功能介绍: feature.md
+  - 安装: installation.md
+  - 使用: how-to-use.md
+  - 常见问题及解答: FAQ.md
+  - 文件结构树: files.md
