@@ -2760,12 +2760,10 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))
                         {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteUInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteHexString("FF FF FF FF FF FF FF FF FF FF FF FF FF");
-                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                            outPacket.WriteHexString("0F 00 00 00 00 00 00 00 01 B3 77 00 00 00 00 00 00 01 00 00 00 01 18 66 00 00 00 00 00 00 02 00 00 00 02 8E 6B 00 00 00 00 00 00 03 00 00 00 02 77 6A 00 00 00 00 00 00 04 00 00 00 02 8F 61 00 00 00 00 00 00 05 00 00 00 03 50 71 00 00 00 00 00 00 06 00 00 00 03 85 6A 00 00 00 00 00 00 07 00 00 00 03 8A 6E 00 00 00 00 00 00 08 00 00 00 03 BB 77 00 00 00 00 00 00 09 00 00 00 03 26 75 00 00 00 00 00 00 0A 00 00 00 04 00 00 00 00 EE 86 01 00 0B 00 00 00 04 00 00 00 00 D5 86 01 00 0C 00 00 00 04 00 00 00 00 CC 86 01 00 0D 00 00 00 04 00 00 00 00 BB 86 01 00 0E 00 00 00 04 00 00 00 00 E1 86 01 00");
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteHexString("00 00 00 00 03 00 00 00 17 00 48 00 0F 00 17 00 51 00 0F 00 03 00 17 00 48 00 05 00 17 00 51 00 05 00 04 00 17 00 48 00 03 00 17 00 51 00 03 00 05 00 FF FF FF FF FF FF FF FF FF FF FF FF FF 50 00 00 00 00 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
