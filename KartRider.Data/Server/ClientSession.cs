@@ -52,10 +52,11 @@ namespace KartRider
                 uint UserNO = Adler32Helper.GenerateAdler32_ASCII(Nickname, 0);
                 iPacket.Position = 0;
                 uint hash = iPacket.ReadUInt();
-                if (hash != 1950550337)//PqServerSideUdpBindCheck
+                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
+                if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
                 {
-                    string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
+                    return;
                 }
                 if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCnAuthenLogin", 0))
                 {
@@ -105,7 +106,7 @@ namespace KartRider
                 }
                 if (hash == Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) ? false : hash != 1340475309)//PqGameReportMyBadUdp
                 {
-                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
+                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
                     {
                         return;
                     }
@@ -259,7 +260,7 @@ namespace KartRider
                         }
                         using (OutPacket outPacket = new OutPacket("PrCompetitiveRewardPacket"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                            outPacket.WriteHexString("00 00 00 00 00 FF 32 00 00 00 01 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         NewRider.LoadItemData(this.Parent, Nickname);
@@ -2874,7 +2875,7 @@ namespace KartRider
                         IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
                         if (serverEndPoint == null) return;
 
-                        bool PcMsgPassport = false;
+                        bool PcMsgPassport = true;
 
                         using (OutPacket outPacket = new OutPacket("PrLogin"))
                         {

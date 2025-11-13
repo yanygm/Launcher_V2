@@ -1047,6 +1047,10 @@ public static class MultyPlayer
             }
             return;
         }
+        else
+        {
+            return;
+        }
     }
 
     static void GrSlotDataPacket(SessionGroup Parent, string nickname)
