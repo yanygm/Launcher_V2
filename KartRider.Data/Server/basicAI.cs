@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using Profile;
 
 namespace KartRider
 {
@@ -118,24 +119,58 @@ namespace KartRider
         public static List<float> GetAISpec(byte GameType)
         {
             Random random = new Random();
-            var b = (float)random.Next(2300, 2600);
-            var c = (float)random.Next(2900, 3000);
-            var d = new[] { 1.4f, 1.5f, 1.6f }[random.Next(3)];
             var e = 1000;
             var f = 1500;
-            if (GameType == 0)
+            if (ProfileService.SettingConfig.AiSpeedType == "简单")
             {
-                var a = new[] { 0.5f, 0.6f, 0.7f, 0.8f }[random.Next(4)];
-                return new List<float>() { a, b, c, d, e, f };
+                var b = (float)random.Next(2300, 2600);
+                var c = (float)random.Next(2900, 3000);
+                var d = new[] { 1.4f, 1.5f, 1.6f }[random.Next(3)];
+                if (GameType == 0)
+                {
+                    var a = new[] { 0.5f, 0.6f, 0.7f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
+                else if (GameType == 1)
+                {
+                    var a = new[] { 0.4f, 0.5f, 0.6f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
             }
-            else if (GameType == 1)
+            else if (ProfileService.SettingConfig.AiSpeedType == "困难")
             {
-                var a = new[] { 0.4f, 0.5f, 0.6f }[random.Next(3)];
-                return new List<float>() { a, b, c, d, e, f };
+                var b = (float)random.Next(2500, 2800);
+                var c = (float)random.Next(3100, 3200);
+                var d = new[] { 1.6f, 1.7f, 1.8f }[random.Next(3)];
+                if (GameType == 0)
+                {
+                    var a = new[] { 0.7f, 0.8f, 0.9f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
+                else if (GameType == 1)
+                {
+                    var a = new[] { 0.5f, 0.6f, 0.7f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
             }
+            else if (ProfileService.SettingConfig.AiSpeedType == "地狱")
+            {
+                var b = (float)random.Next(2700, 3000);
+                var c = (float)random.Next(3300, 3500);
+                var d = new[] { 1.8f, 1.9f, 2.0f }[random.Next(3)];
+                if (GameType == 0)
+                {
+                    var a = new[] { 0.9f, 1.0f, 1.1f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
+                else if (GameType == 1)
+                {
+                    var a = new[] { 0.6f, 0.7f, 0.8f }[random.Next(3)];
+                    return new List<float>() { a, b, c, d, e, f };
+                }
+            }
+            Console.WriteLine(ProfileService.SettingConfig.AiSpeedType);
             return null;
         }
     }
 }
-
-

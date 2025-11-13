@@ -41,15 +41,23 @@ namespace KartRider
             Keys key = keys[index];
             using (OutPacket outPacket = new OutPacket("PcFirstMessage"))
             {
-                outPacket.WriteUShort(SessionGroup.usLocale);
+                outPacket.WriteUShort(ProfileService.SettingConfig.LocaleID);
                 outPacket.WriteUShort(1);
                 outPacket.WriteUShort(ProfileService.SettingConfig.ClientVersion);
                 outPacket.WriteString("https://github.com/yanygm/Launcher_V2");
                 outPacket.WriteUInt(key.first_val);
                 outPacket.WriteUInt(key.second_val);
-                outPacket.WriteByte(SessionGroup.nClientLoc);
+                outPacket.WriteByte((byte)ProfileService.SettingConfig.nClientLoc);
                 outPacket.WriteString(key.key1);
-                outPacket.WriteBytes(new byte[31]);
+                int count = 3;
+                int[] time = new int[] { 1547597728, 1707244048, 1862052984 };
+                outPacket.WriteInt(count);
+                for (int i = 0; i < count; i++)
+                {
+                    outPacket.WriteInt();
+                    outPacket.WriteInt(time[i]);
+                }
+                outPacket.WriteBytes(new byte[3]);
                 outPacket.WriteString(key.key2);
                 Parent.Client.Send(outPacket);
             }

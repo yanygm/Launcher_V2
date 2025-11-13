@@ -2874,6 +2874,8 @@ namespace KartRider
                         IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
                         if (serverEndPoint == null) return;
 
+                        bool PcMsgPassport = false;
+
                         using (OutPacket outPacket = new OutPacket("PrLogin"))
                         {
                             outPacket.WriteInt(0);
@@ -2897,7 +2899,7 @@ namespace KartRider
                             outPacket.WriteEndPoint(IPAddress.Any, 39312);
                             outPacket.WriteByte(0);
                             outPacket.WriteByte(0);
-                            outPacket.WriteByte(1);
+                            outPacket.WriteByte((byte)(PcMsgPassport ? 1 : 0));
                             outPacket.WriteByte(0);
                             outPacket.WriteString("");
                             outPacket.WriteInt(0);
@@ -2906,7 +2908,7 @@ namespace KartRider
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(1);
                             outPacket.WriteString("cc");
-                            outPacket.WriteString(SessionGroup.Service);
+                            outPacket.WriteString(Program.CC.ToString().ToLower());
                             outPacket.WriteInt(6);
                             outPacket.WriteString("content");
                             outPacket.WriteInt(0);
@@ -2920,7 +2922,7 @@ namespace KartRider
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(1);
                             outPacket.WriteString("szId");
-                            outPacket.WriteString(SessionGroup.usLocale.ToString());
+                            outPacket.WriteString(ProfileService.SettingConfig.LocaleID.ToString());
                             outPacket.WriteInt(0);
                             outPacket.WriteString("content");
                             outPacket.WriteInt(0);
@@ -2981,12 +2983,15 @@ namespace KartRider
                             outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].Rider.IdentificationType);
                             this.Parent.Client.Send(outPacket);
                         }
-                        using (OutPacket outPacket = new OutPacket("PcMsgPassport"))
+                        if (PcMsgPassport)
                         {
-                            outPacket.WriteString(Nickname);
-                            outPacket.WriteString(UserNO.ToString());
-                            outPacket.WriteString("fdfggphgrndpicpligmprninfjelpqdjpjnoidkrmofldfkrechgjqcfopclpmnlpjcqplgiccncclnjgjipjmpojkfilqhfqniikneoigqnghjpkiljqgjmilfjdikk", true);
-                            this.Parent.Client.Send(outPacket);
+                            using (OutPacket outPacket = new OutPacket("PcMsgPassport"))
+                            {
+                                outPacket.WriteString(Nickname);
+                                outPacket.WriteString("2000142541");
+                                outPacket.WriteString("meemllpigrppochjepdmgclfekpocdikifemgnkddeierhkekiefcidhrreienedmrcemjcjpqmjpkolfjfpggiqiefelqleondcpennpmpfenhpfomdpfqdpdpggdjm", true);
+                                this.Parent.Client.Send(outPacket);
+                            }
                         }
                         return;
                     }

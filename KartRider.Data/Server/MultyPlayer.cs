@@ -700,7 +700,7 @@ public static class MultyPlayer
             Room.RoomName = RoomName;
             if (Password != "")
             {
-                room.Lock = 1;
+                Room.Lock = 1;
             }
             Room.LockPwd = Password;
             Room.RoomUnkBytes = RoomUnkBytes;

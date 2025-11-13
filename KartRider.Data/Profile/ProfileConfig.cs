@@ -30,9 +30,18 @@ namespace Profile
         public byte SpeedType { get; set; } = 7;
 
         /// <summary>
+        /// Ai速度类型
+        /// </summary>
+        public string AiSpeedType { get; set; } = "简单";
+
+        /// <summary>
         /// 客户端版本
         /// </summary>
         public ushort ClientVersion { get; set; }
+
+        public ushort LocaleID { get; set; }
+
+        public ushort nClientLoc { get; set; }
 
         public bool NgsOn { get; set; } = false;
     }

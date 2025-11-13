@@ -8,6 +8,8 @@ namespace KartRider
 {
     public partial class Setting : Form
     {
+        public string[] AiSpeed = new string[] { "简单", "困难", "地狱" };
+
         public Setting()
         {
             InitializeComponent();
@@ -20,6 +22,7 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
+            ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SaveSettings();
         }
 
@@ -34,7 +37,12 @@ namespace KartRider
             {
                 Speed_comboBox.Items.Add(key);
             }
+            foreach (string key in AiSpeed)
+            {
+                AiSpeed_comboBox.Items.Add(key);
+            }
             Speed_comboBox.Text = (SpeedType.speedNames.FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key);
+            AiSpeed_comboBox.Text = ProfileService.SettingConfig.AiSpeedType;
         }
 
         private void Speed_comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -55,6 +63,24 @@ namespace KartRider
             }
         }
 
+        private void AiSpeed_comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (AiSpeed_comboBox.SelectedItem != null)
+            {
+                string selectedAiSpeed = AiSpeed_comboBox.SelectedItem.ToString();
+                if (AiSpeed.Contains(selectedAiSpeed))
+                {
+                    ProfileService.SettingConfig.AiSpeedType = selectedAiSpeed;
+                    ProfileService.SaveSettings();
+                    Console.WriteLine(selectedAiSpeed);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid AiSpeed type selected.");
+                }
+            }
+        }
+
         private void Save_Click(object sender, EventArgs e)
         {
             ProfileService.SettingConfig.Name = PlayerName.Text;
@@ -62,6 +88,7 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
+            ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SaveSettings();
         }
     }

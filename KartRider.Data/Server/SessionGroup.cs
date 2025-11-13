@@ -20,12 +20,6 @@ namespace KartRider
 
         public static uint LucciMax = 2000000;
 
-        public static ushort usLocale = 3002;
-        public static byte nClientLoc = 47;
-        public static string Service = "cn";
-
-        public static string Developer = "KartRider";
-
         public SessionGroup(Socket clientSocket, Socket serverSocket)
         {
             this.Client = new ClientSession(this, clientSocket);
