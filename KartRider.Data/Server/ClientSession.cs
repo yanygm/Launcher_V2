@@ -230,9 +230,15 @@ namespace KartRider
                         if (Directory.Exists(filename.NicknameDir))
                         {
                             Directory.Move(filename.NicknameDir, Path.GetFullPath(Path.Combine(FileName.ProfileDir, nickname)));
+                            if (ProfileService.SettingConfig.Name == Nickname)
+                            {
+                                ProfileService.SettingConfig.Name = nickname;
+                                ProfileService.SaveSettings();
+                            }
                             Nickname = nickname;
                             ClientGroup.Nickname = nickname;
                             FileName.Load(nickname);
+                            FileName.FileNames.Remove(Nickname);
                         }
                         return;
                     }

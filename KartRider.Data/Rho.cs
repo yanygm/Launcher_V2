@@ -648,12 +648,12 @@ namespace RHOParser
                                     foreach (XmlNode xn in bodyParams)
                                     {
                                         XmlElement xe = (XmlElement)xn;
-                                        short itemCatId = short.Parse(xe.GetAttribute("itemCatId"));
-                                        short itemId = short.Parse(xe.GetAttribute("itemId"));
+                                        ushort itemCatId = ushort.Parse(xe.GetAttribute("itemCatId"));
+                                        ushort itemId = ushort.Parse(xe.GetAttribute("itemId"));
                                         string itemName = xe.GetAttribute("itemName");
                                         if (!NewRider.items.ContainsKey(itemCatId))
                                         {
-                                            NewRider.items[itemCatId] = new Dictionary<short, string>();
+                                            NewRider.items[itemCatId] = new Dictionary<ushort, string>();
                                         }
                                         NewRider.items[itemCatId][itemId] = itemName;
                                     }

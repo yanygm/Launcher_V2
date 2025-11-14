@@ -13,8 +13,8 @@ namespace KartRider
 {
     public partial class GetKart : Form
     {
-        public static short Item_Type = 0;
-        public static short Item_Code = 0;
+        public static ushort Item_Type = 0;
+        public static ushort Item_Code = 0;
 
         public GetKart()
         {
@@ -28,8 +28,8 @@ namespace KartRider
 
         private void button1_Click(object sender, EventArgs e)
         {
-            short tempValue;
-            if (short.TryParse(ItemID.Text, out tempValue))
+            ushort tempValue;
+            if (ushort.TryParse(ItemID.Text, out tempValue))
             {
                 GetKart.Item_Code = tempValue;
                 Console.WriteLine($"Add Item:{ItemID.Text} ID:{ItemType.Text}");
@@ -38,7 +38,7 @@ namespace KartRider
             {
                 if (GetKart.Item_Type == 3)
                 {
-                    short KartSN = 2;
+                    ushort KartSN = 2;
 
                     var newList = new List<NewKart>();
 
@@ -48,7 +48,7 @@ namespace KartRider
                     }
 
                     // 查找合适的KartSN
-                    short currentSN = KartSN;
+                    ushort currentSN = KartSN;
                     // 循环检查当前SN是否已存在相同KartID的记录
                     while (newList.Any(kart => kart.KartID == GetKart.Item_Code && kart.KartSN == currentSN))
                     {
@@ -59,9 +59,9 @@ namespace KartRider
                     {
                         outPacket.WriteByte(1);
                         outPacket.WriteInt(1);
-                        outPacket.WriteShort(GetKart.Item_Type);
-                        outPacket.WriteShort(GetKart.Item_Code);
-                        outPacket.WriteShort(currentSN);
+                        outPacket.WriteUShort(GetKart.Item_Type);
+                        outPacket.WriteUShort(GetKart.Item_Code);
+                        outPacket.WriteUShort(currentSN);
                         outPacket.WriteShort(1);//수량
                         outPacket.WriteShort(0);
                         outPacket.WriteShort(-1);
@@ -82,20 +82,46 @@ namespace KartRider
                 }
                 else
                 {
-                    using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                    var newList = new List<NewItem>();
+
+                    if (File.Exists(FileName.NewItem_LoadFile))
                     {
-                        outPacket.WriteByte(1);
-                        outPacket.WriteInt(1);
-                        outPacket.WriteShort(GetKart.Item_Type);
-                        outPacket.WriteShort(GetKart.Item_Code);
-                        outPacket.WriteShort(0);
-                        outPacket.WriteUShort(1);//수량
-                        outPacket.WriteShort(0);
-                        outPacket.WriteShort(-1);
-                        outPacket.WriteShort(0);
-                        outPacket.WriteShort(0);
-                        outPacket.WriteShort(0);
-                        RouterListener.MySession.Client.Send(outPacket);
+                        newList = JsonHelper.DeserializeNoBom<List<NewItem>>(FileName.NewItem_LoadFile);
+                    }
+
+                    // 检查是否已存在相同的记录
+                    var existingItem = newList.FirstOrDefault(item => item.ItemType == GetKart.Item_Type && item.ItemID == GetKart.Item_Code);
+                    if (existingItem != null)
+                    {
+                        // 增加数量
+                        existingItem.Count++;
+                        Save_NewItemList(newList);
+                    }
+                    else
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                        {
+                            outPacket.WriteByte(1);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteUShort(GetKart.Item_Type);
+                            outPacket.WriteUShort(GetKart.Item_Code);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteUShort(1);//수량
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(-1);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(0);
+                            RouterListener.MySession.Client.Send(outPacket);
+                        }
+                        // 添加新记录
+                        newList.Add(new NewItem
+                        {
+                            ItemType = GetKart.Item_Type,
+                            ItemID = GetKart.Item_Code,
+                            Count = 1
+                        });
+                        Save_NewItemList(newList);
                     }
                 }
             })).Start();
@@ -106,14 +132,19 @@ namespace KartRider
             File.WriteAllText(FileName.NewKart_LoadFile, JsonHelper.Serialize(NewKart));
         }
 
+        public static void Save_NewItemList(List<NewItem> NewItem)
+        {
+            File.WriteAllText(FileName.NewItem_LoadFile, JsonHelper.Serialize(NewItem));
+        }
+
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (ItemType.SelectedItem != null)
             {
-                GetKart.Item_Type = (short)ItemType.SelectedItem;
+                GetKart.Item_Type = (ushort)ItemType.SelectedItem;
                 ItemID.Items.Clear();
 
-                if (NewRider.items.TryGetValue(GetKart.Item_Type, out Dictionary<short, string> innerDictionary))
+                if (NewRider.items.TryGetValue(GetKart.Item_Type, out Dictionary<ushort, string> innerDictionary))
                 {
                     foreach (var innerValue in innerDictionary.Values)
                     {
@@ -127,10 +158,10 @@ namespace KartRider
         {
             if (ItemType.SelectedItem != null && ItemID.SelectedItem != null)
             {
-                short selectedOuterKey = (short)ItemType.SelectedItem;
+                ushort selectedOuterKey = (ushort)ItemType.SelectedItem;
                 string selectedInnerValue = ItemID.SelectedItem.ToString();
 
-                if (NewRider.items.TryGetValue(selectedOuterKey, out Dictionary<short, string> innerDictionary))
+                if (NewRider.items.TryGetValue(selectedOuterKey, out Dictionary<ushort, string> innerDictionary))
                 {
                     GetKart.Item_Code = innerDictionary.FirstOrDefault(pair => pair.Value == selectedInnerValue).Key;
                     Console.WriteLine($"Add Item:{selectedInnerValue} ID:{GetKart.Item_Code}");
@@ -141,7 +172,14 @@ namespace KartRider
 
     public class NewKart
     {
-        public short KartID { get; set; } = 0;
-        public short KartSN { get; set; } = 0;
+        public ushort KartID { get; set; } = 0;
+        public ushort KartSN { get; set; } = 0;
+    }
+
+    public class NewItem
+    {
+        public ushort ItemType { get; set; } = 0;
+        public ushort ItemID { get; set; } = 0;
+        public ushort Count { get; set; } = 0;
     }
 }

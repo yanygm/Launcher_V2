@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using KartLibrary.File;
 
 namespace KartRider;
 
@@ -24,6 +26,10 @@ public class GameRoom
 
     // 8个格子（0-7）
     private RoomMember[] _slots = new RoomMember[8];
+    public List<int> _IDs = new List<int>(8);
+    public List<int> _allIDs = Enumerable.Range(0, 8).ToList();
+    public List<int> _blueIDs = Enumerable.Range(0, 4).ToList();
+    public List<int> _redIDs = Enumerable.Range(4, 8).ToList();
 
     // 构造函数：初始化房间ID（由外部传入唯一ID）
     public GameRoom(int roomId)
@@ -99,12 +105,16 @@ public class GameRoom
                 {
                     _slots[i] = new Player
                     {
-                        ID = i,
+                        ID = _blueIDs.Except(_IDs).ToList().DefaultIfEmpty().Min(),
                         SlotId = i,
                         Nickname = nickname,
                         PlayerType = playerType,
                         Team = team
                     };
+                    if (_slots[i] is Player player)
+                    {
+                        _IDs.Add(player.ID);
+                    }
                     return i;
                 }
             }
@@ -118,12 +128,16 @@ public class GameRoom
                 {
                     _slots[i] = new Player
                     {
-                        ID = i,
+                        ID = _redIDs.Except(_IDs).ToList().DefaultIfEmpty().Min(),
                         SlotId = i,
                         Nickname = nickname,
                         PlayerType = playerType,
                         Team = team
                     };
+                    if (_slots[i] is Player player)
+                    {
+                        _IDs.Add(player.ID);
+                    }
                     return i;
                 }
             }
@@ -137,12 +151,16 @@ public class GameRoom
                 {
                     _slots[i] = new Player
                     {
-                        ID = i,
+                        ID = _allIDs.Except(_IDs).ToList().DefaultIfEmpty().Min(),
                         SlotId = i,
                         Nickname = nickname,
                         PlayerType = playerType,
                         Team = team
                     };
+                    if (_slots[i] is Player player)
+                    {
+                        _IDs.Add(player.ID);
+                    }
                     return i;
                 }
             }
@@ -165,6 +183,14 @@ public class GameRoom
         if (removedMember == null)
             return false; // 格子已为空
 
+        if (removedMember is Player player)
+        {
+            _IDs.Remove(player.ID);
+        }
+        else if (removedMember is Ai ai)
+        {
+            _IDs.Remove(ai.ID);
+        }
         _slots[slotId] = null; // 清空格子
 
         // 如果移除的是玩家，检查剩余玩家数量
@@ -176,20 +202,60 @@ public class GameRoom
     }
 
     // 其他方法：设置AI、获取格子信息等（沿用之前的逻辑，略）
-    public bool TrySetAi(byte slotId, Ai aiData)
+    public byte TrySetAi(Ai aiData, int Id, byte team)
     {
-        if (!IsValidSlotId(slotId))
-            throw new ArgumentOutOfRangeException(nameof(slotId), "格子ID必须在0-7之间");
         if (aiData == null)
             throw new ArgumentNullException(nameof(aiData), "AI数据不能为null");
 
-        if (_slots[slotId] != null)
-            return false; // 格子已被占用，不覆盖
-
-        aiData.ID = slotId; // AI的ID
-        aiData.SlotId = slotId; // 确保AI的位置ID与格子一致
-        _slots[slotId] = aiData;
-        return true;
+        if (team == 2)
+        {
+            for (byte i = 0; i < 4; i++)
+            {
+                if (_slots[i] == null)
+                {
+                    aiData.ID = _IDs.Contains(Id) ? _blueIDs.Except(_IDs).ToList().DefaultIfEmpty().Min() : Id;
+                    _slots[i] = aiData;
+                    _slots[i].SlotId = i;
+                    _IDs.Add(aiData.ID);
+                    return i;
+                }
+            }
+            return 255; // 房间已满
+        }
+        else if (team == 1)
+        {
+            for (byte i = 4; i < 8; i++)
+            {
+                if (_slots[i] == null)
+                {
+                    aiData.ID = _IDs.Contains(Id) ? _redIDs.Except(_IDs).ToList().DefaultIfEmpty().Min() : Id;
+                    _slots[i] = aiData;
+                    _slots[i].SlotId = i;
+                    _IDs.Add(aiData.ID);
+                    return i;
+                }
+            }
+            return 255; // 房间已满
+        }
+        else if (team == 0)
+        {
+            for (byte i = 0; i < 8; i++)
+            {
+                if (_slots[i] == null)
+                {
+                    aiData.ID = _IDs.Contains(Id) ? _allIDs.Except(_IDs).ToList().DefaultIfEmpty().Min() : Id;
+                    _slots[i] = aiData;
+                    _slots[i].SlotId = i;
+                    _IDs.Add(aiData.ID);
+                    return i;
+                }
+            }
+            return 255; // 房间已满
+        }
+        else
+        {
+            return 255; // 未知队伍
+        }
     }
 
     // 获取指定格子的成员
@@ -200,19 +266,44 @@ public class GameRoom
         return _slots[slotId];
     }
 
+    public bool ChangeSlotId(byte slotId, byte newSlotId)
+    {
+        if (!IsValidSlotId(slotId) || !IsValidSlotId(newSlotId))
+            throw new ArgumentOutOfRangeException(nameof(slotId), "格子ID必须在0-7之间");
+
+        if (_slots[newSlotId] != null)
+            return false;
+
+        _slots[newSlotId] = _slots[slotId];
+        _slots[slotId] = null;
+        return true;
+    }
+
+    public byte IdGetSlotId(int Id)
+    {
+        for (byte i = 0; i < 8; i++)
+        {
+            if (_slots[i] != null && _slots[i] is Ai ai && ai.ID == Id)
+                return i;
+            else if (_slots[i] != null && _slots[i] is Player player && player.ID == Id)
+                return i;
+        }
+        return 255;
+    }
+
     private bool IsValidSlotId(byte slotId) => slotId >= 0 && slotId < 8;
 }
 
 // 房间成员基类
 public abstract class RoomMember
 {
-    public int ID { get; set; } // 成员ID（自增）
     public byte SlotId { get; set; } // 格子ID（0-7）
 }
 
 // 玩家类
 public class Player : RoomMember
 {
+    public int ID { get; set; }
     public string Nickname { get; set; } // 玩家昵称
     public int PlayerType { get; set; } // 玩家类型
     public byte Team { get; set; }
@@ -221,6 +312,7 @@ public class Player : RoomMember
 // AI类
 public class Ai : RoomMember
 {
+    public int ID { get; set; }
     public short Character { get; set; }
     public short Rid { get; set; }
     public short Kart { get; set; }

@@ -104,16 +104,16 @@ public static class MultyPlayer
                         var Object = RoomManager.TryGetSlotDetail(roomId, (byte)i);
                         if (Object is Player player)
                         {
-                            if (!room.TimeData.ContainsKey(player.ID))
+                            if (!room.TimeData.ContainsKey(player.SlotId))
                             {
-                                room.TimeData[player.ID] = 4294967295;
+                                room.TimeData[player.SlotId] = 4294967295;
                             }
                         }
                         else if (Object is Ai ai)
                         {
-                            if (!room.TimeData.ContainsKey(ai.ID))
+                            if (!room.TimeData.ContainsKey(ai.SlotId))
                             {
-                                room.TimeData[ai.ID] = 4294967295;
+                                room.TimeData[ai.SlotId] = 4294967295;
                             }
                         }
                     }
@@ -184,12 +184,12 @@ public static class MultyPlayer
                 if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player p3)
                 {
                     outPacket.WriteInt(p3.ID); // player id
-                    outPacket.WriteUInt(room.TimeData[p3.ID]);
+                    outPacket.WriteUInt(room.TimeData[p3.SlotId]);
                     outPacket.WriteByte();
                     outPacket.WriteShort(ProfileService.ProfileConfigs[p3.Nickname].RiderItem.Set_Kart);
                     int playerRanking = room.Ranking[i];
                     int playerPoint = teamPoints[playerRanking];
-                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.ID, playerRanking, playerPoint);
+                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.SlotId, playerRanking, playerPoint);
                     outPacket.WriteInt(playerRanking);
                     outPacket.WriteShort();
                     outPacket.WriteByte();
@@ -200,7 +200,7 @@ public static class MultyPlayer
                     outPacket.WriteBytes(new byte[29]);
                     if (room.GameType == 3 || room.GameType == 4)
                     {
-                        if (room.TimeData[p3.ID] == 4294967295)
+                        if (room.TimeData[p3.SlotId] == 4294967295)
                         {
                             outPacket.WriteInt(0);
                         }
@@ -233,9 +233,9 @@ public static class MultyPlayer
                 if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a3)
                 {
                     outPacket.WriteInt(a3.ID);
-                    if (room.TimeData.ContainsKey(a3.ID) && room.TimeData[a3.ID] > 0)
+                    if (room.TimeData.ContainsKey(a3.SlotId) && room.TimeData[a3.SlotId] > 0)
                     {
-                        outPacket.WriteUInt(room.TimeData[a3.ID]);
+                        outPacket.WriteUInt(room.TimeData[a3.SlotId]);
                     }
                     else
                     {
@@ -245,15 +245,15 @@ public static class MultyPlayer
 
                     // 获取 kart 属性值
                     outPacket.WriteShort(a3.Kart);
-                    int AiRanking = room.Ranking[a3.ID];
+                    int AiRanking = room.Ranking[a3.SlotId];
                     int AiPoint = teamPoints[AiRanking];
-                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.ID, AiRanking, AiPoint);
+                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.SlotId, AiRanking, AiPoint);
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteHexString("A0 60");
                     if (room.GameType == 3 || room.GameType == 4)
                     {
                         outPacket.WriteByte(a3.Team); // Team
-                        if (room.TimeData[a3.ID] == 4294967295)
+                        if (room.TimeData[a3.SlotId] == 4294967295)
                         {
                             outPacket.WriteInt(0);
                         }
@@ -457,7 +457,7 @@ public static class MultyPlayer
                 if (slotId != -1)
                 {
                     var player = RoomManager.GetPlayer(roomId, nickname);
-                    room.TimeData.TryAdd(player.ID, time);
+                    room.TimeData.TryAdd(player.SlotId, time);
                     Console.WriteLine("GameControlPacket, slotId = {0}, Time = {1}", slotId, time);
                 }
                 if (room.EndTicks == 0)
@@ -710,7 +710,7 @@ public static class MultyPlayer
             if (AiCount > 0 && AiSwitch == 6)
             {
                 // 新增 AI 数量
-                AddAi(Room, AiCount - 1, roomData.RandomTrackGameType);
+                AddAis(Room, AiCount - 1, roomData.RandomTrackGameType);
             }
             return;
         }
@@ -745,13 +745,14 @@ public static class MultyPlayer
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestClosePacket"))
         {
+            int slotId = iPacket.ReadInt();
             using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
             {
                 //oPacket.WriteHexString("ff 76 05 5d 01");
                 oPacket.WriteUInt(Adler32Helper.GenerateAdler32_ASCII(nickname, 0));
                 oPacket.WriteByte(1);
-                oPacket.WriteInt(7);
-                oPacket.WriteInt(7);
+                oPacket.WriteInt(slotId);
+                oPacket.WriteInt(slotId);
                 oPacket.WriteInt(0);
                 oPacket.WriteInt(0);
                 Parent.Client.Send(oPacket);
@@ -837,83 +838,29 @@ public static class MultyPlayer
             {
                 Console.WriteLine("CreateRoom Failed, roomId = {0}", roomId);
             }
-            int unk1 = iPacket.ReadInt();
-            Console.WriteLine("GrRequestBasicAiPacket, unk1 = {0}", unk1);
-            byte team = (byte)((unk1 < 4) ? 2 : 1);
-            var selector = new DictionaryRandomSelector();
-            List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 1);
-            List<short> randomKartIds = new List<short>();
-            if (room.RandomTrackGameType == 0)
+            int Id = iPacket.ReadInt();
+            Console.WriteLine("GrRequestBasicAiPacket, ID = {0}", Id);
+            byte slotId = room.IdGetSlotId(Id);
+            if (slotId == 255)
             {
-                randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, true, false);
+                Console.WriteLine("GrRequestBasicAiPacket, ID = {0} not found", Id);
             }
-            else if (room.RandomTrackGameType == 1)
+            if (RoomManager.TryGetSlotDetail(roomId, slotId) is Ai ai)
             {
-                randomKartIds = selector.GetRandomKartIds(aiKartDict, 1, false, true);
-            }
-            if (RoomManager.TryGetSlotStatus(roomId, (byte)unk1) == SlotStatus.Ai)
-            {
+                room.RemoveMember(ai.SlotId, out bool DeleteAi);
                 using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
                 {
                     oPacket.WriteInt(1);
                     oPacket.WriteByte(1);
-                    oPacket.WriteInt(unk1);
-                    oPacket.WriteHexString("0000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+                    oPacket.WriteInt(Id);
+                    oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00");
+                    Position(roomId, oPacket);
                     Parent.Client.Send(oPacket);
                 }
-                room.RemoveMember((byte)unk1, out bool DeleteAi);
             }
             else
             {
-                short targetCharId = randomCharIds[0];
-                short targetKartId = randomKartIds[0];
-                if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
-                {
-                    short? ridIndex = selector.GetRandomRidIndex(targetChar);
-                    short? balloonId = 0;
-                    short? headbandId = 0;
-                    short? goggleId = 0;
-                    if (room.RandomTrackGameType == 1)
-                    {
-                        balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
-                        headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
-                        goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
-                    }
-                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
-                    {
-                        oPacket.WriteInt(0);
-                        oPacket.WriteByte(1);
-                        oPacket.WriteInt(unk1);
-                        oPacket.WriteShort(targetCharId);
-                        oPacket.WriteShort(ridIndex ?? 0);
-                        oPacket.WriteShort(targetKartId);
-                        oPacket.WriteShort(balloonId ?? 0);
-                        oPacket.WriteShort(headbandId ?? 0);
-                        oPacket.WriteShort(goggleId ?? 0);
-                        if (room.GameType == 3 || room.GameType == 4)
-                        {
-                            oPacket.WriteByte(team);
-                        }
-                        else
-                        {
-                            oPacket.WriteByte(0);
-                        }
-                        oPacket.WriteShort(0);
-                        oPacket.WriteShort(0);
-                        oPacket.WriteHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-                        Parent.Client.Send(oPacket);
-                    }
-                    room.TrySetAi((byte)unk1, new Ai
-                    {
-                        Character = targetCharId,
-                        Rid = ridIndex ?? 0,
-                        Kart = targetKartId,
-                        Balloon = balloonId ?? 0,
-                        HeadBand = headbandId ?? 0,
-                        Goggle = goggleId ?? 0,
-                        Team = team
-                    });
-                }
+                AddAi(Parent, roomId, Id);
             }
             using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
             {
@@ -996,22 +943,12 @@ public static class MultyPlayer
             }
             byte team = (byte)(3 - player.Team);
             var Bool = RoomManager.ChangeMemberTeam(roomId, player.SlotId, team);
-            Console.WriteLine("ChangeMemberTeam, roomId = {0}, ID = {1}, Team = {2}, {3}", roomId, player.ID, team, Bool);
+            Console.WriteLine("ChangeMemberTeam, roomId = {0}, SlotId = {1}, Team = {2}, {3}", roomId, player.SlotId, team, Bool);
             using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
             {
                 oPacket.WriteInt(player.ID);
                 oPacket.WriteByte(player.Team);
-                for (byte i = 0; i < 8; i++)
-                {
-                    if (i == player.SlotId)
-                    {
-                        oPacket.WriteInt(player.ID);
-                    }
-                    else
-                    {
-                        oPacket.WriteHexString("FFFFFFFF");
-                    }
-                }
+                Position(roomId, oPacket);
                 Parent.Client.Send(oPacket);
             }
             return;
@@ -1173,22 +1110,7 @@ public static class MultyPlayer
             }
         }
         outPacket.WriteBytes(new byte[32]);
-        for (int i = 0; i < 8; i++)
-        {
-            var Object = RoomManager.TryGetSlotDetail(roomId, (byte)i);
-            if (Object is Player player2 && player2.SlotId == i)
-            {
-                outPacket.WriteInt(player2.ID);
-            }
-            else if (Object is Ai ai2 && ai2.SlotId == i)
-            {
-                outPacket.WriteInt(ai2.ID);
-            }
-            else
-            {
-                outPacket.WriteHexString("FFFFFFFF");
-            }
-        }
+        Position(roomId, outPacket);
     }
 
     static void GrSlotStatePacket(SessionGroup Parent, int Data)
@@ -1244,7 +1166,7 @@ public static class MultyPlayer
     }
 
     // 添加指定数量的 Ai
-    static void AddAi(GameRoom room, int count, byte randomTrackGameType)
+    static void AddAis(GameRoom room, int count, byte randomTrackGameType)
     {
         var selector = new DictionaryRandomSelector();
         List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 8);
@@ -1274,7 +1196,7 @@ public static class MultyPlayer
                     headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
                     goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
                 }
-                byte team = (byte)((i < 4) ? 2 : 1);
+                byte team = i < 4 ? (byte)2 : (byte)1;
                 Ai ai = new Ai
                 {
                     Character = targetCharId,
@@ -1285,7 +1207,7 @@ public static class MultyPlayer
                     Goggle = goggleId ?? 0,
                     Team = team
                 };
-                if (room.TrySetAi((byte)i, ai))
+                if (room.TrySetAi(ai, room.GetCount(), team) != 255)
                 {
                     aiCount++;
                 }
@@ -1293,6 +1215,162 @@ public static class MultyPlayer
                 {
                     break;
                 }
+            }
+        }
+    }
+
+    static void AddAi(SessionGroup Parent, int roomId, int Id)
+    {
+        var room = RoomManager.GetRoom(roomId);
+        if (room == null)
+        {
+            Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+        }
+        var selector = new DictionaryRandomSelector();
+        List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 2);
+        List<short> randomKartIds = new List<short>();
+        if (room.RandomTrackGameType == 0)
+        {
+            randomKartIds = selector.GetRandomKartIds(aiKartDict, 2, true, false);
+        }
+        else if (room.RandomTrackGameType == 1)
+        {
+            randomKartIds = selector.GetRandomKartIds(aiKartDict, 2, false, true);
+        }
+        if (room.GameType == 3 || room.GameType == 4)
+        {
+            byte team = Id < 4 ? (byte)2 : (byte)1;
+            var Ais = new List<Ai>();
+            for (int i = 0; i < 2; i++)
+            {
+                short targetCharId = randomCharIds[i];
+                short targetKartId = randomKartIds[i];
+                if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
+                {
+                    short? ridIndex = selector.GetRandomRidIndex(targetChar);
+                    short? balloonId = 0;
+                    short? headbandId = 0;
+                    short? goggleId = 0;
+                    if (room.RandomTrackGameType == 1)
+                    {
+                        balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
+                        headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
+                        goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                    }
+                    Ais.Add(new Ai
+                    {
+                        Character = targetCharId,
+                        Rid = ridIndex ?? 0,
+                        Kart = targetKartId,
+                        Balloon = balloonId ?? 0,
+                        HeadBand = headbandId ?? 0,
+                        Goggle = goggleId ?? 0,
+                        Team = i == 0 ? team : (byte)(3 - team)
+                    });
+                }
+            }
+            if (room.TrySetAi(Ais[0], Id, Ais[0].Team) != 255)
+            {
+                var id = room._allIDs.Except(room._IDs).ToList().DefaultIfEmpty().Min();
+                if (room.TrySetAi(Ais[1], id, Ais[1].Team) != 255)
+                {
+                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteByte(2);
+                        oPacket.WriteInt(Id);
+                        oPacket.WriteShort(Ais[0].Character);
+                        oPacket.WriteShort(Ais[0].Rid);
+                        oPacket.WriteShort(Ais[0].Kart);
+                        oPacket.WriteShort(Ais[0].Balloon);
+                        oPacket.WriteShort(Ais[0].HeadBand);
+                        oPacket.WriteShort(Ais[0].Goggle);
+                        oPacket.WriteByte(Ais[0].Team);
+                        oPacket.WriteInt(id);
+                        oPacket.WriteShort(Ais[1].Character);
+                        oPacket.WriteShort(Ais[1].Rid);
+                        oPacket.WriteShort(Ais[1].Kart);
+                        oPacket.WriteShort(Ais[1].Balloon);
+                        oPacket.WriteShort(Ais[1].HeadBand);
+                        oPacket.WriteShort(Ais[1].Goggle);
+                        oPacket.WriteByte(Ais[1].Team);
+                        Position(roomId, oPacket);
+                        Parent.Client.Send(oPacket);
+                    }
+                }
+            }
+        }
+        else
+        {
+            short targetCharId = randomCharIds[0];
+            short targetKartId = randomKartIds[0];
+            if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
+            {
+                short? ridIndex = selector.GetRandomRidIndex(targetChar);
+                short? balloonId = 0;
+                short? headbandId = 0;
+                short? goggleId = 0;
+                if (room.RandomTrackGameType == 1)
+                {
+                    balloonId = selector.GetRandomAccessoryId(targetChar.Balloons);
+                    headbandId = selector.GetRandomAccessoryId(targetChar.Headbands);
+                    goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
+                }
+                if (room.TrySetAi(new Ai
+                {
+                    Character = targetCharId,
+                    Rid = ridIndex ?? 0,
+                    Kart = targetKartId,
+                    Balloon = balloonId ?? 0,
+                    HeadBand = headbandId ?? 0,
+                    Goggle = goggleId ?? 0,
+                    Team = 0
+                }, Id, 0) != 255)
+                {
+                    using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
+                    {
+                        oPacket.WriteInt(0);
+                        oPacket.WriteByte(1);
+                        oPacket.WriteInt(Id);
+                        oPacket.WriteShort(targetCharId);
+                        oPacket.WriteShort(ridIndex ?? 0);
+                        oPacket.WriteShort(targetKartId);
+                        oPacket.WriteShort(balloonId ?? 0);
+                        oPacket.WriteShort(headbandId ?? 0);
+                        oPacket.WriteShort(goggleId ?? 0);
+                        oPacket.WriteByte(0);
+                        Position(roomId, oPacket);
+                        Parent.Client.Send(oPacket);
+                    }
+                }
+            }
+        }
+    }
+
+    static void Position(int roomId, OutPacket outPacket)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (RoomManager.TryGetSlotStatus(roomId, (byte)i) != SlotStatus.Empty)
+            {
+                if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player player2)
+                {
+                    if (player2.SlotId == i)
+                    {
+                        outPacket.WriteInt(player2.ID);
+                    }
+                }
+                else if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai ai)
+                {
+                    if (ai.SlotId == i)
+                    {
+                        outPacket.WriteInt(ai.ID);
+                    }
+                }
+            }
+            else
+            {
+                outPacket.WriteHexString("FFFFFFFF");
             }
         }
     }

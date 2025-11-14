@@ -58,9 +58,6 @@ public static class JsonHelper
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 避免中文转义（可选）
     };
 
-    // 无 BOM 的 UTF-8 编码（全局复用，避免重复创建）
-    private static readonly Encoding _utf8NoBom = new UTF8Encoding(false);
-
     /// <summary>
     /// 序列化对象为 JSON 字符串（字符串本身无 BOM，BOM 仅存在于字节流中）
     /// </summary>
@@ -71,25 +68,14 @@ public static class JsonHelper
     }
 
     /// <summary>
-    /// 序列化对象为【无 BOM 的 UTF-8 字节流】（适合直接写入文件/网络）
-    /// </summary>
-    public static byte[] SerializeNoBom<T>(T obj, JsonSerializerOptions options = null)
-    {
-        options ??= _defaultOptions;
-        // 先序列化为字符串，再用无 BOM 编码转换为字节（推荐）
-        string json = JsonSerializer.Serialize(obj, options);
-        return _utf8NoBom.GetBytes(json);
-
-        // 若直接用 SerializeNoBom，需注意：
-        // 该方法默认生成的字节流无 BOM（内部使用无 BOM 的 UTF-8），但文档未明确保证，因此上述方法更稳妥
-    }
-
-    /// <summary>
     /// 反序列化 JSON 字符串为对象
     /// </summary>
     public static T Deserialize<T>(string json, JsonSerializerOptions options = null)
     {
         if (string.IsNullOrEmpty(json))
+            return default;
+
+        if (!IsValidJsonFile("", json))
             return default;
 
         options ??= _defaultOptions;
@@ -101,6 +87,12 @@ public static class JsonHelper
     /// </summary>
     public static T DeserializeNoBom<T>(string FileName, JsonSerializerOptions options = null)
     {
+        if (string.IsNullOrEmpty(FileName))
+            return default;
+
+        if (!IsValidJsonFile(FileName))
+            return default;
+
         byte[] utf8Bytes = File.ReadAllBytes(FileName);
         if (utf8Bytes == null || utf8Bytes.Length == 0)
             return default;
@@ -108,5 +100,29 @@ public static class JsonHelper
         options ??= _defaultOptions;
         // 直接反序列化字节流（无需先转字符串，更高效）
         return JsonSerializer.Deserialize<T>(utf8Bytes, options);
+    }
+
+    public static bool IsValidJsonFile(string filePath, string jsonContent = null)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(jsonContent))
+                jsonContent = File.ReadAllText(filePath);
+            // 尝试解析（仅验证格式，不反序列化具体对象）
+            using (var doc = JsonDocument.Parse(jsonContent))
+            {
+                return true; // 解析成功
+            }
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"JSON 格式错误：{ex.Message}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"文件异常：{ex.Message}");
+            return false;
+        }
     }
 }
