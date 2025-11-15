@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -59,7 +60,7 @@ public static class JsonHelper
     };
 
     /// <summary>
-    /// 序列化对象为 JSON 字符串（字符串本身无 BOM，BOM 仅存在于字节流中）
+    /// 序列化对象为 JSON 字符串（字符串本身无 BOM, BOM 仅存在于字节流中）
     /// </summary>
     public static string Serialize<T>(T obj, JsonSerializerOptions options = null)
     {
@@ -75,11 +76,14 @@ public static class JsonHelper
         if (string.IsNullOrEmpty(json))
             return default;
 
-        if (!IsValidJsonFile("", json))
+        if (!EnsureJsonUtf8NoBom("", out string validJson, json))
+            return default;
+
+        if (validJson == null || validJson.Length == 0)
             return default;
 
         options ??= _defaultOptions;
-        return JsonSerializer.Deserialize<T>(json, options);
+        return JsonSerializer.Deserialize<T>(validJson, options);
     }
 
     /// <summary>
@@ -90,38 +94,158 @@ public static class JsonHelper
         if (string.IsNullOrEmpty(FileName))
             return default;
 
-        if (!IsValidJsonFile(FileName))
+        if (!EnsureJsonUtf8NoBom(FileName, out string validJson))
             return default;
 
-        byte[] utf8Bytes = File.ReadAllBytes(FileName);
-        if (utf8Bytes == null || utf8Bytes.Length == 0)
+        if (validJson == null || validJson.Length == 0)
             return default;
 
         options ??= _defaultOptions;
-        // 直接反序列化字节流（无需先转字符串，更高效）
-        return JsonSerializer.Deserialize<T>(utf8Bytes, options);
+        return JsonSerializer.Deserialize<T>(validJson, options);
     }
 
-    public static bool IsValidJsonFile(string filePath, string jsonContent = null)
+    public static bool EnsureJsonUtf8NoBom(string filePath, out string jsonData, string jsonContent = null, bool validateJson = true)
     {
         try
         {
-            if (string.IsNullOrEmpty(jsonContent))
-                jsonContent = File.ReadAllText(filePath);
-            // 尝试解析（仅验证格式，不反序列化具体对象）
-            using (var doc = JsonDocument.Parse(jsonContent))
+            // 1. 确定要写入的内容
+            string contentToWrite;
+            if (!string.IsNullOrEmpty(jsonContent))
             {
-                return true; // 解析成功
+                contentToWrite = jsonContent;
             }
-        }
-        catch (JsonException ex)
-        {
-            Console.WriteLine($"JSON 格式错误：{ex.Message}");
-            return false;
+            else
+            {
+                if (!File.Exists(filePath))
+                {
+                    Console.WriteLine($"错误: 文件 '{filePath}' 不存在, 且未提供 jsonContent.");
+                    jsonData = null;
+                    return false;
+                }
+                // 读取时尝试自动检测编码, 以防原文件编码混乱
+                contentToWrite = ReadFileWithEncodingDetection(filePath);
+            }
+
+            // 2. （可选）验证 JSON 格式
+            if (validateJson && !IsValidJson(contentToWrite))
+            {
+                Console.WriteLine("JSON 格式无效, 已中止保存.");
+                jsonData = null;
+                return false;
+            }
+
+            jsonData = contentToWrite;
+            return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"文件异常：{ex.Message}");
+            Console.WriteLine($"EnsureJsonUtf8NoBom: {ex.Message}");
+            jsonData = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 尝试检测文件编码并读取内容.
+    /// </summary>
+    private static string ReadFileWithEncodingDetection(string filePath)
+    {
+        byte[] bytes = File.ReadAllBytes(filePath);
+
+        // 检查 UTF-8 BOM
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+        {
+            return Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+        }
+        // 检查 UTF-16 LE BOM
+        if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+        {
+            return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+        }
+        // 检查 UTF-16 BE BOM
+        if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+        {
+            return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+        }
+
+        // 尝试解码为 UTF-8
+        bool isUtf8 = IsValidUtf8(bytes);
+        // 尝试解码为 GBK
+        bool isGbk = IsValidGbk(bytes);
+
+        if (isUtf8 && isGbk)
+        {
+            // 如果两种编码都能成功解码，优先选择 UTF-8（更现代、更通用）
+            return Encoding.UTF8.GetString(bytes);
+        }
+        else if (isUtf8)
+        {
+            return Encoding.UTF8.GetString(bytes);
+        }
+        else if (isGbk)
+        {
+            return Encoding.GetEncoding("GBK").GetString(bytes);
+        }
+        else
+        {
+            // 如果都失败，回退到系统默认编码，并给出警告
+            Console.WriteLine("警告：无法可靠检测编码，将使用系统默认编码。可能导致乱码。");
+            return Encoding.Default.GetString(bytes);
+        }
+    }
+
+    /// <summary>
+    /// 检查字节数组是否是有效的 UTF-8 编码。
+    /// </summary>
+    private static bool IsValidUtf8(byte[] bytes)
+    {
+        try
+        {
+            // 如果解码后再编码能还原原始字节，则认为是有效的
+            string s = Encoding.UTF8.GetString(bytes);
+            return Encoding.UTF8.GetBytes(s).SequenceEqual(bytes);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 检查字节数组是否是有效的 GBK 编码。
+    /// </summary>
+    private static bool IsValidGbk(byte[] bytes)
+    {
+        try
+        {
+            Encoding gbk = Encoding.GetEncoding("GBK");
+            string s = gbk.GetString(bytes);
+            return gbk.GetBytes(s).SequenceEqual(bytes);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 验证 JSON 字符串格式是否有效.
+    /// </summary>
+    private static bool IsValidJson(string jsonString)
+    {
+        if (string.IsNullOrWhiteSpace(jsonString))
+        {
+            return false;
+        }
+        try
+        {
+            using (JsonDocument doc = JsonDocument.Parse(jsonString))
+            {
+                return true;
+            }
+        }
+        catch (JsonException)
+        {
             return false;
         }
     }
