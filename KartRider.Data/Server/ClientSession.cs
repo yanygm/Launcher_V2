@@ -52,11 +52,10 @@ namespace KartRider
                 uint UserNO = Adler32Helper.GenerateAdler32_ASCII(Nickname, 0);
                 iPacket.Position = 0;
                 uint hash = iPacket.ReadUInt();
-                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
-                if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
+                if (hash != Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
                 {
-                    return;
+                    string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
                 }
                 if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCnAuthenLogin", 0))
                 {
@@ -104,7 +103,7 @@ namespace KartRider
                     ProfileService.Save(packet.Nickname);
                     return;
                 }
-                if (hash == Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) ? false : hash != 1340475309)//PqGameReportMyBadUdp
+                if (hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) && hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PqGameReportMyBadUdp"), 0))
                 {
                     if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
                     {
@@ -3755,3 +3754,4 @@ namespace KartRider
         }
     }
 }
+
