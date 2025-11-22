@@ -214,11 +214,6 @@ namespace KartRider
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqRenameRidPacket", 0))
                     {
                         var nickname = iPacket.ReadString(false);
-                        using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
 
                         if (!FileName.FileNames.ContainsKey(Nickname))
                         {
@@ -228,16 +223,32 @@ namespace KartRider
 
                         if (Directory.Exists(filename.NicknameDir))
                         {
-                            Directory.Move(filename.NicknameDir, Path.GetFullPath(Path.Combine(FileName.ProfileDir, nickname)));
-                            if (ProfileService.SettingConfig.Name == Nickname)
+                            if (Directory.Exists(Path.GetFullPath(Path.Combine(FileName.ProfileDir, nickname))))
                             {
-                                ProfileService.SettingConfig.Name = nickname;
-                                ProfileService.SaveSettings();
+                                using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
+                                {
+                                    outPacket.WriteInt(1);
+                                    this.Parent.Client.Send(outPacket);
+                                }
                             }
-                            Nickname = nickname;
-                            ClientGroup.Nickname = nickname;
-                            FileName.Load(nickname);
-                            FileName.FileNames.Remove(Nickname);
+                            else
+                            {
+                                using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
+                                {
+                                    outPacket.WriteInt(0);
+                                    this.Parent.Client.Send(outPacket);
+                                }
+                                Directory.Move(filename.NicknameDir, Path.GetFullPath(Path.Combine(FileName.ProfileDir, nickname)));
+                                if (ProfileService.SettingConfig.Name == Nickname)
+                                {
+                                    ProfileService.SettingConfig.Name = nickname;
+                                    ProfileService.SaveSettings();
+                                }
+                                Nickname = nickname;
+                                ClientGroup.Nickname = nickname;
+                                FileName.Load(nickname);
+                                FileName.FileNames.Remove(Nickname);
+                            }
                         }
                         return;
                     }
