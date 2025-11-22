@@ -15,7 +15,7 @@ namespace KartRider
 {
     public partial class Launcher : Form
     {
-        public static bool GetKart = true;
+        public static bool GetKart = false;
         public string kartRiderDirectory;
         public static string KartRider;
         public static string pinFile;
@@ -112,6 +112,7 @@ namespace KartRider
                     File.WriteAllBytes(pinFile, val.GetEncryptedData());
                     var modifier = new MemoryModifier();
                     modifier.LaunchAndModifyMemory(kartRiderDirectory);
+                    GetKart = true;
                 })).Start();
             }
         }
