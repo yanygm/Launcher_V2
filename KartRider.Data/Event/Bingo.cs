@@ -150,7 +150,7 @@ namespace KartRider
 
     public static class Bingo
     {
-        public static short[] BingoLotteryIDs = new short[] { 1180, 1182 };
+        public static short[] BingoLotteryIDs = new short[] { 1191, 1192 };
         public static byte BingoItem = 0;
         public static byte BingoNum = 0;
         public static short BingoCount = 0;
@@ -318,3 +318,4 @@ namespace KartRider
         }
     }
 }
+
