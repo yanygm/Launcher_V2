@@ -232,9 +232,11 @@ namespace KartRider
             }
 
             // 2. 加载模型尺寸（单独处理ModelMax.xml）
-            var (modelMaxX, modelMaxY) = LoadModelMaxDimensions(kartId);
-            modelMaxX = modelMaxX;
-            modelMaxY = modelMaxY;
+            var modelMax = LoadModelMaxDimensions(kartId);
+            modelMaxX = modelMax.modelMaxX;
+            Console.WriteLine($"[KartSpec] 警告: 属性modelMaxX值为: {modelMaxX}");
+            modelMaxY = modelMax.modelMaxY;
+            Console.WriteLine($"[KartSpec] 警告: 属性modelMaxY值为: {modelMaxY}");
 
             // 3. 设置默认部件类型（Engine/Handle等）
             EngineType = DefaultPartType;
@@ -274,6 +276,7 @@ namespace KartRider
 
                     var maxXAttr = targetNode.Attribute("modelMaxX");
                     var maxYAttr = targetNode.Attribute("modelMaxY");
+
                     if (maxXAttr == null || maxYAttr == null)
                     {
                         Console.WriteLine($"[KartSpec] 警告: ID={kartId} 缺少modelMaxX或modelMaxY属性");
