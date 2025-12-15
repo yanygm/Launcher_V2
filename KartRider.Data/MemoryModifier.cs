@@ -84,19 +84,12 @@ class MemoryModifier
             // 2. 等待进程初始化（根据实际情况调整等待时间，确保进程加载完成）
             Thread.Sleep(5000); // 等待5秒（可根据需要延长）
 
-            // 3. 查找并修改内存 星标赛道数量50改为120
-            bool success = ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32 }, new byte[] { 0x83, 0xFA, 0x78 });
-            if (success)
-            {
-                Console.WriteLine("星标赛道数量50改为120");
-                // 你的其他逻辑（如启用按钮等）
-                // Start_Button.Enabled = true;
-                // Launcher.GetKart = true;
-            }
-            else
-            {
-                Console.WriteLine("未找到目标内存特征码，修改失败");
-            }
+            // 3. 查找并修改内存
+
+            // 星标赛道数量50改为120
+            ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32 }, new byte[] { 0x83, 0xFA, 0x78 });
+            // 赛道模型边界大小2000改为100000单浮点
+            ModifyMemory(process.Id, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x98, 0x41, 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x98, 0x41, 0x00, 0x50, 0xC3, 0x47 });
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
@@ -201,3 +194,4 @@ class MemoryModifier
         return -1;
     }
 }
+
