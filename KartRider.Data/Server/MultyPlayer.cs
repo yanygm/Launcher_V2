@@ -104,16 +104,16 @@ public static class MultyPlayer
                         var Object = RoomManager.TryGetSlotDetail(roomId, (byte)i);
                         if (Object is Player player)
                         {
-                            if (!room.TimeData.ContainsKey(player.SlotId))
+                            if (!room.TimeData.ContainsKey(player.ID))
                             {
-                                room.TimeData[player.SlotId] = 4294967295;
+                                room.TimeData[player.ID] = 4294967295;
                             }
                         }
                         else if (Object is Ai ai)
                         {
-                            if (!room.TimeData.ContainsKey(ai.SlotId))
+                            if (!room.TimeData.ContainsKey(ai.ID))
                             {
-                                room.TimeData[ai.SlotId] = 4294967295;
+                                room.TimeData[ai.ID] = 4294967295;
                             }
                         }
                     }
@@ -139,22 +139,22 @@ public static class MultyPlayer
                 {
                     if (p2.Team == 2)
                     {
-                        blueTeam += teamPoints[room.Ranking[i]];
+                        blueTeam += teamPoints[room.Ranking[p2.ID]];
                     }
                     else if (p2.Team == 1)
                     {
-                        redTeam += teamPoints[room.Ranking[i]];
+                        redTeam += teamPoints[room.Ranking[p2.ID]];
                     }
                 }
                 if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a2)
                 {
                     if (a2.Team == 2)
                     {
-                        blueTeam += teamPoints[room.Ranking[i]];
+                        blueTeam += teamPoints[room.Ranking[a2.ID]];
                     }
                     else if (a2.Team == 1)
                     {
-                        redTeam += teamPoints[room.Ranking[i]];
+                        redTeam += teamPoints[room.Ranking[a2.ID]];
                     }
                 }
             }
@@ -184,12 +184,12 @@ public static class MultyPlayer
                 if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Player p3)
                 {
                     outPacket.WriteInt(p3.ID); // player id
-                    outPacket.WriteUInt(room.TimeData[p3.SlotId]);
+                    outPacket.WriteUInt(room.TimeData[p3.ID]);
                     outPacket.WriteByte();
                     outPacket.WriteShort(ProfileService.ProfileConfigs[p3.Nickname].RiderItem.Set_Kart);
-                    int playerRanking = room.Ranking[i];
+                    int playerRanking = room.Ranking[p3.ID];
                     int playerPoint = teamPoints[playerRanking];
-                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.SlotId, playerRanking, playerPoint);
+                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.ID, playerRanking, playerPoint);
                     outPacket.WriteInt(playerRanking);
                     outPacket.WriteShort();
                     outPacket.WriteByte();
@@ -200,7 +200,7 @@ public static class MultyPlayer
                     outPacket.WriteBytes(new byte[29]);
                     if (room.GameType == 3 || room.GameType == 4)
                     {
-                        if (room.TimeData[p3.SlotId] == 4294967295)
+                        if (room.TimeData[p3.ID] == 4294967295)
                         {
                             outPacket.WriteInt(0);
                         }
@@ -233,9 +233,9 @@ public static class MultyPlayer
                 if (RoomManager.TryGetSlotDetail(roomId, (byte)i) is Ai a3)
                 {
                     outPacket.WriteInt(a3.ID);
-                    if (room.TimeData.ContainsKey(a3.SlotId) && room.TimeData[a3.SlotId] > 0)
+                    if (room.TimeData.ContainsKey(a3.ID) && room.TimeData[a3.ID] > 0)
                     {
-                        outPacket.WriteUInt(room.TimeData[a3.SlotId]);
+                        outPacket.WriteUInt(room.TimeData[a3.ID]);
                     }
                     else
                     {
@@ -245,15 +245,15 @@ public static class MultyPlayer
 
                     // 获取 kart 属性值
                     outPacket.WriteShort(a3.Kart);
-                    int AiRanking = room.Ranking[a3.SlotId];
+                    int AiRanking = room.Ranking[a3.ID];
                     int AiPoint = teamPoints[AiRanking];
-                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.SlotId, AiRanking, AiPoint);
+                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.ID, AiRanking, AiPoint);
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteHexString("A0 60");
                     if (room.GameType == 3 || room.GameType == 4)
                     {
                         outPacket.WriteByte(a3.Team); // Team
-                        if (room.TimeData[a3.SlotId] == 4294967295)
+                        if (room.TimeData[a3.ID] == 4294967295)
                         {
                             outPacket.WriteInt(0);
                         }
@@ -457,8 +457,8 @@ public static class MultyPlayer
                 if (slotId != -1)
                 {
                     var player = RoomManager.GetPlayer(roomId, nickname);
-                    room.TimeData.TryAdd(player.SlotId, time);
-                    Console.WriteLine("GameControlPacket, slotId = {0}, Time = {1}", slotId, time);
+                    room.TimeData.TryAdd(player.ID, time);
+                    Console.WriteLine("GameControlPacket, ID = {0}, Time = {1}", player.ID, time);
                 }
                 if (room.EndTicks == 0)
                 {
@@ -623,8 +623,8 @@ public static class MultyPlayer
             {
                 //oPacket.WriteHexString("01 3d a4 3d 49 8f 99 3d a4 3d 49 90 99");
                 oPacket.WriteByte(1);
-                oPacket.WriteEndPoint(IPAddress.Any, 39311);
-                oPacket.WriteEndPoint(IPAddress.Any, 39312);
+                oPacket.WriteEndPoint(clientEndPoint.Address, 39311);
+                oPacket.WriteEndPoint(clientEndPoint.Address, 39312);
                 Parent.Client.Send(oPacket);
             }
             return;
