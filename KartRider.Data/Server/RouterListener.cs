@@ -57,10 +57,17 @@ namespace KartRider
 
         public static void Start()
         {
-            if (RouterListener.Listener == null || RouterListener.CurrentUDPServer == null)
+            // 示例：启动两个独立的UDP服务端
+            var server1 = new UdpServer("服务端1", 39311);
+            var server2 = new UdpServer("服务端2", 39312);
+
+            // 启动服务端
+            server1.Start();
+            server2.Start();
+
+            if (RouterListener.Listener == null)
             {
                 RouterListener.Listener = new TcpListener(IPAddress.Any, ProfileService.SettingConfig.ServerPort);
-                RouterListener.CurrentUDPServer = new System.Net.IPEndPoint(IPAddress.Any, 39311);
             }
             if (!RouterListener.Listener.Server.IsBound)
             {
