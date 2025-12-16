@@ -52,11 +52,8 @@ namespace KartRider
                 uint UserNO = Adler32Helper.GenerateAdler32_ASCII(Nickname, 0);
                 iPacket.Position = 0;
                 uint hash = iPacket.ReadUInt();
-                if (hash != Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
-                {
-                    string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
-                }
+                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                Console.WriteLine($"[{currentTime}][{Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
                 if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCnAuthenLogin", 0))
                 {
                     iPacket.ReadInt();
@@ -2889,7 +2886,7 @@ namespace KartRider
                         IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
                         if (serverEndPoint == null) return;
 
-                        bool PcMsgPassport = true;
+                        bool PcMsgPassport = false;
 
                         using (OutPacket outPacket = new OutPacket("PrLogin"))
                         {
@@ -2910,8 +2907,8 @@ namespace KartRider
                                 outPacket.WriteInt(0);
                             }
                             outPacket.WriteByte(0);
-                            outPacket.WriteEndPoint(IPAddress.Any, 39311);
-                            outPacket.WriteEndPoint(IPAddress.Any, 39312);
+                            outPacket.WriteEndPoint(serverEndPoint.Address, 39311);
+                            outPacket.WriteEndPoint(serverEndPoint.Address, 39312);
                             outPacket.WriteByte(0);
                             outPacket.WriteByte(0);
                             outPacket.WriteByte((byte)(PcMsgPassport ? 1 : 0));
@@ -3765,4 +3762,3 @@ namespace KartRider
         }
     }
 }
-
