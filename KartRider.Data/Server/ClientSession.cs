@@ -2412,7 +2412,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveRankInfo"))
                         {
-                            outPacket.WriteHexString("0100000000FF000000000000000000000000");
+                            outPacket.WriteHexString("01 00 00 00 00 FF 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
