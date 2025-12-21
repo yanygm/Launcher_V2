@@ -21,6 +21,7 @@ namespace KartRider
             ProfileService.SettingConfig.ServerIP = ServerIP.Text;
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
+            ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SaveSettings();
@@ -32,6 +33,7 @@ namespace KartRider
             ServerIP.Text = ProfileService.SettingConfig.ServerIP;
             ServerPort.Text = ProfileService.SettingConfig.ServerPort.ToString();
             NgsOn.Checked = ProfileService.SettingConfig.NgsOn;
+            PatchUpdate.Checked = ProfileService.SettingConfig.PatchUpdate;
             ProfileService.SaveSettings();
             foreach (string key in SpeedType.speedNames.Keys)
             {
@@ -87,6 +89,7 @@ namespace KartRider
             ProfileService.SettingConfig.ServerIP = ServerIP.Text;
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
+            ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SaveSettings();

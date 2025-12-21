@@ -18,6 +18,7 @@ namespace KartRider
             ServerPort = new TextBox();
             Port_label = new Label();
             NgsOn = new CheckBox();
+            PatchUpdate = new CheckBox();
             Save = new Button();
             SuspendLayout();
             // 
@@ -41,12 +42,23 @@ namespace KartRider
             // 
             NgsOn.AutoSize = true;
             NgsOn.ForeColor = System.Drawing.Color.Blue;
-            NgsOn.Location = new System.Drawing.Point(190, 111);
+            NgsOn.Location = new System.Drawing.Point(190, 82);
             NgsOn.Name = "NgsOn";
             NgsOn.Size = new System.Drawing.Size(52, 16);
             NgsOn.TabIndex = 6;
             NgsOn.Text = "NgsOn";
             NgsOn.UseVisualStyleBackColor = true;
+            // 
+            // PatchUpdate
+            // 
+            PatchUpdate.AutoSize = true;
+            PatchUpdate.ForeColor = System.Drawing.Color.Blue;
+            PatchUpdate.Location = new System.Drawing.Point(190, 111);
+            PatchUpdate.Name = "PatchUpdate";
+            PatchUpdate.Size = new System.Drawing.Size(52, 16);
+            PatchUpdate.TabIndex = 7;
+            PatchUpdate.Text = "更新补丁";
+            PatchUpdate.UseVisualStyleBackColor = true;
             // 
             // ServerIP
             // 
@@ -149,6 +161,7 @@ namespace KartRider
             Controls.Add(AiSpeed_comboBox);
             Controls.Add(AiSpeed_label);
             Controls.Add(NgsOn);
+            Controls.Add(PatchUpdate);
             Controls.Add(Save);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -170,6 +183,7 @@ namespace KartRider
         private ComboBox Speed_comboBox;
         private ComboBox AiSpeed_comboBox;
         private CheckBox NgsOn;
+        private CheckBox PatchUpdate;
         private Button Save;
         private Label Name_label;
         private Label IP_label;

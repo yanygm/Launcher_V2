@@ -112,6 +112,12 @@ namespace KartRider
                 }
                 if (!string.IsNullOrEmpty(RootDirectory))
                 {
+                    ProfileService.LoadSettings();
+                    if (ProfileService.SettingConfig.PatchUpdate)
+                    {
+                        await PatchUpdate.UpdateDataAsync(RootDirectory);
+                    }
+
                     try
                     {
                         Console.WriteLine("当前游戏路径: " + RootDirectory);

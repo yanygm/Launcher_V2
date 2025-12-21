@@ -44,6 +44,8 @@ namespace Profile
         public ushort nClientLoc { get; set; }
 
         public bool NgsOn { get; set; } = false;
+
+        public bool PatchUpdate { get; set; } = false;
     }
 
     public class ProfileConfig

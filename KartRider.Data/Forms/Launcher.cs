@@ -37,7 +37,6 @@ namespace KartRider
 
         private void OnLoad(object sender, EventArgs e)
         {
-            ProfileService.LoadSettings();
             PINFile val = new PINFile(pinFile);
             ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
             ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
