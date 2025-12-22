@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Profile;
 
 namespace KartRider
 {
@@ -18,7 +19,6 @@ namespace KartRider
     {
         public static string owner = "yanygm";
         public static string repo = "Launcher_V2";
-        public static List<string> urls = new List<string>() { "https://gh-proxy.com/", "https://ghproxy.net/", "https://git.myany.uk/" };
         static string name;
         static string filePath;
 
@@ -100,25 +100,21 @@ namespace KartRider
                             string country = await GetCountryAsync();
                             if (country != "" && country == "CN")
                             {
-                                foreach (string url_ in Update.urls)
+                                string url2 = ProfileService.SettingConfig.Proxy + launcherExeAsset.browser_download_url;
+                                if (ProfileService.SettingConfig.Proxy == "https://gh-proxy.com/")
                                 {
-                                    string url2 = url_ + launcherExeAsset.browser_download_url;
-                                    if (url_ == "https://gh-proxy.com/")
+                                    url2 = ProfileService.SettingConfig.Proxy + launcherExeAsset.browser_download_url.Replace("https://", "");
+                                }
+                                if (await GetUrl(url2))
+                                {
+                                    int threadCount = 16; // 可根据需要调整线程数
+                                    var downloader = new MultiThreadedDownloader(url2, Update_File, threadCount);
+                                    var downloadResult1 = await downloader.StartDownloadAsync();
+                                    if (downloadResult1)
                                     {
-                                        url2 = url_ + launcherExeAsset.browser_download_url.Replace("https://", "");
+                                        ApplyUpdate(Update_File);
                                     }
-                                    if (await GetUrl(url2))
-                                    {
-                                        int threadCount = 16; // 可根据需要调整线程数
-                                        var downloader = new MultiThreadedDownloader(url2, Update_File, threadCount);
-                                        var downloadResult1 = await downloader.StartDownloadAsync();
-                                        if (downloadResult1)
-                                        {
-                                            ApplyUpdate(Update_File);
-                                        }
-                                        return downloadResult1;
-                                        break;
-                                    }
+                                    return downloadResult1;
                                 }
                             }
                             else

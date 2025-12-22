@@ -20,6 +20,12 @@ class MultiThreadedDownloader
     private readonly string _savePath;
     // 临时文件目录
     private readonly string _tempDir;
+    // 取消令牌源，用于取消所有下载线程
+    private CancellationTokenSource _downloadCancellationTokenSource;
+    // 取消令牌
+    private CancellationToken _downloadCancellationToken;
+    // 进度显示取消令牌源
+    private CancellationTokenSource _progressCancellationTokenSource;
 
     private int lastProgressLength = 0;
 
@@ -38,6 +44,12 @@ class MultiThreadedDownloader
     /// </summary>
     public async Task<bool> StartDownloadAsync()
     {
+        // 初始化下载线程取消令牌源和取消令牌
+        _downloadCancellationTokenSource = new CancellationTokenSource();
+        _downloadCancellationToken = _downloadCancellationTokenSource.Token;
+        // 初始化进度显示取消令牌源
+        _progressCancellationTokenSource = new CancellationTokenSource();
+        
         try
         {
             // 1. 获取文件总大小
@@ -63,10 +75,10 @@ class MultiThreadedDownloader
             long chunkSize = _fileTotalSize / _threadCount;
             var tasks = new Task[_threadCount];
 
-            // 4. 启动进度显示线程
-            var progressTask = Task.Run(ShowProgress);
+            // 4. 启动进度显示线程，使用单独的取消令牌
+            var progressTask = Task.Run(() => ShowProgress(), _progressCancellationTokenSource.Token);
 
-            // 5. 启动下载线程
+            // 5. 启动下载线程，使用下载取消令牌
             for (int i = 0; i < _threadCount; i++)
             {
                 int threadIndex = i;
@@ -77,34 +89,56 @@ class MultiThreadedDownloader
                 tasks[i] = Task.Run(async () =>
                 {
                     await DownloadChunkAsync(threadIndex, start, end);
-                });
+                }, _downloadCancellationToken);
             }
 
             // 6. 等待所有下载线程完成
             await Task.WhenAll(tasks);
 
-            // 7. 停止进度显示
+            // 7. 检查是否被取消（下载失败导致的取消）
+            if (_downloadCancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine($"\n下载已取消");
+                return false;
+            }
+
+            // 8. 停止进度显示
+            _progressCancellationTokenSource.Cancel();
             progressTask.Wait(1000);
             Console.WriteLine("");
 
-            // 8. 合并文件片段
+            // 9. 合并文件片段
             await MergeChunksAsync();
 
-            // 9. 删除临时文件
+            // 10. 删除临时文件
             Directory.Delete(_tempDir, true);
 
             return true;
         }
+        catch (OperationCanceledException ex)
+        {
+            // 区分是下载取消还是进度显示取消
+            if (ex.CancellationToken == _downloadCancellationToken)
+            {
+                Console.WriteLine($"\n下载已取消");
+            }
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"\n下载出错: {ex.Message}");
+        }
+        finally
+        {
+            // 确保清理资源
+            _downloadCancellationTokenSource?.Dispose();
+            _progressCancellationTokenSource?.Dispose();
             // 清理临时文件
             if (Directory.Exists(_tempDir))
             {
                 Directory.Delete(_tempDir, true);
             }
-            return false;
         }
+        return false;
     }
 
     /// <summary>
@@ -141,18 +175,28 @@ class MultiThreadedDownloader
                 byte[] buffer = new byte[8192]; // 8KB缓冲区
                 int bytesRead;
 
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _downloadCancellationToken)) > 0)
                 {
-                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+                    // 检查是否需要取消下载
+                    _downloadCancellationToken.ThrowIfCancellationRequested();
+                    
+                    await fileStream.WriteAsync(buffer, 0, bytesRead, _downloadCancellationToken);
                     downloaded += bytesRead;
                     // 线程安全地更新总下载字节数
                     Interlocked.Add(ref _totalDownloadedBytes, bytesRead);
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            // 这是正常的取消操作，不需要特别处理
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"\n线程 {threadIndex} 下载失败: {ex.Message}");
+            // 下载失败，取消所有下载线程
+            _downloadCancellationTokenSource.Cancel();
+            throw;
         }
     }
 
@@ -165,12 +209,15 @@ class MultiThreadedDownloader
         {
             for (int i = 0; i < _threadCount; i++)
             {
+                // 检查是否需要取消
+                _downloadCancellationToken.ThrowIfCancellationRequested();
+                
                 string tempFilePath = Path.Combine(_tempDir, $"chunk_{i}.tmp");
                 if (File.Exists(tempFilePath))
                 {
                     using (var inputStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read))
                     {
-                        await inputStream.CopyToAsync(outputStream);
+                        await inputStream.CopyToAsync(outputStream, _downloadCancellationToken);
                     }
                     File.Delete(tempFilePath);
                 }
@@ -183,28 +230,44 @@ class MultiThreadedDownloader
     /// </summary>
     private void ShowProgress()
     {
-        while (_totalDownloadedBytes < _fileTotalSize)
+        try
         {
-            // 计算整体进度
-            double totalProgress = (double)_totalDownloadedBytes / _fileTotalSize * 100;
+            while (_totalDownloadedBytes < _fileTotalSize)
+            {
+                // 检查是否需要取消
+                _progressCancellationTokenSource.Token.ThrowIfCancellationRequested();
+                
+                // 计算整体进度
+                double totalProgress = (double)_totalDownloadedBytes / _fileTotalSize * 100;
 
-            int progressBarWidth = 50;
-            int progress = (int)(totalProgress / 100 * progressBarWidth);
+                int progressBarWidth = 50;
+                int progress = (int)(totalProgress / 100 * progressBarWidth);
 
-            long currentBytes = _totalDownloadedBytes;
-            long speedBytesPerSecond = currentBytes - previousBytes;
-            previousBytes = currentBytes;
+                long currentBytes = _totalDownloadedBytes;
+                long speedBytesPerSecond = currentBytes - previousBytes;
+                previousBytes = currentBytes;
 
-            // 格式化速度显示（转换为 KB/s 或 MB/s）
-            string speedDisplay = FormatSpeed(speedBytesPerSecond);
+                // 格式化速度显示（转换为 KB/s 或 MB/s）
+                string speedDisplay = FormatSpeed(speedBytesPerSecond);
 
-            string progressText = $"[{new string('#', progress)}{new string(' ', progressBarWidth - progress)}] " + $"{totalProgress:F2}%  " + $"({FormatFileSize(_totalDownloadedBytes)} / {FormatFileSize(_fileTotalSize)}) " + $"({speedDisplay})";
-            Console.Write($"\r{new string(' ', lastProgressLength)}");
-            Console.Write($"\r{progressText}");
-            lastProgressLength = progressText.Length;
+                string progressText = $"[{new string('#', progress)}{new string(' ', progressBarWidth - progress)}] " + $"{totalProgress:F2}%  " + $"({FormatFileSize(_totalDownloadedBytes)} / {FormatFileSize(_fileTotalSize)}) " + $"({speedDisplay})";
+                Console.Write($"\r{new string(' ', lastProgressLength)}");
+                Console.Write($"\r{progressText}");
+                lastProgressLength = progressText.Length;
 
-            // 控制刷新频率（每秒1次）
-            Thread.Sleep(1000);
+                // 控制刷新频率（每秒1次），并检查取消
+                if (!_progressCancellationTokenSource.Token.WaitHandle.WaitOne(1000))
+                {
+                    // 如果等待超时（即1秒已过且未取消），继续循环
+                    continue;
+                }
+                // 如果WaitOne返回true，表示取消请求已发出
+                _progressCancellationTokenSource.Token.ThrowIfCancellationRequested();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // 正常取消，不处理
         }
     }
 

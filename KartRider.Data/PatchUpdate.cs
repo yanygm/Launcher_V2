@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using KartRider.Common.Data;
+using Profile;
 
 namespace KartRider
 {
@@ -98,21 +99,17 @@ namespace KartRider
                 string country = await Update.GetCountryAsync();
                 if (country != "" && country == "CN")
                 {
-                    foreach (string url_ in Update.urls)
+                    string url2 = ProfileService.SettingConfig.Proxy + download_url;
+                    if (ProfileService.SettingConfig.Proxy == "https://gh-proxy.com/")
                     {
-                        string url2 = url_ + download_url;
-                        if (url_ == "https://gh-proxy.com/")
-                        {
-                            url2 = url_ + download_url.Replace("https://", "");
-                        }
-                        if (await Update.GetUrl(url2))
-                        {
-                            int threadCount = 16; // 可根据需要调整线程数
-                            var downloader = new MultiThreadedDownloader(url2, fileName, threadCount);
-                            var downloadResult1 = await downloader.StartDownloadAsync();
-                            return downloadResult1;
-                            break;
-                        }
+                        url2 = ProfileService.SettingConfig.Proxy + download_url.Replace("https://", "");
+                    }
+                    if (await Update.GetUrl(url2))
+                    {
+                        int threadCount = 16; // 可根据需要调整线程数
+                        var downloader = new MultiThreadedDownloader(url2, fileName, threadCount);
+                        var downloadResult1 = await downloader.StartDownloadAsync();
+                        return downloadResult1;
                     }
                 }
                 else

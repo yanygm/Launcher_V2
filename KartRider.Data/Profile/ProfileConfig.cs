@@ -46,6 +46,8 @@ namespace Profile
         public bool NgsOn { get; set; } = false;
 
         public bool PatchUpdate { get; set; } = false;
+
+        public string Proxy { get; set; } = "https://gh-proxy.com/";
     }
 
     public class ProfileConfig

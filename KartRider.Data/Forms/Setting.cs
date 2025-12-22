@@ -10,6 +10,8 @@ namespace KartRider
     {
         public string[] AiSpeed = new string[] { "简单", "困难", "地狱" };
 
+        public string[] urls = new string[] { "https://gh-proxy.com/", "https://ghproxy.net/", "https://git.myany.uk/", "" };
+
         public Setting()
         {
             InitializeComponent();
@@ -24,6 +26,7 @@ namespace KartRider
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
+            ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
         }
 
@@ -43,8 +46,13 @@ namespace KartRider
             {
                 AiSpeed_comboBox.Items.Add(key);
             }
+            foreach (string key in urls)
+            {
+                Proxy_comboBox.Items.Add(key);
+            }
             Speed_comboBox.Text = (SpeedType.speedNames.FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key);
             AiSpeed_comboBox.Text = ProfileService.SettingConfig.AiSpeedType;
+            Proxy_comboBox.Text = ProfileService.SettingConfig.Proxy;
         }
 
         private void Speed_comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -56,7 +64,6 @@ namespace KartRider
                 {
                     ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[selectedSpeed];
                     ProfileService.SaveSettings();
-                    Console.WriteLine(selectedSpeed);
                 }
                 else
                 {
@@ -74,11 +81,27 @@ namespace KartRider
                 {
                     ProfileService.SettingConfig.AiSpeedType = selectedAiSpeed;
                     ProfileService.SaveSettings();
-                    Console.WriteLine(selectedAiSpeed);
                 }
                 else
                 {
                     Console.WriteLine("Invalid AiSpeed type selected.");
+                }
+            }
+        }
+
+        private void Proxy_comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Proxy_comboBox.SelectedItem != null)
+            {
+                string selectedProxy = Proxy_comboBox.SelectedItem.ToString();
+                if (urls.Contains(selectedProxy))
+                {
+                    ProfileService.SettingConfig.Proxy = selectedProxy;
+                    ProfileService.SaveSettings();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid Proxy type selected.");
                 }
             }
         }
@@ -92,6 +115,7 @@ namespace KartRider
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
             ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
+            ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
         }
     }
