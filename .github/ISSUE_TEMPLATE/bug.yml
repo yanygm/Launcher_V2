@@ -44,10 +44,10 @@ body:
         Select the severity of the issue.
       multiple: false
       options:
-        - P0 - 严重：无法启动或严重影响使用 / Critical: Cannot launch or severely affects usage
-        - P1 - 高：主要功能无法正常工作 / High: Major feature not working
-        - P2 - 中：功能可用但有明显问题 / Medium: Feature works but with obvious issues
-        - P3 - 低：小问题或界面瑕疵 / Low: Minor issue or UI glitch
+        - "P0 - 严重：无法启动或严重影响使用 / Critical: Cannot launch or severely affects usage"
+        - "P1 - 高：主要功能无法正常工作 / High: Major feature not working"
+        - "P2 - 中：功能可用但有明显问题 / Medium: Feature works but with obvious issues"
+        - "P3 - 低：小问题或界面瑕疵 / Low: Minor issue or UI glitch"
     validations:
       required: true
 
