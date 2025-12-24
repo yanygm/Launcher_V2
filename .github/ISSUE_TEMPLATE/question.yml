@@ -1,0 +1,121 @@
+name: Question
+description: Ask a question about the launcher / 关于启动器的提问
+labels: ["question"]
+title: "[Q]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 提问 / Question
+        
+        欢迎提问！这是一个帮助区域，请先确保：
+        1. 已阅读 [FAQ](https://themagicflute.github.io/Launcher_V2/FAQ/)
+        2. 已搜索过 [Issues](https://github.com/yanygm/Launcher_V2/issues) 和 [Discussions](https://github.com/yanygm/Launcher_V2/discussions)
+        
+        请注意：这里不是技术支持热线，我们会在有空时回复。
+        
+        ---
+        
+        Welcome! This is a help area. Please make sure:
+        1. You have read the [FAQ](https://themagicflute.github.io/Launcher_V2/FAQ/)
+        2. You have searched [Issues](https://github.com/yanygm/Launcher_V2/issues) and [Discussions](https://github.com/yanygm/Launcher_V2/discussions)
+        
+        Note: This is not a tech support hotline. We'll reply when available.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "你的问题 / Your question:"
+      description: |
+        请清晰、具体地描述你的问题。
+        说明你已经尝试过哪些方法。
+        
+        ---
+        
+        Please describe your question clearly and specifically.
+        Explain what you have already tried.
+      value: |
+        **我想知道... / I want to know...**
+        ...
+        
+        **我尝试过... / I have tried...**
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "相关背景 / Context:"
+      description: |
+        提供问题相关的背景信息。
+        为什么这个问题对你很重要？
+        
+        ---
+        
+        Provide relevant background information.
+        Why is this question important to you?
+      value: |
+        **使用场景 / Usage scenario:**
+        ...
+        
+        **当前情况 / Current situation:**
+        ...
+
+  - type: textarea
+    id: launcher-info
+    attributes:
+      label: "启动器信息 / Launcher information (可选/optional):"
+      description: |
+        如果与问题相关，请提供：
+        - 启动器版本
+        - 游戏版本
+        - 操作系统
+        - 系统架构
+        
+        ---
+        
+        If relevant, please provide:
+        - Launcher version
+        - Game version
+        - Operating system
+        - Architecture
+      placeholder: |
+        - 启动器版本 / Launcher version: 251001
+        - 游戏版本 / Game version: P3390
+        - 操作系统 / OS: Windows 11 23H2
+        - 系统架构 / Arch: x64
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "检查单 / Checklist:"
+      description: |
+        请在提交前确认以下事项。
+        Please confirm the following before submitting.
+      options:
+        - label: "我已阅读 FAQ 但没有找到答案 / I have read the FAQ but didn't find an answer"
+          required: true
+        - label: "我已搜索 Issues 和 Discussions 但没有找到类似问题 / I have searched Issues and Discussions but didn't find similar questions"
+          required: true
+        - label: "我的问题清晰具体 / My question is clear and specific"
+        - label: "我理解这不是实时支持 / I understand this is not real-time support"
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "相关参考 / References (可选/optional):"
+      description: |
+        如果有相关链接或文档，请提供。
+        这有助于更好地理解你的问题。
+        
+        ---
+        
+        If there are relevant links or documentation, please provide them.
+        This helps better understand your question.
+      placeholder: |
+        **相关文档 / Related documentation:**
+        - https://themagicflute.github.io/Launcher_V2/feature/
+        
+        **类似讨论 / Similar discussions:**
+        - https://github.com/yanygm/Launcher_V2/issue/1
