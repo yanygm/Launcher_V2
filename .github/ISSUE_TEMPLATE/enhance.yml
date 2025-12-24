@@ -25,7 +25,7 @@ body:
         
         Before submitting, please confirm:
         - You have searched the [Issues list](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) for similar suggestions
-        - This feature is not already covered in the [Feature]([https://themagicflute.github.io/Launcher_V2/FAQ/](https://themagicflute.github.io/Launcher_V2/feature/))
+        - This feature is not already covered in the [Feature](https://themagicflute.github.io/Launcher_V2/feature/)
         - This feature is needed by most users, not just a personal specific need
 
   - type: textarea
@@ -160,10 +160,7 @@ body:
         Please confirm the following before submitting.
       options:
         - label: "我已搜索过现有 Issues，确认没有重复建议"
-              I have searched existing Issues and confirmed no duplicate suggestions
           required: true
         - label: "我已详细描述问题、解决方案和预期收益"
-              I have detailed the problem, solution, and expected benefits
           required: true
         - label: "我愿意在需要时提供更多信息或协助测试"
-              I am willing to provide more information or assist with testing when needed
