@@ -1,0 +1,131 @@
+name: Miscellaneous
+description: Other topics related to the launcher / 与启动器相关的其他话题
+title: "[Misc]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 杂项话题 / Miscellaneous Topics
+
+        由于未打开 GitHub Discussions，此处留作交流讨论。
+        This template is retained for Discussions.
+        
+        这是一个用于讨论其他启动器相关话题的地方。
+        适合讨论：
+        - 想法分享
+        - 使用体验
+        - 建议反馈
+        - 其他不适合放入 bug/feature 类别的话题
+        
+        请注意：
+        1. 这不是客服渠道
+        2. 请保持礼貌和建设性
+        3. 开发者会不定期查看
+        
+        ---
+        
+        This is a place for discussing other launcher-related topics.
+        Suitable for:
+        - Sharing ideas
+        - Usage experience
+        - General feedback
+        - Other topics not suitable for bug/feature categories
+        
+        Note:
+        1. This is not a customer service channel
+        2. Please remain polite and constructive
+        3. Developers will check periodically
+
+  - type: dropdown
+    id: topic-type
+    attributes:
+      label: "话题类型 / Topic type:"
+      description: |
+        请选择最符合的话题类型。
+        Please select the most appropriate topic type.
+      multiple: false
+      options:
+        - "想法分享 / Idea sharing"
+        - "使用体验 / Usage experience"
+        - "一般反馈 / General feedback"
+        - "社区讨论 / Community discussion"
+        - "其他 / Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: "内容 / Content:"
+      description: |
+        详细描述你想要讨论的内容。
+        可以包括你的想法、体验、观察等。
+        
+        ---
+        
+        Describe in detail what you want to discuss.
+        Can include your thoughts, experiences, observations, etc.
+      placeholder: |
+        **我想分享... / I want to share...**
+        例如：使用启动器的一些技巧或发现
+        Example: Some tips or discoveries about using the launcher
+        
+        **我的体验是... / My experience is...**
+        例如：启动器在某些场景下的表现
+        Example: How the launcher performs in certain scenarios
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: "详细信息 / Details (可选/optional):"
+      description: |
+        提供更多细节，如具体场景、示例等。
+        这有助于进行有意义的讨论。
+        
+        ---
+        
+        Provide more details, such as specific scenarios, examples, etc.
+        This helps facilitate meaningful discussion.
+      placeholder: |
+        **具体例子 / Specific example:**
+        ...
+        
+        **相关场景 / Related scenario:**
+        ...
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: "讨论目的 / Purpose of discussion (可选/optional):"
+      description: |
+        你希望通过这次讨论达成什么？
+        是分享信息、寻求建议，还是其他目的？
+        
+        ---
+        
+        What do you hope to achieve through this discussion?
+        Is it to share information, seek advice, or other purposes?
+      placeholder: |
+        **我希望... / I hope to...**
+        例如：分享一些使用技巧给其他用户
+        Example: Share some usage tips with other users
+        例如：了解其他用户的使用经验
+        Example: Learn about other users' experiences
+
+  - type: checkboxes
+    id: guidelines
+    attributes:
+      label: "社区准则 / Community guidelines:"
+      description: |
+        请确认你已阅读并同意以下准则。
+        Please confirm you have read and agree to the following guidelines.
+      options:
+        - label: "我会保持礼貌和建设性 / I will remain polite and constructive"
+          required: true
+        - label: "我理解这不是官方支持渠道 / I understand this is not an official support channel"
+          required: true
+        - label: "我的话题与启动器相关 / My topic is related to the launcher"
+          required: true
+        - label: "我愿意参与有意义的讨论 / I am willing to engage in meaningful discussion"
