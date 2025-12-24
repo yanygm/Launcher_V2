@@ -72,7 +72,7 @@ body:
     attributes:
       label: "Windows 系统大版本（未列出的系统版本不稳定支持） / Windows major version (Unsupported versions are not listed):"
       description: |
-        请提供你正在使用的 Windows 系统大版本。（显示在“设置”->“关于”中，例如 Windows 11）
+        请提供你正在使用的 Windows 系统大版本。（显示在"设置"->"关于"中，例如 Windows 11）
         List your current Windows major version (displayed in "Settings" -> "About", e.g. Windows 11).
       multiple: false
       options:
@@ -84,10 +84,11 @@ body:
       required: true
 
   - type: dropdown
+    id: architecture
     attributes:
       label: "系统架构（未列出的架构不支持） / System architecture (Unsupported architectures are not listed):"
       description: |
-        请提供你正在使用的 Windows 系统架构。（显示在“设置”->“关于”中，例如 x64） 
+        请提供你正在使用的 Windows 系统架构。（显示在"设置"->"关于"中，例如 x64） 
         List your current Windows system architecture (displayed in "Settings" -> "About", e.g. x64).
       multiple: false
       options:
@@ -97,7 +98,8 @@ body:
     validations:
       required: true
 
-    - type: dropdown
+  - type: dropdown
+    id: priority
     attributes:
       label: "优先级 / Priority:"
       description: |
@@ -113,11 +115,11 @@ body:
     validations:
       required: true
 
-    - type: textarea
+  - type: textarea
     attributes:
       label: "检查单 / Checklist:"
       description: |
-        请检查并勾选（将“[ ]”替换为“[x]”）全部事项后，再提交该issue。未全部勾选的issue将被忽略。
+        请检查并勾选（将"[ ]"替换为"[x]"）全部事项后，再提交该issue。未全部勾选的issue将被忽略。
         Please check all items before submit this (replace "[ ]" with "[x]"). This issue will be ignored unless all items are checked.
       value: |
         - [ ] 你正在使用最新版本的启动器。
