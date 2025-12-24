@@ -24,14 +24,14 @@ body:
         Select the most appropriate documentation issue type.
       multiple: true
       options:
-        - 拼写/语法错误 / Spelling/grammar error
-        - 信息过时 / Outdated information
-        - 内容缺失 / Missing content
-        - 描述不清 / Unclear description
-        - 翻译问题 / Translation issue
-        - 格式问题 / Formatting issue
-        - 链接失效 / Broken link
-        - 其他 / Other
+        - "拼写/语法错误 / Spelling/grammar error"
+        - "信息过时 / Outdated information"
+        - "内容缺失 / Missing content"
+        - "描述不清 / Unclear description"
+        - "翻译问题 / Translation issue"
+        - "格式问题 / Formatting issue"
+        - "链接失效 / Broken link"
+        - "其他 / Other"
     validations:
       required: true
 
@@ -99,6 +99,9 @@ body:
         ---
         
         Add any other information that might help understand the issue.
+      placeholder: |
+        例如：附上显示问题的截图...
+        Example: Attach a screenshot showing the issue...
 
   - type: dropdown
     id: severity
@@ -124,11 +127,8 @@ body:
         请确认以下事项后提交。
         Please confirm the following before submitting.
       options:
-        - label: "我已提供准确的文档页面链接"
-              I have provided an accurate documentation page URL
+        - label: "我已提供准确的文档页面链接 / I have provided an accurate documentation page URL"
           required: true
-        - label: "我已清晰描述问题所在"
-              I have clearly described the issue
+        - label: "我已清晰描述问题所在 / I have clearly described the issue"
           required: true
-        - label: "我愿意在需要时协助验证修复"
-              I am willing to assist with verifying fixes when needed
+        - label: "我愿意在需要时协助验证修复 / I am willing to assist with verifying fixes when needed"
