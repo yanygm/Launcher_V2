@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Docs for Launcher_V2 / 启动器文档
+    url: https://themagicflute.github.io/Launcher_V2/
+    about: Learn more if you are new here. / 了解更多
+  - name: FAQ / 常见疑惑及解答
+    url: https://themagicflute.github.io/Launcher_V2/FAQ/
+    about: Try to look for help here. / 尝试解决问题
