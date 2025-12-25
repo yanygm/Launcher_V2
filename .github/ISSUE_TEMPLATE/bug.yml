@@ -1,89 +1,243 @@
 name: Bug report
-description: Submit a bug report
+description: Submit a bug report / 提交一个漏洞报告
 labels: ["bug"]
 title: "[Bug]: "
 body:
   - type: markdown
     attributes:
       value: |
-        请确保：
-        - 你正在使用最新版本的启动器。
-        - 尽可能使用较新的游戏版本，最新的启动器只对较新的游戏版本提供支持。
-        - 在删除启动器目录下的 `Profile` 文件夹并重启启动器后，仍然可以重现该 Bug。
-        - 搜索过 [Yany issues Tracker](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue) 并确认类似 Bug 未曾被报告过。
-
+        ## 漏洞报告 / Bug Report
+        
+        感谢您帮助我们改进启动器！
+        请提供尽可能详细的信息，这将帮助我们快速定位和修复问题，节省时间。
+        
         ---
-
-        Please Make sure:
-        - You are using the latest version of the launcher.
-        - Bugs can be reproduced after deleting the `Profile` folder in the launcher directory and restarting the launcher.
-        - Search the [Yany issues](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue) to check that the bug has not already been reported.
+        
+        Thank you for helping us improve the launcher!
+        Please provide as much detail as possible to help us quickly locate and fix the issue and save time.
 
   - type: textarea
+    id: summary
     attributes:
-      label: "问题描述 / Bug description:"
+      label: "问题概要 / Summary:"
       description: |
-        描述你所遇到的问题。
-        你可以使用 [Markdown 语法](https://guides.github.com/features/mastering-markdown/) 来格式化文本。
-        尽可能清晰且简洁地描述对于出现的异常。
-        如果可以，请提供一个[最简单的可复现问题的方法](https://stackoverflow.com/help/minimal-reproducible-example)，这将帮助开发者尽快定位问题所在。
-        如果愿意，请附上问题相关的游戏截图，以及启动器日志（点击打日志按钮，即可获取日志）。
-
+        用一句话简要描述问题。
+        
         ---
+        
+        Briefly describe the issue in one sentence.
+      placeholder: |
+        例如：启动器在启动游戏时闪退
+        Example: Launcher crashes when starting the game
+    validations:
+      required: true
 
-        Give a clear and concise description of what happened.
-        You can use [Markdown syntax](https://guides.github.com/features/mastering-markdown/) for formatting.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "严重程度 / Severity:"
+      description: |
+        选择问题的严重程度。
+        
+        ---
+        
+        Select the severity of the issue.
+      multiple: false
+      options:
+        - "P0 - 严重：无法启动或严重影响使用 / Critical: Cannot launch or severely affects usage"
+        - "P1 - 高：主要功能无法正常工作 / High: Major feature not working"
+        - "P2 - 中：功能可用但有明显问题 / Medium: Feature works but with obvious issues"
+        - "P3 - 低：小问题或界面瑕疵 / Low: Minor issue or UI glitch"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "详细描述 / Detailed description:"
+      description: |
+        ### 请详细描述：
+        1. 发生了什么问题？
+        2. 你期望发生什么？
+        3. 什么时候开始出现这个问题？（更新后？特定操作后？）
+        
+        使用 [Markdown 语法](https://guides.github.com/features/mastering-markdown/) 来格式化文本。
+        如果可能，请提供[最小可复现示例](https://stackoverflow.com/help/minimal-reproducible-example)。
+        
+        ---
+        
+        ### Please describe in detail:
+        1. What happened?
+        2. What did you expect to happen?
+        3. When did this issue start appearing? (After update? After specific operation?)
+        
+        Use [Markdown syntax](https://guides.github.com/features/mastering-markdown/) for formatting.
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
-        This will help developers locate the problem ASAP.
-        If you want, please attach related game screenshots and logs (click the `打日志` button to get the logs).
       value: |
-        Add your description here.
+        **复现步骤 / Steps to reproduce:**
+        1. xxx
+        2. ...
+        3. foo bar baz...
+        
+        **期望行为 / Expected behavior:**
+        ...
+        
+        **实际行为 / Actual behavior:**
+        ...
     validations:
       required: true
 
   - type: textarea
+    id: environment
     attributes:
-      label: "启动器版本 / Launcher version:"
+      label: "环境信息 / Environment information:"
       description: |
-        请提供你正在使用的启动器版本。（显示在启动器主界面，例如 251001）
-        List your current launcher version (displayed in the launcher main interface, e.g. 251001).
+        请提供以下所有信息：
+        
+        ---
+        
+        Please provide all the following information:
+      value: |
+        ### 启动器信息 / Launcher info:
+        - 版本 / Version: [如 250101 / e.g. 250101]
+        - 源码构建信息（如从源码构建）/ Build info (build from source): [fork/commit SHA]
+
+        ### 游戏信息 / Game info:
+        - 游戏版本 / Game version: [P3390 等 / e.g. P3390]
+
+        ### 系统信息 / System info:
+        - 操作系统 / OS: [Windows 11/10 等 / e.g. Windows 11]
+        - 系统版本 / OS version: [22H2 等 / e.g. 22H2]
+        - 系统架构 / Architecture: [x64/x86/arm64 / e.g. x64]
+        - 内存 / RAM: [16GB 等 / e.g. 16GB]
     validations:
       required: true
 
   - type: textarea
+    id: logs
     attributes:
-      label: "游戏版本 / Game version:"
+      label: "日志文件 / Log files:"
       description: |
-        请提供你正在使用的游戏版本。（显示在启动器主界面，例如 P3390）
-        List your current game version (displayed in the launcher main interface, e.g. P3390).
+        ### 请务必附上日志！
+        1. 复现问题
+        2. 点击启动器的"打日志"按钮
+        3. 将日志文件内容作为附件贴在此处（较小段的可直接复制文本，并用代码块包裹）
+        
+        如果没有日志，我们很难诊断问题。
+        
+        ---
+        
+        ### Please attach logs!
+        1. Reproduce the issue
+        2. Click the "打日志" button in the launcher
+        3. Attach the log file here (or paste content and wrapped in code blocks if there is only a few small sections)
+        
+        Without logs, it's very difficult to diagnose the issue.
+      placeholder: |
+        粘贴日志内容在此...
+        Paste log content here...
     validations:
       required: true
 
-  - type: dropdown
+  - type: textarea
+    id: screenshots
     attributes:
-      label: "Windows 系统大版本（未列出的系统版本不稳定支持） / Windows major version (Unsupported versions are not listed):"
+      label: "截图或录屏 / Screenshots or screen recordings:"
       description: |
-        请提供你正在使用的 Windows 系统大版本。（显示在“设置”->“关于”中，例如 Windows 11）
-        List your current Windows major version (displayed in "Settings" -> "About", e.g. Windows 11).
-      multiple: false
-      options:
-        - Windows 11 
-        - Windows 10
-        - Windows 8
-        - Windows 7
-    validations:
-      required: true
+        如果有帮助，请附加：
+        - 错误提示截图
+        - 问题发生时的屏幕录屏
+        - 相关设置页面截图
+        
+        请使用Markdown语法插入图片或视频网站的链接。
+        
+        ---
+        
+        If helpful, please attach:
+        - Screenshots of error messages
+        - Screen recordings when the issue occurs
+        - Screenshots of relevant settings pages
+        
+        Use Markdown syntax to insert images or links to videos.
 
-  - type: dropdown
+  - type: textarea
+    id: troubleshooting
     attributes:
-      label: "系统架构（未列出的架构不支持） / System architecture (Unsupported architectures are not listed):"
+      label: "已尝试的解决步骤 / Troubleshooting steps attempted:"
       description: |
-        请提供你正在使用的 Windows 系统架构。（显示在“设置”->“关于”中，例如 x64） 
-        List your current Windows system architecture (displayed in "Settings" -> "About", e.g. x64).
-      multiple: false
+        你已经尝试过哪些解决方法？
+        结果如何？
+        
+        ---
+        
+        What troubleshooting steps have you already tried?
+        What were the results?
+
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "相关 Issues / Related issues:"
+      description: |
+        你是否在以下位置搜索过相关问题？
+        如果找到相关issue，请提供链接。
+        
+        ---
+        
+        Have you searched for related issues in the following locations?
+        If you found related issues, please provide links.
+
+        ---
+        
+        - [Issues Tracker](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue+state%3Aopen+label%3Abug)
+        - [Closed Issues](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue+label%3Abug+is%3Aclosed)
+        - [FAQ](https://themagicflute.github.io/Launcher_V2/FAQ/)
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "附加信息 / Additional context:"
+      description: |
+        任何其他可能有帮助的信息。
+        
+        ---
+        
+        Any other information that might be helpful.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "检查单 / Checklist:"
+      description: |
+        请确认以下所有事项。
+        
+        ---
+        
+        Please confirm all of the following.
       options:
-        - x64
-        - x86
-        - arm64
-    validations:
-      required: true
+        - label: |
+            我确认使用的是最新版本启动器
+            I confirm I'm using the latest version of the launcher
+          required: true
+        - label: |
+            我确认在删除 Profile 文件夹后问题仍然存在
+            I confirm the issue persists after deleting the Profile folder
+          required: true
+        - label: |
+            我已搜索 Issues 列表确认没有重复报告
+            I have searched the Issues list and confirmed no duplicate report
+          required: true
+        - label: |
+            我已阅读 [FAQ](https://themagicflute.github.io/Launcher_V2/FAQ/) 但问题未解决
+            I have read the [FAQ](https://themagicflute.github.io/Launcher_V2/FAQ/) but the issue remains
+          required: true
+        - label: |
+            我已附上必要的日志文件
+            I have attached necessary log files
+          required: true
+        - label: |
+            我已提供完整的环境信息
+            I have provided complete environment information
+          required: true
+        - label: |
+            我愿意在需要时提供更多信息或协助测试
+            I am willing to provide more information or assist with testing when needed
