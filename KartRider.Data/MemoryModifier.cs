@@ -87,9 +87,9 @@ class MemoryModifier
             // 3. 查找并修改内存
 
             // 星标赛道数量50改为120
-            ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32 }, new byte[] { 0x83, 0xFA, 0x78 });
+            ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32, 0x7C }, new byte[] { 0x83, 0xFA, 0x78, 0x7C });
             // 赛道模型边界大小2000改为100000单浮点
-            ModifyMemory(process.Id, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x98, 0x41, 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x98, 0x41, 0x00, 0x50, 0xC3, 0x47 });
+            ModifyMemory(process.Id, new byte[] { 0x98, 0x41, 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x98, 0x41, 0x00, 0x50, 0xC3, 0x47 });
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
@@ -115,15 +115,23 @@ class MemoryModifier
     private bool ModifyMemory(int processId, byte[] searchBytes, byte[] replaceBytes)
     {
         if (searchBytes.Length != replaceBytes.Length)
+        {
             Console.WriteLine("查找和替换的字节长度必须一致");
+            return false;
+        }
 
         IntPtr hProcess = OpenProcess(PROCESS_ACCESS_FLAGS, false, processId);
         if (hProcess == IntPtr.Zero)
+        {
             Console.WriteLine("无法打开进程, 可能权限不足");
+            return false;
+        }
 
         try
         {
             IntPtr address = IntPtr.Zero;
+            bool modified = false; // 跟踪是否至少修改了一个匹配
+
             while (true)
             {
                 // 枚举进程内存页
@@ -139,10 +147,14 @@ class MemoryModifier
                     byte[] buffer = new byte[(int)mbi.RegionSize];
                     if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer, buffer.Length, out int bytesRead) && bytesRead > 0)
                     {
-                        // 在当前页中搜索特征码
-                        int index = FindBytes(buffer, searchBytes);
-                        if (index != -1)
+                        // 在当前页中搜索所有特征码匹配
+                        int index = 0;
+                        while (index < bytesRead - searchBytes.Length + 1)
                         {
+                            index = FindBytes(buffer, searchBytes, index);
+                            if (index == -1)
+                                break;
+
                             // 计算实际内存地址
                             IntPtr targetAddress = IntPtr.Add(mbi.BaseAddress, index);
                             Console.WriteLine($"找到特征码, 地址: 0x{targetAddress:X}");
@@ -150,12 +162,15 @@ class MemoryModifier
                             // 修改内存
                             if (WriteProcessMemory(hProcess, targetAddress, replaceBytes, replaceBytes.Length, out int bytesWritten) && bytesWritten == replaceBytes.Length)
                             {
-                                return true;
+                                modified = true;
                             }
                             else
                             {
                                 Console.WriteLine("写入内存失败, 可能没有写入权限");
                             }
+
+                            // 移动到下一个可能的匹配位置（避免重叠匹配）
+                            index += searchBytes.Length;
                         }
                     }
                 }
@@ -164,7 +179,7 @@ class MemoryModifier
                 address = IntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
             }
 
-            return false; // 未找到特征码
+            return modified; // 返回是否至少修改了一个匹配
         }
         finally
         {
@@ -173,11 +188,11 @@ class MemoryModifier
     }
 
     /// <summary>
-    /// 在字节数组中查找目标序列
+    /// 在字节数组中从指定位置开始查找目标序列
     /// </summary>
-    private int FindBytes(byte[] buffer, byte[] searchBytes)
+    private int FindBytes(byte[] buffer, byte[] searchBytes, int startIndex = 0)
     {
-        for (int i = 0; i <= buffer.Length - searchBytes.Length; i++)
+        for (int i = startIndex; i <= buffer.Length - searchBytes.Length; i++)
         {
             bool match = true;
             for (int j = 0; j < searchBytes.Length; j++)

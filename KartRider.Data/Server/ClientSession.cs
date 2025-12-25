@@ -120,7 +120,8 @@ namespace KartRider
                         uint Track = iPacket.ReadUInt();
                         iPacket.ReadBytes(10);
                         short Kart = iPacket.ReadShort();
-                        iPacket.ReadBytes(416);
+                        //iPacket.ReadBytes(417);
+                        iPacket.Position = iPacket.Length - 8;
                         short Booster = iPacket.ReadShort();
                         iPacket.ReadShort();
                         short Crash = iPacket.ReadShort();
@@ -1443,8 +1444,8 @@ namespace KartRider
                         byte RewardType = iPacket.ReadByte();
                         iPacket.ReadInt();
                         iPacket.ReadInt();
-                        iPacket.ReadInt();
-                        iPacket.ReadInt();
+                        iPacket.ReadInt(); //使用加速器次数
+                        iPacket.ReadInt(); //碰撞次数
                         Time.TryAdd(Nickname, iPacket.ReadUInt());
                         uint min = Time[Nickname] / 60000;
                         uint sec = Time[Nickname] - min * 60000;

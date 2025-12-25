@@ -248,7 +248,7 @@ namespace RHOParser
         private uint CalculateBoostScore(List<DriveBonus> bonuses, short actualBoostCount)
         {
             uint score = 0;
-            foreach (var bonus in bonuses.Where(b => b.Type == "booster"))
+            foreach (var bonus in bonuses.Where(b => b.Type == "boooster"))
             {
                 if (actualBoostCount > bonus.Count)
                 {
