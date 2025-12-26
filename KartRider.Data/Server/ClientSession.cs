@@ -89,11 +89,11 @@ namespace KartRider
                     long timeTicks = packet.TimeTicks + 10000;
                     if (MultyPlayer.diff.ContainsKey(packet.Nickname))
                     {
-                        MultyPlayer.diff[packet.Nickname] = dTicks - timeTicks;
+                        MultyPlayer.diff[packet.Nickname] = timeTicks == 10000 ? 0 : dTicks - timeTicks;
                     }
                     else
                     {
-                        MultyPlayer.diff.Add(packet.Nickname, dTicks - timeTicks);
+                        MultyPlayer.diff.Add(packet.Nickname, timeTicks == 10000 ? 0 : dTicks - timeTicks);
                     }
                     Console.WriteLine($"[{packet.Nickname}] diff = {MultyPlayer.diff[packet.Nickname]}");
                     ProfileService.ProfileConfigs[packet.Nickname].Rider.Client = clientId;
