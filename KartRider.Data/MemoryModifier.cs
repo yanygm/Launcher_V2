@@ -60,49 +60,80 @@ class MemoryModifier
 
     public void LaunchAndModifyMemory(string kartRiderDirectory)
     {
-        DataPacket packet = new DataPacket
+        if (File.Exists(Path.Combine(kartRiderDirectory, "25登录器.exe")))
         {
-            Nickname = ProfileService.SettingConfig.Name,
-            TimeTicks = MultyPlayer.GetUpTime()
-        };
-
-        Process process = null;
-        try
-        {
-            // 1. 启动目标进程
-            string passport = Base64Helper.Encode(JsonHelper.Serialize(packet));
-            ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", $"TGC -region:3 -passport:{passport}")
+            Process process25 = null;
+            try
             {
-                WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
-                UseShellExecute = true,
-                Verb = "runas" // 请求管理员权限（内存修改可能需要）
+                ProcessStartInfo startInfo = new ProcessStartInfo("25登录器.exe")
+                {
+                    WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
+                    UseShellExecute = true,
+                    Verb = "runas" // 请求管理员权限（内存修改可能需要）
+                };
+
+                process25 = Process.Start(startInfo);
+
+                Thread.Sleep(500);
+
+                ModifySpecificMemory(process25.Id, new IntPtr(0x004A1896), new byte[] { 0x31, 0x35, 0x38, 0x2E, 0x32, 0x34, 0x37, 0x2E, 0x32, 0x32, 0x30, 0x2E, 0x38, 0x37, 0x00 });
+                ModifySpecificMemory(process25.Id, new IntPtr(0x004A19DB), new byte[] { 0x61, 0x64, 0x64, 0x72, 0x3D, 0x22, 0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x33, 0x39, 0x33, 0x31, 0x32, 0x22, 0x2F, 0x3E });
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                Console.WriteLine($"UAC取消或权限不足: {ex.Message}");
+            }
+            finally
+            {
+                process25?.Dispose(); // 释放进程资源（不影响目标进程运行）
+            }
+        }
+        else
+        {
+            DataPacket packet = new DataPacket
+            {
+                Nickname = ProfileService.SettingConfig.Name,
+                TimeTicks = MultyPlayer.GetUpTime()
             };
 
-            process = Process.Start(startInfo);
-            Console.WriteLine($"进程已启动, ID: {process.Id}");
+            Process process = null;
+            try
+            {
+                // 1. 启动目标进程
+                string passport = Base64Helper.Encode(JsonHelper.Serialize(packet));
+                ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", $"TGC -region:3 -passport:{passport}")
+                {
+                    WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
+                    UseShellExecute = true,
+                    Verb = "runas" // 请求管理员权限（内存修改可能需要）
+                };
 
-            // 2. 等待进程初始化（根据实际情况调整等待时间，确保进程加载完成）
-            Thread.Sleep(5000); // 等待5秒（可根据需要延长）
+                process = Process.Start(startInfo);
+                Console.WriteLine($"进程已启动, ID: {process.Id}");
 
-            // 3. 查找并修改内存
+                // 2. 等待进程初始化（根据实际情况调整等待时间，确保进程加载完成）
+                Thread.Sleep(1000); // 等待1秒（可根据需要延长）
 
-            // 修改指定位置的内存值
-            // 地址009C610E改为byte 120
-            ModifySpecificMemory(process.Id, new IntPtr(0x009C610E), (byte)120);
-            // 地址011F1C64改为单浮点10000
-            ModifySpecificMemory(process.Id, new IntPtr(0x011F1C64), 10000f);
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            Console.WriteLine($"UAC取消或权限不足: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"操作失败: {ex.Message}");
-        }
-        finally
-        {
-            process?.Dispose(); // 释放进程资源（不影响目标进程运行）
+                // 3. 查找并修改内存
+
+                // 修改指定位置的内存值
+                // 地址009C610E改为byte 120
+                ModifySpecificMemory(process.Id, new IntPtr(0x009C610E), (byte)120);
+                // 地址011F1C64改为单浮点10000
+                ModifySpecificMemory(process.Id, new IntPtr(0x011F1C64), 10000f);
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                Console.WriteLine($"UAC取消或权限不足: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"操作失败: {ex.Message}");
+            }
+            finally
+            {
+                process?.Dispose(); // 释放进程资源（不影响目标进程运行）
+            }
         }
     }
 
