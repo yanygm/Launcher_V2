@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -86,10 +86,11 @@ class MemoryModifier
 
             // 3. 查找并修改内存
 
-            // 星标赛道数量50改为120
-            ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32, 0x7C }, new byte[] { 0x83, 0xFA, 0x78, 0x7C });
-            // 赛道模型边界大小2000改为100000单浮点
-            ModifyMemory(process.Id, new byte[] { 0x98, 0x41, 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x98, 0x41, 0x00, 0x50, 0xC3, 0x47 });
+            // 修改指定位置的内存值
+            // 地址009C610E改为byte 120
+            ModifySpecificMemory(process.Id, new IntPtr(0x009C610E), (byte)120);
+            // 地址011F1C64改为单浮点10000
+            ModifySpecificMemory(process.Id, new IntPtr(0x011F1C64), 10000f);
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
@@ -208,5 +209,78 @@ class MemoryModifier
         }
         return -1;
     }
-}
 
+    /// <summary>
+    /// 修改目标进程中指定位置的内存值
+    /// </summary>
+    /// <param name="processId">进程ID</param>
+    /// <param name="address">内存地址</param>
+    /// <param name="newValue">要写入的新值</param>
+    /// <returns>是否修改成功</returns>
+    public bool ModifySpecificMemory(int processId, IntPtr address, object newValue)
+    {
+        byte[] bytesToWrite;
+
+        // 根据newValue的类型将其转换为字节数组
+        if (newValue is byte)
+        {
+            bytesToWrite = new byte[] { (byte)newValue };
+        }
+        else if (newValue is short)
+        {
+            bytesToWrite = BitConverter.GetBytes((short)newValue);
+        }
+        else if (newValue is int)
+        {
+            bytesToWrite = BitConverter.GetBytes((int)newValue);
+        }
+        else if (newValue is long)
+        {
+            bytesToWrite = BitConverter.GetBytes((long)newValue);
+        }
+        else if (newValue is float)
+        {
+            bytesToWrite = BitConverter.GetBytes((float)newValue);
+        }
+        else if (newValue is double)
+        {
+            bytesToWrite = BitConverter.GetBytes((double)newValue);
+        }
+        else if (newValue is byte[])
+        {
+            bytesToWrite = (byte[])newValue;
+        }
+        else
+        {
+            Console.WriteLine("不支持的数据类型");
+            return false;
+        }
+
+        // 打开目标进程
+        IntPtr hProcess = OpenProcess(PROCESS_ACCESS_FLAGS, false, processId);
+        if (hProcess == IntPtr.Zero)
+        {
+            Console.WriteLine("无法打开进程, 可能权限不足");
+            return false;
+        }
+
+        try
+        {
+            // 写入内存
+            if (WriteProcessMemory(hProcess, address, bytesToWrite, bytesToWrite.Length, out int bytesWritten) && bytesWritten == bytesToWrite.Length)
+            {
+                Console.WriteLine($"成功修改地址 0x{address:X} 的内存值为 {newValue}");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"写入内存地址 0x{address:X} 失败, 可能没有写入权限");
+                return false;
+            }
+        }
+        finally
+        {
+            CloseHandle(hProcess); // 释放进程句柄
+        }
+    }
+}
