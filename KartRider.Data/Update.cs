@@ -89,7 +89,7 @@ namespace KartRider
                     Console.WriteLine("==============================");
                     if (launcherExeAsset.digest != sha256Hash)
                     {
-                        Console.WriteLine($"发现新版本, 请问是否需要更新? (Y/n)");
+                        Console.WriteLine($"发现新版本, 请问是否需要更新? (y/N)");
                         string input = Console.ReadLine();
                         if (input.ToLower() != "y")
                         {
@@ -318,3 +318,4 @@ namespace KartRider
         public string browser_download_url { get; set; }
     }
 }
+
