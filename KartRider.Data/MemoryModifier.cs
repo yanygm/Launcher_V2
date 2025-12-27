@@ -76,8 +76,13 @@ class MemoryModifier
 
                 Thread.Sleep(500);
 
-                ModifyMemory(process25.Id, new byte[] { 0x31, 0x39, 0x32, 0x2E, 0x31, 0x34, 0x34, 0x2E, 0x32, 0x31, 0x33, 0x2E, 0x31, 0x38, 0x35 }, new byte[] { 0x31, 0x35, 0x38, 0x2E, 0x32, 0x34, 0x37, 0x2E, 0x32, 0x32, 0x30, 0x2E, 0x38, 0x37, 0x00 });
-                ModifyMemory(process25.Id, new byte[] { 0x61, 0x64, 0x64, 0x72, 0x3D, 0x22, 0x7B, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x7D, 0x3A, 0x32, 0x39, 0x35, 0x31, 0x31, 0x22, 0x2F, 0x3E, 0x0D }, new byte[] { 0x61, 0x64, 0x64, 0x72, 0x3D, 0x22, 0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x33, 0x39, 0x33, 0x31, 0x32, 0x22, 0x2F, 0x3E });
+                ModifyMemory(process25.Id, new byte[] { 0x61, 0x64, 0x64, 0x72, 0x3D, 0x22, 0x7B, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x7D, 0x3A, 0x32, 0x39, 0x35, 0x31, 0x31, 0x22, 0x2F, 0x3E, 0x0D },
+                                           new byte[] { 0x61, 0x64, 0x64, 0x72, 0x3D, 0x22, 0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x33, 0x39, 0x33, 0x31, 0x32, 0x22, 0x2F, 0x3E });
+
+                Thread.Sleep(100);
+
+                ModifyMemory(process25.Id, new byte[] { 0x31, 0x39, 0x32, 0x2E, 0x31, 0x34, 0x34, 0x2E, 0x32, 0x31, 0x33, 0x2E, 0x31, 0x38, 0x35 },
+                                           new byte[] { 0x31, 0x35, 0x38, 0x2E, 0x32, 0x34, 0x37, 0x2E, 0x32, 0x32, 0x30, 0x2E, 0x38, 0x37, 0x00 });
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
@@ -147,23 +152,15 @@ class MemoryModifier
     private bool ModifyMemory(int processId, byte[] searchBytes, byte[] replaceBytes)
     {
         if (searchBytes.Length != replaceBytes.Length)
-        {
             Console.WriteLine("查找和替换的字节长度必须一致");
-            return false;
-        }
 
         IntPtr hProcess = OpenProcess(PROCESS_ACCESS_FLAGS, false, processId);
         if (hProcess == IntPtr.Zero)
-        {
             Console.WriteLine("无法打开进程, 可能权限不足");
-            return false;
-        }
 
         try
         {
             IntPtr address = IntPtr.Zero;
-            bool modified = false; // 跟踪是否至少修改了一个匹配
-
             while (true)
             {
                 // 枚举进程内存页
@@ -179,14 +176,10 @@ class MemoryModifier
                     byte[] buffer = new byte[(int)mbi.RegionSize];
                     if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer, buffer.Length, out int bytesRead) && bytesRead > 0)
                     {
-                        // 在当前页中搜索所有特征码匹配
-                        int index = 0;
-                        while (index < bytesRead - searchBytes.Length + 1)
+                        // 在当前页中搜索特征码
+                        int index = FindBytes(buffer, searchBytes);
+                        if (index != -1)
                         {
-                            index = FindBytes(buffer, searchBytes, index);
-                            if (index == -1)
-                                break;
-
                             // 计算实际内存地址
                             IntPtr targetAddress = IntPtr.Add(mbi.BaseAddress, index);
                             Console.WriteLine($"找到特征码, 地址: 0x{targetAddress:X}");
@@ -194,15 +187,12 @@ class MemoryModifier
                             // 修改内存
                             if (WriteProcessMemory(hProcess, targetAddress, replaceBytes, replaceBytes.Length, out int bytesWritten) && bytesWritten == replaceBytes.Length)
                             {
-                                modified = true;
+                                return true;
                             }
                             else
                             {
                                 Console.WriteLine("写入内存失败, 可能没有写入权限");
                             }
-
-                            // 移动到下一个可能的匹配位置（避免重叠匹配）
-                            index += searchBytes.Length;
                         }
                     }
                 }
@@ -211,7 +201,7 @@ class MemoryModifier
                 address = IntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
             }
 
-            return modified; // 返回是否至少修改了一个匹配
+            return false; // 未找到特征码
         }
         finally
         {
@@ -220,11 +210,11 @@ class MemoryModifier
     }
 
     /// <summary>
-    /// 在字节数组中从指定位置开始查找目标序列
+    /// 在字节数组中查找目标序列
     /// </summary>
-    private int FindBytes(byte[] buffer, byte[] searchBytes, int startIndex = 0)
+    private int FindBytes(byte[] buffer, byte[] searchBytes)
     {
-        for (int i = startIndex; i <= buffer.Length - searchBytes.Length; i++)
+        for (int i = 0; i <= buffer.Length - searchBytes.Length; i++)
         {
             bool match = true;
             for (int j = 0; j < searchBytes.Length; j++)
@@ -315,4 +305,3 @@ class MemoryModifier
         }
     }
 }
-
