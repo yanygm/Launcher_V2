@@ -287,7 +287,6 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqSetRiderItemOnPacket", 0))
                     {
-                        ProfileService.Load(Nickname);
                         ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Character = iPacket.ReadShort();
                         ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Paint = iPacket.ReadShort();
                         ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Kart = iPacket.ReadShort();
@@ -327,7 +326,6 @@ namespace KartRider
                         ProfileService.ProfileConfigs[Nickname].RiderItem.Set_KartBoosterEffect12 = iPacket.ReadShort();
                         ProfileService.ProfileConfigs[Nickname].RiderItem.Set_Unknown5 = iPacket.ReadShort();
                         ProfileService.Save(Nickname);
-                        ProfileService.Load(Nickname);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderInfo", 0))
@@ -3765,5 +3763,6 @@ namespace KartRider
         }
     }
 }
+
 
 
