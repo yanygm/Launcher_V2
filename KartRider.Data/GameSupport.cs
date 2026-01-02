@@ -104,7 +104,7 @@ namespace KartRider
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.AutoBoost);
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.GameType);
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.SetGhost);
-                outPacket.WriteByte(ProfileService.SettingConfig.SpeedType);
+                outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.SpeedType);
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.RoomChat);
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.DrivingChat);
                 outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.ShowAllPlayerHitInfo);
