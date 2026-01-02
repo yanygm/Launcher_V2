@@ -334,6 +334,11 @@ namespace Profile
         public byte SetGhost { get; set; } = 1;
 
         /// <summary>
+        /// 速度设置
+        /// </summary>
+        public byte SpeedType { get; set; } = 7;
+
+        /// <summary>
         /// 查看房间内聊天内容
         /// </summary>
         public byte RoomChat { get; set; } = 1;
@@ -364,3 +369,4 @@ namespace Profile
         public byte HideCompetitiveRank { get; set; } = 0;
     }
 }
+
