@@ -459,9 +459,7 @@ namespace KartRider
                         ProfileService.ProfileConfigs[Nickname].GameOption.AutoBoost = iPacket.ReadByte();
                         ProfileService.ProfileConfigs[Nickname].GameOption.GameType = iPacket.ReadByte();//팀전 개인전 여부
                         ProfileService.ProfileConfigs[Nickname].GameOption.SetGhost = iPacket.ReadByte();//고스트 사용여부
-                        // 速度由客户端控制，游戏内调整速度不生效
-                        //ProfileService.ProfileConfigs[Nickname].GameOption.SpeedType = iPacket.ReadByte();//채널 속도
-                        iPacket.ReadByte();
+                        ProfileService.ProfileConfigs[Nickname].GameOption.SpeedType = iPacket.ReadByte();//채널 속도
                         ProfileService.ProfileConfigs[Nickname].GameOption.RoomChat = iPacket.ReadByte();
                         ProfileService.ProfileConfigs[Nickname].GameOption.DrivingChat = iPacket.ReadByte();
                         ProfileService.ProfileConfigs[Nickname].GameOption.ShowAllPlayerHitInfo = iPacket.ReadByte();
