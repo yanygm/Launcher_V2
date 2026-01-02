@@ -176,14 +176,42 @@ namespace KartRider
 
         private void label_Client_Click(object sender, EventArgs e)
         {
-            string url = "https://github.com/brownsugar/popkart-client-archive/releases";
-            try
+            // 弹出“是否”确认框
+            DialogResult result = MessageBox.Show(
+                $"当前版本为：P{ClientVersion.Text}\n是否需要更新？",  // 提示文本
+                "确认操作",                                      // 弹窗标题
+                MessageBoxButtons.YesNo,                         // 按钮类型：是 + 否
+                MessageBoxIcon.Question                          // 图标类型：问号（增强提示性）
+            );
+
+            // 根据用户选择执行对应逻辑
+            if (result == DialogResult.Yes)
             {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"错误: {ex.Message}");
+                if (File.Exists(pinFileBak))
+                {
+                    File.Delete(pinFile);
+                    File.Move(pinFileBak, pinFile);
+                }
+                System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("KartRider");
+                foreach (System.Diagnostics.Process p in process)
+                {
+                    p.Kill();
+                }
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo("KartRecovery.exe")
+                    {
+                        WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
+                        UseShellExecute = true,
+                        Verb = "runas" // 请求管理员权限（内存修改可能需要）
+                    };
+                    Process.Start(startInfo);
+                    Environment.Exit(0);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"操作失败：{ex.Message}");
+                }
             }
         }
 
@@ -204,4 +232,3 @@ namespace KartRider
         }
     }
 }
-
