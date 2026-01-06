@@ -25,6 +25,11 @@ namespace Profile
         public ushort ServerPort { get; set; } = 39312;
 
         /// <summary>
+        /// 版本
+        /// </summary>
+        public string Version { get; set; } = "国服";
+
+        /// <summary>
         /// 速度类型
         /// </summary>
         public byte SpeedType { get; set; } = 7;
