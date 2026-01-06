@@ -24,7 +24,8 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
-            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
+            ProfileService.SettingConfig.Version = Version_comboBox.Text;
+            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[ProfileService.SettingConfig.Version][Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
@@ -37,8 +38,11 @@ namespace KartRider
             ServerPort.Text = ProfileService.SettingConfig.ServerPort.ToString();
             NgsOn.Checked = ProfileService.SettingConfig.NgsOn;
             PatchUpdate.Checked = ProfileService.SettingConfig.PatchUpdate;
-            ProfileService.SaveSettings();
             foreach (string key in SpeedType.speedNames.Keys)
+            {
+                Version_comboBox.Items.Add(key);
+            }
+            foreach (string key in SpeedType.speedNames[ProfileService.SettingConfig.Version].Keys)
             {
                 Speed_comboBox.Items.Add(key);
             }
@@ -50,9 +54,37 @@ namespace KartRider
             {
                 Proxy_comboBox.Items.Add(key);
             }
-            Speed_comboBox.Text = (SpeedType.speedNames.FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key);
+            Version_comboBox.Text = ProfileService.SettingConfig.Version;
+            Speed_comboBox.Text = (SpeedType.speedNames[ProfileService.SettingConfig.Version].FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key);
             AiSpeed_comboBox.Text = ProfileService.SettingConfig.AiSpeedType;
             Proxy_comboBox.Text = ProfileService.SettingConfig.Proxy;
+            ProfileService.SaveSettings();
+        }
+
+        private void Version_comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Version_comboBox.SelectedItem != null)
+            {
+                string selectedVersion = Version_comboBox.SelectedItem.ToString();
+                if (SpeedType.speedNames.ContainsKey(selectedVersion))
+                {
+                    ProfileService.SettingConfig.Version = selectedVersion;
+                    Speed_comboBox.Items.Clear();
+                    foreach (string key in SpeedType.speedNames[selectedVersion].Keys)
+                    {
+                        Speed_comboBox.Items.Add(key);
+                    }
+                    if (Speed_comboBox.Items.Count > 0)
+                    {
+                        Speed_comboBox.SelectedIndex = 0;
+                    }
+                    ProfileService.SaveSettings();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid speed type selected.");
+                }
+            }
         }
 
         private void Speed_comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -60,9 +92,9 @@ namespace KartRider
             if (Speed_comboBox.SelectedItem != null)
             {
                 string selectedSpeed = Speed_comboBox.SelectedItem.ToString();
-                if (SpeedType.speedNames.ContainsKey(selectedSpeed))
+                if (SpeedType.speedNames[ProfileService.SettingConfig.Version].ContainsKey(selectedSpeed))
                 {
-                    ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[selectedSpeed];
+                    ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[ProfileService.SettingConfig.Version][selectedSpeed];
                     ProfileService.SaveSettings();
                 }
                 else
@@ -113,7 +145,8 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
-            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[Speed_comboBox.Text];
+            ProfileService.SettingConfig.Version = Version_comboBox.Text;
+            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[ProfileService.SettingConfig.Version][Speed_comboBox.Text];
             ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
             ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
