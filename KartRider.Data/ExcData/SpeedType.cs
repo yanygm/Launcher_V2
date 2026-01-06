@@ -299,12 +299,12 @@ namespace ExcData
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
-                        DragFactor = 0.051f;
-                        ForwardAccelForce = 750f;
+                        DragFactor = 0.046f;
+                        ForwardAccelForce = 745f;
                         BackwardAccelForce = 450f;
                         GripBrakeForce = 540f;
                         SlipBrakeForce = 325f;
-                        SteerConstraint = 0.75f;
+                        SteerConstraint = 0.8f;
                         DriftEscapeForce = 1250f;
                         CornerDrawFactor = 0.025f;
                         DriftMaxGauge = 1700f;
@@ -386,4 +386,5 @@ namespace ExcData
         }
     }
 }
+
 
