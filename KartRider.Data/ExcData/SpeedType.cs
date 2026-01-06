@@ -285,10 +285,10 @@ namespace ExcData
                         GripBrakeForce = 270f;
                         SlipBrakeForce = 145f;
                         SteerConstraint = 0.6f;
-                        DriftEscapeForce = 700f;
-                        CornerDrawFactor = 0.02f;
+                        DriftEscapeForce = 850f;
+                        CornerDrawFactor = 0.025f;
                         DriftMaxGauge = 700f;
-                        TransAccelFactor = 0.1545f;
+                        TransAccelFactor = 0.1845f;
                         BoostAccelFactor = 0.006f;
                         StartForwardAccelForceItem = 450f;
                         StartForwardAccelForceSpeed = 450f;
@@ -386,3 +386,4 @@ namespace ExcData
         }
     }
 }
+
