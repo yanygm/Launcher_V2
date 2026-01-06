@@ -85,7 +85,6 @@ namespace KartRider
             Version_comboBox.Name = "Version_comboBox";
             Version_comboBox.Size = new System.Drawing.Size(114, 23);
             Version_comboBox.TabIndex = 4;
-            Version_comboBox.SelectedIndexChanged += Version_comboBox_SelectedIndexChanged;
             // 
             // Version_label
             // 
@@ -105,7 +104,6 @@ namespace KartRider
             Speed_comboBox.Name = "Speed_comboBox";
             Speed_comboBox.Size = new System.Drawing.Size(114, 23);
             Speed_comboBox.TabIndex = 5;
-            Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
             // 
             // Speed_label
             // 
