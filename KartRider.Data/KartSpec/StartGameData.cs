@@ -219,7 +219,7 @@ namespace KartRider
             }
             oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeItem + excSpecs.KartLevel_StartBoosterTimeItem + excSpecs.Plant46_StartBoosterTimeItem);
-            oPacket.WriteEncFloat(speedType.StartBoosterTimeSpeed + Kart.StartBoosterTimeSpeed + excSpecs.Tune_StartBoosterTimeSpeed + excSpecs.Plant43_StartBoosterTimeSpeed + excSpecs.Plant46_StartBoosterTimeSpeed + excSpecs.KartLevel_StartBoosterTimeSpeed + V2Spec.V2Level_StartBoosterTimeSpeed);
+            oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed + excSpecs.Tune_StartBoosterTimeSpeed + excSpecs.Plant43_StartBoosterTimeSpeed + excSpecs.Plant46_StartBoosterTimeSpeed + excSpecs.KartLevel_StartBoosterTimeSpeed + V2Spec.V2Level_StartBoosterTimeSpeed);
             oPacket.WriteEncFloat(speedType.StartForwardAccelForceItem + Kart.StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem + SpeedPatch.StartForwardAccelForceItem + excSpecs.Plant46_StartForwardAccelItem);
             oPacket.WriteEncFloat(speedType.StartForwardAccelForceSpeed + Kart.StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed + SpeedPatch.StartForwardAccelForceSpeed + excSpecs.Plant43_StartForwardAccelSpeed + excSpecs.Plant46_StartForwardAccelSpeed);
             oPacket.WriteEncFloat(Kart.DriftGaguePreservePercent);
@@ -350,7 +350,7 @@ namespace KartRider
             oPacket.WriteEncFloat(speedType.TransAccelFactor + Kart.TransAccelFactor + SpeedPatch.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
             oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeItem);
-            oPacket.WriteEncFloat(speedType.StartBoosterTimeSpeed + Kart.StartBoosterTimeSpeed);
+            oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed);
             oPacket.WriteEncFloat(speedType.StartForwardAccelForceItem + Kart.StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem + SpeedPatch.StartForwardAccelForceItem);
             oPacket.WriteEncFloat(speedType.StartForwardAccelForceSpeed + Kart.StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed + SpeedPatch.StartForwardAccelForceSpeed);
             oPacket.WriteEncFloat(Kart.DriftGaguePreservePercent);
