@@ -123,7 +123,6 @@ namespace KartRider
             AiSpeed_comboBox.Name = "AiSpeed_comboBox";
             AiSpeed_comboBox.Size = new System.Drawing.Size(114, 23);
             AiSpeed_comboBox.TabIndex = 6;
-            AiSpeed_comboBox.SelectedIndexChanged += AiSpeed_comboBox_SelectedIndexChanged;
             // 
             // AiSpeed_label
             // 
@@ -143,7 +142,6 @@ namespace KartRider
             Proxy_comboBox.Name = "Proxy_comboBox";
             Proxy_comboBox.Size = new System.Drawing.Size(114, 23);
             Proxy_comboBox.TabIndex = 7;
-            Proxy_comboBox.SelectedIndexChanged += Proxy_comboBox_SelectedIndexChanged;
             // 
             // Proxy_label
             // 
@@ -242,3 +240,4 @@ namespace KartRider
         private Label Proxy_label;
     }
 }
+
