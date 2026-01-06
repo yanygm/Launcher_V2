@@ -30,7 +30,6 @@ namespace ExcData
         public float DriftMaxGauge { get; set; } = 0f;
         public float TransAccelFactor { get; set; } = 0f;
         public float BoostAccelFactor { get; set; } = 0f;
-        public float StartBoosterTimeSpeed { get; set; } = 0f;
         public float StartForwardAccelForceItem { get; set; } = 0f;
         public float StartForwardAccelForceSpeed { get; set; } = 0f;
 
@@ -57,7 +56,6 @@ namespace ExcData
                         DriftMaxGauge = 750f;
                         TransAccelFactor = -0.2155f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 0f;
                         StartForwardAccelForceItem = -530f;
                         StartForwardAccelForceSpeed = -950f;
                     }
@@ -78,7 +76,6 @@ namespace ExcData
                         DriftMaxGauge = -330f;
                         TransAccelFactor = -0.0015f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 0f;
                         StartForwardAccelForceItem = -200f;
                         StartForwardAccelForceSpeed = -360f;
                     }
@@ -99,7 +96,6 @@ namespace ExcData
                         DriftMaxGauge = 580f;
                         TransAccelFactor = 0.0015f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 0f;
                         StartForwardAccelForceItem = 200f;
                         StartForwardAccelForceSpeed = 360f;
                     }
@@ -120,7 +116,6 @@ namespace ExcData
                         DriftMaxGauge = 1700f;
                         TransAccelFactor = -0.0005f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 0f;
                         StartForwardAccelForceItem = 750f;
                         StartForwardAccelForceSpeed = 1350f;
                     }
@@ -141,7 +136,6 @@ namespace ExcData
                         DriftMaxGauge = 0f;
                         TransAccelFactor = 0f;
                         BoostAccelFactor = 0f;
-                        StartBoosterTimeSpeed = 0f;
                         StartForwardAccelForceItem = 0f;
                         StartForwardAccelForceSpeed = 0f;
                     }
@@ -169,7 +163,6 @@ namespace ExcData
                         DriftMaxGauge = -300f;
                         TransAccelFactor = 0.0045f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1000f;
                         StartForwardAccelForceItem = -270f;
                         StartForwardAccelForceSpeed = -270f;
                     }
@@ -190,7 +183,6 @@ namespace ExcData
                         DriftMaxGauge = 700f;
                         TransAccelFactor = 0.0045f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1400f;
                         StartForwardAccelForceItem = 450f;
                         StartForwardAccelForceSpeed = 450f;
                     }
@@ -211,7 +203,6 @@ namespace ExcData
                         DriftMaxGauge = 800f;
                         TransAccelFactor = 0.0045f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1500f;
                         StartForwardAccelForceItem = 400f;
                         StartForwardAccelForceSpeed = 400f;
                     }
@@ -232,7 +223,6 @@ namespace ExcData
                         DriftMaxGauge = 1700f;
                         TransAccelFactor = 0.0045f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1700f;
                         StartForwardAccelForceItem = 1350f;
                         StartForwardAccelForceSpeed = 1350f;
                     }
@@ -253,7 +243,6 @@ namespace ExcData
                         DriftMaxGauge = 3700f;
                         TransAccelFactor = 0.0045f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 2800f;
                         StartForwardAccelForceItem = 1800f;
                         StartForwardAccelForceSpeed = 1800f;
                     }
@@ -270,18 +259,17 @@ namespace ExcData
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
-                        DragFactor = -0.01f;
-                        ForwardAccelForce = -150f;
+                        DragFactor = -0.015f;
+                        ForwardAccelForce = -155f;
                         BackwardAccelForce = -225f;
                         GripBrakeForce = -270f;
                         SlipBrakeForce = -215f;
-                        SteerConstraint = -0.25f;
-                        DriftEscapeForce = -100f;
-                        CornerDrawFactor = 0.02f;
+                        SteerConstraint = -0.2f;
+                        DriftEscapeForce = 50f;
+                        CornerDrawFactor = 0.025f;
                         DriftMaxGauge = -300f;
-                        TransAccelFactor = 0.1545f;
+                        TransAccelFactor = 0.1845f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1000f;
                         StartForwardAccelForceItem = -270f;
                         StartForwardAccelForceSpeed = -270f;
                     }
@@ -291,18 +279,17 @@ namespace ExcData
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
-                        DragFactor = 0.013f;
-                        ForwardAccelForce = 250f;
+                        DragFactor = 0.008f;
+                        ForwardAccelForce = 245f;
                         BackwardAccelForce = 225f;
                         GripBrakeForce = 270f;
                         SlipBrakeForce = 145f;
-                        SteerConstraint = 0.55f;
+                        SteerConstraint = 0.6f;
                         DriftEscapeForce = 700f;
                         CornerDrawFactor = 0.02f;
                         DriftMaxGauge = 700f;
                         TransAccelFactor = 0.1545f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1400f;
                         StartForwardAccelForceItem = 450f;
                         StartForwardAccelForceSpeed = 450f;
                     }
@@ -318,12 +305,11 @@ namespace ExcData
                         GripBrakeForce = 540f;
                         SlipBrakeForce = 325f;
                         SteerConstraint = 0.75f;
-                        DriftEscapeForce = 1100f;
-                        CornerDrawFactor = 0.02f;
+                        DriftEscapeForce = 1250f;
+                        CornerDrawFactor = 0.025f;
                         DriftMaxGauge = 1700f;
-                        TransAccelFactor = 0.1545f;
+                        TransAccelFactor = 0.1845f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1500f;
                         StartForwardAccelForceItem = 400f;
                         StartForwardAccelForceSpeed = 400f;
                     }
@@ -333,18 +319,17 @@ namespace ExcData
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
-                        DragFactor = 0.044f;
-                        ForwardAccelForce = 750f;
+                        DragFactor = 0.035f;
+                        ForwardAccelForce = 745f;
                         BackwardAccelForce = 450f;
                         GripBrakeForce = 540f;
                         SlipBrakeForce = 325f;
-                        SteerConstraint = 0.75f;
-                        DriftEscapeForce = 1100f;
-                        CornerDrawFactor = 0.02f;
+                        SteerConstraint = 0.8f;
+                        DriftEscapeForce = 1250f;
+                        CornerDrawFactor = 0.025f;
                         DriftMaxGauge = 1700f;
-                        TransAccelFactor = 0.1545f;
+                        TransAccelFactor = 0.1845f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 1700f;
                         StartForwardAccelForceItem = 1350f;
                         StartForwardAccelForceSpeed = 1350f;
                     }
@@ -354,18 +339,17 @@ namespace ExcData
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
-                        DragFactor = 0.06f;
-                        ForwardAccelForce = 1650f;
+                        DragFactor = 0.055f;
+                        ForwardAccelForce = 1645f;
                         BackwardAccelForce = 1125f;
                         GripBrakeForce = 1350f;
                         SlipBrakeForce = 865f;
-                        SteerConstraint = 1.15f;
-                        DriftEscapeForce = 2100f;
-                        CornerDrawFactor = 0.02f;
+                        SteerConstraint = 1.2f;
+                        DriftEscapeForce = 2250f;
+                        CornerDrawFactor = 0.025f;
                         DriftMaxGauge = 3700f;
-                        TransAccelFactor = 0.1545f;
+                        TransAccelFactor = 0.1845f;
                         BoostAccelFactor = 0.006f;
-                        StartBoosterTimeSpeed = 2800f;
                         StartForwardAccelForceItem = 1800f;
                         StartForwardAccelForceSpeed = 1800f;
                     }
@@ -397,7 +381,6 @@ namespace ExcData
             DriftMaxGauge = 0f;
             TransAccelFactor = 0f;
             BoostAccelFactor = 0f;
-            StartBoosterTimeSpeed = 0f;
             StartForwardAccelForceItem = 0f;
             StartForwardAccelForceSpeed = 0f;
         }
