@@ -24,27 +24,24 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
-            ProfileService.SettingConfig.Version = Version_comboBox.Text;
-            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[ProfileService.SettingConfig.Version][Speed_comboBox.Text];
-            ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
-            ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
         }
 
         private void OnLoad(object sender, EventArgs e)
         {
+            ProfileService.LoadSettings();
             PlayerName.Text = ProfileService.SettingConfig.Name;
             ServerIP.Text = ProfileService.SettingConfig.ServerIP;
             ServerPort.Text = ProfileService.SettingConfig.ServerPort.ToString();
             NgsOn.Checked = ProfileService.SettingConfig.NgsOn;
             PatchUpdate.Checked = ProfileService.SettingConfig.PatchUpdate;
-            foreach (string key in SpeedType.speedNames.Keys)
-            {
-                Version_comboBox.Items.Add(key);
-            }
             foreach (string key in SpeedType.speedNames[ProfileService.SettingConfig.Version].Keys)
             {
                 Speed_comboBox.Items.Add(key);
+            }
+            foreach (string key in SpeedType.speedNames.Keys)
+            {
+                Version_comboBox.Items.Add(key);
             }
             foreach (string key in AiSpeed)
             {
@@ -54,11 +51,12 @@ namespace KartRider
             {
                 Proxy_comboBox.Items.Add(key);
             }
+            Speed_comboBox.Text = SpeedType.speedNames[ProfileService.SettingConfig.Version].FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key;
+            Speed_comboBox.SelectedIndexChanged += Speed_comboBox_SelectedIndexChanged;
             Version_comboBox.Text = ProfileService.SettingConfig.Version;
-            Speed_comboBox.Text = (SpeedType.speedNames[ProfileService.SettingConfig.Version].FirstOrDefault(x => x.Value == ProfileService.SettingConfig.SpeedType).Key);
+            Version_comboBox.SelectedIndexChanged += Version_comboBox_SelectedIndexChanged;
             AiSpeed_comboBox.Text = ProfileService.SettingConfig.AiSpeedType;
             Proxy_comboBox.Text = ProfileService.SettingConfig.Proxy;
-            ProfileService.SaveSettings();
         }
 
         private void Version_comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -77,6 +75,7 @@ namespace KartRider
                     if (Speed_comboBox.Items.Count > 0)
                     {
                         Speed_comboBox.SelectedIndex = 0;
+                        ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[selectedVersion][Speed_comboBox.Text];
                     }
                     ProfileService.SaveSettings();
                 }
@@ -145,10 +144,6 @@ namespace KartRider
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
             ProfileService.SettingConfig.PatchUpdate = PatchUpdate.Checked;
-            ProfileService.SettingConfig.Version = Version_comboBox.Text;
-            ProfileService.SettingConfig.SpeedType = SpeedType.speedNames[ProfileService.SettingConfig.Version][Speed_comboBox.Text];
-            ProfileService.SettingConfig.AiSpeedType = AiSpeed_comboBox.Text;
-            ProfileService.SettingConfig.Proxy = Proxy_comboBox.Text;
             ProfileService.SaveSettings();
         }
     }
