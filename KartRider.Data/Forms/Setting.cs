@@ -56,7 +56,9 @@ namespace KartRider
             Version_comboBox.Text = ProfileService.SettingConfig.Version;
             Version_comboBox.SelectedIndexChanged += Version_comboBox_SelectedIndexChanged;
             AiSpeed_comboBox.Text = ProfileService.SettingConfig.AiSpeedType;
+            AiSpeed_comboBox.SelectedIndexChanged += AiSpeed_comboBox_SelectedIndexChanged;
             Proxy_comboBox.Text = ProfileService.SettingConfig.Proxy;
+            Proxy_comboBox.SelectedIndexChanged += Proxy_comboBox_SelectedIndexChanged;
         }
 
         private void Version_comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -148,3 +150,4 @@ namespace KartRider
         }
     }
 }
+
