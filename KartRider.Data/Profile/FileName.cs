@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartRider;
 using Launcher.Properties;
 using RiderData;
@@ -62,7 +62,7 @@ namespace Profile
             filename.Parts12Data_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Parts12Data.json"));
             filename.Level12Data_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Level12Data.json"));
             filename.Competitive_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Competitive.json"));
-            filename.TrainingMission_LoadFile = Path.GetFullPath(Path.Combine(ProfileDir, @"TrainingMission.json"));
+            filename.TrainingMission_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"TrainingMission.json"));
             FileNames.TryAdd(nickname, filename);
             if (!Directory.Exists(filename.NicknameDir))
             {
