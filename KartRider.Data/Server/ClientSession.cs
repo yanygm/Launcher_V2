@@ -404,8 +404,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrSetPlaytimeEventTick"))
                         {
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteHexString("01 CC B3 6F 48");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3735,3 +3734,4 @@ namespace KartRider
         }
     }
 }
+
