@@ -1466,6 +1466,11 @@ namespace KartRider
                             }
                             this.Parent.Client.Send(outPacket);
                         }
+                        using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
+                        {
+                            outPacket.WriteString($"{Nickname} / {RandomTrack.GetTrackName(ProfileService.ProfileConfigs[Nickname].Rider.Track)} / {min}:{sec}:{mil}");
+                            this.Parent.Client.Send(outPacket);
+                        }
                         ProfileService.Save(Nickname);
                         return;
                     }
@@ -3715,6 +3720,15 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPlaytimeEventCompleteCheck", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrPlaytimeEventCompleteCheck"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))
@@ -3734,4 +3748,3 @@ namespace KartRider
         }
     }
 }
-
