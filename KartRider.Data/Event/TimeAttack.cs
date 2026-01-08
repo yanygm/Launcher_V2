@@ -1,9 +1,10 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using KartRider;
 using Profile;
 using RHOParser;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 public static class TimeAttack
 {
@@ -50,15 +51,16 @@ public static class TimeAttack
         if (trackLevel != null)
         {
             trackLevel.Level++;
+            File.WriteAllText(filename.TrainingMission_LoadFile, JsonHelper.Serialize(TrainingMission));
             return trackLevel.Level;
         }
         else
         {
             var initial = new TrainingMission { Track = Track, Level = 1 };
             TrainingMission.Add(initial);
+            File.WriteAllText(filename.TrainingMission_LoadFile, JsonHelper.Serialize(TrainingMission));
             return initial.Level;
         }
-        File.WriteAllText(filename.TrainingMission_LoadFile, JsonHelper.Serialize(TrainingMission));
     }
 }
 
