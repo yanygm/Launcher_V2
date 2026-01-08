@@ -85,12 +85,10 @@ class MemoryModifier
             Thread.Sleep(1000); // 等待1秒（可根据需要延长）
 
             // 3. 查找并修改内存
-
-            // 修改指定位置的内存值
-            // 地址009C610E改为byte 120
-            ModifySpecificMemory(process.Id, new IntPtr(0x009C610E), (byte)120);
-            // 地址011F1C64改为单浮点10000
-            ModifySpecificMemory(process.Id, new IntPtr(0x011F1C64), 10000f);
+            // 星标赛道数量50改为120
+            ModifyMemory(process.Id, new byte[] { 0x83, 0xFA, 0x32 }, new byte[] { 0x83, 0xFA, 0x78 });
+            // 赛道模型边界大小2000改为10000单浮点
+            ModifyMemory(process.Id, new byte[] { 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x00, 0x40, 0x1C, 0x46 });
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
