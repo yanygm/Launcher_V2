@@ -252,31 +252,6 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRider", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("PrSeasonGrandprixRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSeasonTierMatchingRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSeasonVersusModeRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSimGameRankRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrCompetitiveRewardPacket"))
-                        {
-                            outPacket.WriteHexString("00 00 00 00 00 FF 32 00 00 00 01 00 00 00 00 00 00 00");
-                            this.Parent.Client.Send(outPacket);
-                        }
                         NewRider.LoadItemData(this.Parent, Nickname);
                         return;
                     }
@@ -2990,8 +2965,8 @@ namespace KartRider
                             outPacket.WriteString("250");
                             outPacket.WriteInt(0);
                             outPacket.WriteByte(0);
-                            outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Set_screen);
-                            outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].Rider.IdentificationType);
+                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         if (PcMsgPassport)
@@ -3099,8 +3074,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("RpBoomhillExchangeKoin"))
                         {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("00 00 00 00 01 00 00 00 05 00 01 00 00 00 01 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3761,6 +3735,3 @@ namespace KartRider
         }
     }
 }
-
-
-
