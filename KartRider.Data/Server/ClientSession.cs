@@ -1276,7 +1276,7 @@ namespace KartRider
                     {
                         int type = iPacket.ReadInt();
                         uint track = iPacket.ReadUInt();
-                        byte Level = TimeAttack.GetTrackLevel(Nickname, track);
+                        //byte Level = TimeAttack.GetTrackLevel(Nickname, track);
                         //PrGetTrainingMission 00 08 B7 51 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
                         using (OutPacket outPacket = new OutPacket("PrGetTrainingMission"))
                         {
