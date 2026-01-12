@@ -34,10 +34,10 @@ public static class MultyPlayer
 
     public static void milTime(uint time)
     {
-        uint min = time / 60000;
-        uint sec = time - min * 60000;
-        sec = sec / 1000;
-        uint mil = time % 1000;
+        TimeSpan timeSpan = TimeSpan.FromMilliseconds((long)time);
+        uint min = (uint)timeSpan.Minutes;
+        uint sec = (uint)timeSpan.Seconds;
+        uint mil = (uint)timeSpan.Milliseconds;
         Console.WriteLine($"成绩: {min}:{sec}:{mil}");
     }
 
@@ -1382,3 +1382,4 @@ public class RoomList
     public byte SpeedType { get; set; }
     public byte GameType { get; set; }
 }
+
