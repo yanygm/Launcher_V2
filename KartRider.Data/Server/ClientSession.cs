@@ -1419,10 +1419,10 @@ namespace KartRider
                         iPacket.ReadInt(); //使用加速器次数
                         iPacket.ReadInt(); //碰撞次数
                         Time.TryAdd(Nickname, iPacket.ReadUInt());
-                        uint min = Time[Nickname] / 60000;
-                        uint sec = Time[Nickname] - min * 60000;
-                        sec = sec / 1000;
-                        uint mil = Time[Nickname] % 1000;
+                        TimeSpan timeSpan = TimeSpan.FromMilliseconds((long)Time[Nickname]);
+                        uint min = (uint)timeSpan.Minutes;
+                        uint sec = (uint)timeSpan.Seconds;
+                        uint mil = (uint)timeSpan.Milliseconds;
                         if (RewardType == 0)
                         {
                             ProfileService.ProfileConfigs[Nickname].Rider.RP += 10;
@@ -3748,3 +3748,4 @@ namespace KartRider
         }
     }
 }
+
