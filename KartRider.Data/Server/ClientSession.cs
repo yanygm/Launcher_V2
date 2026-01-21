@@ -2969,8 +2969,8 @@ namespace KartRider
                             outPacket.WriteString("250");
                             outPacket.WriteInt(0);
                             outPacket.WriteByte(0);
-                            outPacket.WriteByte(0);
-                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].GameOption.Set_screen);
+                            outPacket.WriteByte(ProfileService.ProfileConfigs[Nickname].Rider.IdentificationType);
                             this.Parent.Client.Send(outPacket);
                         }
                         if (PcMsgPassport)
@@ -3748,4 +3748,5 @@ namespace KartRider
         }
     }
 }
+
 
