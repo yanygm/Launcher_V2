@@ -168,6 +168,7 @@ public class SpecialKartConfig
             SkillChangeDesc = "特殊道具车：将指定道具变更为特殊道具",
             SkillChange = new Dictionary<short, Dictionary<short, short>>
             {
+                { 1597, new Dictionary<short, short> { {9, 34} } },
                 { 1594, new Dictionary<short, short> { {3, 112} } },
                 { 1593, new Dictionary<short, short> { {3, 112} } },
                 { 1592, new Dictionary<short, short> { {3, 112} } },
@@ -211,6 +212,7 @@ public class SpecialKartConfig
             SkillMappingsDesc = "特殊道具车：使用指定道具后获得特殊道具",
             SkillMappings = new Dictionary<short, Dictionary<short, short>>
             {
+                { 1597, new Dictionary<short, short> { {5, 6} } },
                 { 1590, new Dictionary<short, short> { {5, 10} } },
                 { 1569, new Dictionary<short, short> { {5, 7} } },
                 { 1567, new Dictionary<short, short> { {5, 31} } },
@@ -245,6 +247,3 @@ public class SpecialKartConfig
         };
     }
 }
-
-
-

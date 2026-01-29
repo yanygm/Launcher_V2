@@ -110,7 +110,7 @@ namespace KartRider
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqWriteActionLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventTimerPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("VipPlaytimeCheck", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqWriteActionLogPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventTimerPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("VipPlaytimeCheck", 0))
                     {
                         //PqGetRecommandChatServerInfo = 라이더 챗
                         return;
@@ -461,6 +461,17 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
+                        {
+                            // outPacket.WriteHexString("00 00 00 00 01 00 00 00 00 00 00 00 11 00 00 00 CF 6B E5 65 7B 76 55 5F 0C FF 86 98 D6 53 45 51 E1 6E 78 5E D0 8F 84 76 78 5E D0 8F 7C 99 27 54 01 FF 72 79 00 00 00 00 00 00 00 00 00 00 00 00");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLoginVipInfo", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("PrLoginVipInfo"))
@@ -469,12 +480,6 @@ namespace KartRider
                             outPacket.WriteByte(1);
                             outPacket.WriteInt(0);
                             outPacket.WriteHexString("FFFFFFFF");
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
@@ -2181,7 +2186,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestExtradata"))
                         {
-                            outPacket.WriteShort(0);
+                            outPacket.WriteHexString("00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2200,9 +2205,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrPubCommandPacket"))
                         {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 D4 B3 60 36");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2245,7 +2248,7 @@ namespace KartRider
                         {
                             //outPacket.WriteInt(3);
                             //outPacket.WriteInt(0);
-                            outPacket.WriteHexString("0000000001000000000000000000000000");
+                            outPacket.WriteHexString("00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2346,9 +2349,10 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpEnterRewardBoxStage"))
                         {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteByte(1);
+                            outPacket.WriteInt(2);
+                            outPacket.WriteHexString("87 CA B4 37 00 00 00 00 04 72 79 00 00 E1 B3 DE 28 F0 B3 DE 28");
+                            outPacket.WriteHexString("88 CA B4 37 00 00 00 00 03 72 79 00 00 E1 B3 DE 28 F0 B3 DE 28");
+                            outPacket.WriteHexString("02 00 00 00 01");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3029,7 +3033,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
                         {
-                            outPacket.WriteShort(0);
+                            outPacket.WriteHexString("00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3051,7 +3055,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 00");
+                            outPacket.WriteHexString("00 00 00 00 01");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3412,8 +3416,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendNRUserStatePacket"))
                         {
-                            outPacket.WriteByte(0);
-                            outPacket.WriteByte(0);
+                            outPacket.WriteHexString("00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3748,5 +3751,3 @@ namespace KartRider
         }
     }
 }
-
-
