@@ -2301,7 +2301,7 @@ namespace KartRider
                             outPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.Lucci);
                             outPacket.WriteHexString("00 00 00 00");
                             outPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.Koin);
-                            outPacket.WriteHexString("00 00 00 00 00");
+                            outPacket.WriteHexString("00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3757,3 +3757,4 @@ namespace KartRider
         }
     }
 }
+
