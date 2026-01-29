@@ -102,7 +102,7 @@ namespace KartRider
                 }
                 if (hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) && hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PqGameReportMyBadUdp"), 0))
                 {
-                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
+                    if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRiderTalkPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterMagicHatPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqAddTimeEventInitPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqCountdownBoxPeriodPacket", 0))
                     {
                         return;
                     }
@@ -461,7 +461,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
                         {
@@ -485,6 +485,12 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
                         {
                             outPacket.WriteString("单机版完全免费, GitHub: https://github.com/yanygm/Launcher_V2");
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
