@@ -166,11 +166,59 @@ namespace KartRider
                 PINFile val = new PINFile(Path.Combine(GameFolder, @"KartRider.pin"));
                 var targetTag = "P" + val.Header.MinorVersion;
                 var assetList = await GetReleaseAssetsByTag(Update.owner, Update.repo, targetTag);
+                string DataFolder = Path.Combine(GameFolder, @"Data");
 
                 // 输出结果
                 if (assetList == null || assetList.Count == 0)
                 {
                     Console.WriteLine($"未找到标签为 {targetTag} 的发布版本，或该版本无文件！");
+                    try
+                    {
+                        // 1. 检查目标目录是否存在
+                        if (!Directory.Exists(DataFolder))
+                        {
+                            return null;
+                        }
+
+                        // 2. 查找符合条件的文件：以DataPack0_开头，.rho5结尾
+                        // SearchOption.TopDirectoryOnly：仅查找当前目录（不递归子目录）
+                        // 如需递归查找子目录，改为 SearchOption.AllDirectories
+                        string[] rho5Files = Directory.GetFiles(
+                            DataFolder,
+                            "DataPack0_*.rho5",
+                            SearchOption.TopDirectoryOnly
+                        );
+
+                        // 3. 遍历并删除每个符合条件的文件
+                        if (rho5Files.Length == 0)
+                        {
+                            return null;
+                        }
+
+                        foreach (string filePath in rho5Files)
+                        {
+                            // 先检查文件是否存在（防止并发场景下文件已被删除）
+                            if (File.Exists(filePath))
+                            {
+                                // 删除文件（永久删除，不进入回收站）
+                                File.Delete(filePath);
+                            }
+                        }
+
+                        Console.WriteLine("所有符合条件的文件处理完成。");
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine($"错误：没有权限访问文件/目录 -> {ex.Message}");
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"错误：IO操作失败（文件可能被占用） -> {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"未知错误：{ex.Message}");
+                    }
                     return null;
                 }
                 else
