@@ -1429,8 +1429,16 @@ namespace KartRider
                         iPacket.ReadInt();
                         iPacket.ReadInt(); //使用加速器次数
                         iPacket.ReadInt(); //碰撞次数
-                        Time.TryAdd(Nickname, iPacket.ReadUInt());
-                        TimeSpan timeSpan = TimeSpan.FromMilliseconds((long)Time[Nickname]);
+                        uint time = iPacket.ReadUInt();
+                        if (!Time.ContainsKey(Nickname))
+                        {
+                            Time.TryAdd(Nickname, time);
+                        }
+                        else
+                        {
+                            Time[Nickname] = time;
+                        }
+                        TimeSpan timeSpan = TimeSpan.FromMilliseconds((long)time);
                         uint min = (uint)timeSpan.Minutes;
                         uint sec = (uint)timeSpan.Seconds;
                         uint mil = (uint)timeSpan.Milliseconds;
@@ -3757,4 +3765,3 @@ namespace KartRider
         }
     }
 }
-
