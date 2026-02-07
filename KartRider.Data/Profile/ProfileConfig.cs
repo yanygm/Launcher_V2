@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using KartRider.Common.Data;
 
 namespace Profile
 {
@@ -53,6 +54,8 @@ namespace Profile
         public bool PatchUpdate { get; set; } = false;
 
         public string Proxy { get; set; } = "https://gh-proxy.com/";
+
+        public List<PINFile.IPEndPoint> ServerList { get; set; }
     }
 
     public class ProfileConfig

@@ -24,21 +24,7 @@ namespace KartRider
 
         public static async Task<bool> UpdateDataAsync()
         {
-            // 获取当前执行程序集的路径
-            filePath = Assembly.GetExecutingAssembly().Location;
-            // 验证路径是否有效
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            {
-                // 尝试备选方法获取路径
-                filePath = Process.GetCurrentProcess().MainModule.FileName;
-
-                // 再次验证
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                {
-                    Console.WriteLine("无法获取有效的程序集路径");
-                    return false;
-                }
-            }
+            filePath = JsonHelper.GetFilePath();
             Console.WriteLine("当前程序路径: " + filePath);
             name = Path.GetFileName(filePath);
             // 计算文件的SHA256哈希值
@@ -318,4 +304,3 @@ namespace KartRider
         public string browser_download_url { get; set; }
     }
 }
-

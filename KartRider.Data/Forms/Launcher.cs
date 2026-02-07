@@ -1,6 +1,7 @@
 using ExcData;
 using KartRider.Common.Data;
 using KartRider.Common.Utilities;
+using KartRider.IO.Packet;
 using Launcher.Properties;
 using LoggerLibrary;
 using Profile;
@@ -41,6 +42,7 @@ namespace KartRider
             ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
             ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
             ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
+            ProfileService.SettingConfig.ServerList = val.AuthMethods[0].LoginServers;
             ProfileService.SaveSettings();
             ClientVersion.Text = val.Header.MinorVersion.ToString();
             Console.WriteLine($"ClientVersion: {val.Header.MinorVersion}");
@@ -176,41 +178,56 @@ namespace KartRider
 
         private void label_Client_Click(object sender, EventArgs e)
         {
-            // 弹出“是否”确认框
-            DialogResult result = MessageBox.Show(
-                $"当前版本为：P{ClientVersion.Text}\n是否需要更新？",  // 提示文本
-                "确认操作",                                      // 弹窗标题
-                MessageBoxButtons.YesNo,                         // 按钮类型：是 + 否
-                MessageBoxIcon.Question                          // 图标类型：问号（增强提示性）
-            );
+            byte[] data = RouterListener.Connect();
+            string filePath = JsonHelper.GetFilePath();
 
-            // 根据用户选择执行对应逻辑
-            if (result == DialogResult.Yes)
+            if (data != null)
             {
-                if (File.Exists(pinFileBak))
+                InPacket iPacket = new InPacket(data);
+                iPacket.ReadUInt();
+                iPacket.ReadUInt();
+                iPacket.ReadUShort();
+                iPacket.ReadUShort();
+                ushort version = iPacket.ReadUShort();
+                string updateUrl = iPacket.ReadString();
+
+                // 弹出“是否”确认框
+                DialogResult result = MessageBox.Show(
+                    $"当前版本为：P{ClientVersion.Text}\n最新版本为：P{version}\n是否需要更新？",  // 提示文本
+                    "确认操作",                                      // 弹窗标题
+                    MessageBoxButtons.YesNo,                         // 按钮类型：是 + 否
+                    MessageBoxIcon.Question                          // 图标类型：问号（增强提示性）
+                );
+
+                // 根据用户选择执行对应逻辑
+                if (result == DialogResult.Yes)
                 {
-                    File.Delete(pinFile);
-                    File.Move(pinFileBak, pinFile);
-                }
-                System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("KartRider");
-                foreach (System.Diagnostics.Process p in process)
-                {
-                    p.Kill();
-                }
-                try
-                {
-                    ProcessStartInfo startInfo = new ProcessStartInfo("KartRecovery.exe")
+                    if (File.Exists(pinFileBak))
                     {
-                        WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
-                        UseShellExecute = true,
-                        Verb = "runas" // 请求管理员权限（内存修改可能需要）
-                    };
-                    Process.Start(startInfo);
-                    Environment.Exit(0);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"操作失败：{ex.Message}");
+                        File.Delete(pinFile);
+                        File.Move(pinFileBak, pinFile);
+                    }
+
+                    System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("KartRider");
+                    foreach (System.Diagnostics.Process p in process)
+                    {
+                        p.Kill();
+                    }
+                    try
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo("Patcher.exe", $"'1' '123' '{updateUrl}/{version}' '{kartRiderDirectory}' '{filePath}'")
+                        {
+                            WorkingDirectory = Path.GetFullPath(kartRiderDirectory),
+                            UseShellExecute = true,
+                            Verb = "runas" // 请求管理员权限（内存修改可能需要）
+                        };
+                        Process.Start(startInfo);
+                        Environment.Exit(0);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"操作失败：{ex.Message}");
+                    }
                 }
             }
         }

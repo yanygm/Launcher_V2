@@ -84,5 +84,25 @@ namespace KartRider
                 RouterListener.Listener.BeginAcceptSocket(OnAcceptSocket, RouterListener.Listener);
             }
         }
+
+        public static byte[] Connect()
+        {
+            foreach (var server in ProfileService.SettingConfig.ServerList)
+            {
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(server.IP, server.Port);
+                if (socket.Connected)
+                {
+                    // 接收服务器回传的数据
+                    byte[] buffer = new byte[1024];
+                    int bytesRead = socket.Receive(buffer);
+                    byte[] response = new byte[bytesRead];
+                    Buffer.BlockCopy(buffer, 0, response, 0, bytesRead);
+                    socket.Close();
+                    return response;
+                }
+            }
+            return null;
+        }
     }
 }
