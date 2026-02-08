@@ -252,6 +252,42 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRider", 0))
                     {
+                        using (OutPacket outPacket = new OutPacket("PrSeasonGrandprixRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSeasonTierMatchingRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSeasonVersusModeRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrSimGameRankRewardPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        using (OutPacket outPacket = new OutPacket("PrAddTimeEventInitPacket"))
+                        {
+                            outPacket.WriteHexString("6D F8 03 00 E8 B3 18 15 EF B3 17 15");
+                            outPacket.WriteInt(6);
+                            outPacket.WriteHexString("2F 7D A1 8B 28 57 BF 7E 3B 6D A8 52");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("6D F8 03 00");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
                         NewRider.LoadItemData(this.Parent, Nickname);
                         return;
                     }
@@ -476,10 +512,25 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrLoginVipInfo"))
                         {
-                            outPacket.WriteInt(ProfileService.ProfileConfigs[Nickname].Rider.Premium);
-                            outPacket.WriteByte(1);
+                            outPacket.WriteUShort(0);
+                            if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 0)
+                                outPacket.WriteInt(0);
+                            else if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 1)
+                                outPacket.WriteInt(10000);
+                            else if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 2)
+                                outPacket.WriteInt(30000);
+                            else if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 3)
+                                outPacket.WriteInt(60000);
+                            else if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 4)
+                                outPacket.WriteInt(120000);
+                            else if (ProfileService.ProfileConfigs[Nickname].Rider.Premium == 5)
+                                outPacket.WriteInt(200000);
+                            else
+                                outPacket.WriteInt(0);
+                            outPacket.WriteUShort((ushort)ProfileService.ProfileConfigs[Nickname].Rider.Premium);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
                             outPacket.WriteInt(0);
-                            outPacket.WriteHexString("FFFFFFFF");
                             this.Parent.Client.Send(outPacket);
                         }
                         using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
@@ -2309,7 +2360,7 @@ namespace KartRider
                             outPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.Lucci);
                             outPacket.WriteHexString("00 00 00 00");
                             outPacket.WriteUInt(ProfileService.ProfileConfigs[Nickname].Rider.Koin);
-                            outPacket.WriteHexString("00 00 00 00 00 00 00");
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2363,10 +2414,8 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpEnterRewardBoxStage"))
                         {
-                            outPacket.WriteInt(2);
-                            outPacket.WriteHexString("87 CA B4 37 00 00 00 00 04 72 79 00 00 E1 B3 DE 28 F0 B3 DE 28");
-                            outPacket.WriteHexString("88 CA B4 37 00 00 00 00 03 72 79 00 00 E1 B3 DE 28 F0 B3 DE 28");
-                            outPacket.WriteHexString("02 00 00 00 01");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteHexString("00 00 00 00 01");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3061,6 +3110,7 @@ namespace KartRider
                             outPacket.WriteInt();
                             outPacket.WriteShort(Type);
                             outPacket.WriteInt();
+                            outPacket.WriteInt();
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3069,7 +3119,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 01");
+                            outPacket.WriteHexString("00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3094,9 +3144,16 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RqBoomhillExchangeKoin", 0))
                     {
+                        short Type = iPacket.ReadShort();
+                        int Value = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("RpBoomhillExchangeKoin"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 01 00 00 00 05 00 01 00 00 00 01 00 00 00 00 00 00 00");
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteShort(Type);
+                            outPacket.WriteInt(Value);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
