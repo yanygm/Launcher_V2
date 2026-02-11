@@ -49,13 +49,12 @@ namespace KartRider
                 outPacket.WriteUInt(key.second_val);
                 outPacket.WriteByte((byte)ProfileService.SettingConfig.nClientLoc);
                 outPacket.WriteString(key.key1);
-                int count = 3;
                 int[] time = new int[] { 1547597728, 1707244048, 1862052984 };
-                outPacket.WriteInt(count);
-                for (int i = 0; i < count; i++)
+                outPacket.WriteInt(time.Length);
+                foreach (int t in time)
                 {
                     outPacket.WriteInt();
-                    outPacket.WriteInt(time[i]);
+                    outPacket.WriteInt(t);
                 }
                 outPacket.WriteBytes(new byte[3]);
                 outPacket.WriteString(key.key2);
