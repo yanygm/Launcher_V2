@@ -16,7 +16,6 @@ namespace KartRider
 {
     public partial class Launcher : Form
     {
-        public static bool GetKart = false;
         public string kartRiderDirectory;
         public static string KartRider;
         public static string pinFile;
@@ -24,6 +23,11 @@ namespace KartRider
 
         public Launcher()
         {
+            if (File.Exists(pinFileBak))
+            {
+                File.Delete(pinFile);
+                File.Move(pinFileBak, pinFile);
+            }
             this.InitializeComponent();
         }
 
@@ -113,17 +117,20 @@ namespace KartRider
                     File.WriteAllBytes(pinFile, val.GetEncryptedData());
                     var modifier = new MemoryModifier();
                     modifier.LaunchAndModifyMemory(kartRiderDirectory);
-                    GetKart = true;
                 })).Start();
             }
         }
 
         private void GetKart_Button_Click(object sender, EventArgs e)
         {
-            if (Launcher.GetKart)
+            if (IsProcessRunning("KartRider"))
             {
                 Program.GetKartDlg = new GetKart();
                 Program.GetKartDlg.ShowDialog();
+            }
+            else
+            {
+                LauncherSystem.MessageBoxType5();
             }
         }
 
@@ -246,6 +253,30 @@ namespace KartRider
         {
             CachedConsoleWriter.SaveToFile();
             CachedConsoleWriter.cachedWriter.ClearCache();
+        }
+
+        /// <summary>
+        /// 检查指定名称的进程是否正在运行
+        /// </summary>
+        /// <param name="processName">进程名（不含.exe后缀）</param>
+        /// <returns>true=运行中，false=未运行</returns>
+        static bool IsProcessRunning(string processName)
+        {
+            try
+            {
+                // 关键方法：根据进程名获取所有正在运行的进程
+                // GetProcessesByName 会忽略大小写，且不需要.exe后缀
+                Process[] processes = Process.GetProcessesByName(processName);
+
+                // 如果数组长度大于0，说明进程正在运行
+                return processes.Length > 0;
+            }
+            catch (Exception ex)
+            {
+                // 捕获可能的异常（比如权限不足）
+                Console.WriteLine($"检查进程时出错：{ex.Message}");
+                return false;
+            }
         }
     }
 }
