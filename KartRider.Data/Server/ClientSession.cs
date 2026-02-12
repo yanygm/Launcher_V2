@@ -2270,7 +2270,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrPubCommandPacket"))
                         {
-                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 D4 B3 60 36");
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
