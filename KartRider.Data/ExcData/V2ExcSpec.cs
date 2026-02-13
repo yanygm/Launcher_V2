@@ -359,10 +359,10 @@ namespace ExcData
                     Kart.chargeInstAccelGaugeByBoost = 0.02f;
                     Kart.chargeInstAccelGaugeByGrip = 0.07f;
                     Kart.chargeInstAccelGaugeByWall = 0.15f;
-                    Kart.instAccelFactor = 1.29f;
+                    Kart.instAccelFactor = 1.32f;
                     Kart.instAccelGaugeCooldownTime = 3000;
                     Kart.instAccelGaugeLength = 1040f;
-                    Kart.instAccelGaugeMinUsable = 208f;
+                    Kart.instAccelGaugeMinUsable = 260f;
                     Kart.instAccelGaugeMinVelBound = 0f;
                     Kart.instAccelGaugeMinVelLoss = 50f;
                     Kart.useExtendedAfterBoosterMore = 0;
@@ -375,7 +375,7 @@ namespace ExcData
                     Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
                     Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
                     Kart.chargerSystemboosterUseCount = 4;
-                    Kart.chargerSystemUseTime = 3000;
+                    Kart.chargerSystemUseTime = 2700;
                     Kart.chargeBoostBySpeedAdded = 350.0f;
                     Kart.driftGaugeFactor = 2.0f;
                 }
@@ -452,5 +452,6 @@ namespace ExcData
         public float V2Level_DriftMaxGauge { get; set; } = 0f;
     }
 }
+
 
 
