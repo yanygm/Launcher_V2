@@ -252,42 +252,42 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRider", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("PrSeasonGrandprixRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSeasonTierMatchingRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSeasonVersusModeRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrSimGameRankRewardPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        using (OutPacket outPacket = new OutPacket("PrAddTimeEventInitPacket"))
-                        {
-                            outPacket.WriteHexString("6D F8 03 00 E8 B3 18 15 EF B3 17 15");
-                            outPacket.WriteInt(6);
-                            outPacket.WriteHexString("2F 7D A1 8B 28 57 BF 7E 3B 6D A8 52");
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteHexString("6D F8 03 00");
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        // using (OutPacket outPacket = new OutPacket("PrSeasonGrandprixRewardPacket"))
+                        // {
+                        //     outPacket.WriteInt(0);
+                        //     this.Parent.Client.Send(outPacket);
+                        // }
+                        // using (OutPacket outPacket = new OutPacket("PrSeasonTierMatchingRewardPacket"))
+                        // {
+                        //     outPacket.WriteInt(0);
+                        //     this.Parent.Client.Send(outPacket);
+                        // }
+                        // using (OutPacket outPacket = new OutPacket("PrSeasonVersusModeRewardPacket"))
+                        // {
+                        //     outPacket.WriteInt(0);
+                        //     this.Parent.Client.Send(outPacket);
+                        // }
+                        // using (OutPacket outPacket = new OutPacket("PrSimGameRankRewardPacket"))
+                        // {
+                        //     outPacket.WriteInt(0);
+                        //     this.Parent.Client.Send(outPacket);
+                        // }
+                        // using (OutPacket outPacket = new OutPacket("PrAddTimeEventInitPacket"))
+                        // {
+                        //     outPacket.WriteHexString("6D F8 03 00 E8 B3 18 15 EF B3 17 15");
+                        //     outPacket.WriteInt(6);
+                        //     outPacket.WriteHexString("2F 7D A1 8B 28 57 BF 7E 3B 6D A8 52");
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteHexString("6D F8 03 00");
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                        //     outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                        //     outPacket.WriteInt(0);
+                        //     this.Parent.Client.Send(outPacket);
+                        // }
                         NewRider.LoadItemData(this.Parent, Nickname);
                         return;
                     }
@@ -440,7 +440,8 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrSetPlaytimeEventTick"))
                         {
-                            outPacket.WriteHexString("01 CC B3 6F 48");
+                            outPacket.WriteByte(0);
+                            // outPacket.WriteHexString("01 CC B3 6F 48");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2387,7 +2388,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrDisassembleFeeInfo"))
                         {
-                            outPacket.WriteHexString("0000000008000000030000E803030100F401020000E803020100F401010000E803010100F401000000E803000100F401");
+                            outPacket.WriteHexString("00 00 00 00 06 00 00 00 00 00 E8 03 01 00 F4 01 00 00 E8 03 01 00 F4 01 00 00 E8 03 01 00 F4 01");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -2818,10 +2819,11 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))
                         {
-                            outPacket.WriteHexString("0F 00 00 00 00 00 00 00 01 B3 77 00 00 00 00 00 00 01 00 00 00 01 18 66 00 00 00 00 00 00 02 00 00 00 02 8E 6B 00 00 00 00 00 00 03 00 00 00 02 77 6A 00 00 00 00 00 00 04 00 00 00 02 8F 61 00 00 00 00 00 00 05 00 00 00 03 50 71 00 00 00 00 00 00 06 00 00 00 03 85 6A 00 00 00 00 00 00 07 00 00 00 03 8A 6E 00 00 00 00 00 00 08 00 00 00 03 BB 77 00 00 00 00 00 00 09 00 00 00 03 26 75 00 00 00 00 00 00 0A 00 00 00 04 00 00 00 00 EE 86 01 00 0B 00 00 00 04 00 00 00 00 D5 86 01 00 0C 00 00 00 04 00 00 00 00 CC 86 01 00 0D 00 00 00 04 00 00 00 00 BB 86 01 00 0E 00 00 00 04 00 00 00 00 E1 86 01 00");
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
-                            outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
-                            outPacket.WriteHexString("00 00 00 00 03 00 00 00 17 00 48 00 0F 00 17 00 51 00 0F 00 03 00 17 00 48 00 05 00 17 00 51 00 05 00 04 00 17 00 48 00 03 00 17 00 51 00 03 00 05 00 FF FF FF FF FF FF FF FF FF FF FF FF FF 50 00 00 00 00 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00");
+                            outPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF 47 00 00 00 00 00 47 00 00 00 00 00 00 00 02 00 00 00");
+                            // outPacket.WriteHexString("0F 00 00 00 00 00 00 00 01 B3 77 00 00 00 00 00 00 01 00 00 00 01 18 66 00 00 00 00 00 00 02 00 00 00 02 8E 6B 00 00 00 00 00 00 03 00 00 00 02 77 6A 00 00 00 00 00 00 04 00 00 00 02 8F 61 00 00 00 00 00 00 05 00 00 00 03 50 71 00 00 00 00 00 00 06 00 00 00 03 85 6A 00 00 00 00 00 00 07 00 00 00 03 8A 6E 00 00 00 00 00 00 08 00 00 00 03 BB 77 00 00 00 00 00 00 09 00 00 00 03 26 75 00 00 00 00 00 00 0A 00 00 00 04 00 00 00 00 EE 86 01 00 0B 00 00 00 04 00 00 00 00 D5 86 01 00 0C 00 00 00 04 00 00 00 00 CC 86 01 00 0D 00 00 00 04 00 00 00 00 BB 86 01 00 0E 00 00 00 04 00 00 00 00 E1 86 01 00");
+                            // outPacket.WriteUShort((ushort)RouterListener.DataTime()[0]);
+                            // outPacket.WriteUShort((ushort)RouterListener.DataTime()[1]);
+                            // outPacket.WriteHexString("00 00 00 00 03 00 00 00 17 00 48 00 0F 00 17 00 51 00 0F 00 03 00 17 00 48 00 05 00 17 00 51 00 05 00 04 00 17 00 48 00 03 00 17 00 51 00 03 00 05 00 FF FF FF FF FF FF FF FF FF FF FF FF FF 50 00 00 00 00 00 50 00 00 00 00 00 00 00 00 00 00 00 00 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
