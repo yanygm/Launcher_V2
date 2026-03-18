@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最新版本下载 | GitHub Releases</title>
+    <style>
+        /* 简单美化页面，可自定义 */
+        body {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 0 20px;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .release-card {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .download-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0366d6;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .download-link:hover {
+            background: #0250ac;
+        }
+        .loading {
+            color: #666;
+            font-size: 18px;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>最新版本下载</h1>
+    <div id="release-container">
+        <div class="loading">正在获取最新版本信息...</div>
+    </div>
+
+    <script>
+        // ************************* 请修改这里的配置 *************************
+        const CONFIG = {
+            // 替换为：你的GitHub用户名/你的仓库名
+            repo: "octocat/hello-world", 
+            // GitHub API 地址（无需修改）
+            apiUrl: "https://api.github.com/repos/"
+        };
+        // ******************************************************************
+
+        // 获取最新Release数据的函数
+        async function getLatestRelease() {
+            const container = document.getElementById('release-container');
+            try {
+                // 调用GitHub API获取最新Release
+                const response = await fetch(`${CONFIG.apiUrl}${CONFIG.repo}/releases/latest`);
+                
+                // 处理API返回错误（如仓库不存在、无Release等）
+                if (!response.ok) {
+                    throw new Error(`请求失败：${response.status} ${response.statusText}`);
+                }
+
+                const release = await response.json();
+                
+                // 渲染Release信息到页面
+                renderReleaseInfo(release, container);
+
+            } catch (error) {
+                // 错误提示
+                container.innerHTML = `<div class="error">获取失败：${error.message}</div>`;
+                console.error("获取Release失败：", error);
+            }
+        }
+
+        // 渲染Release信息（版本号、描述、下载链接）
+        function renderReleaseInfo(release, container) {
+            // 提取下载链接（assets是Release中的附件，若没有则显示源码包）
+            let downloadLinks = '';
+            if (release.assets.length > 0) {
+                // 遍历所有附件，生成下载链接
+                release.assets.forEach(asset => {
+                    downloadLinks += `
+                        <a href="${asset.browser_download_url}" class="download-link">
+                            📥 ${asset.name} (${formatFileSize(asset.size)})
+                        </a>
+                    `;
+                });
+            } else {
+                // 若无附件，显示源码包下载链接
+                downloadLinks = `
+                    <a href="${release.zipball_url}" class="download-link">📥 源码包 (ZIP)</a>
+                    <a href="${release.tarball_url}" class="download-link">📥 源码包 (TAR.GZ)</a>
+                `;
+            }
+
+            // 拼接HTML内容
+            const html = `
+                <div class="release-card">
+                    <h2>版本：${release.tag_name}</h2>
+                    <p><strong>发布时间：</strong>${formatDate(release.published_at)}</p>
+                    <div><strong>更新说明：</strong>${release.body || '无更新说明'}</div>
+                    <div style="margin-top: 20px;">
+                        <strong>下载文件：</strong>
+                        ${downloadLinks}
+                    </div>
+                </div>
+            `;
+
+            // 替换页面内容
+            container.innerHTML = html;
+        }
+
+        // 辅助函数：格式化文件大小（字节转MB/KB）
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        // 辅助函数：格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN'); // 转为中文格式（如 2026/3/18 12:00:00）
+        }
+
+        // 页面加载完成后执行
+        window.onload = getLatestRelease;
+    </script>
+</body>
+</html>
