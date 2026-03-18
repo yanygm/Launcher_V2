@@ -11,7 +11,7 @@
             margin: 50px auto;
             padding: 0 20px;
             font-family: Arial, sans-serif;
-            line-height: 1.6;
+            line-height: 1.8; /* 增加行高，提升可读性 */
         }
         .release-card {
             border: 1px solid #eee;
@@ -39,12 +39,20 @@
             color: #dc3545;
             font-size: 18px;
         }
-        /* 更新说明样式（支持Markdown解析后的内容） */
+        /* 更新说明样式（关键：适配marked解析后的HTML） */
         .release-body {
             margin: 10px 0;
-            padding: 10px;
+            padding: 15px;
             background: #f8f9fa;
             border-radius: 4px;
+        }
+        /* 修复列表/换行的间距 */
+        .release-body p, 
+        .release-body ul, 
+        .release-body ol,
+        .release-body li {
+            margin: 8px 0;
+            line-height: 1.8;
         }
         /* 解析后的链接样式 */
         .release-body a {
@@ -53,6 +61,10 @@
         }
         .release-body a:hover {
             text-decoration: underline;
+        }
+        /* 加粗样式适配 */
+        .release-body strong {
+            color: #24292e;
         }
     </style>
     <!-- 引入轻量Markdown解析库（CDN） -->
@@ -74,6 +86,13 @@
         };
         // ******************************************************************
 
+        // 配置marked：保留原始换行逻辑
+        marked.setOptions({
+            breaks: true, // 关键：让单个换行符(\n)也能生成<br>
+            gfm: true,    // 启用GitHub风格的Markdown
+            sanitize: true // 安全过滤：防止XSS
+        });
+
         // 获取最新Release数据的函数
         async function getLatestRelease() {
             const container = document.getElementById('release-container');
@@ -92,7 +111,7 @@
             }
         }
 
-        // 渲染Release信息（核心修改：解析Markdown）
+        // 渲染Release信息
         function renderReleaseInfo(release, container) {
             // 1. 处理下载链接
             let downloadLinks = '';
@@ -111,9 +130,9 @@
                 `;
             }
 
-            // 2. 核心：用marked解析更新说明的Markdown（包括链接）
+            // 2. 解析Markdown（带换行）
             const releaseBody = release.body 
-                ? marked.parse(release.body)  // 解析Markdown为HTML
+                ? marked.parse(release.body)
                 : '<p>无更新说明</p>';
 
             // 3. 拼接最终HTML
