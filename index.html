@@ -39,6 +39,14 @@
             color: #dc3545;
             font-size: 18px;
         }
+        /* 给更新说明增加一点内边距，提升可读性 */
+        .release-body {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-line; /* 关键：保留换行，自动处理空格 */
+        }
     </style>
 </head>
 <body>
@@ -102,12 +110,16 @@
                 `;
             }
 
+            // 修复换行问题：处理更新说明的换行
+            const releaseBody = release.body ? release.body : '无更新说明';
+
             // 拼接HTML内容
             const html = `
                 <div class="release-card">
                     <h2>版本：${release.tag_name}</h2>
                     <p><strong>发布时间：</strong>${formatDate(release.published_at)}</p>
-                    <div><strong>更新说明：</strong>${release.body || '无更新说明'}</div>
+                    <div><strong>更新说明：</strong></div>
+                    <div class="release-body">${releaseBody}</div> <!-- 用专门的样式处理换行 -->
                     <div style="margin-top: 20px;">
                         <strong>下载文件：</strong>
                         ${downloadLinks}
