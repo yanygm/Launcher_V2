@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>最新版本下载 | GitHub Releases</title>
     <style>
-        /* 简单美化页面，可自定义 */
+        /* 基础样式 */
         body {
             max-width: 800px;
             margin: 50px auto;
@@ -39,15 +39,24 @@
             color: #dc3545;
             font-size: 18px;
         }
-        /* 给更新说明增加一点内边距，提升可读性 */
+        /* 更新说明样式（支持Markdown解析后的内容） */
         .release-body {
             margin: 10px 0;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 4px;
-            white-space: pre-line; /* 关键：保留换行，自动处理空格 */
+        }
+        /* 解析后的链接样式 */
+        .release-body a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .release-body a:hover {
+            text-decoration: underline;
         }
     </style>
+    <!-- 引入轻量Markdown解析库（CDN） -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <h1>最新版本下载</h1>
@@ -69,32 +78,25 @@
         async function getLatestRelease() {
             const container = document.getElementById('release-container');
             try {
-                // 调用GitHub API获取最新Release
                 const response = await fetch(`${CONFIG.apiUrl}${CONFIG.repo}/releases/latest`);
-                
-                // 处理API返回错误（如仓库不存在、无Release等）
                 if (!response.ok) {
                     throw new Error(`请求失败：${response.status} ${response.statusText}`);
                 }
 
                 const release = await response.json();
-                
-                // 渲染Release信息到页面
                 renderReleaseInfo(release, container);
 
             } catch (error) {
-                // 错误提示
                 container.innerHTML = `<div class="error">获取失败：${error.message}</div>`;
                 console.error("获取Release失败：", error);
             }
         }
 
-        // 渲染Release信息（版本号、描述、下载链接）
+        // 渲染Release信息（核心修改：解析Markdown）
         function renderReleaseInfo(release, container) {
-            // 提取下载链接（assets是Release中的附件，若没有则显示源码包）
+            // 1. 处理下载链接
             let downloadLinks = '';
             if (release.assets.length > 0) {
-                // 遍历所有附件，生成下载链接
                 release.assets.forEach(asset => {
                     downloadLinks += `
                         <a href="${asset.browser_download_url}" class="download-link">
@@ -103,23 +105,24 @@
                     `;
                 });
             } else {
-                // 若无附件，显示源码包下载链接
                 downloadLinks = `
                     <a href="${release.zipball_url}" class="download-link">📥 源码包 (ZIP)</a>
                     <a href="${release.tarball_url}" class="download-link">📥 源码包 (TAR.GZ)</a>
                 `;
             }
 
-            // 修复换行问题：处理更新说明的换行
-            const releaseBody = release.body ? release.body : '无更新说明';
+            // 2. 核心：用marked解析更新说明的Markdown（包括链接）
+            const releaseBody = release.body 
+                ? marked.parse(release.body)  // 解析Markdown为HTML
+                : '<p>无更新说明</p>';
 
-            // 拼接HTML内容
+            // 3. 拼接最终HTML
             const html = `
                 <div class="release-card">
                     <h2>版本：${release.tag_name}</h2>
                     <p><strong>发布时间：</strong>${formatDate(release.published_at)}</p>
                     <div><strong>更新说明：</strong></div>
-                    <div class="release-body">${releaseBody}</div> <!-- 用专门的样式处理换行 -->
+                    <div class="release-body">${releaseBody}</div>
                     <div style="margin-top: 20px;">
                         <strong>下载文件：</strong>
                         ${downloadLinks}
@@ -127,11 +130,10 @@
                 </div>
             `;
 
-            // 替换页面内容
             container.innerHTML = html;
         }
 
-        // 辅助函数：格式化文件大小（字节转MB/KB）
+        // 辅助函数：格式化文件大小
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
@@ -141,7 +143,7 @@
         // 辅助函数：格式化日期
         function formatDate(dateStr) {
             const date = new Date(dateStr);
-            return date.toLocaleString('zh-CN'); // 转为中文格式（如 2026/3/18 12:00:00）
+            return date.toLocaleString('zh-CN');
         }
 
         // 页面加载完成后执行
