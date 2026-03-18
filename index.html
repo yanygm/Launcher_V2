@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>最新版本下载 | GitHub Releases</title>
+    <title>多仓库最新版本下载 | GitHub Releases</title>
     <style>
         /* 基础样式 */
         body {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 50px auto;
             padding: 0 20px;
             font-family: Arial, sans-serif;
-            line-height: 1.8; /* 增加行高，提升可读性 */
+            line-height: 1.8;
         }
-        .release-card {
+        /* 每个仓库的卡片样式 */
+        .repo-card {
             border: 1px solid #eee;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .repo-title {
+            color: #24292e;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
         }
         .download-link {
             display: block;
@@ -34,19 +42,24 @@
         .loading {
             color: #666;
             font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
         }
         .error {
             color: #dc3545;
-            font-size: 18px;
+            font-size: 16px;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 10px 0;
         }
-        /* 更新说明样式（关键：适配marked解析后的HTML） */
+        /* 更新说明样式 */
         .release-body {
             margin: 10px 0;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 4px;
         }
-        /* 修复列表/换行的间距 */
         .release-body p, 
         .release-body ul, 
         .release-body ol,
@@ -54,7 +67,6 @@
             margin: 8px 0;
             line-height: 1.8;
         }
-        /* 解析后的链接样式 */
         .release-body a {
             color: #0366d6;
             text-decoration: none;
@@ -62,58 +74,70 @@
         .release-body a:hover {
             text-decoration: underline;
         }
-        /* 加粗样式适配 */
         .release-body strong {
             color: #24292e;
         }
     </style>
-    <!-- 引入轻量Markdown解析库（CDN） -->
+    <!-- 引入Markdown解析库 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-    <h1>最新版本下载</h1>
-    <div id="release-container">
-        <div class="loading">正在获取最新版本信息...</div>
+    <h1 style="text-align: center;">多仓库最新版本下载</h1>
+    <!-- 所有仓库的Release会渲染到这里 -->
+    <div id="repos-container">
+        <div class="loading">正在获取所有仓库的最新版本信息...</div>
     </div>
 
     <script>
-        // ************************* 请修改这里的配置 *************************
-        const CONFIG = {
-            // 替换为：你的GitHub用户名/你的仓库名
-            repo: "yanygm/Launcher_V2", 
-            // GitHub API 地址（无需修改）
-            apiUrl: "https://api.github.com/repos/"
-        };
+        // ************************* 配置多个仓库 *************************
+        // 格式：{ repo: "用户名/仓库名", name: "仓库展示名称（可选）" }
+        const REPOS = [
+            { repo: "yanygm/Launcher_V2", name: "Launcher_V2" },
+            { repo: "brownsugar/popkart-client-archive", name: "popkart-client" },
+        ];
+        // GitHub API 基础地址（无需修改）
+        const API_BASE_URL = "https://api.github.com/repos/";
         // ******************************************************************
 
-        // 配置marked：保留原始换行逻辑
+        // 配置marked：保留换行+安全过滤
         marked.setOptions({
-            breaks: true, // 关键：让单个换行符(\n)也能生成<br>
-            gfm: true,    // 启用GitHub风格的Markdown
-            sanitize: true // 安全过滤：防止XSS
+            breaks: true,
+            gfm: true,
+            sanitize: true
         });
 
-        // 获取最新Release数据的函数
-        async function getLatestRelease() {
-            const container = document.getElementById('release-container');
-            try {
-                const response = await fetch(`${CONFIG.apiUrl}${CONFIG.repo}/releases/latest`);
-                if (!response.ok) {
-                    throw new Error(`请求失败：${response.status} ${response.statusText}`);
+        // 初始化：循环获取所有仓库的Release
+        async function init() {
+            const container = document.getElementById('repos-container');
+            container.innerHTML = ""; // 清空加载提示
+
+            // 遍历每个仓库，逐个获取并渲染
+            for (const repoConfig of REPOS) {
+                try {
+                    // 获取单个仓库的最新Release
+                    const release = await getRepoLatestRelease(repoConfig.repo);
+                    // 渲染该仓库的Release卡片
+                    renderRepoCard(release, repoConfig, container);
+                } catch (error) {
+                    // 单个仓库失败不影响其他仓库
+                    renderRepoError(repoConfig, error, container);
+                    console.error(`获取 ${repoConfig.name || repoConfig.repo} 失败：`, error);
                 }
-
-                const release = await response.json();
-                renderReleaseInfo(release, container);
-
-            } catch (error) {
-                container.innerHTML = `<div class="error">获取失败：${error.message}</div>`;
-                console.error("获取Release失败：", error);
             }
         }
 
-        // 渲染Release信息
-        function renderReleaseInfo(release, container) {
-            // 1. 处理下载链接
+        // 获取单个仓库的最新Release
+        async function getRepoLatestRelease(repo) {
+            const response = await fetch(`${API_BASE_URL}${repo}/releases/latest`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}（可能无Release）`);
+            }
+            return await response.json();
+        }
+
+        // 渲染单个仓库的正常卡片
+        function renderRepoCard(release, repoConfig, container) {
+            // 处理下载链接
             let downloadLinks = '';
             if (release.assets.length > 0) {
                 release.assets.forEach(asset => {
@@ -130,15 +154,19 @@
                 `;
             }
 
-            // 2. 解析Markdown（带换行）
+            // 解析Markdown更新说明
             const releaseBody = release.body 
                 ? marked.parse(release.body)
                 : '<p>无更新说明</p>';
 
-            // 3. 拼接最终HTML
-            const html = `
-                <div class="release-card">
-                    <h2>版本：${release.tag_name}</h2>
+            // 仓库展示名称（优先自定义，否则用repo名）
+            const repoDisplayName = repoConfig.name || repoConfig.repo;
+
+            // 拼接卡片HTML
+            const cardHtml = `
+                <div class="repo-card">
+                    <h2 class="repo-title">${repoDisplayName}</h2>
+                    <p><strong>最新版本：</strong>${release.tag_name}</p>
                     <p><strong>发布时间：</strong>${formatDate(release.published_at)}</p>
                     <div><strong>更新说明：</strong></div>
                     <div class="release-body">${releaseBody}</div>
@@ -149,7 +177,22 @@
                 </div>
             `;
 
-            container.innerHTML = html;
+            // 添加到容器中
+            container.innerHTML += cardHtml;
+        }
+
+        // 渲染单个仓库的错误提示
+        function renderRepoError(repoConfig, error, container) {
+            const repoDisplayName = repoConfig.name || repoConfig.repo;
+            const errorHtml = `
+                <div class="repo-card">
+                    <h2 class="repo-title">${repoDisplayName}</h2>
+                    <div class="error">
+                        获取失败：${error.message}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += errorHtml;
         }
 
         // 辅助函数：格式化文件大小
@@ -166,7 +209,7 @@
         }
 
         // 页面加载完成后执行
-        window.onload = getLatestRelease;
+        window.onload = init;
     </script>
 </body>
 </html>
