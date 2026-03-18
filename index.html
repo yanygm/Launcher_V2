@@ -27,16 +27,34 @@
             padding-bottom: 10px;
             margin-top: 0;
         }
+        /* 下载链接组：代理+原始 */
+        .link-group {
+            margin: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
         .download-link {
-            display: block;
-            margin: 10px 0;
+            flex: 1;
+            min-width: 200px;
             padding: 10px;
-            background: #0366d6;
+            text-align: center;
             color: white;
             text-decoration: none;
             border-radius: 4px;
         }
-        .download-link:hover {
+        /* 代理链接样式 */
+        .proxy-link {
+            background: #28a745;
+        }
+        .proxy-link:hover {
+            background: #218838;
+        }
+        /* 原始链接样式 */
+        .original-link {
+            background: #0366d6;
+        }
+        .original-link:hover {
             background: #0250ac;
         }
         .loading {
@@ -89,15 +107,17 @@
     </div>
 
     <script>
-        // ************************* 配置多个仓库 *************************
-        // 格式：{ repo: "用户名/仓库名", name: "仓库展示名称（可选）" }
+        // ************************* 配置项 *************************
+        // 1. 多仓库配置
         const REPOS = [
             { repo: "yanygm/Launcher_V2", name: "Launcher_V2" },
             { repo: "brownsugar/popkart-client-archive", name: "popkart-client" },
         ];
-        // GitHub API 基础地址（无需修改）
+        // 2. 代理地址配置（可替换为其他GH代理）
+        const PROXY_PREFIX = "https://gh-proxy.com/";
+        // 3. GitHub API 基础地址
         const API_BASE_URL = "https://api.github.com/repos/";
-        // ******************************************************************
+        // **********************************************************
 
         // 配置marked：保留换行+安全过滤
         marked.setOptions({
@@ -114,12 +134,9 @@
             // 遍历每个仓库，逐个获取并渲染
             for (const repoConfig of REPOS) {
                 try {
-                    // 获取单个仓库的最新Release
                     const release = await getRepoLatestRelease(repoConfig.repo);
-                    // 渲染该仓库的Release卡片
                     renderRepoCard(release, repoConfig, container);
                 } catch (error) {
-                    // 单个仓库失败不影响其他仓库
                     renderRepoError(repoConfig, error, container);
                     console.error(`获取 ${repoConfig.name || repoConfig.repo} 失败：`, error);
                 }
@@ -135,22 +152,45 @@
             return await response.json();
         }
 
-        // 渲染单个仓库的正常卡片
+        // 渲染单个仓库的正常卡片（核心修改：代理+原始链接）
         function renderRepoCard(release, repoConfig, container) {
-            // 处理下载链接
+            // 处理下载链接（生成代理+原始）
             let downloadLinks = '';
+            // 1. 处理附件链接
             if (release.assets.length > 0) {
                 release.assets.forEach(asset => {
+                    const originalUrl = asset.browser_download_url;
+                    const proxyUrl = PROXY_PREFIX + originalUrl;
                     downloadLinks += `
-                        <a href="${asset.browser_download_url}" class="download-link">
-                            📥 ${asset.name} (${formatFileSize(asset.size)})
-                        </a>
+                        <div class="link-group">
+                            <a href="${proxyUrl}" class="download-link proxy-link">
+                                📥 代理下载：${asset.name} (${formatFileSize(asset.size)})
+                            </a>
+                            <a href="${originalUrl}" class="download-link original-link">
+                                📥 原始下载：${asset.name} (${formatFileSize(asset.size)})
+                            </a>
+                        </div>
                     `;
                 });
-            } else {
+            } 
+            // 2. 处理源码包链接（无附件时）
+            else {
+                // ZIP包
+                const zipOriginal = release.zipball_url;
+                const zipProxy = PROXY_PREFIX + zipOriginal;
+                // TAR.GZ包
+                const tarOriginal = release.tarball_url;
+                const tarProxy = PROXY_PREFIX + tarOriginal;
+
                 downloadLinks = `
-                    <a href="${release.zipball_url}" class="download-link">📥 源码包 (ZIP)</a>
-                    <a href="${release.tarball_url}" class="download-link">📥 源码包 (TAR.GZ)</a>
+                    <div class="link-group">
+                        <a href="${zipProxy}" class="download-link proxy-link">📥 代理下载：源码包 (ZIP)</a>
+                        <a href="${zipOriginal}" class="download-link original-link">📥 原始下载：源码包 (ZIP)</a>
+                    </div>
+                    <div class="link-group">
+                        <a href="${tarProxy}" class="download-link proxy-link">📥 代理下载：源码包 (TAR.GZ)</a>
+                        <a href="${tarOriginal}" class="download-link original-link">📥 原始下载：源码包 (TAR.GZ)</a>
+                    </div>
                 `;
             }
 
@@ -159,7 +199,7 @@
                 ? marked.parse(release.body)
                 : '<p>无更新说明</p>';
 
-            // 仓库展示名称（优先自定义，否则用repo名）
+            // 仓库展示名称
             const repoDisplayName = repoConfig.name || repoConfig.repo;
 
             // 拼接卡片HTML
