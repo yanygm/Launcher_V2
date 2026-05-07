@@ -1345,15 +1345,15 @@ namespace KartRider
                 if (now < startTime || now > endTime)
                     return null;
 
+                int days = (now.Date - startTime.Date).Days;
+
                 // 判断属于哪一段
-                if ((now.Day - startTime.Day) < 7)
+                if (days < 7)
                     return new List<int>(){ 1, 2, 3, 4, 5, 6, 7 };
-                if ((now.Day - startTime.Day) < 14)
-                    return new List<int>(){ 8, 9, 10, 11, 12, 13, 14 };
-                if (now.Day < endTime.Day)
-                    return new List<int>(){ 15, 16, 17, 18, 19, 20, 21 };
+                if (days < 14)
+                    return new List<int>(){ 7, 8, 9, 10, 11, 12, 13 };
                 else
-                    return null;
+                    return new List<int>() { 13, 14, 15, 16, 17, 18, 19 };
             }
             catch
             {
