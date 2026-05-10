@@ -81,6 +81,26 @@ public static class TrackRankData
         {
             trackRanks = JsonHelper.DeserializeNoBom<List<TrackRank>>(filePath);
         }
+        var existingList = trackRanks.Where(t => t.Nickname == newRank.Nickname).ToList();
+        if (existingList.Count > 1)
+        {
+            var bestExisting = existingList.OrderBy(t => t.Time).First();
+            foreach (var ex in existingList)
+            {
+                if (ex != bestExisting)
+                    trackRanks.Remove(ex);
+            }
+            File.WriteAllText(filePath, JsonHelper.Serialize(trackRanks));
+        }
+        var existing = trackRanks.FirstOrDefault(t => t.Nickname == newRank.Nickname);
+        if (existing != null)
+        {
+            if (newRank.Time >= existing.Time)
+            {
+                return;
+            }
+            trackRanks.Remove(existing);
+        }
         trackRanks.Add(newRank);
         trackRanks = trackRanks.OrderBy(t => t.Time).Take(10).ToList();
         if (trackRanks.Contains(newRank))
