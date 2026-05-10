@@ -123,9 +123,9 @@ class MemoryModifier
                 {
                     for (int i = bml.SubObjects.Count - 1; i >= 0; i--)
                     {
-                        Console.WriteLine("Removing {0}", bml.SubObjects[i].Item1);
                         if (bml.SubObjects[i].Item1 == "NgsOn")
                         {
+                            Console.WriteLine("Removing {0}", bml.SubObjects[i].Item1);
                             bml.SubObjects.RemoveAt(i);
                             break;
                         }
