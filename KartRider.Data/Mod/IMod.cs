@@ -9,4 +9,5 @@ public interface IMod
     string Description { get; }
 
     void OnInitialize();
+    void OnUninitialize();
 }
