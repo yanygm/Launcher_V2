@@ -105,7 +105,6 @@ class MemoryModifier
         {
             foreach (PINFile.AuthMethod authMethod in val.AuthMethods)
             {
-                Console.WriteLine("Changing IP Addr to local... {0}", authMethod.Name);
                 authMethod.LoginServers?.Clear();
                 authMethod.LoginServers?.Add(new PINFile.IPEndPoint
                 {

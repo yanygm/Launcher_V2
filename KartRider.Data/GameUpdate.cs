@@ -524,8 +524,9 @@ public class PatchManager
     /// <param name="port">端口</param>
     /// <param name="sendStr">要发送的内容</param>
     /// <returns>服务端返回字符串</returns>
-    public static async Task<byte[]> GetPatchUrl(string ip, int port, int recvBufferSize = 4096, int connectTimeoutMs = 3000, int readTimeoutMs = 3000)
+    public static async Task<(byte[], bool)> GetPatchUrl(string ip, int port, int recvBufferSize = 4096, int connectTimeoutMs = 3000, int readTimeoutMs = 3000)
     {
+        bool single = true;
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(connectTimeoutMs + readTimeoutMs));
@@ -542,13 +543,17 @@ public class PatchManager
             var completedTask = await Task.WhenAny(connectTask, timeoutTask);
             if (completedTask == timeoutTask)
             {
-                return Array.Empty<byte>();
+                return (Array.Empty<byte>(), single);
             }
 
             // 确保连接完成
             await connectTask;
 
             using NetworkStream stream = client.GetStream();
+
+            IPAddress ServerAddress = ((IPEndPoint)client.Client.LocalEndPoint).Address;
+            IPAddress ClientAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+            single = (ServerAddress.ToString() == ClientAddress.ToString());
 
             // 读取数据，带超时
             byte[] buffer = new byte[recvBufferSize];
@@ -558,13 +563,13 @@ public class PatchManager
             completedTask = await Task.WhenAny(readTask, readTimeout);
             if (completedTask == readTimeout)
             {
-                return Array.Empty<byte>();
+                return (Array.Empty<byte>(), single);
             }
 
             int readLen = await readTask;
             if (readLen <= 0)
             {
-                return Array.Empty<byte>();
+                return (Array.Empty<byte>(), single);
             }
 
             byte[] res = new byte[readLen];
@@ -572,17 +577,17 @@ public class PatchManager
 
             // 获取数据后断开连接
             client.Close();
-            return res;
+            return (res, single);
         }
         catch
         {
-            return Array.Empty<byte>();
+            return (Array.Empty<byte>(), single);
         }
     }
 
     public static async Task StartUpdateAsync(string RootDirectory)
     {
-        byte[] recvData = await GetPatchUrl(ProfileService.SettingConfig.ServerIP, ProfileService.SettingConfig.ServerPort);
+        var (recvData, single) = await GetPatchUrl(ProfileService.SettingConfig.ServerIP, ProfileService.SettingConfig.ServerPort);
 
         if (recvData.Length <= 0)
         {
@@ -621,7 +626,8 @@ public class PatchManager
 
         if (string.IsNullOrWhiteSpace(updateUrl))
         {
-            RhoDump(RootDirectory);
+            if (single)
+                RhoDump(RootDirectory);
             return;
         }
 
@@ -656,7 +662,8 @@ public class PatchManager
 
                 int exitCode = process.ExitCode;
             }
-            RhoDump(RootDirectory);
+            if (single)
+                RhoDump(RootDirectory);
         }
         catch (Exception ex)
         {
