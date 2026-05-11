@@ -81,14 +81,17 @@ public static class TrackRankData
         {
             trackRanks = JsonHelper.DeserializeNoBom<List<TrackRank>>(filePath);
         }
-        var existingList = new List<TrackRank>();
-        foreach (var group in trackRanks.GroupBy(t => t.Nickname))
+        if (!ProfileService.SettingConfig.SoloRank)
         {
-            existingList.Add(group.OrderBy(t => t.Time).First());
-        }
-        if (existingList.Count > 0)
-        {
-            File.WriteAllText(filePath, JsonHelper.Serialize(trackRanks));
+            var existingList = new List<TrackRank>();
+            foreach (var group in trackRanks.GroupBy(t => t.Nickname))
+            {
+                existingList.Add(group.OrderBy(t => t.Time).First());
+            }
+            if (existingList.Count > 0)
+            {
+                File.WriteAllText(filePath, JsonHelper.Serialize(trackRanks));
+            }
         }
         var existing = trackRanks.FirstOrDefault(t => t.Nickname == newRank.Nickname);
         if (existing != null)

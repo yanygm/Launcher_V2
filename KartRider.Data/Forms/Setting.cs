@@ -28,6 +28,8 @@ namespace KartRider
             ProfileService.SettingConfig.ServerIP = ServerIP.Text;
             ProfileService.SettingConfig.ServerPort = ushort.Parse(ServerPort.Text);
             ProfileService.SettingConfig.NgsOn = NgsOn.Checked;
+            ProfileService.SettingConfig.SoloRank = SoloRank.Checked;
+            ProfileService.SettingConfig.EnableMod = EnableMod.Checked;
             ProfileService.SettingConfig.AutoUpdate = AutoUpdate.Checked;
             ProfileService.SaveSettings();
             if (update)
@@ -43,6 +45,8 @@ namespace KartRider
             ServerIP.Text = ProfileService.SettingConfig.ServerIP;
             ServerPort.Text = ProfileService.SettingConfig.ServerPort.ToString();
             NgsOn.Checked = ProfileService.SettingConfig.NgsOn;
+            SoloRank.Checked = ProfileService.SettingConfig.SoloRank;
+            EnableMod.Checked = ProfileService.SettingConfig.EnableMod;
             AutoUpdate.Checked = ProfileService.SettingConfig.AutoUpdate;
             foreach (string key in SpeedType.speedNames[ProfileService.SettingConfig.Version].Keys)
             {
