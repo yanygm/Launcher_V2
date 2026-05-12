@@ -1303,8 +1303,8 @@ public static class MultyPlayer
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqWhereIsRider", 0))
         {
-            uint ID = iPacket.ReadUInt();
-            string nickname = ClientManager.GetNickname(ID);
+            uint UserID = iPacket.ReadUInt();
+            string nickname = ClientManager.GetNickname(UserID);
             if (string.IsNullOrEmpty(nickname)) return;
             int roomId = RoomManager.TryGetRoomId(nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1312,7 +1312,7 @@ public static class MultyPlayer
             {
                 using (OutPacket outPacket = new OutPacket("PrWhereIsRider"))
                 {
-                    outPacket.WriteUInt(ID);
+                    outPacket.WriteUInt(UserID);
                     outPacket.WriteBytes(new byte[10]);
                     Parent.Client.Send(outPacket);
                 }
@@ -1322,7 +1322,7 @@ public static class MultyPlayer
             {
                 using (OutPacket outPacket = new OutPacket("PrWhereIsRider"))
                 {
-                    outPacket.WriteUInt(ID);
+                    outPacket.WriteUInt(UserID);
                     outPacket.WriteInt(roomId);
                     var channel = GameSupport.Channels.FirstOrDefault(c => c.Value.GameType == room.GameType).Key;
                     outPacket.WriteInt(channel);
@@ -1335,13 +1335,13 @@ public static class MultyPlayer
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqWhereAmI"))
         {
-            uint userid = iPacket.ReadUInt();
+            uint UserID = iPacket.ReadUInt();
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
             var channel = GameSupport.Channels.FirstOrDefault(c => c.Value.GameType == room.GameType).Key;
             using (OutPacket outPacket = new OutPacket("PrWhereAmI"))
             {
-                outPacket.WriteUInt(userid);
+                outPacket.WriteUInt(UserID);
                 outPacket.WriteInt(roomId);
                 outPacket.WriteByte(channel);
                 outPacket.WriteInt(0);
@@ -1352,8 +1352,8 @@ public static class MultyPlayer
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInviteGamePacket"))
         {
-            uint userid = iPacket.ReadUInt();
-            string nickname = ClientManager.GetNickname(userid);
+            uint UserID = iPacket.ReadUInt();
+            string nickname = ClientManager.GetNickname(UserID);
             if (string.IsNullOrEmpty(nickname))
             {
                 return; // 无效用户
