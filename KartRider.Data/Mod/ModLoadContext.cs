@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -16,12 +17,35 @@ public class ModLoadContext : AssemblyLoadContext
 
     protected override Assembly Load(AssemblyName assemblyName)
     {
+        var existing = Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
+        if (existing != null)
+            return existing;
+
         string path = _resolver.ResolveAssemblyToPath(assemblyName);
         if (path != null)
         {
             byte[] assemblyBytes = File.ReadAllBytes(path);
             return LoadFromStream(new MemoryStream(assemblyBytes));
         }
+
+        try
+        {
+            string mainDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
+            if (!string.IsNullOrEmpty(mainDir))
+            {
+                string assemblyPath = Path.Combine(mainDir, assemblyName.Name + ".dll");
+                if (File.Exists(assemblyPath))
+                    return Assembly.LoadFrom(assemblyPath);
+            }
+        }
+        catch { }
+
+        try
+        {
+            return Default.LoadFromAssemblyName(assemblyName);
+        }
+        catch { }
+
         return null;
     }
 
