@@ -74,7 +74,7 @@ public static class ModManager
             byte[] dllBytes = File.ReadAllBytes(filePath);
             
             ModLoadContext? tempAlc = null;
-            bool isProviderMod = false;
+            bool isDependencyMod = false;
             Type? modType = null;
             IMod? tempMod = null;
             Assembly? tempAssembly = null;
@@ -95,15 +95,15 @@ public static class ModManager
 
             modType = modTypes.First();
             tempMod = (IMod)Activator.CreateInstance(modType);
-            isProviderMod = tempMod.IsProvider;
+            isDependencyMod = tempMod.IsDependencyMod;
 
             ModLoadContext alc;
             Assembly assembly;
             IMod mod;
 
-            if (isProviderMod)
+            if (isDependencyMod)
             {
-                Console.WriteLine($"[ModManager] 检测到 Provider Mod: {tempMod.Name}，加载到默认 ALC");
+                Console.WriteLine($"[ModManager] 检测到依赖 Mod: {tempMod.Name}，加载到默认 ALC");
                 tempAlc.Unload();
                 
                 assembly = Assembly.LoadFrom(filePath);
@@ -142,7 +142,7 @@ public static class ModManager
             });
 
             Console.WriteLine(
-                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)} (可回收: {!isProviderMod})"
+                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)} (可回收: {!isDependencyMod})"
             );
 
             return true;
@@ -160,6 +160,12 @@ public static class ModManager
         if (modInfo == null)
         {
             Console.WriteLine($"[警告] 未找到 Mod: [{modName}]");
+            return false;
+        }
+
+        if (modInfo.Instance.IsDependencyMod)
+        {
+            Console.WriteLine($"[警告] 依赖 Mod [{modName}] 不可卸载，跳过");
             return false;
         }
 
