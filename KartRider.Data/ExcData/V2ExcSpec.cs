@@ -27,7 +27,7 @@ namespace ExcData
         };
 
         // 随机迅超越类型
-        public static int[] ExceedTypes = { 2, 3, 4, 6, 7, 8, 9 };
+        public static int[] ExceedTypes = { 2, 3, 4, 6, 7, 8, 9, 10 };
 
         public static List<short> GetSkills(string Nickname)
         {
