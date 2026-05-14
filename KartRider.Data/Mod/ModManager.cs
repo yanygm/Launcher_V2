@@ -42,7 +42,14 @@ public static class ModManager
         string[] modDllFiles = Directory.GetFiles(modPath, "*.dll");
         foreach (string file in modDllFiles)
         {
-            LoadMod(file);
+            try
+            {
+                LoadMod(file);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[警告] 加载 {Path.GetFileName(file)} 时发生未预期错误: {ex.Message}，跳过");
+            }
         }
     }
 
@@ -62,40 +69,80 @@ public static class ModManager
 
         try
         {
-            var alc = new ModLoadContext(filePath);
             byte[] dllBytes = File.ReadAllBytes(filePath);
-            Assembly assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
+            
+            ModLoadContext? tempAlc = null;
+            bool isDependencyMod = false;
+            Type? modType = null;
+            IMod? tempMod = null;
+            Assembly? tempAssembly = null;
 
-            var modTypes = assembly
+            tempAlc = new ModLoadContext(filePath, isCollectible: true);
+            tempAssembly = tempAlc.LoadFromStream(new MemoryStream(dllBytes));
+
+            var modTypes = tempAssembly
                 .GetTypes()
                 .Where(t => typeof(IMod).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract);
 
-            foreach (var type in modTypes)
+            if (!modTypes.Any())
             {
-                IMod mod = (IMod)Activator.CreateInstance(type);
-                mod.OnInitialize();
+                tempAlc.Unload();
+                return false;
+            }
 
-                bool isPacketHandler = mod is IPacketHandler;
-                if (isPacketHandler)
-                {
-                    PacketDispatcher.RegisterHandler((IPacketHandler)mod);
-                    Console.WriteLine(
-                        $">>> Mod [{mod.Name}] 已注册数据包拦截，监听 {(mod as IPacketHandler).TargetPackets.Count} 种数据包"
-                    );
-                }
+            modType = modTypes.First();
+            tempMod = (IMod)Activator.CreateInstance(modType);
+            isDependencyMod = tempMod.IsDependencyMod;
 
-                ModList.Add(new ModInfo
-                {
-                    Instance = mod,
-                    LoadContext = alc,
-                    FilePath = filePath,
-                    IsPacketHandler = isPacketHandler
-                });
+            ModLoadContext alc;
+            Assembly assembly;
+            IMod mod;
 
+            if (isDependencyMod)
+            {
+                Console.WriteLine($"[ModManager] 检测到依赖 Mod: {tempMod.Name}");
+                tempAlc.Unload();
+                
+                assembly = Assembly.LoadFrom(filePath);
+                Type finalType = assembly.GetType(modType.FullName!);
+                mod = (IMod)Activator.CreateInstance(finalType);
+                
+                alc = new ModLoadContext(filePath, isCollectible: false);
+            }
+            else
+            {
+                tempAlc.Unload();
+                alc = new ModLoadContext(filePath, isCollectible: true);
+                assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
+                Type finalType = assembly.GetType(modType.FullName!);
+                mod = (IMod)Activator.CreateInstance(finalType);
+                Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}");
+            }
+
+            mod.OnInitialize();
+
+            bool isPacketHandler = mod is IPacketHandler;
+            if (isPacketHandler)
+            {
+                PacketDispatcher.RegisterHandler((IPacketHandler)mod);
                 Console.WriteLine(
-                    $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
+                    $">>> Mod [{mod.Name}] 已注册数据包拦截，监听 {(mod as IPacketHandler).TargetPackets.Count} 种数据包"
                 );
             }
+
+            ModList.Add(new ModInfo
+            {
+                Instance = mod,
+                LoadContext = alc,
+                FilePath = filePath,
+                IsPacketHandler = isPacketHandler
+            });
+
+            Console.WriteLine(
+                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
+            );
+            Console.WriteLine("Mod描述:" + mod.Description);
+            Console.WriteLine("Mod版本:" + mod.Version);
 
             return true;
         }
@@ -112,6 +159,12 @@ public static class ModManager
         if (modInfo == null)
         {
             Console.WriteLine($"[警告] 未找到 Mod: [{modName}]");
+            return false;
+        }
+
+        if (modInfo.Instance.IsDependencyMod)
+        {
+            Console.WriteLine($"[警告] 依赖 Mod [{modName}] 不可卸载，跳过");
             return false;
         }
 
