@@ -10,7 +10,7 @@ public class ModLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
 
-    public ModLoadContext(string modPath) : base(isCollectible: true)
+    public ModLoadContext(string modPath, bool isCollectible = true) : base(isCollectible)
     {
         _resolver = new AssemblyDependencyResolver(modPath);
     }
@@ -20,6 +20,10 @@ public class ModLoadContext : AssemblyLoadContext
         var existing = Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
         if (existing != null)
             return existing;
+
+        var defaultAssembly = Default.Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
+        if (defaultAssembly != null)
+            return defaultAssembly;
 
         string path = _resolver.ResolveAssemblyToPath(assemblyName);
         if (path != null)

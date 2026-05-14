@@ -42,8 +42,17 @@ public static class ModManager
         string[] modDllFiles = Directory.GetFiles(modPath, "*.dll");
         foreach (string file in modDllFiles)
         {
+            string fileName = Path.GetFileName(file);
+            if (IsDependencyDll(fileName))
+                continue;
             LoadMod(file);
         }
+    }
+
+    private static bool IsDependencyDll(string fileName)
+    {
+        var dependencyNames = new[] { "0Harmony", "MonoMod", "System.", "Microsoft.", "netstandard" };
+        return dependencyNames.Any(name => fileName.StartsWith(name, StringComparison.OrdinalIgnoreCase));
     }
 
     public static bool LoadMod(string filePath)
@@ -62,40 +71,79 @@ public static class ModManager
 
         try
         {
-            var alc = new ModLoadContext(filePath);
             byte[] dllBytes = File.ReadAllBytes(filePath);
-            Assembly assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
+            
+            ModLoadContext? tempAlc = null;
+            bool isProviderMod = false;
+            Type? modType = null;
+            IMod? tempMod = null;
+            Assembly? tempAssembly = null;
 
-            var modTypes = assembly
+            tempAlc = new ModLoadContext(filePath, isCollectible: true);
+            tempAssembly = tempAlc.LoadFromStream(new MemoryStream(dllBytes));
+
+            var modTypes = tempAssembly
                 .GetTypes()
                 .Where(t => typeof(IMod).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract);
 
-            foreach (var type in modTypes)
+            if (!modTypes.Any())
             {
-                IMod mod = (IMod)Activator.CreateInstance(type);
-                mod.OnInitialize();
+                tempAlc.Unload();
+                Console.WriteLine($"[错误] 未找到实现 IMod 接口的类型: {Path.GetFileName(filePath)}");
+                return false;
+            }
 
-                bool isPacketHandler = mod is IPacketHandler;
-                if (isPacketHandler)
-                {
-                    PacketDispatcher.RegisterHandler((IPacketHandler)mod);
-                    Console.WriteLine(
-                        $">>> Mod [{mod.Name}] 已注册数据包拦截，监听 {(mod as IPacketHandler).TargetPackets.Count} 种数据包"
-                    );
-                }
+            modType = modTypes.First();
+            tempMod = (IMod)Activator.CreateInstance(modType);
+            isProviderMod = tempMod.IsProvider;
 
-                ModList.Add(new ModInfo
-                {
-                    Instance = mod,
-                    LoadContext = alc,
-                    FilePath = filePath,
-                    IsPacketHandler = isPacketHandler
-                });
+            ModLoadContext alc;
+            Assembly assembly;
+            IMod mod;
 
+            if (isProviderMod)
+            {
+                Console.WriteLine($"[ModManager] 检测到 Provider Mod: {tempMod.Name}，加载到默认 ALC");
+                tempAlc.Unload();
+                
+                assembly = Assembly.LoadFrom(filePath);
+                Type finalType = assembly.GetType(modType.FullName!);
+                mod = (IMod)Activator.CreateInstance(finalType);
+                
+                alc = new ModLoadContext(filePath, isCollectible: false);
+            }
+            else
+            {
+                tempAlc.Unload();
+                alc = new ModLoadContext(filePath, isCollectible: true);
+                assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
+                Type finalType = assembly.GetType(modType.FullName!);
+                mod = (IMod)Activator.CreateInstance(finalType);
+                Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}，使用可回收上下文");
+            }
+
+            mod.OnInitialize();
+
+            bool isPacketHandler = mod is IPacketHandler;
+            if (isPacketHandler)
+            {
+                PacketDispatcher.RegisterHandler((IPacketHandler)mod);
                 Console.WriteLine(
-                    $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
+                    $">>> Mod [{mod.Name}] 已注册数据包拦截，监听 {(mod as IPacketHandler).TargetPackets.Count} 种数据包"
                 );
             }
+
+            ModList.Add(new ModInfo
+            {
+                Instance = mod,
+                LoadContext = alc,
+                FilePath = filePath,
+                IsPacketHandler = isPacketHandler
+            });
+
+            Console.WriteLine(
+                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)} (可回收: {!isProviderMod})"
+            );
 
             return true;
         }
