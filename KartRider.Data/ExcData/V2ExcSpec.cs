@@ -423,6 +423,31 @@ namespace ExcData
                     Kart.chargeBoostBySpeedAdded = 350.0f;
                     Kart.driftGaugeFactor = 2.0f;
                 }
+                else if (Kart.defaultExceedType == 10)//B集气
+                {
+                    Kart.chargeInstAccelGaugeByBoost = 0.03f;
+                    Kart.chargeInstAccelGaugeByGrip = 0.07f;
+                    Kart.chargeInstAccelGaugeByWall = 0.15f;
+                    Kart.instAccelFactor = 1.135f;
+                    Kart.instAccelGaugeCooldownTime = 3000;
+                    Kart.instAccelGaugeLength = 2000f;
+                    Kart.instAccelGaugeMinUsable = 400f;
+                    Kart.instAccelGaugeMinVelBound = 0f;
+                    Kart.instAccelGaugeMinVelLoss = 50f;
+                    Kart.useExtendedAfterBoosterMore = 0;
+                    Kart.wallCollGaugeCooldownTime = 3000;
+                    Kart.wallCollGaugeMaxVelLoss = 200f;
+                    Kart.wallCollGaugeMinVelBound = 200f;
+                    Kart.wallCollGaugeMinVelLoss = 50f;
+
+                    Kart.chargeInstAccelGaugeByWallAdded = 0.09f;
+                    Kart.chargeInstAccelGaugeByBoostAdded = 0.03f;
+                    Kart.chargerSystemboosterUseCount = 5;
+                    Kart.chargerSystemUseTime = 3750f;
+                    Kart.chargeBoostBySpeedAdded = 350f;
+                    Kart.driftGaugeFactor = 2f;
+                    Kart.chargeAntiCollideBalance = 0.8f;
+                }
                 else
                 {
                     Kart.chargeInstAccelGaugeByBoost = 0.02f;

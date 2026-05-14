@@ -9,23 +9,23 @@ namespace KartRider
         public static void DataReset(string Nickname)
         {
             var resetConfig = ProfileService.GetProfileConfig(Nickname);
-            if (resetConfig.Rider.Lucci > int.MaxValue)
+            if (resetConfig.Rider.Lucci > uint.MaxValue)
             {
                 resetConfig.Rider.Lucci = SessionGroup.LucciMax;
             }
-            if (resetConfig.Rider.RP > int.MaxValue)
+            if (resetConfig.Rider.RP > uint.MaxValue)
             {
                 resetConfig.Rider.RP = SessionGroup.LucciMax;
             }
-            if (resetConfig.Rider.Koin > int.MaxValue)
+            if (resetConfig.Rider.Koin > uint.MaxValue)
             {
                 resetConfig.Rider.Koin = SessionGroup.LucciMax;
             }
-            if (resetConfig.Rider.Cash > int.MaxValue)
+            if (resetConfig.Rider.Cash > uint.MaxValue)
             {
                 resetConfig.Rider.Cash = SessionGroup.LucciMax;
             }
-            if (resetConfig.Rider.TcCash > int.MaxValue)
+            if (resetConfig.Rider.TcCash > uint.MaxValue)
             {
                 resetConfig.Rider.TcCash = SessionGroup.LucciMax;
             }

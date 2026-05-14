@@ -343,27 +343,27 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderInfo", 0))
                     {
+                        uint UserID = iPacket.ReadUInt();
                         iPacket.ReadInt();
-                        iPacket.ReadInt();
-                        string nickname = iPacket.ReadString(false);
+                        iPacket.ReadString(false);
+                        string nickname = ClientManager.GetNickname(UserID);
                         if (nickname == this.Parent.Client.Nickname)
                         {
-                            GameSupport.PrGetRiderInfo(nickname, this.Parent);
+                            GameSupport.PrGetRiderInfo(UserID, this.Parent);
                         }
                         else
                         {
-                            try
-                            {
-                                var config = ProfileService.GetProfileConfig(nickname);
-                                GameSupport.PrGetRiderInfo(nickname, this.Parent);
-                            }
-                            catch
+                            if (string.IsNullOrEmpty(nickname))
                             {
                                 using (OutPacket outPacket = new OutPacket("PrGetRiderInfo"))
                                 {
                                     outPacket.WriteByte(0);
                                     this.Parent.Client.Send(outPacket);
                                 }
+                            }
+                            else
+                            {
+                                GameSupport.PrGetRiderInfo(UserID, this.Parent);
                             }
                         }
                         return;

@@ -23,6 +23,8 @@ namespace KartRider
             ServerPort = new TextBox();
             Port_label = new Label();
             NgsOn = new CheckBox();
+            SoloRank = new CheckBox();
+            EnableMod = new CheckBox();
             AutoUpdate = new CheckBox();
             SuspendLayout();
             // 
@@ -156,12 +158,34 @@ namespace KartRider
             // 
             NgsOn.AutoSize = true;
             NgsOn.ForeColor = System.Drawing.Color.Blue;
-            NgsOn.Location = new System.Drawing.Point(190, 169);
+            NgsOn.Location = new System.Drawing.Point(190, 111);
             NgsOn.Name = "NgsOn";
             NgsOn.Size = new System.Drawing.Size(52, 16);
             NgsOn.TabIndex = 8;
             NgsOn.Text = "NgsOn";
             NgsOn.UseVisualStyleBackColor = true;
+            // 
+            // SoloRank
+            // 
+            SoloRank.AutoSize = true;
+            SoloRank.ForeColor = System.Drawing.Color.Blue;
+            SoloRank.Location = new System.Drawing.Point(190, 140);
+            SoloRank.Name = "SoloRank";
+            SoloRank.Size = new System.Drawing.Size(52, 16);
+            SoloRank.TabIndex = 9;
+            SoloRank.Text = "单人排位";
+            SoloRank.UseVisualStyleBackColor = true;
+            // 
+            // EnableMod
+            // 
+            EnableMod.AutoSize = true;
+            EnableMod.ForeColor = System.Drawing.Color.Blue;
+            EnableMod.Location = new System.Drawing.Point(190, 169);
+            EnableMod.Name = "EnableMod";
+            EnableMod.Size = new System.Drawing.Size(52, 16);
+            EnableMod.TabIndex = 10;
+            EnableMod.Text = "启用MOD";
+            EnableMod.UseVisualStyleBackColor = true;
             // 
             // AutoUpdate
             // 
@@ -170,7 +194,7 @@ namespace KartRider
             AutoUpdate.Location = new System.Drawing.Point(190, 198);
             AutoUpdate.Name = "AutoUpdate";
             AutoUpdate.Size = new System.Drawing.Size(52, 16);
-            AutoUpdate.TabIndex = 9;
+            AutoUpdate.TabIndex = 11;
             AutoUpdate.Text = "自动更新";
             AutoUpdate.UseVisualStyleBackColor = true;
             // 
@@ -195,6 +219,8 @@ namespace KartRider
             Controls.Add(Proxy_comboBox);
             Controls.Add(Proxy_label);
             Controls.Add(NgsOn);
+            Controls.Add(SoloRank);
+            Controls.Add(EnableMod);
             Controls.Add(AutoUpdate);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedToolWindow;
@@ -218,6 +244,8 @@ namespace KartRider
         private ComboBox AiSpeed_comboBox;
         private ComboBox Proxy_comboBox;
         private CheckBox NgsOn;
+        private CheckBox SoloRank;
+        private CheckBox EnableMod;
         private CheckBox AutoUpdate;
         private Label Name_label;
         private Label IP_label;
