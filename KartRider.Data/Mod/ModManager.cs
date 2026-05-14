@@ -42,17 +42,15 @@ public static class ModManager
         string[] modDllFiles = Directory.GetFiles(modPath, "*.dll");
         foreach (string file in modDllFiles)
         {
-            string fileName = Path.GetFileName(file);
-            if (IsDependencyDll(fileName))
-                continue;
-            LoadMod(file);
+            try
+            {
+                LoadMod(file);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[警告] 加载 {Path.GetFileName(file)} 时发生未预期错误: {ex.Message}，跳过");
+            }
         }
-    }
-
-    private static bool IsDependencyDll(string fileName)
-    {
-        var dependencyNames = new[] { "0Harmony", "MonoMod", "System.", "Microsoft.", "netstandard" };
-        return dependencyNames.Any(name => fileName.StartsWith(name, StringComparison.OrdinalIgnoreCase));
     }
 
     public static bool LoadMod(string filePath)
@@ -89,7 +87,6 @@ public static class ModManager
             if (!modTypes.Any())
             {
                 tempAlc.Unload();
-                Console.WriteLine($"[错误] 未找到实现 IMod 接口的类型: {Path.GetFileName(filePath)}");
                 return false;
             }
 
@@ -103,7 +100,7 @@ public static class ModManager
 
             if (isDependencyMod)
             {
-                Console.WriteLine($"[ModManager] 检测到依赖 Mod: {tempMod.Name}，加载到默认 ALC");
+                Console.WriteLine($"[ModManager] 检测到依赖 Mod: {tempMod.Name}");
                 tempAlc.Unload();
                 
                 assembly = Assembly.LoadFrom(filePath);
@@ -119,7 +116,7 @@ public static class ModManager
                 assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
                 Type finalType = assembly.GetType(modType.FullName!);
                 mod = (IMod)Activator.CreateInstance(finalType);
-                Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}，使用可回收上下文");
+                Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}");
             }
 
             mod.OnInitialize();
@@ -142,8 +139,10 @@ public static class ModManager
             });
 
             Console.WriteLine(
-                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)} (可回收: {!isDependencyMod})"
+                $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
             );
+            Console.WriteLine("Mod描述:" + mod.Description);
+            Console.WriteLine("Mod版本:" + mod.Version);
 
             return true;
         }
