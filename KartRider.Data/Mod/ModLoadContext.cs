@@ -21,15 +21,10 @@ public class ModLoadContext : AssemblyLoadContext
         if (existing != null)
             return existing;
 
-        var defaultAssembly = Default.Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
-        if (defaultAssembly != null)
-            return defaultAssembly;
-
         string path = _resolver.ResolveAssemblyToPath(assemblyName);
         if (path != null)
         {
-            byte[] assemblyBytes = File.ReadAllBytes(path);
-            return LoadFromStream(new MemoryStream(assemblyBytes));
+            return Assembly.LoadFrom(path);
         }
 
         try
