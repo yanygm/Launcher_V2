@@ -92,15 +92,15 @@ public static class TrackRankData
             {
                 File.WriteAllText(filePath, JsonHelper.Serialize(trackRanks));
             }
-        }
-        var existing = trackRanks.FirstOrDefault(t => t.Nickname == newRank.Nickname);
-        if (existing != null)
-        {
-            if (newRank.Time >= existing.Time)
+            var existing = trackRanks.FirstOrDefault(t => t.Nickname == newRank.Nickname);
+            if (existing != null)
             {
-                return;
+                if (newRank.Time >= existing.Time)
+                {
+                    return;
+                }
+                trackRanks.Remove(existing);
             }
-            trackRanks.Remove(existing);
         }
         trackRanks.Add(newRank);
         trackRanks = trackRanks.OrderBy(t => t.Time).Take(10).ToList();
