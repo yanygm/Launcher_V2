@@ -345,11 +345,14 @@ namespace KartRider
                     {
                         uint UserID = iPacket.ReadUInt();
                         iPacket.ReadInt();
-                        iPacket.ReadString(false);
                         string nickname = ClientManager.GetNickname(UserID);
+                        if (UserID == 0)
+                        {
+                            nickname = iPacket.ReadString(false);
+                        }
                         if (nickname == this.Parent.Client.Nickname)
                         {
-                            GameSupport.PrGetRiderInfo(UserID, this.Parent);
+                            GameSupport.PrGetRiderInfo(nickname, this.Parent);
                         }
                         else
                         {
@@ -363,7 +366,7 @@ namespace KartRider
                             }
                             else
                             {
-                                GameSupport.PrGetRiderInfo(UserID, this.Parent);
+                                GameSupport.PrGetRiderInfo(nickname, this.Parent);
                             }
                         }
                         return;

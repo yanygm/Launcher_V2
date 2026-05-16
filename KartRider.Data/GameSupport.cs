@@ -260,9 +260,9 @@ namespace KartRider
             outPacket.WriteUShort(config.RiderItem.Set_Unknown5);
         }
 
-        public static void PrGetRiderInfo(uint UserID, SessionGroup Parent)
+        public static void PrGetRiderInfo(string nickname, SessionGroup Parent)
         {
-            string nickname = ClientManager.GetNickname(UserID);
+            uint UserID = ClientManager.GetUserNO(nickname);
             var config = ProfileService.GetProfileConfig(nickname);
             using (OutPacket outPacket = new OutPacket("PrGetRiderInfo"))
             {
