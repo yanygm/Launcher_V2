@@ -166,9 +166,14 @@ class MemoryModifier
 
             // 3. 立即修改内存（无需等待连接）
             // 星标赛道数量50改为120
-            ModifyMemory(processId, new byte[] { 0x83, 0xFA, 0x32 }, new byte[] { 0x83, 0xFA, 0x78 });
+            ModifyMemory(processId, new byte[] { 0x64, 0x00, 0x00, 0x00, 0xF7, 0xF9, 0x83, 0xFA, 0x32 },
+            new byte[] { 0x64, 0x00, 0x00, 0x00, 0xF7, 0xF9, 0x83, 0xFA, 0x78 });
             // 赛道模型边界大小2000改为10000单浮点
-            ModifyMemory(processId, new byte[] { 0x00, 0x00, 0xFA, 0x44 }, new byte[] { 0x00, 0x40, 0x1C, 0x46 });
+            ModifyMemory(processId, new byte[] { 0x00, 0x00, 0x98, 0x41, 0x00, 0x00, 0xFA, 0x44 },
+            new byte[] { 0x00, 0x00, 0x98, 0x41, 0x00, 0x40, 0x1C, 0x46 });
+            // 修改贴图 1 2 4 8 16 32 64 128 256 512 1024 的限制
+            ModifyMemory(processId, new byte[] { 0x8B, 0x44, 0x24, 0x04, 0x83, 0xF8, 0x01, 0x74, 0x3D, 0x83, 0xF8, 0x02, 0x74, 0x38, 0x83, 0xF8, 0x04, 0x74, 0x33, 0x83, 0xF8, 0x08, 0x74, 0x2E, 0x83, 0xF8, 0x10, 0x74, 0x29, 0x83, 0xF8, 0x20, 0x74, 0x24, 0x83, 0xF8, 0x40, 0x74, 0x1F },
+            new byte[] { 0xB0, 0x01, 0xC3, 0x90 });
 
             // 4. 启动后台线程持续检测 TCP 连接
             string serverIP = ProfileService.SettingConfig.ServerIP;
@@ -441,78 +446,135 @@ class MemoryModifier
     }
 
     /// <summary>
-    /// 在目标进程中查找特征码并修改
+    /// 在目标进程中查找特征码并修改所有匹配项
     /// </summary>
     /// <param name="processId">进程ID</param>
     /// <param name="searchBytes">要查找的字节序列</param>
     /// <param name="replaceBytes">要替换的字节序列</param>
-    /// <returns>是否修改成功</returns>
-    private bool ModifyMemory(int processId, byte[] searchBytes, byte[] replaceBytes)
+    /// <returns>修改成功的数量</returns>
+    private int ModifyMemory(int processId, byte[] searchBytes, byte[] replaceBytes)
     {
-        if (searchBytes.Length != replaceBytes.Length)
-            Console.WriteLine("查找和替换的字节长度必须一致");
+        // 如果替换字节长度小于搜索字节，用 0x90 (NOP) 补充
+        if (replaceBytes.Length < searchBytes.Length)
+        {
+            byte[] paddedReplace = new byte[searchBytes.Length];
+            Array.Copy(replaceBytes, paddedReplace, replaceBytes.Length);
+            for (int i = replaceBytes.Length; i < searchBytes.Length; i++)
+            {
+                paddedReplace[i] = 0x90; // NOP 指令
+            }
+            replaceBytes = paddedReplace;
+        }
+        else if (replaceBytes.Length > searchBytes.Length)
+        {
+            return 0;
+        }
 
         IntPtr hProcess = OpenProcess(PROCESS_ACCESS_FLAGS, false, processId);
         if (hProcess == IntPtr.Zero)
+        {
             Console.WriteLine("无法打开进程, 可能权限不足");
+            return 0;
+        }
 
+        int modifiedCount = 0;
+        int scanCount = 0;
+        const int maxScanCount = 10000; // 最大扫描页数限制，防止异常
         try
         {
             IntPtr address = IntPtr.Zero;
-            while (true)
+            long maxAddress = 0x7FFFFFFF;
+
+            while (address.ToInt64() < maxAddress && scanCount < maxScanCount)
             {
+                scanCount++;
+
                 // 枚举进程内存页
-                if (VirtualQueryEx(hProcess, address, out MEMORY_BASIC_INFORMATION mbi, (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION>()) == IntPtr.Zero)
+                int queryResult = VirtualQueryEx(hProcess, address, out MEMORY_BASIC_INFORMATION mbi, (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION>()).ToInt32();
+                if (queryResult == 0)
                     break;
 
-                // 只处理可读写的私有内存页（避免系统内存或只读内存）
-                if (mbi.State == 0x1000 && // MEM_COMMIT（已提交的内存）
-                    (mbi.Protect == 0x04 || mbi.Protect == 0x08 || mbi.Protect == 0x10 || // PAGE_READWRITE, PAGE_WRITECOPY, PAGE_EXECUTE_READWRITE
-                     mbi.Protect == 0x80 || mbi.Protect == 0x40)) // PAGE_EXECUTE_WRITECOPY, PAGE_READWRITE
+                // 安全检查：确保 BaseAddress 有效
+                if (mbi.BaseAddress == IntPtr.Zero && address != IntPtr.Zero)
                 {
-                    // 读取当前内存页数据
-                    byte[] buffer = new byte[(int)mbi.RegionSize];
-                    if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer, buffer.Length, out int bytesRead) && bytesRead > 0)
+                    break;
+                }
+
+                // 同步 address 与 BaseAddress
+                if (mbi.BaseAddress != address)
+                {
+                    address = mbi.BaseAddress;
+                }
+
+                long regionSize = mbi.RegionSize.ToInt64();
+                if (regionSize <= 0)
+                {
+                    address = IntPtr.Add(address, 0x1000);
+                    continue;
+                }
+
+                // 只处理可读写的私有内存页
+                if (mbi.State == 0x1000 &&
+                    (mbi.Protect == 0x04 || mbi.Protect == 0x08 || mbi.Protect == 0x10 ||
+                     mbi.Protect == 0x80 || mbi.Protect == 0x40))
+                {
+                    // 限制单页读取大小，防止过大内存分配
+                    int readSize = (int)Math.Min(regionSize, 64 * 1024 * 1024); // 最大64MB
+                    byte[] buffer = new byte[readSize];
+
+                    if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer, readSize, out int bytesRead) && bytesRead > 0)
                     {
-                        // 在当前页中搜索特征码
-                        int index = FindBytes(buffer, searchBytes);
-                        if (index != -1)
+                        int searchStart = 0;
+                        int foundIndex;
+
+                        while ((foundIndex = FindBytes(buffer, searchBytes, searchStart)) != -1)
                         {
-                            // 计算实际内存地址
-                            IntPtr targetAddress = IntPtr.Add(mbi.BaseAddress, index);
+                            IntPtr targetAddress = IntPtr.Add(mbi.BaseAddress, foundIndex);
                             Console.WriteLine($"找到特征码, 地址: 0x{targetAddress:X}");
 
-                            // 修改内存
                             if (WriteProcessMemory(hProcess, targetAddress, replaceBytes, replaceBytes.Length, out int bytesWritten) && bytesWritten == replaceBytes.Length)
                             {
-                                return true;
+                                modifiedCount++;
                             }
                             else
                             {
-                                Console.WriteLine("写入内存失败, 可能没有写入权限");
+                                Console.WriteLine("写入内存失败");
                             }
+
+                            // 更新buffer
+                            for (int k = 0; k < replaceBytes.Length && foundIndex + k < buffer.Length; k++)
+                            {
+                                buffer[foundIndex + k] = replaceBytes[k];
+                            }
+                            searchStart = foundIndex + searchBytes.Length;
                         }
                     }
                 }
 
                 // 移动到下一个内存页
-                address = IntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
+                address = IntPtr.Add(mbi.BaseAddress, (int)regionSize);
             }
 
-            return false; // 未找到特征码
+            Console.WriteLine($"共修改了 {modifiedCount} 处特征码 (扫描了 {scanCount} 页)");
+            return modifiedCount;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"修改内存异常: {ex.Message}");
+            return modifiedCount;
         }
         finally
         {
-            CloseHandle(hProcess); // 释放进程句柄
+            CloseHandle(hProcess);
         }
     }
 
     /// <summary>
-    /// 在字节数组中查找目标序列
+    /// 在字节数组中查找目标序列（从指定位置开始）
     /// </summary>
-    private int FindBytes(byte[] buffer, byte[] searchBytes)
+    private int FindBytes(byte[] buffer, byte[] searchBytes, int startIndex = 0)
     {
-        for (int i = 0; i <= buffer.Length - searchBytes.Length; i++)
+        for (int i = startIndex; i <= buffer.Length - searchBytes.Length; i++)
         {
             bool match = true;
             for (int j = 0; j < searchBytes.Length; j++)
