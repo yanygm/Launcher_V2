@@ -90,7 +90,7 @@ public static class TrackRankData
             }
             if (existingList.Count > 0)
             {
-                File.WriteAllText(filePath, JsonHelper.Serialize(trackRanks));
+                File.WriteAllText(filePath, JsonHelper.Serialize(existingList));
             }
             var existing = trackRanks.FirstOrDefault(t => t.Nickname == newRank.Nickname);
             if (existing != null)
