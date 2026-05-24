@@ -551,9 +551,8 @@ public class PatchManager
 
             using NetworkStream stream = client.GetStream();
 
-            IPAddress ServerAddress = ((IPEndPoint)client.Client.LocalEndPoint).Address;
             IPAddress ClientAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
-            single = (ServerAddress.ToString() == ClientAddress.ToString());
+            single = (RouterListener.RouterIPList.Contains(ClientAddress.ToString()));
 
             // 读取数据，带超时
             byte[] buffer = new byte[recvBufferSize];

@@ -3778,20 +3778,12 @@ namespace KartRider
 
                         int val1 = iPacket.ReadInt();
 
-                        using (OutPacket outPacket = new OutPacket("GameRelayBroadcastingPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(val1);
-                            MultyPlayer.BroadCast(roomId, outPacket);
-                        }
-                        if (!room.ReqRelay)
-                        {
-                            room.ReqRelay = true;
-                        }
-                        else
-                        {
-                            room.RelayType = 1; //TCP
-                        }
+                        // using (OutPacket outPacket = new OutPacket("GameRelayBroadcastingPacket"))
+                        // {
+                        //     outPacket.WriteInt(0);
+                        //     outPacket.WriteInt(val1);
+                        //     MultyPlayer.BroadCast(roomId, outPacket);
+                        // }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChClientP2pAddrPacket", 0))

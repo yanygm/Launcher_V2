@@ -1,5 +1,6 @@
 using System;
 using System.CodeDom;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -13,13 +14,13 @@ namespace KartRider
 {
     public class RouterListener
     {
-        public static IPAddress sIP { get; set; }
-
         public static TcpListener Listener { get; private set; }
 
         public static SessionGroup MySession { get; set; }
 
-        public static MsgrServer MsgrServer = new MsgrServer("MsgrServer", 39322);
+        public static List<string> RouterIPList = new List<string>();
+
+        public static MsgrServer MsgrServer = new MsgrServer("MsgrServer", (ushort)(ProfileService.SettingConfig.ServerPort + 2));
 
         public static UdpServer UDPServer = new UdpServer("UDP", ProfileService.SettingConfig.ServerPort);
 
@@ -72,7 +73,15 @@ namespace KartRider
             }
             if (!RouterListener.Listener.Server.IsBound)
             {
-                var RouterIPList = LanIpGetter.GetAllLocalLanIps();
+                RouterIPList = new List<string>();
+                RouterIPList = LanIpGetter.GetAllLocalLanIps();
+                RouterIPList.Add("127.0.0.1");
+                var ipInfo = Task.Run(async () => await Update.GetCountryAsync()).Result;
+                string ip = ipInfo?.Ip ?? "";
+                if (!string.IsNullOrEmpty(ip))
+                {
+                    RouterIPList.Add(ip);
+                }
                 foreach (var ip in RouterIPList)
                 {
                     Console.WriteLine("Load server IP: {0}:{1}", ip, ProfileService.SettingConfig.ServerPort);

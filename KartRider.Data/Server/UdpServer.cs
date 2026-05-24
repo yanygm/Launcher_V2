@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -26,6 +27,7 @@ namespace KartRider
         private volatile bool _isRunning;
         // 同步锁（防止重复启动/停止）
         private readonly object _lockObj = new object();
+        private static ConcurrentDictionary<string, (IPEndPoint, uint)> udpClients = new ConcurrentDictionary<string, (IPEndPoint, uint)>();
 
         /// <summary>
         /// 构造函数
@@ -56,6 +58,14 @@ namespace KartRider
                 {
                     // 初始化UDP客户端并绑定端口
                     _udpClient = new UdpClient(_listenPort);
+
+                    // 禁用 UDP Socket 的 ConnectionReset 错误（Windows 特有）
+                    // 当向未监听端口发送 UDP 时，远程返回 ICMP Port Unreachable，
+                    // 系统将其映射为 ConnectionReset 并在 EndReceive 时抛出，
+                    // 同时丢弃所有已缓冲的正常数据包。此设置彻底关闭该行为。
+                    const int SIO_UDP_CONNRESET = -1744830452;
+                    _udpClient.Client.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+
                     _isRunning = true;
 
                     Console.WriteLine($"[{_serverName}] 服务端启动成功，监听端口：{_listenPort}");
@@ -152,13 +162,13 @@ namespace KartRider
             try
             {
                 // 结束异步接收，获取数据和客户端地址
-                clientEP = new IPEndPoint(IPAddress.Any, 0);
+                clientEP = null;
                 receiveBuffer = _udpClient.EndReceive(ar, ref clientEP);
 
                 try
                 {
                     // 解析数据
-                    if (receiveBuffer.Length >= 16)
+                    if (clientEP != null)
                     {
                         uint iv = BitConverter.ToUInt32(receiveBuffer, 0);
                         uint otherChecksum = BitConverter.ToUInt32(receiveBuffer, receiveBuffer.Length - 4);
@@ -168,19 +178,24 @@ namespace KartRider
                         InPacket p = new InPacket(packetData);
                         uint accountID = p.ReadUInt();
                         uint hash = p.ReadUInt();
+                        uint packetName = p.ReadUInt();
+                        var packetValue = (PacketName)packetName;
 
                         string nickname = "";
                         ClientManager.UserNOToNickname.TryGetValue(accountID, out nickname);
-
-                        uint packetName = p.ReadUInt();
-                        var packetValue = (PacketName)packetName;
+                        string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        if (!string.IsNullOrEmpty(nickname))
+                        {
+                            udpClients.AddOrUpdate(nickname, (clientEP, hash), (key, oldEP) => (clientEP, hash));
+                            // Console.WriteLine($"[UDP][{currentTime}][{nickname}] {packetValue}" + ": " + BitConverter.ToString(packetData).Replace("-", " "));
+                        }
 
                         if (PacketDispatcher.Dispatch(typeof(UdpServer), packetValue, p, receiveBuffer, clientEP, this))
                             return;
 
-                        OutPacket outPacket = new OutPacket();
                         if (packetValue == PacketName.PqUdpEcho)
                         {
+                            OutPacket outPacket = new OutPacket();
                             outPacket.WriteUInt(accountID);
                             outPacket.WriteUInt(hash);
                             outPacket.WriteInt((int)PacketName.PrUdpEcho);
@@ -191,6 +206,7 @@ namespace KartRider
                         }
                         else if (packetValue == PacketName.PqUdpTimeSync)
                         {
+                            OutPacket outPacket = new OutPacket();
                             outPacket.WriteUInt(accountID);
                             outPacket.WriteUInt(hash);
                             outPacket.WriteInt((int)PacketName.PrUdpTimeSync);
@@ -210,37 +226,27 @@ namespace KartRider
                         {
                             int roomId = RoomManager.TryGetRoomId(nickname);
                             var room = RoomManager.GetRoom(roomId);
+                            byte[] data = p.ReadBytes(p.Available);
                             if (room != null)
                             {
-                                if (room.RelayType == 0) //UDP
+                                foreach (RoomMember member in room._slots)
                                 {
-                                    foreach (RoomMember member in room._slots)
+                                    if (member is Player player && player.Nickname != nickname)
                                     {
-                                        if (member is Player player && player.Nickname != nickname)
+                                        var udp = GetUdp(player.Nickname).Item1;
+                                        var pHash = GetUdp(player.Nickname).Item2 == 0 ? hash : GetUdp(player.Nickname).Item2;
+
+                                        OutPacket outPacket = new OutPacket();
+                                        outPacket.WriteUInt(ClientManager.GetUserNO(player.Nickname));
+                                        outPacket.WriteUInt(pHash);
+                                        outPacket.WriteUInt(packetName);
+                                        outPacket.WriteBytes(data);
+
+                                        bool success = BeginSend(outPacket, udp);
+                                        if (success)
                                         {
-                                            OutPacket oPacket = new OutPacket();
-
-                                            oPacket.WriteUInt(ClientManager.GetUserNO(player.Nickname));
-                                            oPacket.WriteUInt(hash);
-                                            oPacket.WriteInt((int)PacketName.GameSlotPacket);
-
-                                            oPacket.WriteBytes(p.ReadBytes(p.Available));
-                                            string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                                            var playerConfig = ProfileService.GetProfileConfig(player.Nickname);
-                                            IPEndPoint client = ClientManager.ClientToIPEndPoint(playerConfig.Rider.ClientId);
-                                            var clientudp = new IPEndPoint(client.Address, playerConfig.Rider.UdpPort);
-                                            bool success = BeginSend(oPacket, clientudp);
-                                            if (success)
-                                                Console.WriteLine($"[UDP][{currentTime}][{nickname}] " + packetValue + ": " + BitConverter.ToString(oPacket.ToArray()).Replace("-", " "));
+                                            // Console.WriteLine($"[{udp}][{currentTime}][{player.Nickname}] {packetValue}" + ": " + BitConverter.ToString(outPacket.ToArray()).Replace("-", " "));
                                         }
-                                    }
-                                }
-                                else
-                                {
-                                    using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
-                                    {
-                                        oPacket.WriteBytes(p.ReadBytes(p.Available));
-                                        MultyPlayer.BroadCast(roomId, oPacket, nickname);
                                     }
                                 }
                             }
@@ -248,6 +254,7 @@ namespace KartRider
                         else if (packetValue == PacketName.RoomSlotPacket)
                         {
                             string owner = MyRoomData.GetRoomOwnerByNickname(nickname);
+                            byte[] data = p.ReadBytes(p.Available);
                             if (!string.IsNullOrEmpty(owner))
                             {
                                 var members = MyRoomData.GetRoomPlayers(owner);
@@ -256,21 +263,19 @@ namespace KartRider
                                     if (string.IsNullOrEmpty(member) || string.Equals(member, nickname, StringComparison.OrdinalIgnoreCase))
                                         continue;
 
-                                    var memberConfig = ProfileService.GetProfileConfig(member);
+                                    var udp = GetUdp(member).Item1;
+                                    var pHash = GetUdp(member).Item2 == 0 ? hash : GetUdp(member).Item2;
 
-                                    OutPacket oPacket = new OutPacket();
-                                    oPacket.WriteUInt(ClientManager.GetUserNO(member));
-                                    oPacket.WriteUInt(hash);
-                                    oPacket.WriteInt((int)PacketName.RoomSlotPacket);
-                                    oPacket.WriteBytes(p.ReadBytes(p.Available));
+                                    OutPacket outPacket = new OutPacket();
+                                    outPacket.WriteUInt(ClientManager.GetUserNO(member));
+                                    outPacket.WriteUInt(pHash);
+                                    outPacket.WriteUInt(packetName);
+                                    outPacket.WriteBytes(data);
 
-                                    IPEndPoint client = ClientManager.ClientToIPEndPoint(memberConfig.Rider.ClientId);
-                                    var clientudp = new IPEndPoint(client.Address, memberConfig.Rider.UdpPort);
-                                    bool success = BeginSend(oPacket, clientudp);
+                                    bool success = BeginSend(outPacket, udp);
                                     if (success)
                                     {
-                                        string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                                        Console.WriteLine($"[UDP][{currentTime}][{nickname}] {packetValue}: {BitConverter.ToString(oPacket.ToArray()).Replace("-", " ")}");
+                                        // Console.WriteLine($"[{udp}][{currentTime}][{nickname}] {packetValue}: {BitConverter.ToString(outPacket.ToArray()).Replace("-", " ")}");
                                     }
                                 }
                             }
@@ -283,20 +288,24 @@ namespace KartRider
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[{_serverName}{clientEP.Address}:{clientEP.Port}] 处理数据异常：{ex.Message}");
+                    Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}");
                 }
             }
             catch (ObjectDisposedException)
             {
                 // 服务端停止时触发，忽略
             }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // UDP Socket 收到 ICMP Port Unreachable，非致命错误，静默忽略并继续接收
+            }
             catch (SocketException ex)
             {
-                Console.WriteLine($"[{_serverName}{clientEP.Address}:{clientEP.Port}] 处理数据异常：{ex.Message}，错误码：{ex.SocketErrorCode}");
+                Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}，错误码：{ex.SocketErrorCode}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{_serverName}{clientEP.Address}:{clientEP.Port}] 处理数据异常：{ex.Message}");
+                Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}");
             }
             finally
             {
@@ -313,29 +322,28 @@ namespace KartRider
             byte[] buffer = outPacket.ToArray();
             try
             {
-                if (buffer.Length >= 16)
+                if (endPoint == null || IPAddress.Any.Equals(endPoint.Address) && endPoint.Port == 0)
                 {
-                    byte[] data = new byte[buffer.Length + 8];
+                    // 无效端点（0.0.0.0:0），跳过发送，避免触发 ICMP Port Unreachable
+                    return false;
+                }
 
-                    uint siv = (uint)(new Random((int)DateTime.Now.Ticks).Next());
-                    uint newHash = KRPacketCrypto.HashEncrypt(buffer, (uint)buffer.Length, siv);
-                    Buffer.BlockCopy(BitConverter.GetBytes(siv), 0, data, 0, 4);
-                    Buffer.BlockCopy(BitConverter.GetBytes((uint)(siv ^ newHash ^ 1329075907U)), 0, data, data.Length - 4, 4);
-                    Buffer.BlockCopy(buffer, 0, data, 4, buffer.Length);
+                byte[] data = new byte[buffer.Length + 8];
 
-                    int sentBytes = _udpClient.Send(data, data.Length, endPoint);
-                    if (sentBytes == data.Length)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"发送失败（部分发送）：{sentBytes} / {data.Length}");
-                        return false;
-                    }
+                uint siv = (uint)(new Random((int)DateTime.Now.Ticks).Next());
+                uint newHash = KRPacketCrypto.HashEncrypt(buffer, (uint)buffer.Length, siv);
+                Buffer.BlockCopy(BitConverter.GetBytes(siv), 0, data, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes((uint)(siv ^ newHash ^ 1329075907U)), 0, data, data.Length - 4, 4);
+                Buffer.BlockCopy(buffer, 0, data, 4, buffer.Length);
+
+                int sentBytes = _udpClient.Send(data, data.Length, endPoint);
+                if (sentBytes == data.Length)
+                {
+                    return true;
                 }
                 else
                 {
+                    Console.WriteLine($"发送失败（部分发送）：{sentBytes} / {data.Length}");
                     return false;
                 }
             }
@@ -348,6 +356,21 @@ namespace KartRider
             {
                 Console.WriteLine($"发送失败：{ex.Message}");
                 return false;
+            }
+        }
+
+        public static (IPEndPoint, uint) GetUdp(string nickname)
+        {
+            if (udpClients.TryGetValue(nickname, out (IPEndPoint, uint) udp))
+            {
+                return udp;
+            }
+            else
+            {
+                var profile = ProfileService.GetProfileConfig(nickname);
+                IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
+                var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
+                return (udpIP, 0);
             }
         }
     }

@@ -77,7 +77,8 @@ namespace KartRider
                     {
                         try
                         {
-                            string country = await GetCountryAsync();
+                            var ipInfo = await GetCountryAsync();
+                            string country = ipInfo == null ? "" : ipInfo.Country;
                             if (country != "" && country == "CN")
                             {
                                 ProfileService.LoadSettings();
@@ -174,7 +175,7 @@ namespace KartRider
             }
         }
 
-        public static async Task<string> GetCountryAsync()
+        public static async Task<IpInfo> GetCountryAsync()
         {
             try
             {
@@ -186,20 +187,19 @@ namespace KartRider
                         string json = await response.Content.ReadAsStringAsync();
                         IpInfo data = JsonSerializer.Deserialize<IpInfo>(json,
                             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        string country = data.Country;
-                        return country;
+                        return data;
                     }
                     else
                     {
                         Console.WriteLine($"请求失败，状态码: {response.StatusCode}");
-                        return "";
+                        return null;
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"发生异常: {ex.Message}");
-                return "";
+                return null;
             }
         }
 
@@ -295,7 +295,7 @@ namespace KartRider
         public string body { get; set; }
     }
 
-    class IpInfo
+    public class IpInfo
     {
         public string Ip { get; set; }
         public string City { get; set; }

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Xml;
 using System.Xml.Linq;
@@ -31,9 +32,17 @@ public static class MultyPlayer
     public static IPEndPoint GetServerEndPoint(SessionGroup Parent)
     {
         IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
-        if (ProfileService.SettingConfig.ServerIP == "127.0.0.1" && serverEndPoint != null)
+        IPAddress clientEndPoint = ((IPEndPoint)Parent.Client.Socket.RemoteEndPoint).Address;
+        var ipInfo = Task.Run(async () => await Update.GetCountryAsync()).Result;
+        string ip = ipInfo?.Ip ?? "";
+        if (RouterListener.RouterIPList.Contains(clientEndPoint.ToString()))
         {
             return serverEndPoint;
+        }
+        else if(!string.IsNullOrEmpty(ip))
+        {
+            int serverPort = ProfileService.SettingConfig.ServerPort;
+            return new IPEndPoint(IPAddress.Parse(ip), serverPort);
         }
         else
         {
@@ -413,8 +422,6 @@ public static class MultyPlayer
 
         room.StartTicks = 0;
         room.Started = false;
-        room.ReqRelay = false;
-        room.RelayType = 0; //0 - UDP 1 - TCP
 
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p4)

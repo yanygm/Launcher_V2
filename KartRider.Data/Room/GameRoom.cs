@@ -26,8 +26,6 @@ public class GameRoom
     public bool Lock { get; set; } = false;
     public bool Started { get; set; } = false;
     public string LockPwd { get; set; } = "";
-    public bool ReqRelay = false;
-    public byte RelayType = 0; //0 - UDP 1 - TCP
     public List<byte> CloseSlotIds { get; set; } = new List<byte>();
     public Dictionary<int, uint> TimeData { get; set; } = new Dictionary<int, uint>();
     public Dictionary<int, int> Ranking { get; set; } = new Dictionary<int, int>();

@@ -322,6 +322,7 @@ namespace KartRider
         public static void PrCheckMyClubStatePacket(SessionGroup Parent, string Nickname)
         {
             var config = ProfileService.GetProfileConfig(Nickname);
+            var server = MultyPlayer.GetServerEndPoint(Parent);
             using (OutPacket outPacket = new OutPacket("PrCheckMyClubStatePacket"))
             {
                 if (config.Rider.ClubMark_LOGO == 0)
@@ -342,9 +343,7 @@ namespace KartRider
                 outPacket.WriteString(Nickname);
                 outPacket.WriteInt(0);//ClubMember
                 outPacket.WriteByte(5);//Level
-                IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
-                if (serverEndPoint == null) return;
-                outPacket.WriteEndPoint(serverEndPoint.Address, 39322);
+                outPacket.WriteEndPoint(server.Address, (ushort)(ProfileService.SettingConfig.ServerPort + 2));
                 Parent.Client.Send(outPacket);
             }
         }
