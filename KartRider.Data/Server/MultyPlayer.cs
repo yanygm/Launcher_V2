@@ -35,7 +35,7 @@ public static class MultyPlayer
         IPAddress clientEndPoint = ((IPEndPoint)Parent.Client.Socket.RemoteEndPoint).Address;
         var ipInfo = Task.Run(async () => await Update.GetCountryAsync()).Result;
         string ip = ipInfo?.Ip ?? "";
-        if (RouterListener.RouterIPList.Contains(clientEndPoint.ToString()))
+        if (RouterListener.RouterIPList.Contains(clientEndPoint.ToString()) || LanIpGetter.IsInLocalSubnet(clientEndPoint.ToString()))
         {
             return serverEndPoint;
         }
