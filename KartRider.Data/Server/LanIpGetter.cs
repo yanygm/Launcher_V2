@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -60,5 +60,54 @@ public class LanIpGetter
             }
         }
         return ips;
+    }
+
+    /// <summary>
+    /// 判断指定 IP 是否在本机任一局域网网卡的子网内
+    /// </summary>
+    /// <param name="targetIp">待判断的 IP 字符串</param>
+    /// <returns>在同一子网返回 true，否则 false</returns>
+    public static bool IsInLocalSubnet(string targetIp)
+    {
+        if (!IPAddress.TryParse(targetIp, out IPAddress target))
+            return false;
+
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+        foreach (var iface in interfaces)
+        {
+            if (iface.OperationalStatus != OperationalStatus.Up ||
+                iface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+
+            foreach (var addr in iface.GetIPProperties().UnicastAddresses)
+            {
+                if (addr.Address.AddressFamily != AddressFamily.InterNetwork ||
+                    IPAddress.IsLoopback(addr.Address))
+                    continue;
+
+                IPAddress mask = addr.IPv4Mask;
+                if (mask == null) continue;
+
+                byte[] localBytes = addr.Address.GetAddressBytes();
+                byte[] maskBytes = mask.GetAddressBytes();
+                byte[] targetBytes = target.GetAddressBytes();
+
+                bool sameSubnet = true;
+                for (int i = 0; i < 4; i++)
+                {
+                    if ((localBytes[i] & maskBytes[i]) != (targetBytes[i] & maskBytes[i]))
+                    {
+                        sameSubnet = false;
+                        break;
+                    }
+                }
+
+                if (sameSubnet)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }
