@@ -82,9 +82,9 @@ namespace KartRider
                 {
                     RouterIPList.Add(ip);
                 }
-                foreach (var ip in RouterIPList)
+                foreach (var IP in RouterIPList)
                 {
-                    Console.WriteLine("Load server IP: {0}:{1}", ip, ProfileService.SettingConfig.ServerPort);
+                    Console.WriteLine("Load Server IP: {0}:{1}", IP, ProfileService.SettingConfig.ServerPort);
                 }
                 RouterListener.Listener.Start();
                 RouterListener.Listener.BeginAcceptSocket(OnAcceptSocket, RouterListener.Listener);
