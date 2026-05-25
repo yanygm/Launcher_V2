@@ -93,7 +93,10 @@ namespace KartRider
             {
                 RouterListener.Listener.BeginAcceptSocket(OnAcceptSocket, RouterListener.Listener);
             }
-            TinyMapper.Start();
+            if (LanIpGetter.CheckHasPublicIpv6())
+            {
+                TinyMapper.Start();
+            }
         }
     }
 }

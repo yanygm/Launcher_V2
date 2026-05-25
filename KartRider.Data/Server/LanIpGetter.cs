@@ -111,6 +111,65 @@ public class LanIpGetter
         return false;
     }
 
+    /// <summary>
+    /// 检查本机是否拥有公网 IPv6 地址
+    /// </summary>
+    public static bool CheckHasPublicIpv6()
+    {
+        // 遍历所有网络接口
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            // 排除禁用、非运行中的网卡
+            if (ni.OperationalStatus != OperationalStatus.Up ||
+                ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+
+            // 获取该网卡的 IP 信息
+            IPInterfaceProperties ipProps = ni.GetIPProperties();
+            foreach (UnicastIPAddressInformation ipInfo in ipProps.UnicastAddresses)
+            {
+                IPAddress ip = ipInfo.Address;
+
+                // 只处理 IPv6
+                if (ip.AddressFamily != AddressFamily.InterNetworkV6)
+                    continue;
+
+                // 判断是否为公网 IPv6
+                if (IsPublicIpv6Address(ip))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 核心判断：一个 IPv6 地址是否为公网地址
+    /// </summary>
+    private static bool IsPublicIpv6Address(IPAddress ipv6Address)
+    {
+        // 1. 排除环回地址 ::1
+        if (IPAddress.IsLoopback(ipv6Address))
+            return false;
+
+        // 2. 排除本地链路地址（fe80::/10 开头，局域网用）
+        if (ipv6Address.IsIPv6LinkLocal)
+            return false;
+
+        // 3. 排除唯一本地地址（fc00::/7 开头，内网专用）
+        if (ipv6Address.IsIPv6UniqueLocal)
+            return false;
+
+        // 4. 排除自动隧道/ISATAP 等特殊地址
+        if (ipv6Address.IsIPv6SiteLocal || ipv6Address.IsIPv6Teredo)
+            return false;
+
+        // 剩下的就是公网 IPv6 地址
+        return true;
+    }
+
     // 是否IPv4
     public static bool IsIPv4(string ip)
     {
