@@ -122,6 +122,11 @@ namespace KartRider
                         Console.WriteLine($"启动路由器监听失败: {ex.Message}");
                     }
 
+                    if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
+                    {
+                        TinyMapper.ClientStart();
+                    }
+
                     PatchManager.StartUpdateAsync(RootDirectory).Wait();
 
                     PINFile val = new PINFile(pinFile);

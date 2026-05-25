@@ -103,12 +103,13 @@ class MemoryModifier
 
         if (val.AuthMethods != null)
         {
+            var ip = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
             foreach (PINFile.AuthMethod authMethod in val.AuthMethods)
             {
                 authMethod.LoginServers?.Clear();
                 authMethod.LoginServers?.Add(new PINFile.IPEndPoint
                 {
-                    IP = ProfileService.SettingConfig.ServerIP,
+                    IP = ip,
                     Port = ProfileService.SettingConfig.ServerPort
                 });
             }
@@ -165,7 +166,7 @@ class MemoryModifier
             Thread.Sleep(2000);
 
             // 3. 启动后台线程持续检测 TCP 连接
-            string serverIP = ProfileService.SettingConfig.ServerIP;
+            string serverIP = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
             int serverPort = ProfileService.SettingConfig.ServerPort;
             bool pinRestored = false;
             bool connectionEstablished = false;

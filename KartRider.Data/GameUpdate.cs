@@ -586,7 +586,8 @@ public class PatchManager
 
     public static async Task StartUpdateAsync(string RootDirectory)
     {
-        var (recvData, single) = await GetPatchUrl(ProfileService.SettingConfig.ServerIP, ProfileService.SettingConfig.ServerPort);
+        var ip = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
+        var (recvData, single) = await GetPatchUrl(ip, ProfileService.SettingConfig.ServerPort);
 
         if (recvData.Length <= 0)
         {

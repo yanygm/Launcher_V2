@@ -35,6 +35,10 @@ namespace KartRider
             if (update)
             {
                 PatchManager.StartUpdateAsync(Program.LauncherDlg.kartRiderDirectory);
+                if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
+                {
+                    TinyMapper.ClientStart();
+                }
             }
         }
 

@@ -46,7 +46,7 @@ public static class MultyPlayer
         }
         else
         {
-            string serverIP = ProfileService.SettingConfig.ServerIP;
+            string serverIP = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
             int serverPort = ProfileService.SettingConfig.ServerPort;
             return new IPEndPoint(IPAddress.Parse(serverIP), serverPort);
         }

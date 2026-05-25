@@ -93,6 +93,7 @@ namespace KartRider
             {
                 RouterListener.Listener.BeginAcceptSocket(OnAcceptSocket, RouterListener.Listener);
             }
+            TinyMapper.Start();
         }
     }
 }

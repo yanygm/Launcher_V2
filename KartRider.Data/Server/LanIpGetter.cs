@@ -110,4 +110,18 @@ public class LanIpGetter
 
         return false;
     }
+
+    // 是否IPv4
+    public static bool IsIPv4(string ip)
+    {
+        return IPAddress.TryParse(ip, out var addr)
+            && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
+    }
+
+    // 是否IPv6
+    public static bool IsIPv6(string ip)
+    {
+        return IPAddress.TryParse(ip, out var addr)
+            && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6;
+    }
 }
