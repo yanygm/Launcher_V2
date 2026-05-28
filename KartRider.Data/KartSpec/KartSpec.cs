@@ -153,12 +153,11 @@ namespace KartRider
         };
 
         /// <summary>获取卡丁车规格入口方法</summary>
-        public void GetKartSpec(string Nickname, bool School = false)
+        public void GetKartSpec(ushort KartID, bool School = false)
         {
             try
             {
                 // 1. 处理卡丁车ID为0的默认情况
-                ushort KartID = ProfileService.GetProfileConfig(Nickname).RiderItem.Set_Kart;
                 if (School || KartID == 0)
                 {
                     Console.WriteLine("[KartSpec] 卡丁车ID=0, 加载练习车数据");
@@ -181,7 +180,7 @@ namespace KartRider
                     }
 
                     // 2.3 解析规格XML并赋值
-                    ParseKartSpecXml(Nickname, KartID, kartSpecDoc);
+                    ParseKartSpecXml(KartID, kartSpecDoc);
                 }
             }
             catch (Exception ex)
@@ -192,7 +191,7 @@ namespace KartRider
         }
 
         /// <summary>解析卡丁车规格XML文档</summary>
-        private void ParseKartSpecXml(string Nickname, ushort kartId, XmlDocument specDoc)
+        private void ParseKartSpecXml(ushort kartId, XmlDocument specDoc)
         {
             var bodyParams = specDoc.GetElementsByTagName("BodyParam");
             // 检查是否存在BodyParam节点且为XmlElement类型

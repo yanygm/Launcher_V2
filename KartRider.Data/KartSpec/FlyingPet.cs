@@ -27,9 +27,8 @@ namespace KartRider
         public float StartForwardAccelForceItem { get; set; } = 0f;
         public float StartForwardAccelForceSpeed { get; set; } = 0f;
 
-        public void FlyingPet_Spec(string Nickname)
+        public void FlyingPet_Spec(ushort FlyingPetID)
         {
-            ushort FlyingPetID = ProfileService.GetProfileConfig(Nickname).RiderItem.Set_FlyingPet;
             if (FlyingPet.flyingName.ContainsKey(FlyingPetID))
             {
                 string Name = FlyingPet.flyingName[FlyingPetID];

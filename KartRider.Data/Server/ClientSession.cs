@@ -619,10 +619,10 @@ namespace KartRider
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartSpec", 0))
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
-                        var Kart_id = iPacket.ReadShort();
-                        var FlyingPet_id = iPacket.ReadShort();
+                        var Kart_id = iPacket.ReadUShort();
+                        var FlyingPet_id = iPacket.ReadUShort();
                         byte StartType = 1;
-                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType);
+                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChapterInfoPacket", 0))
@@ -678,10 +678,10 @@ namespace KartRider
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqchallengerKartSpec", 0))
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
-                        var Kart_id = iPacket.ReadShort();
-                        var FlyingPet_id = iPacket.ReadShort();
+                        var Kart_id = iPacket.ReadUShort();
+                        var FlyingPet_id = iPacket.ReadUShort();
                         byte StartType = 2;
-                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType);
+                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCompleteChallenger", 0))
@@ -1348,8 +1348,8 @@ namespace KartRider
                         var StartTimeAttack_Track = iPacket.ReadUInt();
                         attackConfig.Rider.SpeedType = iPacket.ReadByte();
                         attackConfig.Rider.GameType = iPacket.ReadByte();
-                        var Kart_id = iPacket.ReadShort();
-                        var FlyingPet_id = iPacket.ReadShort();
+                        var Kart_id = iPacket.ReadUShort();
+                        var FlyingPet_id = iPacket.ReadUShort();
                         var StartTimeAttack_StartType = iPacket.ReadByte();
                         var StartTimeAttack_Unk3 = iPacket.ReadInt();
                         var StartTimeAttack_Unk4 = iPacket.ReadInt();
@@ -1366,7 +1366,7 @@ namespace KartRider
                         attackConfig.Rider.Track = RandomTrack.GetRandomTrack(this.Parent.Client.Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
                         ProfileService.Save(this.Parent.Client.Nickname, attackConfig);
                         byte StartType = 3;
-                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, attackConfig.Rider.Track, attackConfig.Rider.SpeedType);
+                        StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, attackConfig.Rider.Track, attackConfig.Rider.SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFinishTimeAttack", 0))

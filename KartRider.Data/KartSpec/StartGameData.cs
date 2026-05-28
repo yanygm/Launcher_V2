@@ -7,28 +7,28 @@ namespace KartRider
 {
     public class StartGameData
     {
-        public static void Start_KartSpac(SessionGroup Parent, string Nickname, byte StartType, byte StartTimeAttack_StartType, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
+        public static void Start_KartSpac(SessionGroup Parent, string Nickname, byte StartType, byte StartTimeAttack_StartType, int Unk1, uint Track, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             if (StartType == 1)
             {
                 Console.WriteLine("故事模式");
-                StartGameData.PrKartSpec(Parent, Nickname, StartTimeAttack_SpeedType);
+                StartGameData.PrKartSpec(Parent, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
             }
             else if (StartType == 2)
             {
                 Console.WriteLine("挑战者");
-                StartGameData.PrchallengerKartSpec(Parent, Nickname, StartTimeAttack_SpeedType);
+                StartGameData.PrchallengerKartSpec(Parent, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
             }
             else if (StartType == 3)
             {
                 Console.WriteLine("排行计时");
                 if (StartTimeAttack_StartType == 0)
                 {
-                    StartGameData.PrStartTimeAttack(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType);
+                    StartGameData.PrStartTimeAttack(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 }
                 else
                 {
-                    StartGameData.PrStartTimeAttack_QuestType(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType);
+                    StartGameData.PrStartTimeAttack_QuestType(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 }
             }
             else
@@ -37,13 +37,13 @@ namespace KartRider
             }
         }
 
-        public static void PrStartTimeAttack(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
+        public static void PrStartTimeAttack(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
                 oPacket.WriteInt(Unk1);
                 oPacket.WriteInt(0);
-                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
+                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(0);
                 oPacket.WriteInt(0);
@@ -54,36 +54,36 @@ namespace KartRider
             }
         }
 
-        public static void PrchallengerKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType)
+        public static void PrchallengerKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             using (OutPacket oPacket = new OutPacket("PrchallengerKartSpec"))
             {
                 oPacket.WriteByte(1);
-                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
+                GetKartSpac(oPacket, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 oPacket.WriteInt(0);
                 oPacket.WriteByte(0);
                 Parent.Client.Send(oPacket);
             }
         }
 
-        public static void PrKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType)
+        public static void PrKartSpec(SessionGroup Parent, string Nickname, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             using (OutPacket oPacket = new OutPacket("PrKartSpec"))
             {
                 oPacket.WriteByte(1);
-                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
+                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 oPacket.WriteByte(0);
                 Parent.Client.Send(oPacket);
             }
         }
 
-        public static void PrStartTimeAttack_QuestType(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType)
+        public static void PrStartTimeAttack_QuestType(SessionGroup Parent, string Nickname, int Unk1, uint Track, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             using (OutPacket oPacket = new OutPacket("PrStartTimeAttack"))
             {
                 oPacket.WriteInt(Unk1);
                 oPacket.WriteInt(0);
-                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType);
+                GetDefaultSpac(oPacket, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
                 oPacket.WriteByte(0);
                 oPacket.WriteInt(0);
                 oPacket.WriteInt(0);
@@ -94,7 +94,7 @@ namespace KartRider
             }
         }
 
-        public static void GetKartSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType)
+        public static void GetKartSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             var speedType = new SpeedType();
             string version = ProfileService.SettingConfig.Version;
@@ -124,16 +124,20 @@ namespace KartRider
 
             int StartPosition = oPacket.Position;
             var FlyingPet = new FlyingPetSpec();
-            FlyingPet.FlyingPet_Spec(Nickname);
+            FlyingPet.FlyingPet_Spec(FlyingPetID);
 
             var Kart = new KartSpec();
-            Kart.GetKartSpec(Nickname);
+            Kart.GetKartSpec(KartID);
 
             var excSpecs = new ExcSpecs();
-            ExcSpec.Use_TuneSpec(Nickname, excSpecs);
-            ExcSpec.Use_PlantSpec(Nickname, excSpecs);
-            ExcSpec.Use_KartLevelSpec(Nickname, excSpecs);
-            ExcSpec.Use_PartsSpec(Nickname, excSpecs);
+
+            if (KartID == ProfileService.GetProfileConfig(Nickname).RiderItem.Set_Kart)
+            {
+                ExcSpec.Use_TuneSpec(Nickname, excSpecs);
+                ExcSpec.Use_PlantSpec(Nickname, excSpecs);
+                ExcSpec.Use_KartLevelSpec(Nickname, excSpecs);
+                ExcSpec.Use_PartsSpec(Nickname, excSpecs);
+            }
 
             var V2Spec = new V2Specs();
             V2Spec.ExceedSpec(Nickname, Kart);
@@ -287,15 +291,15 @@ namespace KartRider
             KartSpecLog(oPacket, StartPosition);
         }
 
-        public static void GetDefaultSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType)
+        public static void GetDefaultSpac(OutPacket oPacket, string Nickname, byte StartTimeAttack_SpeedType, ushort KartID, ushort FlyingPetID)
         {
             var speedType = new SpeedType();
             speedType.SpeedTypeData(ProfileService.SettingConfig.Version, ProfileService.SettingConfig.SpeedType);
 
             var FlyingPet = new FlyingPetSpec();
-            FlyingPet.FlyingPet_Spec(Nickname);
+            FlyingPet.FlyingPet_Spec(FlyingPetID);
             var Kart = new KartSpec();
-            Kart.GetKartSpec(Nickname);
+            Kart.GetKartSpec(KartID);
 
             var V2Spec = new V2Specs();
             V2Spec.ExceedSpec(Nickname, Kart);
@@ -420,7 +424,7 @@ namespace KartRider
         public static void GetSchoolSpac(OutPacket oPacket, string Nickname)
         {
             var Kart = new KartSpec();
-            Kart.GetKartSpec(Nickname, true);
+            Kart.GetKartSpec(0, true);
 
             //------------------------------------------------------------------------KartSpac Start
             oPacket.WriteEncFloat(Kart.draftMulAccelFactor);
