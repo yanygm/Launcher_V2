@@ -82,7 +82,7 @@ class MemoryModifier
 
         try
         {
-            RestorePinFile()
+            RestorePinFile();
             File.Copy(pinFile, pinFileBak, overwrite: true);
         }
         catch (Exception ex)
@@ -185,7 +185,7 @@ class MemoryModifier
                         }
 
                         // 连接成功，恢复 PIN 文件
-                        if (())
+                        if (RestorePinFile())
                         {
                             pinRestored = true;
 
