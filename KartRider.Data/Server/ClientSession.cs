@@ -217,7 +217,13 @@ namespace KartRider
 
                         if (!FileName.FileNames.ContainsKey(oldNickname))
                         {
-                            FileName.Load(oldNickname);
+                            // 旧昵称未加载，拒绝改名
+                            using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
+                            {
+                                outPacket.WriteInt(1);
+                                this.Parent.Client.Send(outPacket);
+                            }
+                            return;
                         }
                         var filename = FileName.FileNames[oldNickname];
                         string newfile = Path.GetFullPath(Path.Combine(FileName.ProfileDir, newNickname));
@@ -241,21 +247,17 @@ namespace KartRider
                                 this.Parent.Client.Nickname = newNickname;
 
                                 // 2. 更新 FileName.FileNames 的 key
-                                var oldFileName = FileName.FileNames[oldNickname];
                                 FileName.FileNames.Remove(oldNickname);
                                 FileName.Load(newNickname);
 
                                 // 3. 更新 ClientManager.NicknameToUserNO
-                                if (ClientManager.NicknameToUserNO.TryGetValue(oldNickname, out uint userNO))
-                                {
-                                    ClientManager.NicknameToUserNO.Remove(oldNickname, out _);
-                                    ClientManager.NicknameToUserNO.TryAdd(newNickname, userNO);
-                                }
+                                ClientManager.UpdateNickname(oldNickname, newNickname);
 
-                                // 4. 更新 ClientManager.UserNOToNickname
-                                if (ClientManager.UserNOToNickname.TryGetValue(userNO, out _))
+                                // 4. 删除可能被意外重建的旧昵称目录
+                                string oldDir = Path.GetFullPath(Path.Combine(FileName.ProfileDir, oldNickname));
+                                if (Directory.Exists(oldDir))
                                 {
-                                    ClientManager.UserNOToNickname.TryAdd(userNO, newNickname);
+                                    Directory.Delete(oldDir, true);
                                 }
 
                                 if (ProfileService.SettingConfig.Name == oldNickname)

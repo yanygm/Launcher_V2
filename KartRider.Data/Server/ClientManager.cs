@@ -18,6 +18,7 @@ public static class ClientManager
     private static readonly ConcurrentDictionary<string, SessionGroup> _clientSessions = new ConcurrentDictionary<string, SessionGroup>();
     public static ConcurrentDictionary<string, uint> NicknameToUserNO = new ConcurrentDictionary<string, uint>();
     public static ConcurrentDictionary<uint, string> UserNOToNickname = new ConcurrentDictionary<uint, string>();
+    private static readonly object SyncLock = new object();
     private static uint UserNO = 1;
 
     // 添加客户端会话
@@ -171,5 +172,31 @@ public static class ClientManager
             return nickname;
         }
         return null;
+    }
+
+    public static void UpdateNickname(string oldNickname, string newNickname)
+    {
+        // 锁定保证原子更新（多线程必备，两个字典要一起修改）
+        lock (SyncLock)
+        {
+            // 1. 取出原有账号
+            if (!NicknameToUserNO.TryGetValue(oldNickname, out uint userNO))
+                return; // 找不到原昵称，直接退出
+
+            // 2. 冲突校验：新昵称已被别人占用则禁止改名
+            if (NicknameToUserNO.ContainsKey(newNickname))
+            {
+                // 昵称已存在，改名失败，直接return
+                return;
+            }
+
+            // 3. 删除旧昵称映射
+            NicknameToUserNO.TryRemove(oldNickname, out _);
+            // 绑定新昵称→账号
+            NicknameToUserNO[newNickname] = userNO;
+
+            // 4. 更新账号→昵称（直接下标覆盖，必然生效）
+            UserNOToNickname[userNO] = newNickname;
+        }
     }
 }
