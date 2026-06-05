@@ -31,7 +31,6 @@ namespace KartRider
         public static List<List<short>> Dictionary = new List<List<short>>();
         public static List<int> scenario = new List<int>();
         public static List<uint> quest = new List<uint>();
-        public static int seasonId = 0;
         public static List<uint> QuestEncodeList = new List<uint>();
         public static Dictionary<byte, Channel> Channels = new Dictionary<byte, Channel>();
 

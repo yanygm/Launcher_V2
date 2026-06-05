@@ -1382,16 +1382,9 @@ namespace KartRider
                         iPacket.ReadInt(); //碰撞次数
                         var finishConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         finishConfig.Rider.Time = iPacket.ReadUInt();
-                        if (RewardType == 0)
-                        {
-                            finishConfig.Rider.RP += 10;
-                            finishConfig.Rider.Lucci += 20;
-                        }
-                        else if (RewardType == 1)
-                        {
-                            finishConfig.Rider.RP += 20;
-                            finishConfig.Rider.Lucci += 50;
-                        }
+                        var finishReward = TimeReward.FinishReward(RewardType);
+                        finishConfig.Rider.RP += finishReward.RP;
+                        finishConfig.Rider.Lucci += finishReward.Lucci;
                         ProfileService.Save(this.Parent.Client.Nickname, finishConfig);
                         var timeSpan = TrackRankData.GetTimeSpan(finishConfig.Rider.Time);
                         Console.WriteLine("FinishTimeAttack: {0} / {1} / {2}:{3}:{4}", RewardType, RandomTrack.GetTrackName(finishConfig.Rider.Track), timeSpan.min, timeSpan.sec, timeSpan.mil);
@@ -1446,16 +1439,9 @@ namespace KartRider
                         var rewardConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         rewardConfig.Rider.Track = Track;
                         Console.WriteLine("RewardTimeAttack : ResultType: {0}, RP: {1}, Lucci: {2}, Track: {3}", RewardType, RP, Lucci, RandomTrack.GetTrackName(Track));
-                        if (RewardType == 0)
-                        {
-                            rewardConfig.Rider.RP += 10;
-                            rewardConfig.Rider.Lucci += 20;
-                        }
-                        else if (RewardType == 1)
-                        {
-                            rewardConfig.Rider.RP += 20;
-                            rewardConfig.Rider.Lucci += 50;
-                        }
+                        var finishReward = TimeReward.FinishReward(RewardType);
+                        rewardConfig.Rider.RP += finishReward.RP;
+                        rewardConfig.Rider.Lucci += finishReward.Lucci;
                         ProfileService.Save(this.Parent.Client.Nickname, rewardConfig);
                         return;
                     }
@@ -1655,15 +1641,6 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubPacket", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
-                        {
-                            outPacket.WriteInt(1);
-                            this.Parent.Client.Send(outPacket);
-                        }
-                        return;
-                    }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubChannelSwitch", 0))
-                    {
                         var clubSwitchConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
                         {
@@ -1675,6 +1652,18 @@ namespace KartRider
                             {
                                 outPacket.WriteInt(1);
                             }
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubChannelSwitch", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrChannelSwitch"))
+                        {
+                            outPacket.WriteInt(1);
+                            outPacket.WriteShort(13);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteEndPoint(new IPEndPoint(IPAddress.Any, 0));
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -3414,7 +3403,7 @@ namespace KartRider
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
                         {
-                            outPacket.WriteHexString("C4 00");
+                            outPacket.WriteHexString("FC 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;

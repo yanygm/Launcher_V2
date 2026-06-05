@@ -586,7 +586,7 @@ namespace KartRider
                                 var isInTime = IsCurrentTimeInPeriod(period);
                                 if (isInTime != null)
                                 {
-                                    GameSupport.seasonId = int.Parse(questInfo.Attribute("seasonId").Value);
+                                    string seasonId = questInfo.Attribute("seasonId").Value;
                                     List<uint> ids = new List<uint>();
                                     foreach (int group in isInTime)
                                     {
@@ -595,7 +595,7 @@ namespace KartRider
                                             string groupStr = group.ToString("D2");  // 1 → 01
                                             string indexStr = index.ToString("D2");  // 1 → 01
                                             // 拼接：14500 + 组号 + 序号
-                                            uint id = uint.Parse($"14500{groupStr}{indexStr}");
+                                            uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
                                             ids.Add(id);
                                         }
                                     }

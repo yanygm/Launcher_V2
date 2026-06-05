@@ -344,14 +344,12 @@ public static class MultyPlayer
                     }
                     outPacket.WriteByte();
 
-                    Random rankRandom = new Random(playerRanking);
-                    uint earnedRP = (uint)rankRandom.Next(0, 51); // RP范围: 0-50
-                    uint earnedLucci = (uint)rankRandom.Next(0, 501); // Lucci范围: 0-500
-                    p3Config.Rider.RP += earnedRP;
+                    var reward = TimeReward.Reward(playerRanking);
+                    p3Config.Rider.RP += reward.RP;
                     outPacket.WriteUInt(p3Config.Rider.RP);
-                    outPacket.WriteUInt(earnedRP); // Earned RP
-                    outPacket.WriteUInt(earnedLucci); // Earned Lucci
-                    p3Config.Rider.Lucci += earnedLucci;
+                    outPacket.WriteUInt(reward.RP); // Earned RP
+                    outPacket.WriteUInt(reward.Lucci); // Earned Lucci
+                    p3Config.Rider.Lucci += reward.Lucci;
                     outPacket.WriteUInt(p3Config.Rider.Lucci);
                     ProfileService.Save(p3.Nickname, p3Config);
                     outPacket.WriteBytes(new byte[29]);
