@@ -332,6 +332,7 @@ public static class MultyPlayer
                 if (member is Player p3)
                 {
                     p3.PlayerType = 2; // 初始玩家状态
+                    p3.LastPacketReceived = 0;
                     var p3Config = ProfileService.GetProfileConfig(p3.Nickname);
 
                     outPacket.WriteInt(p3.ID); // player id

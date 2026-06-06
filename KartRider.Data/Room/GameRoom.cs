@@ -444,6 +444,7 @@ public class Player : RoomMember
     public int PlayerType { get; set; } // 玩家类型
     public byte Team { get; set; }
     public SessionGroup Session { get; set; }
+    public uint LastPacketReceived { get; set; } = 0;
 }
 
 // AI类

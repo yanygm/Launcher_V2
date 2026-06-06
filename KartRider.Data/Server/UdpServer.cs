@@ -242,11 +242,7 @@ namespace KartRider
                                         outPacket.WriteUInt(packetName);
                                         outPacket.WriteBytes(data);
 
-                                        bool success = BeginSend(outPacket, udp);
-                                        if (success)
-                                        {
-                                            // Console.WriteLine($"[{udp}][{currentTime}][{player.Nickname}] {packetValue}" + ": " + BitConverter.ToString(outPacket.ToArray()).Replace("-", " "));
-                                        }
+                                        UdpBoardCast(player, udp, outPacket);
                                     }
                                 }
                             }
@@ -371,6 +367,30 @@ namespace KartRider
                 IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
                 var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
                 return (udpIP, 0);
+            }
+        }
+
+        public void UdpBoardCast(Player player, IPEndPoint udp, OutPacket outPacket)
+        {
+            InPacket iPacket = new InPacket(outPacket.ToArray());
+            var data1 = iPacket.ReadBytes(32);
+            var packetName = iPacket.ReadUInt();
+            var packetValue = (PacketName)packetName;
+            var tick = iPacket.ReadUInt();
+            // var data2 = iPacket.ReadBytes(iPacket.Available);
+            if (packetValue == PacketName.GameKartQuadPacket || packetValue == PacketName.GameKartPacket)
+            {
+                if (tick < player.LastPacketReceived)
+                {
+                    Console.WriteLine($"[{player.Nickname}] 丢包率过高，丢弃数据包");
+                    return;
+                }
+                player.LastPacketReceived = tick;
+            }
+            bool success = BeginSend(outPacket, udp);
+            if (success)
+            {
+                // Console.WriteLine($"[{udp}][{currentTime}][{nickname}] {packetValue}: {BitConverter.ToString(outPacket.ToArray()).Replace("-", " ")}");
             }
         }
     }

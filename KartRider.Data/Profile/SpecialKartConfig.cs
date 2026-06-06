@@ -196,8 +196,6 @@ public class SpecialKartConfig
         config.SkillChange ??= new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>();
         config.SkillMappings ??= new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>();
         config.SkillAttacked ??= new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>();
-
-        Console.WriteLine($"道具车特性配置已成功从 {filePath} 读取");
         return config;
     }
 
