@@ -146,7 +146,6 @@ public class SpecialKartConfig
             }
 
             finalConfig = existingConfig;
-            Console.WriteLine($"配置已更新（补充缺失内容）：{filePath}");
         }
         else
         {

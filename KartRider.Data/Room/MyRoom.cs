@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using ExcData;
 using KartRider.IO.Packet;
 using Profile;
+using RiderData;
 
 namespace KartRider;
 
@@ -473,6 +476,257 @@ public class MyRoomData
         {
             outPacket.WriteByte(1);
             Parent.Client.Send(outPacket);
+        }
+    }
+
+    public static void RmRequestItemsPacket(SessionGroup Parent, string Nickname)
+    {
+        string MasterNickname = GetRoomOwnerByNickname(Nickname);
+        if (string.IsNullOrEmpty(MasterNickname))
+        {
+            using (OutPacket outPacket = new OutPacket("RmOwnerItemEnchantPacket"))
+            {
+                outPacket.WriteInt(0);
+                Parent.Client.Send(outPacket);
+            }
+        }
+        else
+        {
+            if (!FileName.FileNames.ContainsKey(MasterNickname))
+            {
+                FileName.Load(MasterNickname);
+            }
+            var filename = FileName.FileNames[MasterNickname];
+
+            RmOwnerItemEnchantPacket(Parent, filename);
+            RmOwnerItemPacket(Parent, filename);
+        }
+    }
+
+    public static void RmOwnerItemEnchantPacket(SessionGroup Parent, fileName filename)
+    {
+        var TuneList = new List<Tune>();
+        if (File.Exists(filename.TuneData_LoadFile))
+        {
+            TuneList = JsonHelper.DeserializeNoBom<List<Tune>>(filename.TuneData_LoadFile) ?? new List<Tune>();
+        }
+        int range = 26;//分批次数
+        int times = TuneList.Count / range + (TuneList.Count % range > 0 ? 1 : 0);
+        for (int i = 0; i < times; i++)
+        {
+            var tempList = TuneList.GetRange(i * range, (i + 1) * range > TuneList.Count ? (TuneList.Count - i * range) : range);
+            int TuneCount = tempList.Count;
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemEnchantPacket"))
+            {
+                oPacket.WriteInt(TuneCount);
+                for (var f = 0; f < TuneCount; f++)
+                {
+                    oPacket.WriteShort(3);
+                    oPacket.WriteShort(tempList[f].ID);
+                    oPacket.WriteShort(tempList[f].SN);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].Tune1);
+                    oPacket.WriteShort(tempList[f].Tune2);
+                    oPacket.WriteShort(tempList[f].Tune3);
+                    oPacket.WriteShort(tempList[f].Slot1);
+                    oPacket.WriteShort(tempList[f].Count1);
+                    oPacket.WriteShort(tempList[f].Slot2);
+                    oPacket.WriteShort(tempList[f].Count2);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+    }
+
+    public static void RmOwnerItemPacket(SessionGroup Parent, fileName filename)
+    {
+        int range = 26;//分批次数
+        int count = 1;
+
+        var newkart = new List<NewKart>();
+        if (File.Exists(filename.NewKart_LoadFile))
+        {
+            newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
+        }
+        int newkartTimes = newkart.Count / range + (newkart.Count % range > 0 ? 1 : 0);
+
+        var PlantList = new List<Plant>();
+        if (File.Exists(filename.PlantData_LoadFile))
+        {
+            PlantList = JsonHelper.DeserializeNoBom<List<Plant>>(filename.PlantData_LoadFile) ?? new List<Plant>();
+        }
+        int PlantListTimes = PlantList.Count / range + (PlantList.Count % range > 0 ? 1 : 0);
+
+        var PartsList = new List<Parts>();
+        if (File.Exists(filename.PartsData_LoadFile))
+        {
+            PartsList = JsonHelper.DeserializeNoBom<List<Parts>>(filename.PartsData_LoadFile) ?? new List<Parts>();
+        }
+        int PartsListTimes = PartsList.Count / range + (PartsList.Count % range > 0 ? 1 : 0);
+
+        var Parts12List = new List<Parts12>();
+        if (File.Exists(filename.Parts12Data_LoadFile))
+        {
+            Parts12List = JsonHelper.DeserializeNoBom<List<Parts12>>(filename.Parts12Data_LoadFile) ?? new List<Parts12>();
+        }
+        int Parts12ListTimes = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
+
+        int AllCount = newkartTimes + PlantListTimes + PartsListTimes + Parts12ListTimes;
+
+        for (int i = 0; i < newkartTimes; i++)
+        {
+            var tempList = newkart.GetRange(i * range, (i + 1) * range > newkart.Count ? (newkart.Count - i * range) : range);
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
+            {
+                oPacket.WriteInt(newkartTimes);
+                oPacket.WriteInt(i + 1);
+                oPacket.WriteInt(tempList.Count);
+                foreach (var Kart in tempList)
+                {
+                    oPacket.WriteUShort(3);
+                    oPacket.WriteUShort(Kart.KartID);
+                    oPacket.WriteUShort(Kart.KartSN);
+                    oPacket.WriteUShort(1);
+                    oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(0);
+                }
+                oPacket.WriteBytes(new byte[16]);
+                oPacket.WriteInt(AllCount);
+                oPacket.WriteInt(count++);
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        for (int i = 0; i < PlantListTimes; i++)
+        {
+            var tempList = PlantList.GetRange(i * range, (i + 1) * range > PlantList.Count ? (PlantList.Count - i * range) : range);
+            int PlantCount = tempList.Count;
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
+            {
+                oPacket.WriteInt(PlantListTimes);
+                oPacket.WriteInt(i + 1);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(PlantCount);
+                for (var f = 0; f < PlantCount; f++)
+                {
+                    oPacket.WriteShort(tempList[f].ID);
+                    oPacket.WriteShort(tempList[f].SN);
+                    oPacket.WriteInt(4);
+                    oPacket.WriteShort(tempList[f].Engine);
+                    oPacket.WriteShort(tempList[f].EngineID);
+                    oPacket.WriteShort(tempList[f].Handle);
+                    oPacket.WriteShort(tempList[f].HandleID);
+                    oPacket.WriteShort(tempList[f].Wheel);
+                    oPacket.WriteShort(tempList[f].WheelID);
+                    oPacket.WriteShort(tempList[f].Kit);
+                    oPacket.WriteShort(tempList[f].KitID);
+                }
+                oPacket.WriteBytes(new byte[12]);
+                oPacket.WriteInt(AllCount);
+                oPacket.WriteInt(count++);
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        for (int i = 0; i < PartsListTimes; i++)
+        {
+            var tempList = PartsList.GetRange(i * range, (i + 1) * range > PartsList.Count ? (PartsList.Count - i * range) : range);
+            int parts = tempList.Count;
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
+            {
+                oPacket.WriteInt(PartsListTimes);
+                oPacket.WriteInt(i + 1);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(parts);
+                for (var f = 0; f < parts; f++)
+                {
+                    oPacket.WriteShort(tempList[f].ID);
+                    oPacket.WriteShort(tempList[f].SN);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].Engine);
+                    oPacket.WriteByte(tempList[f].EngineGrade);
+                    oPacket.WriteShort(tempList[f].EngineValue);
+                    oPacket.WriteShort(tempList[f].Handle);
+                    oPacket.WriteByte(tempList[f].HandleGrade);
+                    oPacket.WriteShort(tempList[f].HandleValue);
+                    oPacket.WriteShort(tempList[f].Wheel);
+                    oPacket.WriteByte(tempList[f].WheelGrade);
+                    oPacket.WriteShort(tempList[f].WheelValue);
+                    oPacket.WriteShort(tempList[f].Booster);
+                    oPacket.WriteByte(tempList[f].BoosterGrade);
+                    oPacket.WriteShort(tempList[f].BoosterValue);
+                    oPacket.WriteShort(tempList[f].Coating);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].TailLamp);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(0);
+                }
+                oPacket.WriteBytes(new byte[8]);
+                oPacket.WriteInt(AllCount);
+                oPacket.WriteInt(count++);
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        for (int i = 0; i < Parts12ListTimes; i++)
+        {
+            var tempList = Parts12List.GetRange(i * range, (i + 1) * range > Parts12List.Count ? (Parts12List.Count - i * range) : range);
+            int parts12 = tempList.Count;
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
+            {
+                oPacket.WriteInt(Parts12ListTimes);
+                oPacket.WriteInt(i + 1);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(parts12);
+                for (var f = 0; f < parts12; f++)
+                {
+                    oPacket.WriteShort(tempList[f].ID);
+                    oPacket.WriteShort(tempList[f].SN);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].Engine);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(tempList[f].Handle);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(tempList[f].Wheel);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(tempList[f].Booster);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(tempList[f].Coating);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].TailLamp);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].BoosterEffect);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteShort(tempList[f].ExceedType);
+                    oPacket.WriteShort(0);
+                }
+                oPacket.WriteBytes(new byte[4]);
+                oPacket.WriteInt(AllCount);
+                oPacket.WriteInt(count++);
+                Parent.Client.Send(oPacket);
+            }
         }
     }
 }

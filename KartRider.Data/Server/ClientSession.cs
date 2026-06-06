@@ -553,6 +553,11 @@ namespace KartRider
                         MyRoomData.RmSlotDataPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRequestItemsPacket", 0))
+                    {
+                        MyRoomData.RmRequestItemsPacket(this.Parent, this.Parent.Client.Nickname);
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmNotiMyRoomInfoPacket", 0))
                     {
                         var myRoomConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -589,7 +594,14 @@ namespace KartRider
                         using (OutPacket outPacket = new OutPacket("ChRpMyroomCheckPassEtcPacket"))
                         {
                             outPacket.WriteInt(id);
-                            outPacket.WriteInt(0); // 1 允许查看
+                            if (id == 0)
+                            {
+                                outPacket.WriteInt(1);
+                            }
+                            else
+                            {
+                                outPacket.WriteInt(0); // 1 允许查看
+                            }
                             this.Parent.Client.Send(outPacket);
                         }
                         return;

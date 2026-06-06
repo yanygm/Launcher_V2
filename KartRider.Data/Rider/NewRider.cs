@@ -1013,8 +1013,8 @@ namespace RiderData
                 var tempList = item.GetRange(i * range, (i + 1) * range > item.Count ? (item.Count - i * range) : range);
                 using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
                 {
-                    oPacket.WriteInt(1);
-                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(times);
+                    oPacket.WriteInt(i + 1);
                     oPacket.WriteInt(tempList.Count);
                     for (int f = 0; f < tempList.Count; f++)
                     {

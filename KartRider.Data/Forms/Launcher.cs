@@ -63,6 +63,12 @@ namespace KartRider
             Console.WriteLine($"程序编译时间: {CompileTime.Time}");
             VersionLabel.Text = CompileTime.Time;
             Console.WriteLine("Process: {0}", KartRider);
+            string[] UserPaths = Directory.GetDirectories(FileName.ProfileDir);
+            foreach (string userPath in UserPaths)
+            {
+                string UserName = Path.GetFileName(userPath);
+                ClientManager.GetUserNO(UserName);
+            }
         }
 
         private void Start_Button_Click(object sender, EventArgs e)

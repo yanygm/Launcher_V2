@@ -209,7 +209,7 @@ public static class MultyPlayer
     static void Set_settleTrigger(SessionGroup Parent)
     {
         var onceTimer = new System.Timers.Timer();
-        onceTimer.Interval = 11000;
+        onceTimer.Interval = 10000;
         onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(Parent, s, _event));
         onceTimer.AutoReset = false;
         onceTimer.Start();
@@ -226,6 +226,14 @@ public static class MultyPlayer
         if (room == null)
         {
             return;
+        }
+
+        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
+        {
+            outPacket.WriteInt(4);
+            outPacket.WriteByte(0);
+            outPacket.WriteUInt(room.EndTicks + 6000);
+            BroadCast(roomId, outPacket);
         }
 
         if (room.TimeData.Count < room.GetCount())
@@ -407,14 +415,6 @@ public static class MultyPlayer
             Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
             outPacket.WriteBytes(new byte[34]);
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-            BroadCast(roomId, outPacket);
-        }
-
-        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
-        {
-            outPacket.WriteInt(4);
-            outPacket.WriteByte(0);
-            outPacket.WriteUInt(room.EndTicks + 6000);
             BroadCast(roomId, outPacket);
         }
 
