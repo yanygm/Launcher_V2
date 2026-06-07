@@ -245,6 +245,22 @@ namespace KartRider
                                         UdpBoardCast(player, udp, outPacket);
                                     }
                                 }
+                                foreach (RoomMember member in room.ObIDs)
+                                {
+                                    if (member is Player player)
+                                    {
+                                        var udp = GetUdp(player.Nickname).Item1;
+                                        var pHash = GetUdp(player.Nickname).Item2 == 0 ? hash : GetUdp(player.Nickname).Item2;
+
+                                        OutPacket outPacket = new OutPacket();
+                                        outPacket.WriteUInt(ClientManager.GetUserNO(player.Nickname));
+                                        outPacket.WriteUInt(pHash);
+                                        outPacket.WriteUInt(packetName);
+                                        outPacket.WriteBytes(data);
+
+                                        UdpBoardCast(player, udp, outPacket);
+                                    }
+                                }
                             }
                         }
                         else if (packetValue == PacketName.RoomSlotPacket)
