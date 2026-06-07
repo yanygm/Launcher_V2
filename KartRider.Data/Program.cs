@@ -109,22 +109,26 @@ namespace KartRider
 
                     Load_Data();
 
-                    try
-                    {
-                        RouterListener.Start();
-                    }
-                    catch (System.Net.Sockets.SocketException)
-                    {
-                        LauncherSystem.MessageBoxType2();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"启动路由器监听失败: {ex.Message}");
-                    }
-
                     if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
                     {
+                        // IPv6 远程服务器模式：仅启动端口转发（客户端 → IPv6 服务器）
+                        // 不启动 RouterListener，避免端口冲突（SocketError 10048）
                         TinyMapper.ClientStart();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            RouterListener.Start();
+                        }
+                        catch (System.Net.Sockets.SocketException)
+                        {
+                            LauncherSystem.MessageBoxType2();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"启动路由器监听失败: {ex.Message}");
+                        }
                     }
 
                     PatchManager.StartUpdateAsync(RootDirectory).Wait();

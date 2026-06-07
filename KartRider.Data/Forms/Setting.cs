@@ -34,10 +34,17 @@ namespace KartRider
             ProfileService.SaveSettings();
             if (update)
             {
-                PatchManager.StartUpdateAsync(Program.LauncherDlg.kartRiderDirectory);
+                // 停止本地服务端，释放端口，避免与 ClientStart 端口冲突
+                RouterListener.Stop();
                 if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
                 {
                     TinyMapper.ClientStart();
+                    PatchManager.StartUpdateAsync(Program.LauncherDlg.kartRiderDirectory);
+                }
+                else
+                {
+                    RouterListener.Start();
+                    PatchManager.StartUpdateAsync(Program.LauncherDlg.kartRiderDirectory);
                 }
             }
         }

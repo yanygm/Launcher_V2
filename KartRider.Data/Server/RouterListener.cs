@@ -41,7 +41,9 @@ namespace KartRider
         {
             try
             {
-                Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                if (RouterListener.Listener == null)
+                    return;
+
                 Socket clientSocket = RouterListener.Listener.EndAcceptSocket(ar);
 
                 // 创建客户端会话（自动开始接收消息）
@@ -50,13 +52,29 @@ namespace KartRider
                 // 将会话添加到管理类
                 ClientManager.AddClient(RouterListener.MySession);
             }
+            catch (ObjectDisposedException)
+            {
+                // Listener 已停止/释放，忽略
+            }
+            catch (NullReferenceException)
+            {
+                // Listener 已被 Stop() 置为 null，忽略
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"发生异常：{ex.Message}");
             }
             finally
             {
-                RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
+                if (RouterListener.Listener != null)
+                {
+                    try
+                    {
+                        RouterListener.Listener.BeginAcceptSocket(new AsyncCallback(RouterListener.OnAcceptSocket), null);
+                    }
+                    catch (ObjectDisposedException) { }
+                    catch (NullReferenceException) { }
+                }
             }
         }
 
@@ -97,6 +115,38 @@ namespace KartRider
             {
                 TinyMapper.Start();
             }
+        }
+
+        /// <summary>
+        /// 停止服务端所有监听（释放端口）
+        /// </summary>
+        public static void Stop()
+        {
+            // 停止 UDP 服务
+            UDPServer.Stop();
+            P2PServer.Stop();
+
+            // 停止 TCP 消息服务
+            MsgrServer.Stop();
+
+            // 停止 TCP 监听器
+            if (Listener != null)
+            {
+                try
+                {
+                    Listener.Stop();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[RouterListener] 停止 TCP 监听器异常: {ex.Message}");
+                }
+                Listener = null;
+            }
+
+            // 停止 TinyMapper 端口转发
+            TinyMapper.Stop();
+
+            Console.WriteLine("[RouterListener] 所有服务已停止");
         }
     }
 }
