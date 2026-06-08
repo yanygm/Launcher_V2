@@ -552,13 +552,6 @@ public class MyRoomData
         }
         int newkartTimes = newkart.Count / range + (newkart.Count % range > 0 ? 1 : 0);
 
-        var PlantList = new List<Plant>();
-        if (File.Exists(filename.PlantData_LoadFile))
-        {
-            PlantList = JsonHelper.DeserializeNoBom<List<Plant>>(filename.PlantData_LoadFile) ?? new List<Plant>();
-        }
-        int PlantListTimes = PlantList.Count / range + (PlantList.Count % range > 0 ? 1 : 0);
-
         var PartsList = new List<Parts>();
         if (File.Exists(filename.PartsData_LoadFile))
         {
@@ -573,7 +566,7 @@ public class MyRoomData
         }
         int Parts12ListTimes = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 
-        int AllCount = newkartTimes + PlantListTimes + PartsListTimes + Parts12ListTimes;
+        int AllCount = newkartTimes + PartsListTimes + Parts12ListTimes;
 
         if (newkart.Count == 0)
         {
@@ -613,37 +606,6 @@ public class MyRoomData
                     oPacket.WriteShort(0);
                 }
                 oPacket.WriteBytes(new byte[16]);
-                oPacket.WriteInt(AllCount);
-                oPacket.WriteInt(count++);
-                Parent.Client.Send(oPacket);
-            }
-        }
-
-        for (int i = 0; i < PlantListTimes; i++)
-        {
-            var tempList = PlantList.GetRange(i * range, (i + 1) * range > PlantList.Count ? (PlantList.Count - i * range) : range);
-            int PlantCount = tempList.Count;
-            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
-            {
-                oPacket.WriteInt(PlantListTimes);
-                oPacket.WriteInt(i + 1);
-                oPacket.WriteInt(0);
-                oPacket.WriteInt(PlantCount);
-                for (var f = 0; f < PlantCount; f++)
-                {
-                    oPacket.WriteShort(tempList[f].ID);
-                    oPacket.WriteShort(tempList[f].SN);
-                    oPacket.WriteInt(4);
-                    oPacket.WriteShort(tempList[f].Engine);
-                    oPacket.WriteShort(tempList[f].EngineID);
-                    oPacket.WriteShort(tempList[f].Handle);
-                    oPacket.WriteShort(tempList[f].HandleID);
-                    oPacket.WriteShort(tempList[f].Wheel);
-                    oPacket.WriteShort(tempList[f].WheelID);
-                    oPacket.WriteShort(tempList[f].Kit);
-                    oPacket.WriteShort(tempList[f].KitID);
-                }
-                oPacket.WriteBytes(new byte[12]);
                 oPacket.WriteInt(AllCount);
                 oPacket.WriteInt(count++);
                 Parent.Client.Send(oPacket);
