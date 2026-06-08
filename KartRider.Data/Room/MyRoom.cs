@@ -510,6 +510,7 @@ public class MyRoomData
         {
             TuneList = JsonHelper.DeserializeNoBom<List<Tune>>(filename.TuneData_LoadFile) ?? new List<Tune>();
         }
+
         int range = 26;//分批次数
         int times = TuneList.Count / range + (TuneList.Count % range > 0 ? 1 : 0);
         for (int i = 0; i < times; i++)
@@ -573,6 +574,21 @@ public class MyRoomData
         int Parts12ListTimes = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 
         int AllCount = newkartTimes + PlantListTimes + PartsListTimes + Parts12ListTimes;
+
+        if (newkart.Count == 0)
+        {
+            using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(0);
+                oPacket.WriteBytes(new byte[16]);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                Parent.Client.Send(oPacket);
+            }
+            return;
+        }
 
         for (int i = 0; i < newkartTimes; i++)
         {
