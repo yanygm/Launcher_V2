@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using KartRider.IO.Packet;
@@ -30,8 +31,6 @@ public class RewardBox
     public long ID { get; set; }
     public byte Type { get; set; }
     public int stockId { get; set; }
-    public DateTime Sent { get; set; }
-    public DateTime Expire { get; set; }
 }
 
 public static class CouponList
@@ -372,8 +371,8 @@ public static class CouponList
                     outPacket.WriteLong(RewardBox.ID);
                     outPacket.WriteByte(RewardBox.Type);
                     outPacket.WriteInt(RewardBox.stockId);
-                    outPacket.WriteDateTime(RewardBox.Sent);
-                    outPacket.WriteDateTime(RewardBox.Expire);
+                    outPacket.WriteDateTime(DateTime.Now);
+                    outPacket.WriteDateTime(DateTime.Now.AddDays(7));
                 }
                 outPacket.WriteInt(RewardBoxList.Count);
                 outPacket.WriteByte((byte)(i + 1));
