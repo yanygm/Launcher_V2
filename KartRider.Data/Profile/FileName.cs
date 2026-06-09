@@ -27,6 +27,8 @@ namespace Profile
         public string Level12Data_LoadFile;
         public string Competitive_LoadFile;
         public string TrainingMission_LoadFile;
+        public string GiveGift_LoadFile;
+        public string RewardBox_LoadFile;
     }
 
     public static class FileName
@@ -39,6 +41,7 @@ namespace Profile
         public static string Load_TrackRank = Path.GetFullPath(Path.Combine(appDir, @"TrackRank"));
         public static string ModelMax_LoadFile = Path.GetFullPath(Path.Combine(ProfileDir, @"ModelMax.xml"));
         public static string SpecialKartConfig = Path.GetFullPath(Path.Combine(ProfileDir, @"SpecialKartConfig.json"));
+        public static string Coupon = Path.GetFullPath(Path.Combine(ProfileDir, @"Coupon.json"));
 
         public static Dictionary<string, fileName> FileNames = new Dictionary<string, fileName>();
 
@@ -60,6 +63,8 @@ namespace Profile
             filename.Level12Data_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Level12Data.json"));
             filename.Competitive_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Competitive.json"));
             filename.TrainingMission_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"TrainingMission.json"));
+            filename.GiveGift_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"GiveGift.json"));
+            filename.RewardBox_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"RewardBox.json"));
             FileNames.TryAdd(nickname, filename);
             if (!Directory.Exists(filename.NicknameDir))
             {

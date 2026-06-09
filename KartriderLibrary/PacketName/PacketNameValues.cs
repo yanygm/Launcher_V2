@@ -1638,5 +1638,8 @@ namespace KartRider_PacketName
 		PcSendMacroChat = 745670063,
 		PqPersonalShopEventTimerPacket = 3099069434,
 		PqPersonalShopActionCheckPacket = 3273198643,
+		SpReqDeleteReceiveLogPacket = 2432305787,
+		SpRepDeleteReceiveLogPacket = 2430798458,
+		PrCnChkPassword = 750257628,
 	}
 }

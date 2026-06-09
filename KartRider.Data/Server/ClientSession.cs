@@ -2257,12 +2257,41 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCurrentRid", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("PrGetCurrentRid"))
+                        string UserName = iPacket.ReadString();
+                        if (Directory.Exists(Path.GetFullPath(Path.Combine(FileName.ProfileDir, UserName))))
                         {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
+                            using (OutPacket outPacket = new OutPacket("PrGetCurrentRid"))
+                            {
+                                outPacket.WriteString(UserName);
+                                this.Parent.Client.Send(outPacket);
+                            }
+                        }
+                        else
+                        {
+                            using (OutPacket outPacket = new OutPacket("PrGetCurrentRid"))
+                            {
+                                outPacket.WriteInt(0);
+                                this.Parent.Client.Send(outPacket);
+                            }
                         }
                         return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqDuplicatedItemPacket", 0))
+                    {
+                        string UserName = iPacket.ReadString();
+                        int stockId = iPacket.ReadInt();
+                        CouponList.DuplicatedItem(this.Parent, stockId);
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopGiveGiftPacket", 0))
+                    {
+                        string UserName = iPacket.ReadString();
+                        int stockId = iPacket.ReadInt();
+                        iPacket.ReadInt();
+                        string Message = iPacket.ReadString();
+                        iPacket.ReadInt();
+                        iPacket.ReadInt();
+                        string Password = iPacket.ReadString();
+                        CouponList.GiveGift(this.Parent, UserName, stockId, Message, Password);
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMyCouponList", 0))
                     {
@@ -2302,21 +2331,14 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqEnterRewardBoxStage", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("SpRpEnterRewardBoxStage"))
-                        {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteHexString("00 00 00 00 01");
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        CouponList.GetRewardBox(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqReceiveRewardItemPacket", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("SpRpReceiveRewardItemPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        long RewardBoxId = iPacket.ReadLong();
+                        int stockId = iPacket.ReadInt();
+                        CouponList.ReceiveReward(this.Parent, RewardBoxId, stockId);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqExitRewardBoxStage", 0))
@@ -2325,22 +2347,33 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetGiftListIncomingPacket", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("SpRpGetGiftListIncomingPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        CouponList.GetGiftList(this.Parent);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetGiftListReceivedPacket", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("SpRpGetGiftListReceivedPacket"))
-                        {
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        CouponList.GetGiftList(this.Parent, true);
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqReceiveGiftPacket", 0))
+                    {
+                        int giftId = iPacket.ReadInt();
+                        CouponList.ReceiveGift(this.Parent, giftId);
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqDeleteGiftPacket", 0))
+                    {
+                        iPacket.ReadInt();
+                        iPacket.ReadInt();
+                        string Password = iPacket.ReadString();
+                        int giftId = iPacket.ReadInt();
+                        CouponList.Delete(this.Parent, giftId);
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqDeleteReceiveLogPacket", 0))
+                    {
+                        int giftId = iPacket.ReadInt();
+                        CouponList.Delete(this.Parent, giftId, true);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveRankInfo", 0))
@@ -2492,12 +2525,14 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqQueryCoupon", 0))
                     {
-                        using (OutPacket outPacket = new OutPacket("SpRpQueryCoupon"))
-                        {
-                            outPacket.WriteInt(1);
-                            outPacket.WriteInt(0);
-                            this.Parent.Client.Send(outPacket);
-                        }
+                        string Coupon = iPacket.ReadString();
+                        CouponList.QueryCoupon(this.Parent, Coupon);
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqUseCoupon", 0))
+                    {
+                        string Coupon = iPacket.ReadString();
+                        CouponList.QueryCoupon(this.Parent, Coupon, true);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqShopCashPage", 0))
