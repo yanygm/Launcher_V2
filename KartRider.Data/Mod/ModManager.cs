@@ -20,6 +20,10 @@ public static class ModManager
     private static string ModPath { get; set; } = string.Empty;
 
     public static event Action OnAllModLoaded;
+    public static event Action<string> OnModLoaded;
+    public static event Action<string> OnModUnloaded;
+    public static event Action<string> OnModReloading;
+    public static event Action<string> OnModReloaded;
 
     public static void Initialize(string RootDirectory)
     {
@@ -34,7 +38,14 @@ public static class ModManager
         LoadMods(ModPath);
         Console.WriteLine($"Mod加载完成，共加载 {ModList.Count} 个 Mod。");
 
-        OnAllModLoaded?.Invoke();
+        try
+        {
+            OnAllModLoaded?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] OnAllModLoaded 事件处理程序抛出异常: {ex.Message}");
+        }
     }
 
     public static void LoadMods(string modPath)
@@ -138,11 +149,24 @@ public static class ModManager
                 IsPacketHandler = isPacketHandler
             });
 
+            // 所有 Mod 按名称自动注册到 ServiceRegistry
+            // 依赖 Mod 也会注册，消费者统一通过 ServiceRegistry.Invoke 调用
+            ServiceRegistry.Register(mod.Name, mod);
+
             Console.WriteLine(
                 $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
             );
             Console.WriteLine("Mod描述:" + mod.Description);
             Console.WriteLine("Mod版本:" + mod.Version);
+
+            try
+            {
+                OnModLoaded?.Invoke(mod.Name);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[错误] OnModLoaded 事件处理程序抛出异常: {ex.Message}");
+            }
 
             return true;
         }
@@ -178,6 +202,10 @@ public static class ModManager
             }
 
             ModList.Remove(modInfo);
+
+            // 从 ServiceRegistry 移除注册
+            ServiceRegistry.Unregister(modInfo.Instance.Name);
+
             modInfo.LoadContext.Unload();
 
             modInfo.Instance = null;
@@ -187,6 +215,16 @@ public static class ModManager
             GC.WaitForPendingFinalizers();
 
             Console.WriteLine($">>> 成功卸载 Mod: [{modName}]");
+
+            try
+            {
+                OnModUnloaded?.Invoke(modName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -207,12 +245,35 @@ public static class ModManager
 
         string filePath = modInfo.FilePath;
 
+        try
+        {
+            OnModReloading?.Invoke(modName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] OnModReloading 事件处理程序抛出异常: {ex.Message}");
+        }
+
         if (!UnloadMod(modName))
         {
             return false;
         }
 
-        return LoadMod(filePath);
+        if (!LoadMod(filePath))
+        {
+            return false;
+        }
+
+        try
+        {
+            OnModReloaded?.Invoke(modName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] OnModReloaded 事件处理程序抛出异常: {ex.Message}");
+        }
+
+        return true;
     }
 
     public static void UnloadAllMods()
