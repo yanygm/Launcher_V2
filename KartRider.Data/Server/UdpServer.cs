@@ -27,7 +27,7 @@ namespace KartRider
         private volatile bool _isRunning;
         // 同步锁（防止重复启动/停止）
         private readonly object _lockObj = new object();
-        private static ConcurrentDictionary<string, (IPEndPoint, uint)> udpClients = new ConcurrentDictionary<string, (IPEndPoint, uint)>();
+        private static ConcurrentDictionary<string, (IPEndPoint, uint, bool)> udpClients = new ConcurrentDictionary<string, (IPEndPoint, uint, bool)>();
 
         /// <summary>
         /// 构造函数
@@ -162,7 +162,6 @@ namespace KartRider
             try
             {
                 // 结束异步接收，获取数据和客户端地址
-                clientEP = null;
                 receiveBuffer = _udpClient.EndReceive(ar, ref clientEP);
 
                 try
@@ -184,9 +183,14 @@ namespace KartRider
                         string nickname = "";
                         ClientManager.UserNOToNickname.TryGetValue(accountID, out nickname);
                         string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        bool p2p = false;
                         if (!string.IsNullOrEmpty(nickname))
                         {
-                            udpClients.AddOrUpdate(nickname, (clientEP, hash), (key, oldEP) => (clientEP, hash));
+                            var playerConfig = ProfileService.GetProfileConfig(nickname);
+                            IPEndPoint client = ClientManager.ClientToIPEndPoint(playerConfig.Rider.ClientId);
+                            var clientudp = new IPEndPoint(client.Address, playerConfig.Rider.UdpPort);
+                            p2p = (clientEP == clientudp);
+                            udpClients.AddOrUpdate(nickname, (clientEP, hash, p2p), (key, oldValue) => (clientEP, hash, p2p));
                             // Console.WriteLine($"[UDP][{currentTime}][{nickname}] {packetValue}" + ": " + BitConverter.ToString(packetData).Replace("-", " "));
                         }
 
@@ -233,8 +237,13 @@ namespace KartRider
                                 {
                                     if (member is Player player && player.Nickname != nickname)
                                     {
-                                        var udp = GetUdp(player.Nickname).Item1;
-                                        var pHash = GetUdp(player.Nickname).Item2 == 0 ? hash : GetUdp(player.Nickname).Item2;
+                                        var targetUdp = GetUdp(player.Nickname);
+                                        // 发送方和目标方都是 P2P 直连时跳过，避免重复发送
+                                        if (p2p && targetUdp.Item3)
+                                            continue;
+
+                                        var udp = targetUdp.Item1;
+                                        var pHash = targetUdp.Item2 == 0 ? hash : targetUdp.Item2;
 
                                         OutPacket outPacket = new OutPacket();
                                         outPacket.WriteUInt(ClientManager.GetUserNO(player.Nickname));
@@ -249,8 +258,13 @@ namespace KartRider
                                 {
                                     if (member is Player player)
                                     {
-                                        var udp = GetUdp(player.Nickname).Item1;
-                                        var pHash = GetUdp(player.Nickname).Item2 == 0 ? hash : GetUdp(player.Nickname).Item2;
+                                        var targetUdp = GetUdp(player.Nickname);
+                                        // 发送方和目标方都是 P2P 直连时跳过，避免重复发送
+                                        if (p2p && targetUdp.Item3)
+                                            continue;
+
+                                        var udp = targetUdp.Item1;
+                                        var pHash = targetUdp.Item2 == 0 ? hash : targetUdp.Item2;
 
                                         OutPacket outPacket = new OutPacket();
                                         outPacket.WriteUInt(ClientManager.GetUserNO(player.Nickname));
@@ -275,8 +289,13 @@ namespace KartRider
                                     if (string.IsNullOrEmpty(member) || string.Equals(member, nickname, StringComparison.OrdinalIgnoreCase))
                                         continue;
 
-                                    var udp = GetUdp(member).Item1;
-                                    var pHash = GetUdp(member).Item2 == 0 ? hash : GetUdp(member).Item2;
+                                    var targetUdp = GetUdp(member);
+                                    // 发送方和目标方都是 P2P 直连时跳过，避免重复发送
+                                    if (p2p && targetUdp.Item3)
+                                        continue;
+
+                                    var udp = targetUdp.Item1;
+                                    var pHash = targetUdp.Item2 == 0 ? hash : targetUdp.Item2;
 
                                     OutPacket outPacket = new OutPacket();
                                     outPacket.WriteUInt(ClientManager.GetUserNO(member));
@@ -371,20 +390,20 @@ namespace KartRider
             }
         }
 
-        public static (IPEndPoint, uint) GetUdp(string nickname)
+    public static (IPEndPoint, uint, bool) GetUdp(string nickname)
+    {
+        if (udpClients.TryGetValue(nickname, out var value))
         {
-            if (udpClients.TryGetValue(nickname, out (IPEndPoint, uint) udp))
-            {
-                return udp;
-            }
-            else
-            {
-                var profile = ProfileService.GetProfileConfig(nickname);
-                IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
-                var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
-                return (udpIP, 0);
-            }
+            return (value.Item1, value.Item2, value.Item3);
         }
+        else
+        {
+            var profile = ProfileService.GetProfileConfig(nickname);
+            IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
+            var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
+            return (udpIP, 0, false);
+        }
+    }
 
         public void UdpBoardCast(Player player, IPEndPoint udp, OutPacket outPacket)
         {

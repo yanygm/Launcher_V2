@@ -1645,7 +1645,14 @@ public static class MultyPlayer
             //kart data
             ushort KartID = ProfileService.GetProfileConfig(p.Nickname).RiderItem.Set_Kart;
             ushort FlyingPetID = ProfileService.GetProfileConfig(p.Nickname).RiderItem.Set_FlyingPet;
-            StartGameData.GetKartSpac(oPacket, p.Nickname, room.SpeedType, KartID, FlyingPetID);
+            if (room.RoomName.Contains("原版"))
+            {
+                StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
+            }
+            else
+            {
+                StartGameData.GetKartSpac(oPacket, p.Nickname, room.SpeedType, KartID, FlyingPetID);
+            }
 
             oPacket.WriteInt(room.GetAiCount()); //AI count
             if (room.GetAiCount() > 0)
