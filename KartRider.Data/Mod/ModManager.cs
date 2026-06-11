@@ -286,6 +286,10 @@ public static class ModManager
         }
         Console.WriteLine(">>> 所有 Mod 已卸载");
 
+        // 清空 ServiceRegistry 中的 MethodInfo 缓存，
+        // 避免下次 Invoke 时命中旧 Assembly 的缓存（抛 TargetException）
+        ServiceRegistry.ClearMethodCache();
+
         try
         {
             OnAllModUnloaded?.Invoke();
