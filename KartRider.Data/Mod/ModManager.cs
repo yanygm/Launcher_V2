@@ -20,6 +20,8 @@ public static class ModManager
     private static string ModPath { get; set; } = string.Empty;
 
     public static event Action OnAllModLoaded;
+    public static event Action OnAllModReloaded;
+    public static event Action OnAllModUnloaded;
     public static event Action<string> OnModLoaded;
     public static event Action<string> OnModUnloaded;
     public static event Action<string> OnModReloading;
@@ -283,6 +285,15 @@ public static class ModManager
             UnloadMod(modInfo.Instance.Name);
         }
         Console.WriteLine(">>> 所有 Mod 已卸载");
+
+        try
+        {
+            OnAllModUnloaded?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] OnAllModUnloaded 事件处理程序抛出异常: {ex.Message}");
+        }
     }
 
     public static void ReloadAllMods()
@@ -295,6 +306,15 @@ public static class ModManager
             LoadMod(filePath);
         }
         Console.WriteLine(">>> 所有 Mod 已重新加载");
+
+        try
+        {
+            OnAllModReloaded?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] OnAllModReloaded 事件处理程序抛出异常: {ex.Message}");
+        }
     }
 
     public static Func<object[], object> GetModAction(string modName, string methodName)
