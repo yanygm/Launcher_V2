@@ -588,7 +588,7 @@ public class PatchManager
     {
         var (updateUrl, ClientVersion, single) = await GetUpdateAsync();
 
-        if (ClientVersion != ProfileService.SettingConfig.ClientVersion)
+        if (ClientVersion != 0 && ClientVersion != ProfileService.SettingConfig.ClientVersion)
         {
             // 弹出“是否”确认框
             DialogResult result = MessageBox.Show(
