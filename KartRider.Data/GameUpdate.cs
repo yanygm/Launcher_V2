@@ -552,7 +552,7 @@ public class PatchManager
             using NetworkStream stream = client.GetStream();
 
             IPAddress ClientAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
-            single = (RouterListener.RouterIPList.Contains(ClientAddress.ToString()));
+            single = RouterListener.RouterIPList.Contains(ClientAddress.ToString());
 
             // 读取数据，带超时
             byte[] buffer = new byte[recvBufferSize];
@@ -586,21 +586,7 @@ public class PatchManager
 
     public static async Task StartUpdateAsync(string RootDirectory)
     {
-        var ip = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
-        var (recvData, single) = await GetPatchUrl(ip, ProfileService.SettingConfig.ServerPort);
-
-        if (recvData.Length <= 0)
-        {
-            return;
-        }
-
-        InPacket inPacket = new InPacket(recvData);
-        inPacket.ReadUInt();
-        inPacket.ReadUInt();
-        inPacket.ReadUShort();
-        inPacket.ReadUShort();
-        ushort ClientVersion = inPacket.ReadUShort();
-        string updateUrl = inPacket.ReadString();
+        var (updateUrl, ClientVersion, single) = await GetUpdateAsync();
 
         if (ClientVersion != ProfileService.SettingConfig.ClientVersion)
         {
@@ -718,6 +704,26 @@ public class PatchManager
                 Program.LauncherDlg.ControlBox = true;
             }
         }
+    }
+
+    public static async Task<(string, ushort, bool)> GetUpdateAsync()
+    {
+        var ip = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
+        var (recvData, single) = await GetPatchUrl(ip, ProfileService.SettingConfig.ServerPort);
+
+        if (recvData.Length <= 0)
+        {
+            return ("", 0, single);
+        }
+
+        InPacket inPacket = new InPacket(recvData);
+        inPacket.ReadUInt();
+        inPacket.ReadUInt();
+        inPacket.ReadUShort();
+        inPacket.ReadUShort();
+        ushort ClientVersion = inPacket.ReadUShort();
+        string updateUrl = inPacket.ReadString();
+        return (updateUrl, ClientVersion, single);
     }
 
     private class PatchItem
