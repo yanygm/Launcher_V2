@@ -81,7 +81,9 @@ public static class ServiceRegistry
             return null;
 
         var type = instance.GetType();
-        var cacheKey = $"{type.GUID}:{methodName}";
+        // 使用 Module.ModuleVersionId（每次加载生成新 GUID）而非 type.GUID（固定），
+        // 确保 reloadallmod 后不会命中旧 Assembly 的 MethodInfo 缓存（否则会抛 TargetException）
+        var cacheKey = $"{type.Module.ModuleVersionId}:{methodName}";
 
         if (!_methodCache.TryGetValue(cacheKey, out var method))
         {
@@ -101,6 +103,15 @@ public static class ServiceRegistry
     {
         if (!string.IsNullOrWhiteSpace(name))
             _services.Remove(name);
+    }
+
+    /// <summary>
+    /// 清空方法缓存。ModManager 卸载全部 Mod 时调用，
+    /// 避免下次 Invoke 时命中旧 Assembly 的 MethodInfo。
+    /// </summary>
+    public static void ClearMethodCache()
+    {
+        _methodCache.Clear();
     }
 
     /// <summary>
