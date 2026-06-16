@@ -339,22 +339,6 @@ public static class ModManager
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        // --- 内存泄漏诊断 ---
-        var aliveAlcs = System.Runtime.Loader.AssemblyLoadContext.All
-            .Where(al => !al.IsDefault && al.IsCollectible)
-            .ToList();
-        if (aliveAlcs.Any())
-        {
-            Console.WriteLine($"[诊断] 警告：仍有 {aliveAlcs.Count} 个 Mod ALC 未被卸载！");
-            foreach (var alc in aliveAlcs)
-                Console.WriteLine($"  - {alc.Name}");
-        }
-        else
-        {
-            Console.WriteLine("[诊断] 所有 Mod ALC 已成功卸载，无泄漏");
-        }
-        // --------------------
-
         Console.WriteLine(">>> 所有 Mod 已卸载");
 
         // 清空 ServiceRegistry 中的 MethodInfo 缓存，
