@@ -218,11 +218,20 @@ namespace KartRider
                             outPacket.WriteInt(p.ReadInt());
                             outPacket.WriteUInt(MultyPlayer.ConvertTick());
                             bool success = BeginSend(outPacket, clientEP);
-                            if (MultyPlayer.Ready != null)
+
+                            if (!string.IsNullOrEmpty(nickname))
                             {
-                                if (MultyPlayer.Ready.ContainsKey(nickname) && MultyPlayer.Ready[nickname] == false)
+                                int roomId = RoomManager.TryGetRoomId(nickname);
+                                var room = RoomManager.GetRoom(roomId);
+                                if (room != null)
                                 {
-                                    MultyPlayer.Ready[nickname] = success;
+                                    if (room.Ready != null)
+                                    {
+                                        if (room.Ready.ContainsKey(nickname) && room.Ready[nickname] == false)
+                                        {
+                                            room.Ready[nickname] = success;
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -29,6 +29,7 @@ public class GameRoom
     public List<byte> CloseSlotIds { get; set; } = new List<byte>();
     public Dictionary<int, uint> TimeData { get; set; } = new Dictionary<int, uint>();
     public Dictionary<int, int> Ranking { get; set; } = new Dictionary<int, int>();
+    public Dictionary<string, bool> Ready { get; set; } = new Dictionary<string, bool>();
 
     // 8个格子（0-7）
     public RoomMember[] _slots = new RoomMember[8];

@@ -26,7 +26,6 @@ public static class MultyPlayer
     public static Dictionary<short, AICharacter> aiCharacterDict = new Dictionary<short, AICharacter>();
     public static Dictionary<short, AIKart> aiKartDict = new Dictionary<short, AIKart>();
     public static Dictionary<string, byte> StartTimeAttack = new Dictionary<string, byte>();
-    public static Dictionary<string, bool> Ready = new Dictionary<string, bool>();
     public static int[] teamPoints = { 10, 8, 6, 5, 4, 3, 2, 1 };
 
     public static IPEndPoint GetServerEndPoint(SessionGroup Parent)
@@ -100,20 +99,20 @@ public static class MultyPlayer
             return;
         }
 
-        Ready = new Dictionary<string, bool>();
+        room.Ready = new Dictionary<string, bool>();
 
         foreach (var player in room._slots)
         {
             if (player is Player p && !string.IsNullOrEmpty(p.Nickname))
             {
-                Ready[p.Nickname] = false;
+                room.Ready[p.Nickname] = false;
             }
         }
         foreach (var player in room.ObIDs)
         {
             if (player is Player p && !string.IsNullOrEmpty(p.Nickname))
             {
-                Ready[p.Nickname] = false;
+                room.Ready[p.Nickname] = false;
             }
         }
 
@@ -121,7 +120,7 @@ public static class MultyPlayer
         bool allReady = true;
 
         // 第一步：遍历字典值，检查是否有false
-        foreach (bool value in Ready.Values)
+        foreach (bool value in room.Ready.Values)
         {
             if (!value) // 只要有一个值为false，标记为未全部就绪
             {
@@ -142,7 +141,7 @@ public static class MultyPlayer
 
             // 模拟：重新检查字典值（实际场景中可替换为刷新数据的逻辑）
             allReady = true;
-            foreach (bool value in Ready.Values)
+            foreach (bool value in room.Ready.Values)
             {
                 if (!value)
                 {
@@ -202,7 +201,7 @@ public static class MultyPlayer
         room.TimeData = new Dictionary<int, uint>();
         room.Ranking = new Dictionary<int, int>();
         room.EndTicks = 0;
-        Ready = new Dictionary<string, bool>();
+        room.Ready = new Dictionary<string, bool>();
         Console.WriteLine("StartTicks = {0}", room.StartTicks);
     }
 
