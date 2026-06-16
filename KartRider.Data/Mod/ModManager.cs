@@ -124,11 +124,10 @@ public static class ModManager
             }
             else
             {
-                tempAlc.Unload();
-                alc = new ModLoadContext(filePath, isCollectible: true);
-                assembly = alc.LoadFromStream(new MemoryStream(dllBytes));
-                Type finalType = assembly.GetType(modType.FullName!);
-                mod = (IMod)Activator.CreateInstance(finalType);
+                // 直接复用第一次加载的 ALC 和实例，避免重复加载 DLL
+                alc = tempAlc;
+                assembly = tempAssembly;
+                mod = tempMod;
                 Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}");
             }
 
@@ -263,6 +262,7 @@ public static class ModManager
 
         if (!LoadMod(filePath))
         {
+            Console.WriteLine($"[警告] Mod [{modName}] 重新加载失败，文件路径: {filePath}");
             return false;
         }
 
@@ -280,10 +280,65 @@ public static class ModManager
 
     public static void UnloadAllMods()
     {
-        foreach (var modInfo in ModList.ToArray())
+        // 排除依赖 Mod（不可卸载）
+        var mods = ModList.Where(m => !m.Instance.IsDependencyMod).ToArray();
+
+        // Phase 1: 所有 Mod 先执行 OnUninitialize
+        // 此时所有实例仍可用，Mod 之间可安全地互相取消订阅
+        foreach (var modInfo in mods)
         {
-            UnloadMod(modInfo.Instance.Name);
+            try
+            {
+                modInfo.Instance.OnUninitialize();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[错误] Mod [{modInfo.Instance.Name}] OnUninitialize 抛出异常: {ex.Message}");
+            }
         }
+
+        // Phase 2: 逐个清理和卸载
+        foreach (var modInfo in mods)
+        {
+            try
+            {
+                string modName = modInfo.Instance.Name;
+
+                if (modInfo.IsPacketHandler && modInfo.Instance is IPacketHandler handler)
+                {
+                    PacketDispatcher.UnregisterHandler(handler);
+                }
+
+                ModList.Remove(modInfo);
+
+                // 从 ServiceRegistry 移除注册
+                ServiceRegistry.Unregister(modName);
+
+                modInfo.LoadContext.Unload();
+
+                modInfo.Instance = null;
+                modInfo.LoadContext = null;
+
+                Console.WriteLine($">>> 成功卸载 Mod: [{modName}]");
+
+                try
+                {
+                    OnModUnloaded?.Invoke(modName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[错误] 卸载 Mod 失败: {ex.Message}");
+            }
+        }
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+
         Console.WriteLine(">>> 所有 Mod 已卸载");
 
         // 清空 ServiceRegistry 中的 MethodInfo 缓存，
@@ -302,13 +357,8 @@ public static class ModManager
 
     public static void ReloadAllMods()
     {
-        var filePaths = ModList.Select(m => m.FilePath).ToList();
         UnloadAllMods();
-        
-        foreach (string filePath in filePaths)
-        {
-            LoadMod(filePath);
-        }
+        LoadMods(ModPath);
         Console.WriteLine(">>> 所有 Mod 已重新加载");
 
         try
