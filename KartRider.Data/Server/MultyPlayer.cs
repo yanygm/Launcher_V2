@@ -32,16 +32,19 @@ public static class MultyPlayer
     {
         IPEndPoint serverEndPoint = Parent.Client.Socket.LocalEndPoint as IPEndPoint;
         IPAddress clientEndPoint = ((IPEndPoint)Parent.Client.Socket.RemoteEndPoint).Address;
-        var ipInfo = Task.Run(async () => await Update.GetCountryAsync()).Result;
-        string ip = ipInfo?.Ip ?? "";
+        if (string.IsNullOrEmpty(RouterListener.ServerIP))
+        {
+            var ipInfo = Task.Run(async () => await Update.GetCountryAsync()).Result;
+            RouterListener.ServerIP = ipInfo?.Ip ?? "";
+        }
         if (RouterListener.RouterIPList.Contains(clientEndPoint.ToString()) || LanIpGetter.IsInLocalSubnet(clientEndPoint.ToString()))
         {
             return serverEndPoint;
         }
-        else if(!string.IsNullOrEmpty(ip))
+        else if(!string.IsNullOrEmpty(RouterListener.ServerIP))
         {
             int serverPort = ProfileService.SettingConfig.ServerPort;
-            return new IPEndPoint(IPAddress.Parse(ip), serverPort);
+            return new IPEndPoint(IPAddress.Parse(RouterListener.ServerIP), serverPort);
         }
         else
         {

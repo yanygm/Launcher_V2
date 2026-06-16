@@ -14,6 +14,8 @@ namespace KartRider
 {
     public class RouterListener
     {
+        public static string ServerIP = "";
+
         public static TcpListener Listener { get; private set; }
 
         public static SessionGroup MySession { get; set; }

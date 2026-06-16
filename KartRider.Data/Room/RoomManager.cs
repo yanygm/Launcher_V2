@@ -21,6 +21,12 @@ public static class RoomManager
         return roomId;
     }
 
+    // 检查房间是否有玩家（不包含AI）
+    public static bool HasPlayer(GameRoom room)
+    {
+        return room.GetPlayerCount() > 0 || room.GetOBCount() > 0;
+    }
+
     // 获取指定页码的房间列表（每页10个）
     public static Dictionary<int, GameRoom> GetRoomsByPage(int pageIndex)
     {
@@ -71,6 +77,13 @@ public static class RoomManager
             _playerRoomMap[nickname] = roomId;
             return added;
         }
+
+        // 添加失败检查房间是否为空，是则立即删除
+        if (!HasPlayer(room))
+        {
+            _rooms.Remove(roomId);
+        }
+
         return 255;
     }
 
