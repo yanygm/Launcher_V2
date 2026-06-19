@@ -73,12 +73,12 @@ namespace KartRider
 
         private void Start_Button_Click(object sender, EventArgs e)
         {
-            if (Process.GetProcessesByName("KartRider").Length != 0)
-            {
-                LauncherSystem.MessageBoxType1();
-            }
-            else
-            {
+            // if (Process.GetProcessesByName("KartRider").Length != 0)
+            // {
+            //     LauncherSystem.MessageBoxType1();
+            // }
+            // else
+            // {
                 var thread = new Thread(() =>
                 {
                     try
@@ -95,7 +95,7 @@ namespace KartRider
                     Name = "GameLauncherThread"
                 };
                 thread.Start();
-            }
+            // }
         }
 
         /// <summary>
@@ -122,19 +122,6 @@ namespace KartRider
         private void GitHub_Click(object sender, EventArgs e)
         {
             string url = "https://yanygm.github.io/Launcher_V2/";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"错误: {ex.Message}");
-            }
-        }
-
-        private void KartInfo_Click(object sender, EventArgs e)
-        {
-            string url = "https://kartinfo.me/thread-9369-1-1.html";
             try
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
