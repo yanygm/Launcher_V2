@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Profile;
 
 namespace KartRider;
@@ -8,16 +10,16 @@ namespace KartRider;
 public static class RoomManager
 {
     // 存储所有房间（键：房间ID，值：房间实例）
-    public static Dictionary<int, GameRoom> _rooms = new Dictionary<int, GameRoom>();
-    private static Dictionary<string, int> _playerRoomMap = new Dictionary<string, int>();
+    public static ConcurrentDictionary<int, GameRoom> _rooms = new ConcurrentDictionary<int, GameRoom>();
+    private static ConcurrentDictionary<string, int> _playerRoomMap = new ConcurrentDictionary<string, int>();
     private static int _nextRoomId = 1; // 下一个可用的房间ID（自增确保唯一）
     private const int PageSize = 10; // 每页10个
 
     // 创建新房间（返回房间ID）
     public static int CreateRoom()
     {
-        int roomId = _nextRoomId++;
-        _rooms.Add(roomId, new GameRoom(roomId));
+        int roomId = Interlocked.Increment(ref _nextRoomId) - 1;
+        _rooms.TryAdd(roomId, new GameRoom(roomId));
         return roomId;
     }
 
@@ -60,8 +62,8 @@ public static class RoomManager
         if (room == null || string.IsNullOrEmpty(nickname))
             return 255;
 
-        // 去重：严格区分大小写
-        if (_playerRoomMap.ContainsKey(nickname))
+        // 去重：严格区分大小写，TryAdd 原子操作
+        if (!_playerRoomMap.TryAdd(nickname, roomId))
             return 255;
 
         // 确保玩家配置文件已加载
@@ -74,14 +76,16 @@ public static class RoomManager
         byte added = room.TryAddPlayer(nickname, team, playerType, client);
         if (added != 255)
         {
-            _playerRoomMap[nickname] = roomId;
             return added;
         }
+
+        // 添加失败，回滚 playerRoomMap
+        _playerRoomMap.TryRemove(nickname, out _);
 
         // 添加失败检查房间是否为空，是则立即删除
         if (!HasPlayer(room))
         {
-            _rooms.Remove(roomId);
+            _rooms.TryRemove(roomId, out _);
         }
 
         return 255;
@@ -92,41 +96,36 @@ public static class RoomManager
         if (string.IsNullOrEmpty(nickname))
             return -1;
 
-        lock (_rooms)
-        {
-            // 1. 检查房间是否存在
-            if (!_rooms.TryGetValue(roomId, out var room))
-                return -1;
+        // 1. 检查房间是否存在
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return -1;
 
-            uint pmap = Profile.ProfileService.GetProfileConfig(nickname).Rider.pmap;
-            if (pmap == 718 || pmap == 590)
+        uint pmap = Profile.ProfileService.GetProfileConfig(nickname).Rider.pmap;
+        if (pmap == 718 || pmap == 590)
+        {
+            foreach (var member in room.ObIDs)
             {
-                foreach (var member in room.ObIDs)
+                // 匹配玩家类型且昵称一致
+                if (member is Player player && player.Nickname == nickname)
                 {
-                    // 匹配玩家类型且昵称一致
-                    if (member is Player player && player.Nickname == nickname)
-                    {
-                        return player.SlotId; // 返回玩家所在的格子ID
-                    }
+                    return player.SlotId; // 返回玩家所在的格子ID
                 }
-                return -1;
             }
-            else
-            {
-                // 2. 遍历房间所有格子，查找目标玩家
-                foreach (var member in room._slots)
-                {
-                    // 匹配玩家类型且昵称一致
-                    if (member is Player player && player.Nickname == nickname)
-                    {
-                        return player.SlotId; // 返回玩家所在的格子ID
-                    }
-                }
-                return -1;
-            }
+            return -1;
         }
-        // 未找到玩家（或玩家不在该房间）
-        return -1;
+        else
+        {
+            // 2. 遍历房间所有格子，查找目标玩家
+            foreach (var member in room._slots)
+            {
+                // 匹配玩家类型且昵称一致
+                if (member is Player player && player.Nickname == nickname)
+                {
+                    return player.SlotId; // 返回玩家所在的格子ID
+                }
+            }
+            return -1;
+        }
     }
 
     public static int TryGetRoomId(string nickname)
@@ -135,7 +134,7 @@ public static class RoomManager
         if (string.IsNullOrEmpty(nickname))
             return roomId;
 
-        // 严格匹配大小写（“Zhang”和“zhang”会返回不同结果）
+        // 严格匹配大小写（"Zhang"和"zhang"会返回不同结果）
         return _playerRoomMap.TryGetValue(nickname, out roomId) ? roomId : -1;
     }
 
@@ -154,11 +153,11 @@ public static class RoomManager
 
             if (!string.IsNullOrEmpty(nickname))
             {
-                _playerRoomMap.Remove(nickname); // 区分大小写删除
+                _playerRoomMap.TryRemove(nickname, out _); // 原子删除
             }
             if (shouldDeleteRoom)
             {
-                _rooms.Remove(roomId);
+                _rooms.TryRemove(roomId, out _);
             }
         }
         return removed;
@@ -225,39 +224,35 @@ public static class RoomManager
         if (string.IsNullOrEmpty(nickname))
             return null;
 
-        lock (_rooms)
+        // 1. 先检查房间是否存在
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return null;
+        uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
+        if (pmap == 718 || pmap == 590)
         {
-            // 1. 先检查房间是否存在
-            if (!_rooms.TryGetValue(roomId, out var room))
-                return null;
-            uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
-            if (pmap == 718 || pmap == 590)
+            foreach (var member in room.ObIDs)
             {
-                foreach (var member in room.ObIDs)
+                // 严格匹配昵称（含大小写）
+                if (member is Player player && player.Nickname == nickname)
                 {
-                    // 严格匹配昵称（含大小写）
-                    if (member is Player player && player.Nickname == nickname)
-                    {
-                        return player;
-                    }
+                    return player;
                 }
-                return null;
             }
-            else
-            {
-                // 2. 遍历房间的8个格子，查找昵称匹配的玩家
-                foreach (var member in room._slots)
-                {
-                    // 严格匹配昵称（含大小写）
-                    if (member is Player player && player.Nickname == nickname)
-                    {
-                        return player;
-                    }
-                }
-                return null;
-            }
+            return null;
         }
-        return null; // 未找到玩家
+        else
+        {
+            // 2. 遍历房间的8个格子，查找昵称匹配的玩家
+            foreach (var member in room._slots)
+            {
+                // 严格匹配昵称（含大小写）
+                if (member is Player player && player.Nickname == nickname)
+                {
+                    return player;
+                }
+            }
+            return null;
+        }
     }
 
     // 更换指定房间中指定位置成员的队伍
@@ -337,5 +332,5 @@ public static class RoomManager
     public static GameRoom GetRoom(int roomId) =>
         _rooms.TryGetValue(roomId, out var room) ? room : null;
 
-    public static Dictionary<int, GameRoom> GetRoomsDict() => _rooms;
+    public static ConcurrentDictionary<int, GameRoom> GetRoomsDict() => _rooms;
 }
