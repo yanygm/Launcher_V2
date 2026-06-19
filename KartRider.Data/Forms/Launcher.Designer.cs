@@ -15,8 +15,6 @@ namespace KartRider
             label_Client = new Label();
             ClientVersion = new Label();
             VersionLabel = new Label();
-            GitHub = new Label();
-            KartInfo = new Label();
             Launcher_label = new Label();
             SuspendLayout();
             // 
@@ -108,28 +106,6 @@ namespace KartRider
             VersionLabel.TabIndex = 7;
             VersionLabel.Click += GitHub_Click;
             // 
-            // GitHub
-            // 
-            GitHub.AutoSize = true;
-            GitHub.ForeColor = System.Drawing.Color.Blue;
-            GitHub.Location = new System.Drawing.Point(213, 144);
-            GitHub.Name = "GitHub";
-            GitHub.Size = new System.Drawing.Size(41, 12);
-            GitHub.TabIndex = 8;
-            GitHub.Text = "GitHub";
-            GitHub.Click += GitHub_Click;
-            // 
-            // KartInfo
-            // 
-            KartInfo.AutoSize = true;
-            KartInfo.ForeColor = System.Drawing.Color.Blue;
-            KartInfo.Location = new System.Drawing.Point(201, 160);
-            KartInfo.Name = "KartInfo";
-            KartInfo.Size = new System.Drawing.Size(53, 12);
-            KartInfo.TabIndex = 9;
-            KartInfo.Text = "KartInfo";
-            KartInfo.Click += KartInfo_Click;
-            // 
             // Launcher
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -144,8 +120,6 @@ namespace KartRider
             Controls.Add(label_Client);
             Controls.Add(VersionLabel);
             Controls.Add(Launcher_label);
-            Controls.Add(GitHub);
-            Controls.Add(KartInfo);
             Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = Icon.ExtractAssociatedIcon(Process.GetCurrentProcess().MainModule.FileName);
@@ -167,7 +141,5 @@ namespace KartRider
         private Label ClientVersion;
         private Label Launcher_label;
         private Label VersionLabel;
-        private Label GitHub;
-        private Label KartInfo;
     }
 }
