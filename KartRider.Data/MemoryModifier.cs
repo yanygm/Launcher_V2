@@ -175,7 +175,7 @@ class MemoryModifier
             Thread detectThread = new Thread(() =>
             {
                 int checkCount = 0;
-                while (!pinRestored && checkCount < 120) // 最多检测2分钟 (120 * 1秒)
+                while (!pinRestored && checkCount < 30) // 最多检测30秒
                 {
                     if (CheckTcpConnection(processId, serverIP, serverPort))
                     {
@@ -220,7 +220,7 @@ class MemoryModifier
 
                 if (!pinRestored)
                 {
-                    Console.WriteLine("[TCP检测] 超过2分钟未检测到连接，停止检测");
+                    Console.WriteLine("[TCP检测] 超过30秒未检测到连接，停止检测");
                 }
             })
             {
