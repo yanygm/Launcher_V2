@@ -87,25 +87,11 @@ namespace KartRider
                     uint UserNO = ClientManager.GetUserNO(packet.Nickname);
                     var loginConfig = ProfileService.GetProfileConfig(packet.Nickname);
                     loginConfig.Rider.ClientId = clientId;
-                    if (packet.Nickname.Length > 1 && packet.Nickname.StartsWith("sob", StringComparison.OrdinalIgnoreCase))
+                    if (packet.Nickname.Length > 1 && packet.Nickname.StartsWith("ob", StringComparison.OrdinalIgnoreCase))
                     {
                         if (loginConfig.Rider.pmap == 0)
                         {
                             loginConfig.Rider.pmap = 718;
-                        }
-                    }
-                    else if (packet.Nickname.Length > 1 && packet.Nickname.StartsWith("ob", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (loginConfig.Rider.pmap == 0)
-                        {
-                            loginConfig.Rider.pmap = 590;
-                        }
-                    }
-                    else if (packet.Nickname.Length > 1 && packet.Nickname.StartsWith("ca", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (loginConfig.Rider.pmap == 0)
-                        {
-                            loginConfig.Rider.pmap = 1068;
                         }
                     }
                     ProfileService.Save(packet.Nickname, loginConfig);
