@@ -1423,7 +1423,7 @@ public static class MultyPlayer
         }
     }
 
-    static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false)
+    static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "")
     {
         var room = RoomManager.GetRoom(roomId);
         outPacket.WriteUInt(room.track); // track name hash
@@ -1466,12 +1466,24 @@ public static class MultyPlayer
                 IPEndPoint client = ClientManager.ClientToIPEndPoint(pConfig.Rider.ClientId);
                 outPacket.WriteEndPoint(new IPEndPoint(client.Address, pConfig.Rider.P2pPort));
                 outPacket.WriteEndPoint(new IPEndPoint(IPAddress.Any, 0));
-                outPacket.WriteString(p.Nickname);
-                outPacket.WriteShort(pConfig.Rider.Emblem1);
-                outPacket.WriteShort(pConfig.Rider.Emblem2);
-                outPacket.WriteShort(0);
-                GameSupport.GetRider(p.Nickname, outPacket);
-                outPacket.WriteString(pConfig.Rider.Card);
+                if (room.RoomName.Contains("比赛") && nickname != "" && nickname != p.Nickname)
+                {
+                    outPacket.WriteString("跑跑卡丁车");
+                    outPacket.WriteShort(0);
+                    outPacket.WriteShort(0);
+                    outPacket.WriteShort(0);
+                    GameSupport.GetRider(nickname, outPacket);
+                    outPacket.WriteString("");
+                }
+                else
+                {
+                    outPacket.WriteString(p.Nickname);
+                    outPacket.WriteShort(pConfig.Rider.Emblem1);
+                    outPacket.WriteShort(pConfig.Rider.Emblem2);
+                    outPacket.WriteShort(0);
+                    GameSupport.GetRider(p.Nickname, outPacket);
+                    outPacket.WriteString(pConfig.Rider.Card);
+                }
                 outPacket.WriteUInt(pConfig.Rider.RP);
                 if (room.GameType == 3 || room.GameType == 4)
                 {
@@ -1641,7 +1653,7 @@ public static class MultyPlayer
             GrSessionDataPacket(p.Nickname, oPacket);
 
             oPacket.WriteUInt(Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("GrSlotDataPacket")));
-            GrSlotDataPacket(roomId, oPacket, true);
+            GrSlotDataPacket(roomId, oPacket, true, p.Nickname);
             oPacket.WriteInt();
 
             //kart data
