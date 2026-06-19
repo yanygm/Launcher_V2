@@ -304,6 +304,7 @@ public class GameRoom
         else if (removedMember is Ai ai)
         {
             _IDs[ai.ID] = null;
+            shouldDeleteRoom = (GetPlayerCount() + GetOBCount()) == 0;
             if (!shouldDeleteRoom) MultyPlayer.GrSlotDataPacket(RoomId);
             return true;
         }
