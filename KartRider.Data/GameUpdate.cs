@@ -679,8 +679,23 @@ public class PatchManager
             var packFolderManager = KartRhoFile.Dump(Path.GetFullPath(Path.Combine(RootDirectory, @"Data\aaa.pk")));
             if (packFolderManager == null)
             {
-                MessageBox.Show("游戏文件校验失败，请检查更新服务器或手动修复游戏文件。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(1);
+                DialogResult result = MessageBox.Show(
+                    $"游戏文件校验失败，是否修复游戏文件？",
+                    "确认操作",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question
+                );
+
+                // 根据用户选择执行对应逻辑
+                if (result == DialogResult.Yes)
+                {
+                    LauncherSystem.CheckGame(RootDirectory);
+                    return;
+                }
+                else
+                {
+                    Environment.Exit(1);
+                }
             }
             packFolderManager.Reset();
             PINFile val = new PINFile(Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin")));
