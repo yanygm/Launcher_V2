@@ -435,6 +435,13 @@ public static class MultyPlayer
             room.RoomMaster = firstID;
             p5.PlayerType = 2;
         }
+        foreach (RoomMember member in room.ObIDs)
+        {
+            if (member is Player p6)
+            {
+                p6.LastPacketReceived = 0;
+            }
+        }
         Console.WriteLine("EndTicks = {0}", room.EndTicks + 5000);
     }
 
