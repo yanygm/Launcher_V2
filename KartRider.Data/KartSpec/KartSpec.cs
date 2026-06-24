@@ -78,36 +78,36 @@ namespace KartRider
             new("UseTransformBooster", 0M, 0M, 1M, val => UseTransformBooster = (byte)val),
             new("motorcycleType", 0M, 0M, 1M, val => motorcycleType = (byte)val),
             new("BikeRearWheel", 0M, 1M, 1M, val => BikeRearWheel = (byte)val),
-            new("Mass", 0M, 100M, 1M, val => Mass = (float)val),
-            new("AirFriction", 0M, 3M, 1M, val => AirFriction = (float)val),
-            new("DragFactor", 0.75M, 0.75M, 1M, val => DragFactor = (float)val),
-            new("ForwardAccelForce", 2150M, 2150M, 1M, val => ForwardAccelForce = (float)val),
-            new("BackwardAccelForce", 1725M, 1725M, 1M, val => BackwardAccelForce = (float)val),
-            new("GripBrakeForce", 2070M, 2070M, 1M, val => GripBrakeForce = (float)val),
-            new("SlipBrakeForce", 1415M, 1415M, 1M, val => SlipBrakeForce = (float)val),
-            new("MaxSteerAngle", 0M, 10M, 1M, val => MaxSteerAngle = (float)val),
-            new("SteerConstraint", 22.25M, 22.25M, 1M, val => SteerConstraint = (float)val),
-            new("FrontGripFactor", 0M, 5M, 1M, val => FrontGripFactor = (float)val),
-            new("RearGripFactor", 0M, 5M, 1M, val => RearGripFactor = (float)val),
-            new("DriftTriggerFactor", 0M, 0.2M, 1M, val => DriftTriggerFactor = (float)val),
-            new("DriftTriggerTime", 0M, 0.2M, 1M, val => DriftTriggerTime = (float)val),
-            new("DriftSlipFactor", 0M, 0.2M, 1M, val => DriftSlipFactor = (float)val),
-            new("DriftEscapeForce", 2600M, 2600M, 1M, val => DriftEscapeForce = (float)val),
-            new("CornerDrawFactor", 0.18M, 0.18M, 1M, val => CornerDrawFactor = (float)val),
+            new("Mass", 0M, 0M, 1M, val => Mass = (float)val),
+            new("AirFriction", 0M, 0M, 1M, val => AirFriction = (float)val),
+            new("DragFactor", 0M, 0M, 1M, val => DragFactor = (float)val),
+            new("ForwardAccelForce", 0M, 0M, 1M, val => ForwardAccelForce = (float)val),
+            new("BackwardAccelForce", 0M, 0M, 1M, val => BackwardAccelForce = (float)val),
+            new("GripBrakeForce", 0M, 0M, 1M, val => GripBrakeForce = (float)val),
+            new("SlipBrakeForce", 0M, 0M, 1M, val => SlipBrakeForce = (float)val),
+            new("MaxSteerAngle", 0M, 0M, 1M, val => MaxSteerAngle = (float)val),
+            new("SteerConstraint", 0M, 0M, 1M, val => SteerConstraint = (float)val),
+            new("FrontGripFactor", 0M, 0M, 1M, val => FrontGripFactor = (float)val),
+            new("RearGripFactor", 0M, 0M, 1M, val => RearGripFactor = (float)val),
+            new("DriftTriggerFactor", 0M, 0M, 1M, val => DriftTriggerFactor = (float)val),
+            new("DriftTriggerTime", 0M, 0M, 1M, val => DriftTriggerTime = (float)val),
+            new("DriftSlipFactor", 0M, 0M, 1M, val => DriftSlipFactor = (float)val),
+            new("DriftEscapeForce", 0M, 0M, 1M, val => DriftEscapeForce = (float)val),
+            new("CornerDrawFactor", 0M, 0M, 1M, val => CornerDrawFactor = (float)val),
             new("DriftLeanFactor", 0.07M, 0.07M, 1M, val => DriftLeanFactor = (float)val),
             new("SteerLeanFactor", 0.01M, 0.01M, 1M, val => SteerLeanFactor = (float)val),
-            new("DriftMaxGauge", 4300M, 4300M, 1M, val => DriftMaxGauge = (float)val),
+            new("DriftMaxGauge", 0M, 0M, 1M, val => DriftMaxGauge = (float)val),
             new("NormalBoosterTime", 3000M, 3000M, 1M, val => NormalBoosterTime = (float)val),
             new("ItemBoosterTime", 3000M, 3000M, 1M, val => ItemBoosterTime = (float)val),
             new("TeamBoosterTime", 4500M, 4500M, 1M, val => TeamBoosterTime = (float)val),
             new("AnimalBoosterTime", 4000M, 4000M, 1M, val => AnimalBoosterTime = (float)val),
             new("SuperBoosterTime", 3500M, 3500M, 1M, val => SuperBoosterTime = (float)val),
-            new("TransAccelFactor", -0.0045M, 1.4955M, 1M, val => TransAccelFactor = (float)val),
-            new("BoostAccelFactor", -0.006M, 1.494M, 1M, val => BoostAccelFactor = (float)val),
+            new("TransAccelFactor", 0M, 1.5M, 1M, val => TransAccelFactor = (float)val),
+            new("BoostAccelFactor", 0M, 1.5M, 1M, val => BoostAccelFactor = (float)val),
             new("StartBoosterTimeItem", 0M, 1000M, 1M, val => StartBoosterTimeItem = (float)val),
             new("StartBoosterTimeSpeed", 0M, 1000M, 1M, val => StartBoosterTimeSpeed = (float)val),
-            new("StartForwardAccelForceItem", 171.6355M, 2304M, 2102.325M, val => StartForwardAccelForceItem = (float)val),
-            new("StartForwardAccelForceSpeed", 176.132M, 2304M, 2099.68M, val => StartForwardAccelForceSpeed = (float)val),
+            new("StartForwardAccelFactorItem", 0M, 0M, 1M, val => StartForwardAccelFactorItem = (float)val),
+            new("StartForwardAccelFactorSpeed", 0M, 0M, 1M, val => StartForwardAccelFactorSpeed = (float)val),
             new("DriftGaguePreservePercent", 0M, 0M, 1M, val => DriftGaguePreservePercent = (float)val),
             new("UseExtendedAfterBooster", 0M, 0M, 1M, val => UseExtendedAfterBooster = (byte)val),
             new("BoostAccelFactorOnlyItem", 0M, 1.5M, 1M, val => BoostAccelFactorOnlyItem = (float)val),
@@ -324,19 +324,7 @@ namespace KartRider
                 return defaultValue.ToString(CultureInfo.InvariantCulture);
             }
 
-            // 2. 处理特殊属性: StartForwardAccelForceItem（读取Factor属性）
-            if (attributeName == "StartForwardAccelForceItem")
-            {
-                return GetScaledValue(element, "StartForwardAccelFactorItem", fallbackValue, defaultValue, scale);
-            }
-
-            // 3. 处理特殊属性: StartForwardAccelForceSpeed（读取Factor属性）
-            if (attributeName == "StartForwardAccelForceSpeed")
-            {
-                return GetScaledValue(element, "StartForwardAccelFactorSpeed", fallbackValue, defaultValue, scale);
-            }
-
-            // 4. 处理特殊属性: instAccelGaugeMinUsable（依赖instAccelGaugeLength）
+            // 2. 处理特殊属性: instAccelGaugeMinUsable（依赖instAccelGaugeLength）
             if (attributeName == "instAccelGaugeMinUsable")
             {
                 // 先获取instAccelGaugeLength的值
@@ -349,7 +337,7 @@ namespace KartRider
                 return GetScaledValue(element, attributeName, fallbackValue, defaultValue, scale * length);
             }
 
-            // 5. 普通数值属性
+            // 3. 普通数值属性
             return GetScaledValue(element, attributeName, fallbackValue, defaultValue, scale);
         }
 
@@ -430,82 +418,82 @@ namespace KartRider
         /// <summary>
         /// 车辆重量
         /// </summary>
-        public float Mass { get; set; } = 100f;
+        public float Mass { get; set; } = 0f;
 
         /// <summary>
         /// 空气阻力-
         /// </summary>
-        public float AirFriction { get; set; } = 3f;
+        public float AirFriction { get; set; } = 0f;
 
         /// <summary>
         /// 改裝名称：極限速度-
         /// </summary>
-        public float DragFactor { get; set; } = 0.667f;
+        public float DragFactor { get; set; } = -0.083f;
 
         /// <summary>
         /// 競速賽起步加速力
         /// </summary>
-        public float ForwardAccelForce { get; set; } = 2304f;
+        public float ForwardAccelForce { get; set; } = 154f;
 
         /// <summary>
         /// 倒车加速度+
         /// </summary>
-        public float BackwardAccelForce { get; set; } = 1825f;
+        public float BackwardAccelForce { get; set; } = 100f;
 
         /// <summary>
         /// 迴轉減速
         /// </summary>
-        public float GripBrakeForce { get; set; } = 2070f;
+        public float GripBrakeForce { get; set; } = 0f;
 
         /// <summary>
         /// 漂移減速
         /// </summary>
-        public float SlipBrakeForce { get; set; } = 1415f;
+        public float SlipBrakeForce { get; set; } = 0f;
 
         /// <summary>
         /// 最大转向角度
         /// </summary>
-        public float MaxSteerAngle { get; set; } = 10f;
+        public float MaxSteerAngle { get; set; } = 0f;
 
         /// <summary>
         /// 轉向靈活度
         /// </summary>
-        public float SteerConstraint { get; set; } = 24.61f;
+        public float SteerConstraint { get; set; } = 2.36f;
 
         /// <summary>
         /// 弯道敏捷性
         /// </summary>
-        public float FrontGripFactor { get; set; } = 5f;
+        public float FrontGripFactor { get; set; } = 0f;
 
         /// <summary>
         /// 弯道敏捷性
         /// </summary>
-        public float RearGripFactor { get; set; } = 5f;
+        public float RearGripFactor { get; set; } = 0f;
 
         /// <summary>
         /// 漂移触发系数
         /// </summary>
-        public float DriftTriggerFactor { get; set; } = 0.2f;
+        public float DriftTriggerFactor { get; set; } = 0f;
 
         /// <summary>
         /// 漂移触发时间
         /// </summary>
-        public float DriftTriggerTime { get; set; } = 0.2f;
+        public float DriftTriggerTime { get; set; } = 0f;
 
         /// <summary>
         /// 漂移稳定性
         /// </summary>
-        public float DriftSlipFactor { get; set; } = 0.2f;
+        public float DriftSlipFactor { get; set; } = 0f;
 
         /// <summary>
         /// 改裝名称：漂移最佳化
         /// </summary>
-        public float DriftEscapeForce { get; set; } = 4200f;
+        public float DriftEscapeForce { get; set; } = 1600f;
 
         /// <summary>
         /// 改裝名称：弯道加速度
         /// </summary>
-        public float CornerDrawFactor { get; set; } = 0.254f;
+        public float CornerDrawFactor { get; set; } = 0.074f;
 
         /// <summary>
         /// 漂移车身傾斜度
@@ -520,7 +508,7 @@ namespace KartRider
         /// <summary>
         /// 改裝名称：集气速度-
         /// </summary>
-        public float DriftMaxGauge { get; set; } = 3860f;
+        public float DriftMaxGauge { get; set; } = -440f;
 
         /// <summary>
         /// 改裝名称：加速器持续时间
@@ -550,12 +538,12 @@ namespace KartRider
         /// <summary>
         /// 改裝名称：变形加速度
         /// </summary>
-        public float TransAccelFactor { get; set; } = 1.8495f;
+        public float TransAccelFactor { get; set; } = 1.854f;
 
         /// <summary>
         /// 加速器加速度
         /// </summary>
-        public float BoostAccelFactor { get; set; } = 1.494f;
+        public float BoostAccelFactor { get; set; } = 1.5f;
 
         /// <summary>
         /// 道具賽起步時間
@@ -570,12 +558,12 @@ namespace KartRider
         /// <summary>
         /// 道具賽起步加速力
         /// </summary>
-        public float StartForwardAccelForceItem { get; set; } = 2304f;
+        public float StartForwardAccelFactorItem { get; set; } = 0f;
 
         /// <summary>
         /// 競速賽起步加速力
         /// </summary>
-        public float StartForwardAccelForceSpeed { get; set; } = 3745.588f;
+        public float StartForwardAccelFactorSpeed { get; set; } = 1.7f;
 
         /// <summary>
         /// 碰撞时恢复集气量（％）
@@ -806,6 +794,6 @@ namespace KartRider
         /// <summary>
         /// 鎖定超越推進器特效欄位
         /// </summary>
-        public byte PartsBoosterEffectLock { get; set; } = (byte)(true ? 1 : 0);
+        public byte PartsBoosterEffectLock { get; set; } = (byte)(false ? 1 : 0);
     }
 }

@@ -399,20 +399,20 @@ namespace KartRider
             }
         }
 
-    public static (IPEndPoint, uint, bool) GetUdp(string nickname)
-    {
-        if (udpClients.TryGetValue(nickname, out var value))
+        public static (IPEndPoint, uint, bool) GetUdp(string nickname)
         {
-            return (value.Item1, value.Item2, value.Item3);
+            if (udpClients.TryGetValue(nickname, out var value))
+            {
+                return (value.Item1, value.Item2, value.Item3);
+            }
+            else
+            {
+                var profile = ProfileService.GetProfileConfig(nickname);
+                IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
+                var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
+                return (udpIP, 0, false);
+            }
         }
-        else
-        {
-            var profile = ProfileService.GetProfileConfig(nickname);
-            IPEndPoint client = ClientManager.ClientToIPEndPoint(profile.Rider.ClientId);
-            var udpIP = new IPEndPoint(client.Address, profile.Rider.UdpPort);
-            return (udpIP, 0, false);
-        }
-    }
 
         public void UdpBoardCast(Player player, IPEndPoint udp, OutPacket outPacket)
         {

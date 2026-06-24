@@ -18,7 +18,7 @@ public class TrackRank
 
 public static class TrackRankData
 {
-	public static Dictionary<byte, string> SpeedTypes = new Dictionary<byte, string> { { 7, "标准" }, { 4, "无限" } };
+	public static Dictionary<byte, string> SpeedTypes = new Dictionary<byte, string> { { 0, "普通" }, { 1, "快速" }, { 2, "高速" }, { 3, "慢速" }, { 4, "无限" }, { 5, "CGS" }, { 6, "真·无限" }, { 7, "标准" }, { 8, "标准" } };
 	public static Dictionary<byte, string> GameTypes = new Dictionary<byte, string> { { 0, "个人赛" }, { 1, "组队赛" } };
 
 	public static string GetSpeedTypeName(byte speedType)
