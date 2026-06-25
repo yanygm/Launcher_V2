@@ -1776,10 +1776,6 @@ public static class MultyPlayer
                 outPacket.WriteBytes(new byte[5]);
                 Parent.Client.Send(outPacket);
             }
-            if (!RoomManager.HasPlayer(room))
-            {
-                RoomManager._rooms.TryRemove(roomId, out _);
-            }
             return;
         }
         else if (room.GameType == 3 || room.GameType == 4)
