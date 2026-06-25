@@ -1730,21 +1730,8 @@ public static class MultyPlayer
 
     static void ChJoinRoomReplyPacket(SessionGroup Parent, int roomId, String pwd)
     {
-        if (roomId == -1)
-        {
-            using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
-            {
-                outPacket.WriteByte(1);
-                outPacket.WriteByte(0);
-                outPacket.WriteByte(0);
-                outPacket.WriteEncByte(0);
-                outPacket.WriteBytes(new byte[5]);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
         var room = RoomManager.GetRoom(roomId);
-        if (room == null)
+        if (room == null || room.Started)
         {
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {
@@ -1757,20 +1744,7 @@ public static class MultyPlayer
             }
             return;
         }
-        if (room.Started)
-        {
-            using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
-            {
-                outPacket.WriteByte(1);
-                outPacket.WriteByte(0);
-                outPacket.WriteByte(0);
-                outPacket.WriteEncByte(0);
-                outPacket.WriteBytes(new byte[5]);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        if (!string.IsNullOrEmpty(room.LockPwd) && pwd != room.LockPwd)
+        else if (!string.IsNullOrEmpty(room.LockPwd) && pwd != room.LockPwd)
         {
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {
@@ -1780,6 +1754,10 @@ public static class MultyPlayer
                 outPacket.WriteEncByte(room.GameType);
                 outPacket.WriteBytes(new byte[5]);
                 Parent.Client.Send(outPacket);
+            }
+            if (!RoomManager.HasPlayer(room))
+            {
+                RoomManager._rooms.TryRemove(roomId, out _);
             }
             return;
         }
@@ -1797,6 +1775,10 @@ public static class MultyPlayer
                 outPacket.WriteEncByte(room.GameType);
                 outPacket.WriteBytes(new byte[5]);
                 Parent.Client.Send(outPacket);
+            }
+            if (!RoomManager.HasPlayer(room))
+            {
+                RoomManager._rooms.TryRemove(roomId, out _);
             }
             return;
         }
