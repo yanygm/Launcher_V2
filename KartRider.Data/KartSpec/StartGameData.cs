@@ -530,25 +530,7 @@ namespace KartRider
             byte speed = ProfileService.SettingConfig.SpeedType;
             if (version == "国服" && speed == 7)
             {
-                if (StartTimeAttack_SpeedType == 0)
-                {
-                    version = "韩服复古";
-                    speed = 3;
-                }
-                else if (StartTimeAttack_SpeedType == 2)
-                {
-                    version = "国服复古";
-                    speed = 2;
-                }
-                else if (StartTimeAttack_SpeedType == 3)
-                {
-                    version = "国服复古";
-                    speed = 3;
-                }
-                else
-                {
-                    speed = StartTimeAttack_SpeedType;
-                }
+                speed = StartTimeAttack_SpeedType;
             }
             int roomId = RoomManager.TryGetRoomId(nickname);
             if (roomId != -1)
