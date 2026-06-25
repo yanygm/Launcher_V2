@@ -583,7 +583,7 @@ namespace ExcData
             string finalVersion;
 
             // 复古模式速度关键字
-            HashSet<string> _retroSpeeds = new HashSet<string> { "初级", "L3", "L2", "L1", "Pro" };
+            HashSet<string> _retroSpeeds = new HashSet<string>(speedNames["国服复古"].Keys);
 
             bool isHanfu = lowerInput.Contains("韩服复古") || lowerInput.Contains("韩服");
 
