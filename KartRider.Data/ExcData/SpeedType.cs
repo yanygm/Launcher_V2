@@ -417,6 +417,7 @@ namespace ExcData
                     {
                         Default();
                     }
+                    KR();
                 }
             }
             else
@@ -535,6 +536,16 @@ namespace ExcData
             BoostAccelFactor = 0f;
             NormalBoosterTime = 0f;
             TeamBoosterTime = 0f;
+        }
+
+        private void KR()
+        {
+            DragFactor += -0.005f;
+            ForwardAccelForce += -5f;
+            SteerConstraint += 0.05f;
+            DriftEscapeForce += 150f;
+            CornerDrawFactor += 0.005f;
+            TransAccelFactor += 0.18f;
         }
 
         /// <summary>
