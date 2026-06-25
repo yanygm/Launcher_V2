@@ -1641,5 +1641,11 @@ namespace KartRider_PacketName
 		SpReqDeleteReceiveLogPacket = 2432305787,
 		SpRepDeleteReceiveLogPacket = 2430798458,
 		PrCnChkPassword = 750257628,
+		PqExpeditionActiveMissionListPacket = 4214951436,
+		PrExpeditionActiveMissionListPacket = 4217179661,
+		PqExpeditionBuyMissionPacket = 2717649732,
+		PrExpeditionBuyMissionPacket = 2719419205,
+		PqExpeditionMissionStartPacket = 3133082658,
+		PrExpeditionMissionStartPacket = 3134983203,
 	}
 }

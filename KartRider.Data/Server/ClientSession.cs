@@ -3771,6 +3771,38 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionActiveMissionListPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrExpeditionActiveMissionListPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionBuyMissionPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrExpeditionBuyMissionPacket"))
+                        {
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionMissionStartPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrExpeditionMissionStartPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteByte(2);
+                            outPacket.WriteTime(DateTime.Now);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderQuestUX2ndData", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderQuestUX2ndData"))

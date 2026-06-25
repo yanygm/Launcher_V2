@@ -267,58 +267,12 @@ namespace ExcData
                     if (SpeedType == 0 || SpeedType == 1)//Rookie
                     {
                         Console.WriteLine("SpeedType:Rookie");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.74f;
-                        ForwardAccelForce = 2000.0f;
-                        BackwardAccelForce = 1500.0f;
-                        GripBrakeForce = 1800.0f;
-                        SlipBrakeForce = 1200.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 22.0f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 2500.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 4000.0f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        Rookie();
                     }
                     else if (SpeedType == 2)//L3, S2
                     {
                         Console.WriteLine("SpeedType:L3");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.763f;
-                        ForwardAccelForce = 2400.0f;
-                        BackwardAccelForce = 1950.0f;
-                        GripBrakeForce = 2340.0f;
-                        SlipBrakeForce = 1560.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 22.8f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 3300.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 5000.0f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        L3();
                     }
                     else if (SpeedType == 3)//L2
                     {
@@ -379,30 +333,7 @@ namespace ExcData
                     else if (SpeedType == 5)//Pro
                     {
                         Console.WriteLine("SpeedType:Pro");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.810f;
-                        ForwardAccelForce = 3800.0f;
-                        BackwardAccelForce = 2850.0f;
-                        GripBrakeForce = 3420.0f;
-                        SlipBrakeForce = 2280.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 23.4f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 4700.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 8000.0f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        Pro();
                     }
                     else
                     {
@@ -414,58 +345,12 @@ namespace ExcData
                     if (SpeedType == 0 || SpeedType == 1)//Rookie
                     {
                         Console.WriteLine("SpeedType:Rookie");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.74f;
-                        ForwardAccelForce = 2000.0f;
-                        BackwardAccelForce = 1500.0f;
-                        GripBrakeForce = 1800.0f;
-                        SlipBrakeForce = 1200.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 22.0f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 2500.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 4000.0f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        Rookie();
                     }
                     else if (SpeedType == 2)//L3, S2
                     {
                         Console.WriteLine("SpeedType:L3");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.763f;
-                        ForwardAccelForce = 2400.0f;
-                        BackwardAccelForce = 1950.0f;
-                        GripBrakeForce = 2340.0f;
-                        SlipBrakeForce = 1560.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 22.8f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 3300.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 5000.0f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        L3();
                     }
                     else if (SpeedType == 3)//L2
                     {
@@ -526,30 +411,7 @@ namespace ExcData
                     else if (SpeedType == 5)//Pro
                     {
                         Console.WriteLine("SpeedType:Pro");
-                        AddSpec_SteerConstraint = 0f;
-                        AddSpec_DriftEscapeForce = 0f;
-                        AddSpec_TransAccelFactor = 0f;
-                        Mass = 100f;
-                        AirFriction = 3f;
-                        DragFactor = 0.810f;
-                        ForwardAccelForce = 3800.0f;
-                        BackwardAccelForce = 2850.0f;
-                        GripBrakeForce = 3420.0f;
-                        SlipBrakeForce = 2280.0f;
-                        MaxSteerAngle = 10.0f;
-                        SteerConstraint = 23.4f;
-                        FrontGripFactor = 5.0f;
-                        RearGripFactor = 5.0f;
-                        DriftTriggerFactor = 0.2f;
-                        DriftTriggerTime = 0.2f;
-                        DriftSlipFactor = 0.2f;
-                        DriftEscapeForce = 4700.0f;
-                        CornerDrawFactor = 0.2f;
-                        DriftMaxGauge = 8000f;
-                        TransAccelFactor = 0f;
-                        BoostAccelFactor = 0f;
-                        NormalBoosterTime = 0f;
-                        TeamBoosterTime = 0f;
+                        Pro();
                     }
                     else
                     {
@@ -587,6 +449,90 @@ namespace ExcData
             DriftMaxGauge = 4300f;
             TransAccelFactor = -0.0045f;
             BoostAccelFactor = -0.006f;
+            NormalBoosterTime = 0f;
+            TeamBoosterTime = 0f;
+        }
+
+        private void Rookie()
+        {
+            AddSpec_SteerConstraint = 0f;
+            AddSpec_DriftEscapeForce = 0f;
+            AddSpec_TransAccelFactor = 0f;
+            Mass = 100f;
+            AirFriction = 3f;
+            DragFactor = 0.74f;
+            ForwardAccelForce = 2000.0f;
+            BackwardAccelForce = 1500.0f;
+            GripBrakeForce = 1800.0f;
+            SlipBrakeForce = 1200.0f;
+            MaxSteerAngle = 10.0f;
+            SteerConstraint = 22.0f;
+            FrontGripFactor = 5.0f;
+            RearGripFactor = 5.0f;
+            DriftTriggerFactor = 0.2f;
+            DriftTriggerTime = 0.2f;
+            DriftSlipFactor = 0.2f;
+            DriftEscapeForce = 2500.0f;
+            CornerDrawFactor = 0.2f;
+            DriftMaxGauge = 4000.0f;
+            TransAccelFactor = 0f;
+            BoostAccelFactor = 0f;
+            NormalBoosterTime = 0f;
+            TeamBoosterTime = 0f;
+        }
+
+        private void L3()
+        {
+            AddSpec_SteerConstraint = 0f;
+            AddSpec_DriftEscapeForce = 0f;
+            AddSpec_TransAccelFactor = 0f;
+            Mass = 100f;
+            AirFriction = 3f;
+            DragFactor = 0.763f;
+            ForwardAccelForce = 2400.0f;
+            BackwardAccelForce = 1950.0f;
+            GripBrakeForce = 2340.0f;
+            SlipBrakeForce = 1560.0f;
+            MaxSteerAngle = 10.0f;
+            SteerConstraint = 22.8f;
+            FrontGripFactor = 5.0f;
+            RearGripFactor = 5.0f;
+            DriftTriggerFactor = 0.2f;
+            DriftTriggerTime = 0.2f;
+            DriftSlipFactor = 0.2f;
+            DriftEscapeForce = 3300.0f;
+            CornerDrawFactor = 0.2f;
+            DriftMaxGauge = 5000.0f;
+            TransAccelFactor = 0f;
+            BoostAccelFactor = 0f;
+            NormalBoosterTime = 0f;
+            TeamBoosterTime = 0f;
+        }
+
+        private void Pro()
+        {
+            AddSpec_SteerConstraint = 0f;
+            AddSpec_DriftEscapeForce = 0f;
+            AddSpec_TransAccelFactor = 0f;
+            Mass = 100f;
+            AirFriction = 3f;
+            DragFactor = 0.810f;
+            ForwardAccelForce = 3800.0f;
+            BackwardAccelForce = 2850.0f;
+            GripBrakeForce = 3420.0f;
+            SlipBrakeForce = 2280.0f;
+            MaxSteerAngle = 10.0f;
+            SteerConstraint = 23.4f;
+            FrontGripFactor = 5.0f;
+            RearGripFactor = 5.0f;
+            DriftTriggerFactor = 0.2f;
+            DriftTriggerTime = 0.2f;
+            DriftSlipFactor = 0.2f;
+            DriftEscapeForce = 4700.0f;
+            CornerDrawFactor = 0.2f;
+            DriftMaxGauge = 8000f;
+            TransAccelFactor = 0f;
+            BoostAccelFactor = 0f;
             NormalBoosterTime = 0f;
             TeamBoosterTime = 0f;
         }
