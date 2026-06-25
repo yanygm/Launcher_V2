@@ -533,7 +533,7 @@ namespace KartRider
                 if (StartTimeAttack_SpeedType == 0)
                 {
                     version = "韩服复古";
-                    speed = 2;
+                    speed = 3;
                 }
                 else if (StartTimeAttack_SpeedType == 2)
                 {
