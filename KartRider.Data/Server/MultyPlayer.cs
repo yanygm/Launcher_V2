@@ -1625,7 +1625,7 @@ public static class MultyPlayer
         {
             ai = true;
         }
-        uint track = RandomTrack.GetRandomTrack(Parent.Client.Nickname, room.RandomTrackGameType, room.track, ai);
+        uint track = RandomTrack.GetRandomTrack($"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai);
         room.trackTemp = track;
 
         using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
