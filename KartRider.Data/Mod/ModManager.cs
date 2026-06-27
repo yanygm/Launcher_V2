@@ -193,10 +193,19 @@ public static class ModManager
             return false;
         }
 
+        // OnUninitialize 单独 try-catch，确保即使异常也能执行后续清理
         try
         {
             modInfo.Instance.OnUninitialize();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[错误] Mod [{modName}] OnUninitialize 抛出异常: {ex.Message}");
+        }
 
+        // 清理操作：卸载 handler、移除注册、卸载 ALC
+        try
+        {
             if (modInfo.IsPacketHandler && modInfo.Instance is IPacketHandler handler)
             {
                 PacketDispatcher.UnregisterHandler(handler);

@@ -29,6 +29,9 @@ public static class ServiceRegistry
     // 按名称存储的弱引用字典
     private static readonly Dictionary<string, WeakReference> _services = new(StringComparer.OrdinalIgnoreCase);
 
+    // 静态服务注册（存储类型全名 → Assembly 弱引用，不阻止 Mod 卸载）
+    private static readonly Dictionary<string, WeakReference> _staticServices = new(StringComparer.OrdinalIgnoreCase);
+
     // 用于方法查找的缓存（MethodInfo 不持有实例引用，可以安全缓存）
     private static readonly Dictionary<string, MethodInfo> _methodCache = new();
 
@@ -120,5 +123,90 @@ public static class ServiceRegistry
     public static bool IsRegistered(string name)
     {
         return GetService(name) != null;
+    }
+
+    /// <summary>
+    /// 注册静态服务（存储类型全名 → Assembly 弱引用，不阻止 Mod 卸载）
+    /// </summary>
+    /// <param name="type">要注册的类型</param>
+    public static void RegisterStatic(Type type)
+    {
+        if (type == null)
+            throw new ArgumentNullException(nameof(type));
+
+        _staticServices[type.FullName!] = new WeakReference(type.Assembly);
+    }
+
+    /// <summary>
+    /// 移除静态服务注册
+    /// </summary>
+    public static void UnregisterStatic(string typeFullName)
+    {
+        if (!string.IsNullOrWhiteSpace(typeFullName))
+            _staticServices.Remove(typeFullName);
+    }
+
+    /// <summary>
+    /// 调用静态方法（按类型全名查找，优先使用注册时存储的 Assembly 弱引用，
+    /// 不阻止 Mod 卸载，卸载后安全返回 null）
+    /// </summary>
+    /// <param name="typeFullName">类型全名（含命名空间）</param>
+    /// <param name="methodName">方法名</param>
+    /// <param name="args">调用参数</param>
+    /// <returns>方法返回值，若类型或方法不存在返回 null</returns>
+    public static object? InvokeStatic(string typeFullName, string methodName, params object?[]? args)
+    {
+        // 优先从注册的弱引用中查找 Assembly（支持自定义 ALC 中的类型）
+        Assembly? assembly = null;
+        if (_staticServices.TryGetValue(typeFullName, out var wr))
+        {
+            assembly = wr.Target as Assembly;
+            if (assembly == null)
+            {
+                // 弱引用已失效（Assembly 已卸载），清理
+                _staticServices.Remove(typeFullName);
+            }
+        }
+
+        // 弱引用没找到，回退到全局扫描（兼容未注册的调用）
+        Type? targetType = assembly?.GetType(typeFullName);
+        if (targetType == null)
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                targetType = asm.GetType(typeFullName);
+                if (targetType != null)
+                    break;
+            }
+        }
+
+        if (targetType == null)
+            return null;
+
+        // ModuleVersionId 在 Assembly 重载后生成新 GUID，确保缓存自动失效
+        var cacheKey = $"{targetType.Module.ModuleVersionId}:{methodName}";
+
+        if (!_methodCache.TryGetValue(cacheKey, out var method))
+        {
+            method = targetType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+            {
+                Console.WriteLine($"[警告] 类型 {typeFullName} 中找不到静态方法 {methodName}");
+                return null;
+            }
+            else
+                _methodCache[cacheKey] = method;
+        }
+
+        try
+        {
+            return method.Invoke(null, args);
+        }
+        catch (InvalidOperationException)
+        {
+            // Assembly 已卸载，清理缓存并返回 null
+            _methodCache.Remove(cacheKey);
+            return null;
+        }
     }
 }
