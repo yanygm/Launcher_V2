@@ -29,6 +29,9 @@ public static class ServiceRegistry
     // 按名称存储的弱引用字典
     private static readonly Dictionary<string, WeakReference> _services = new(StringComparer.OrdinalIgnoreCase);
 
+    // 静态服务注册（只存类型全名，不持有 Type/Assembly 引用，不阻止 Mod 卸载）
+    private static readonly HashSet<string> _staticServices = new(StringComparer.OrdinalIgnoreCase);
+
     // 用于方法查找的缓存（MethodInfo 不持有实例引用，可以安全缓存）
     private static readonly Dictionary<string, MethodInfo> _methodCache = new();
 
@@ -120,5 +123,68 @@ public static class ServiceRegistry
     public static bool IsRegistered(string name)
     {
         return GetService(name) != null;
+    }
+
+    /// <summary>
+    /// 注册静态服务（只存类型全名，不持有 Type/Assembly 引用，不阻止 Mod 卸载）
+    /// </summary>
+    /// <param name="typeFullName">类型全名（含命名空间）</param>
+    public static void RegisterStatic(string typeFullName)
+    {
+        if (!string.IsNullOrWhiteSpace(typeFullName))
+            _staticServices.Add(typeFullName);
+    }
+
+    /// <summary>
+    /// 移除静态服务注册
+    /// </summary>
+    public static void UnregisterStatic(string typeFullName)
+    {
+        if (!string.IsNullOrWhiteSpace(typeFullName))
+            _staticServices.Remove(typeFullName);
+    }
+
+    /// <summary>
+    /// 调用静态方法（按类型全名查找，不持有引用，Mod 卸载后安全返回 null）
+    /// </summary>
+    /// <param name="typeFullName">类型全名（含命名空间）</param>
+    /// <param name="methodName">方法名</param>
+    /// <param name="args">调用参数</param>
+    /// <returns>方法返回值，若类型或方法不存在返回 null</returns>
+    public static object? InvokeStatic(string typeFullName, string methodName, params object?[]? args)
+    {
+        // 每次动态查找类型，不持有 Type/Assembly 引用
+        Type? targetType = null;
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            targetType = asm.GetType(typeFullName);
+            if (targetType != null)
+                break;
+        }
+
+        if (targetType == null)
+            return null;
+
+        // ModuleVersionId 在 Assembly 重载后生成新 GUID，确保缓存自动失效
+        var cacheKey = $"{targetType.Module.ModuleVersionId}:{methodName}";
+
+        if (!_methodCache.TryGetValue(cacheKey, out var method))
+        {
+            method = targetType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                throw new MissingMethodException($"类型 {typeFullName} 中找不到静态方法 {methodName}");
+            _methodCache[cacheKey] = method;
+        }
+
+        try
+        {
+            return method.Invoke(null, args);
+        }
+        catch (InvalidOperationException)
+        {
+            // Assembly 已卸载，清理缓存并返回 null
+            _methodCache.Remove(cacheKey);
+            return null;
+        }
     }
 }
