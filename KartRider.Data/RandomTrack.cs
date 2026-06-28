@@ -28,9 +28,9 @@ namespace KartRider
         public static string GameTrack = "village_R01";
 
         // 每个 Nickname 独立记录已使用的随机 track
-        private static Dictionary<string, HashSet<uint>> _usedTracksByNickname = new Dictionary<string, HashSet<uint>>();
+        private static Dictionary<string, HashSet<uint>> _usedTracks = new Dictionary<string, HashSet<uint>>();
         // 记录每个 Nickname 上一次使用的 Track，用于检测 Track 是否改变
-        private static Dictionary<string, uint> _lastTrackByNickname = new Dictionary<string, uint>();
+        private static Dictionary<string, uint> _lastTrack = new Dictionary<string, uint>();
 
         public static string GetTrackName(uint trackId)
         {
@@ -111,24 +111,24 @@ namespace KartRider
             return (double)lcsLength / Math.Max(m, n);
         }
 
-        public static uint GetRandomTrack(string Nickname, byte GameType, uint Track, bool ai = false)
+        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false)
         {
             string RandomTrackGameType = "speed";
             string RandomTrackSetRandomTrack = "all";
 
             // 检测 Track 是否改变，改变则清除该 Nickname 的记录
-            if (_lastTrackByNickname.TryGetValue(Nickname, out uint lastTrack) && lastTrack != Track)
+            if (_lastTrack.TryGetValue(usedTracksName, out uint lastTrack) && lastTrack != Track)
             {
-                _usedTracksByNickname.Remove(Nickname);
+                _usedTracks.Remove(usedTracksName);
             }
-            _lastTrackByNickname[Nickname] = Track;
+            _lastTrack[usedTracksName] = Track;
 
             // 获取或初始化该 Nickname 的已使用记录
-            if (!_usedTracksByNickname.ContainsKey(Nickname))
+            if (!_usedTracks.ContainsKey(usedTracksName))
             {
-                _usedTracksByNickname[Nickname] = new HashSet<uint>();
+                _usedTracks[usedTracksName] = new HashSet<uint>();
             }
-            var usedTracks = _usedTracksByNickname[Nickname];
+            var usedTracks = _usedTracks[usedTracksName];
 
             if (GameType == 0)
             {
@@ -191,17 +191,17 @@ namespace KartRider
             if (RandomTrackSetRandomTrack == "all" || RandomTrackSetRandomTrack == "speedAll")
             {
                 Random random = new Random();
-                if (!FileName.FileNames.ContainsKey(Nickname))
+                List<uint> availableTracks = new List<uint>();
+                if (FileName.FileNames.ContainsKey(Parent.Client.Nickname))
                 {
-                    FileName.Load(Nickname);
+                    var filename = FileName.FileNames[Parent.Client.Nickname];
+                    var FavoriteTrackList = new Favorite_Track();
+                    if (File.Exists(filename.FavoriteTrack_LoadFile))
+                    {
+                        FavoriteTrackList = JsonHelper.DeserializeNoBom<Favorite_Track>(filename.FavoriteTrack_LoadFile) ?? new Favorite_Track();
+                    }
+                    availableTracks = FavoriteTrackList.GetAllTracks();
                 }
-                var filename = FileName.FileNames[Nickname];
-                var FavoriteTrackList = new Favorite_Track();
-                if (File.Exists(filename.FavoriteTrack_LoadFile))
-                {
-                    FavoriteTrackList = JsonHelper.DeserializeNoBom<Favorite_Track>(filename.FavoriteTrack_LoadFile) ?? new Favorite_Track();
-                }
-                List<uint> availableTracks = FavoriteTrackList.GetAllTracks();
 
                 if (availableTracks == null || availableTracks.Count == 0)
                 {
@@ -310,10 +310,10 @@ namespace KartRider
         /// <summary>
         /// 清除指定 Nickname 的已使用记录
         /// </summary>
-        public static void ClearUsedTracks(string Nickname)
+        public static void ClearUsedTracks(string usedTracksName)
         {
-            _usedTracksByNickname.Remove(Nickname);
-            _lastTrackByNickname.Remove(Nickname);
+            _usedTracks.Remove(usedTracksName);
+            _lastTrack.Remove(usedTracksName);
         }
 
         /// <summary>
@@ -321,8 +321,8 @@ namespace KartRider
         /// </summary>
         public static void ClearAllUsedTracks()
         {
-            _usedTracksByNickname.Clear();
-            _lastTrackByNickname.Clear();
+            _usedTracks.Clear();
+            _lastTrack.Clear();
         }
     }
 }

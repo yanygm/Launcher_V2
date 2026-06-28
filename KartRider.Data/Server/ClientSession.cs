@@ -1363,7 +1363,7 @@ namespace KartRider
                             attackConfig.Rider.Lucci -= 1000;
                         }
                         Console.WriteLine("StartTimeAttack: {0} / {1} / {2} / {3} / {4} / {5} / {6} / {7}", attackConfig.Rider.SpeedType, attackConfig.Rider.GameType, Kart_id, FlyingPet_id, RandomTrack.GetTrackName(StartTimeAttack_Track), StartTimeAttack_StartType, attackConfig.Rider.AttackType, StartTimeAttack_TimaAttackMpdeType);
-                        attackConfig.Rider.Track = RandomTrack.GetRandomTrack(this.Parent.Client.Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
+                        attackConfig.Rider.Track = RandomTrack.GetRandomTrack(this.Parent, this.Parent.Client.Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
                         ProfileService.Save(this.Parent.Client.Nickname, attackConfig);
                         byte StartType = 3;
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, attackConfig.Rider.Track, attackConfig.Rider.SpeedType, Kart_id, FlyingPet_id);
