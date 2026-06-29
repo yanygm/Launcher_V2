@@ -965,7 +965,7 @@ public static class MultyPlayer
             byte ID = iPacket.ReadByte();
             if (RoomManager.TryGetIdDetail(roomId, ID) is Ai ai)
             {
-                room.RemoveMember(ai.SlotId, "", out bool DeleteAi);
+                room.RemoveMember(ai.SlotId, "");
                 using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
                 {
                     oPacket.WriteInt(1);
@@ -1755,10 +1755,7 @@ public static class MultyPlayer
                 outPacket.WriteBytes(new byte[5]);
                 Parent.Client.Send(outPacket);
             }
-            if (!RoomManager.HasPlayer(room))
-            {
-                RoomManager._rooms.TryRemove(roomId, out _);
-            }
+            RoomManager.RemoveRoom(room);
             return;
         }
 

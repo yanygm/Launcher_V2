@@ -243,9 +243,8 @@ public class GameRoom
     }
 
     // 移除指定格子的成员（如果是玩家，需检查是否触发删除）
-    public bool RemoveMember(byte slotId, string nickname, out bool shouldDeleteRoom)
+    public bool RemoveMember(byte slotId, string nickname)
     {
-        shouldDeleteRoom = false;
         if (!IsValidSlotId(slotId))
             return false;
 
@@ -256,9 +255,7 @@ public class GameRoom
             {
                 if (ObIDs[slotId] is Player p1)
                 {
-                    ObIDs[slotId] = null;
-                    shouldDeleteRoom = (GetPlayerCount() + GetOBCount()) == 0;
-                    if (!shouldDeleteRoom && p1.ID == RoomMaster)
+                    if (p1.ID == RoomMaster)
                     {
                         foreach (RoomMember member in _IDs)
                         {
@@ -270,7 +267,8 @@ public class GameRoom
                             }
                         }
                     }
-                    if (!shouldDeleteRoom) MultyPlayer.GrSlotDataPacket(RoomId);
+                    RoomManager.RemoveRoom(this);
+                    ObIDs[slotId] = null;
                     return true;
                 }
             }
@@ -284,9 +282,7 @@ public class GameRoom
 
         if (removedMember is Player player)
         {
-            _IDs[player.ID] = null;
-            shouldDeleteRoom = (GetPlayerCount() + GetOBCount()) == 0;
-            if (!shouldDeleteRoom && player.ID == RoomMaster)
+            if (player.ID == RoomMaster)
             {
                 foreach (RoomMember member in _IDs)
                 {
@@ -298,14 +294,14 @@ public class GameRoom
                     }
                 }
             }
-            if (!shouldDeleteRoom) MultyPlayer.GrSlotDataPacket(RoomId);
+            RoomManager.RemoveRoom(this);
+            _IDs[player.ID] = null;
             return true;
         }
         else if (removedMember is Ai ai)
         {
             _IDs[ai.ID] = null;
-            shouldDeleteRoom = (GetPlayerCount() + GetOBCount()) == 0;
-            if (!shouldDeleteRoom) MultyPlayer.GrSlotDataPacket(RoomId);
+            MultyPlayer.GrSlotDataPacket(RoomId);
             return true;
         }
 

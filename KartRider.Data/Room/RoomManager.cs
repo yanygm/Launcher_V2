@@ -23,10 +23,18 @@ public static class RoomManager
         return roomId;
     }
 
-    // 检查房间是否有玩家（不包含AI）
-    public static bool HasPlayer(GameRoom room)
+    // 检查房间是否有玩家，如果没有则删除房间
+    public static void RemoveRoom(GameRoom room)
     {
-        return room.GetPlayerCount() > 0 || room.GetOBCount() > 0;
+        if (!(room.GetPlayerCount() > 0 || room.GetOBCount() > 0))
+        {
+            _rooms.TryRemove(room.RoomId, out _);
+        }
+        else
+        {
+            MultyPlayer.GrSlotDataPacket(room.RoomId);
+        }
+        RandomTrack.ClearUsedTracks($"[{room.RoomName}][{room.RoomId.ToString()}]");
     }
 
     // 获取指定页码的房间列表（每页10个）
@@ -83,10 +91,7 @@ public static class RoomManager
         _playerRoomMap.TryRemove(nickname, out _);
 
         // 添加失败检查房间是否为空，是则立即删除
-        if (!HasPlayer(room))
-        {
-            _rooms.TryRemove(roomId, out _);
-        }
+        RemoveRoom(room);
 
         return 255;
     }
@@ -145,7 +150,7 @@ public static class RoomManager
         if (room == null)
             return false;
 
-        bool removed = room.RemoveMember(slotId, nickname, out bool shouldDeleteRoom);
+        bool removed = room.RemoveMember(slotId, nickname);
         if (removed)
         {
             // 清理并重整排名
@@ -154,10 +159,6 @@ public static class RoomManager
             if (!string.IsNullOrEmpty(nickname))
             {
                 _playerRoomMap.TryRemove(nickname, out _); // 原子删除
-            }
-            if (shouldDeleteRoom)
-            {
-                _rooms.TryRemove(roomId, out _);
             }
         }
         return removed;

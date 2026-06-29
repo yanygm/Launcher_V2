@@ -44,12 +44,15 @@ public static class ClientManager
 
         string clientId = GetClientId(clientEndPoint);
         _clientSessions.TryGetValue(clientId, out var client);
+        RandomTrack.ClearUsedTracks(client.Client.Nickname);
         if (!string.IsNullOrEmpty(client.Client.Nickname))
         {
             int roomId = RoomManager.TryGetRoomId(client.Client.Nickname);
             int slotId = RoomManager.GetPlayerSlotId(roomId, client.Client.Nickname);
             if (slotId != -1)
             {
+                var room = RoomManager.GetRoom(roomId);
+                RandomTrack.ClearUsedTracks($"[{room.RoomName}][{room.RoomId.ToString()}]");
                 RoomManager.RemovePlayer(roomId, (byte)slotId, client.Client.Nickname);
             }
             MyRoomData.TryLeaveMyRoom(client.Client.Nickname);
