@@ -333,8 +333,6 @@ public static class MultyPlayer
             {
                 if (member is Player p3)
                 {
-                    p3.PlayerType = 2; // 初始玩家状态
-                    p3.LastPacketReceived = 0;
                     var p3Config = ProfileService.GetProfileConfig(p3.Nickname);
 
                     outPacket.WriteInt(p3.ID); // player id
@@ -421,8 +419,7 @@ public static class MultyPlayer
             BroadCast(roomId, outPacket);
         }
 
-        room.StartTicks = 0;
-        room.Started = false;
+        InitRoom(room);
 
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p4)
@@ -434,13 +431,6 @@ public static class MultyPlayer
         {
             room.RoomMaster = firstID;
             p5.PlayerType = 2;
-        }
-        foreach (RoomMember member in room.ObIDs)
-        {
-            if (member is Player p6)
-            {
-                p6.LastPacketReceived = 0;
-            }
         }
         Console.WriteLine("EndTicks = {0}", room.EndTicks + 5000);
     }
@@ -1144,29 +1134,7 @@ public static class MultyPlayer
                 }
                 else if (value.StartsWith("结束游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("結束遊戲", StringComparison.OrdinalIgnoreCase))
                 {
-                    using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
-                    {
-                        outPacket.WriteString("结束游戏");
-                        BroadCast(roomId, outPacket, Parent.Client.Nickname);
-                    }
-                    using (OutPacket outPacket = new OutPacket("GameResultPacket"))
-                    {
-                        outPacket.WriteByte(0);
-                        outPacket.WriteInt(0); // player count
-                        outPacket.WriteInt(0); // AI count
-                        outPacket.WriteBytes(new byte[34]);
-                        outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-                        BroadCast(roomId, outPacket);
-                    }
-                    using (OutPacket outPacket = new OutPacket("GameControlPacket"))
-                    {
-                        outPacket.WriteInt(4);
-                        outPacket.WriteByte(0);
-                        outPacket.WriteUInt(ConvertTick());
-                        BroadCast(roomId, outPacket);
-                    }
-                    room.Started = false;
-                    room.StartTicks = 0;
+                    StopGame(roomId, Parent);
                     return;
                 }
             }
@@ -1388,6 +1356,7 @@ public static class MultyPlayer
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSendMacroChat"))
         {
             var roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
+            var room = RoomManager.GetRoom(roomId);
             if (roomId == -1)
             {
                 return;
@@ -1412,6 +1381,16 @@ public static class MultyPlayer
                     outPacket.WriteString(ProfileService.GetProfileConfig(Parent.Client.Nickname).GameOption.TeamQuickMsg.GetValueOrDefault(id) ?? "");
                     BroadCast(roomId, outPacket, Parent.Client.Nickname, player.Team);
                 }
+                if (room.GetPlayerCount(0) == 1)
+                {
+                    if (ProfileService.GetProfileConfig(Parent.Client.Nickname).GameOption.QuickMsg.GetValueOrDefault(id) == "结束游戏" ||
+                        ProfileService.GetProfileConfig(Parent.Client.Nickname).GameOption.QuickMsg.GetValueOrDefault(id) == "結束遊戲" ||
+                        ProfileService.GetProfileConfig(Parent.Client.Nickname).GameOption.TeamQuickMsg.GetValueOrDefault(id) == "结束游戏" ||
+                        ProfileService.GetProfileConfig(Parent.Client.Nickname).GameOption.TeamQuickMsg.GetValueOrDefault(id) == "結束遊戲")
+                    {
+                        StopGame(roomId, Parent);
+                    }
+                }
             }
             return;
         }
@@ -1428,6 +1407,54 @@ public static class MultyPlayer
             GrSlotDataPacket(roomId, outPacket);
             BroadCast(roomId, outPacket);
         }
+    }
+
+    static void StopGame(int roomId, SessionGroup Parent)
+    {
+        var room = RoomManager.GetRoom(roomId);
+        using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
+        {
+            outPacket.WriteString("结束游戏");
+            BroadCast(roomId, outPacket, Parent.Client.Nickname);
+        }
+        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
+        {
+            outPacket.WriteByte(0);
+            outPacket.WriteInt(0); // player count
+            outPacket.WriteInt(0); // AI count
+            outPacket.WriteBytes(new byte[34]);
+            outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
+            BroadCast(roomId, outPacket);
+        }
+        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
+        {
+            outPacket.WriteInt(4);
+            outPacket.WriteByte(0);
+            outPacket.WriteUInt(ConvertTick());
+            BroadCast(roomId, outPacket);
+        }
+        InitRoom(room);
+    }
+
+    static void InitRoom(GameRoom room)
+    {
+        foreach (RoomMember member in room._IDs)
+        {
+            if (member is Player p)
+            {
+                p.PlayerType = 2;
+                p.LastPacketReceived = 0;
+            }
+        }
+        foreach (RoomMember member in room.ObIDs)
+        {
+            if (member is Player p)
+            {
+                p.LastPacketReceived = 0;
+            }
+        }
+        room.Started = false;
+        room.StartTicks = 0;
     }
 
     static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "")

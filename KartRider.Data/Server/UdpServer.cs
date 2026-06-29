@@ -424,7 +424,7 @@ namespace KartRider
             // var data2 = iPacket.ReadBytes(iPacket.Available);
             if (packetValue == PacketName.GameKartQuadPacket || packetValue == PacketName.GameKartPacket)
             {
-                if (tick < player.LastPacketReceived)
+                if (tick < player.LastPacketReceived && tick > MultyPlayer.ConvertTick())
                 {
                     Console.WriteLine($"[{player.Nickname}] 丢包率过高，丢弃数据包");
                     return;

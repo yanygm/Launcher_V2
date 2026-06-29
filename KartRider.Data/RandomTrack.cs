@@ -113,6 +113,13 @@ namespace KartRider
 
         public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false)
         {
+            // 如果 TrackList 为空，直接返回默认 Track 的 hash，避免返回无效值
+            if (TrackList == null || TrackList.Count == 0)
+            {
+                Console.WriteLine("[RandomTrack] Warning: TrackList is empty, returning default track: {0}", GameTrack);
+                return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
+            }
+
             string RandomTrackGameType = "speed";
             string RandomTrackSetRandomTrack = "all";
 
@@ -215,7 +222,20 @@ namespace KartRider
                             .ToList();
                     }
 
+                    // 如果 AI 过滤后没有可用 track，回退到不过滤 AI
+                    if (allTracks.Count == 0 && ai)
+                    {
+                        allTracks = TrackList.Values.Where(t => t.gameType == RandomTrackGameType).ToList();
+                    }
+
                     availableTracks = allTracks.Select(t => t.hash).ToList();
+                }
+
+                // 如果仍然没有可用 track（TrackList 中没有对应 gameType 的 track），返回默认
+                if (availableTracks == null || availableTracks.Count == 0)
+                {
+                    Console.WriteLine("[RandomTrack] Warning: No available tracks for gameType={0}, ai={1}, returning default track: {2}", RandomTrackGameType, ai, GameTrack);
+                    return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
 
                 // 排除已使用的 track
@@ -236,7 +256,8 @@ namespace KartRider
                 }
                 else
                 {
-                    return Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
+                    Console.WriteLine("[RandomTrack] Warning: No unused tracks available, returning default track: {0}", GameTrack);
+                    return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
             }
             else if (RandomTrackSetRandomTrack == "Unknown")
@@ -285,6 +306,13 @@ namespace KartRider
                     .Where(hash => hash != 0)
                     .ToList();
 
+                // 如果 XML 中没有配置该类型的 track，返回默认
+                if (availableHashes.Count == 0)
+                {
+                    Console.WriteLine("[RandomTrack] Warning: No tracks found in XML for gameType={0}, randomType={1}, returning default track: {2}", RandomTrackGameType, RandomTrackSetRandomTrack, GameTrack);
+                    return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
+                }
+
                 // 排除已使用的 track
                 var unusedHashes = availableHashes.Where(h => !usedTracks.Contains(h)).ToList();
 
@@ -303,7 +331,8 @@ namespace KartRider
                     return selectedHash;
                 }
 
-                return Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
+                Console.WriteLine("[RandomTrack] Warning: No unused hashes available, returning default track: {0}", GameTrack);
+                return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
             }
         }
 
