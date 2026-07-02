@@ -51,8 +51,6 @@ public static class ClientManager
             int slotId = RoomManager.GetPlayerSlotId(roomId, client.Client.Nickname);
             if (slotId != -1)
             {
-                var room = RoomManager.GetRoom(roomId);
-                RandomTrack.ClearUsedTracks($"[{room.RoomName}][{room.RoomId.ToString()}]");
                 RoomManager.RemovePlayer(roomId, (byte)slotId, client.Client.Nickname);
             }
             MyRoomData.TryLeaveMyRoom(client.Client.Nickname);
