@@ -209,6 +209,7 @@ public class SpecialKartConfig
             SkillChangeDesc = "特殊道具车：将指定道具变更为特殊道具",
             SkillChange = new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>
             {
+                { 1625, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 104, Probability = 100 }} } },
                 { 1622, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 32, Probability = 100 }}, { 6, new SkillMappingConfig { TargetItemId = 31, Probability = 100 } } } },
                 { 1620, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 117, Probability = 100 }} } },
                 { 1615, new Dictionary<short, SkillMappingConfig> { {5, new SkillMappingConfig { TargetItemId = 103, Probability = 100 }}, {7, new SkillMappingConfig { TargetItemId = 99, Probability = 100 }} } },
@@ -261,6 +262,7 @@ public class SpecialKartConfig
             SkillMappingsDesc = "特殊道具车：使用指定道具后获得特殊道具",
             SkillMappings = new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>
             {
+                { 1625, new Dictionary<short, SkillMappingConfig> { {104, new SkillMappingConfig { TargetItemId = 33, Probability = 100 }} } },
                 { 1607, new Dictionary<short, SkillMappingConfig> { {5, new SkillMappingConfig { TargetItemId = 6, Probability = 100 }} } },
                 { 1601, new Dictionary<short, SkillMappingConfig> { {131, new SkillMappingConfig { TargetItemId = 5, Probability = 100 }} } },
                 { 1597, new Dictionary<short, SkillMappingConfig> { {5, new SkillMappingConfig { TargetItemId = 6, Probability = 100 }} } },
