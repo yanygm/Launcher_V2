@@ -29,12 +29,12 @@ public static class RoomManager
         if (!(room.GetPlayerCount() > 0 || room.GetOBCount() > 0))
         {
             _rooms.TryRemove(room.RoomId, out _);
+            RandomTrack.ClearUsedTracks($"[{room.RoomName}][{room.RoomId.ToString()}]");
         }
         else
         {
             MultyPlayer.GrSlotDataPacket(room.RoomId);
         }
-        RandomTrack.ClearUsedTracks($"[{room.RoomName}][{room.RoomId.ToString()}]");
     }
 
     // 获取指定页码的房间列表（每页10个）
