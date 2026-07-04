@@ -1757,6 +1757,7 @@ public static class MultyPlayer
 
     static void ChJoinRoomReplyPacket(SessionGroup Parent, int roomId, String pwd)
     {
+        // 1-无法进入房间；2-房间已满；3-密码错误；4-匹配失败；5-创建新房间
         var room = RoomManager.GetRoom(roomId);
         if (room == null || room.Started)
         {
@@ -1775,7 +1776,7 @@ public static class MultyPlayer
         {
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {
-                outPacket.WriteByte(2);
+                outPacket.WriteByte(3);
                 outPacket.WriteByte(0);
                 outPacket.WriteByte(0);
                 outPacket.WriteEncByte(room.GameType);
@@ -1793,7 +1794,7 @@ public static class MultyPlayer
         {
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {
-                outPacket.WriteByte(1);
+                outPacket.WriteByte(2);
                 outPacket.WriteByte(0);
                 outPacket.WriteByte(0);
                 outPacket.WriteEncByte(room.GameType);
