@@ -592,6 +592,19 @@ public static class MultyPlayer
             byte AiSwitch = iPacket.ReadByte();
             Console.WriteLine("AiSwitch = {0}", AiSwitch);
 
+            if (UdpServer.GetUdp(Parent.Client.Nickname).Item2 == 0)
+            {
+                using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
+                {
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteEncByte(GameType);
+                    Parent.Client.Send(oPacket);
+                }
+                return;
+            }
+
             var RoomId = RoomManager.CreateRoom();
             var Room = RoomManager.GetRoom(RoomId);
             Room.RoomName = RoomName;
