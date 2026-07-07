@@ -66,8 +66,41 @@ public class SlotData
                 }
                 return;
             }
-            else if (type is 9 or 10 or 12)
+            else if (type is 9 or 12)
             {
+                using (OutPacket oPacket = new OutPacket())
+                {
+                    oPacket.WriteBytes(iPacket.ToArray());
+                    MultyPlayer.BroadCast(roomId, oPacket, Parent.Client.Nickname);
+                }
+                return;
+            }
+            else if (type == 10)
+            {
+                byte uni = iPacket.ReadByte();
+                byte success = iPacket.ReadByte();
+                byte unk = iPacket.ReadByte();
+                var skill = iPacket.ReadShort();
+                if (success == 1 || success == 2)
+                {
+                    List<short> skills = V2Specs.GetSkills(Parent.Client.Nickname);
+                    if (skills.Contains(14) && skill == 5)
+                    {
+                        AddItemSkill(roomId, id, Parent, 6);
+                    }
+
+                    // Ensure profile is loaded before accessing
+                    var parentConfig2 = ProfileService.GetProfileConfig(Parent.Client.Nickname);
+                    if (kartConfig.SkillMappings.TryGetValue(parentConfig2.RiderItem.Set_Kart, out var kartSkills2))
+                    {
+                        if (kartSkills2.TryGetValue(skill, out var skillConfig2))
+                        {
+                            // 传入概率参数，由 AddItemSkill 内部判断是否触发
+                            AddItemSkill(roomId, id, Parent, skillConfig2.TargetItemId, skillConfig2.Probability);
+                        }
+                    }
+                    Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
+                }
                 using (OutPacket oPacket = new OutPacket())
                 {
                     oPacket.WriteBytes(iPacket.ToArray());
@@ -96,31 +129,6 @@ public class SlotData
                     }
                 }
                 Console.WriteLine("GameSlotPacket, Attacked. Skill = {0}", skill);
-                return;
-            }
-            else if (type == 18)
-            {
-                var uni = iPacket.ReadByte();
-                iPacket.ReadShort();
-                iPacket.ReadByte();
-                var skill = iPacket.ReadShort();
-                List<short> skills = V2Specs.GetSkills(Parent.Client.Nickname);
-                if (skills.Contains(14) && skill == 5)
-                {
-                    AddItemSkill(roomId, id, Parent, 6);
-                }
-
-                // Ensure profile is loaded before accessing
-                var parentConfig2 = ProfileService.GetProfileConfig(Parent.Client.Nickname);
-                if (kartConfig.SkillMappings.TryGetValue(parentConfig2.RiderItem.Set_Kart, out var kartSkills2))
-                {
-                    if (kartSkills2.TryGetValue(skill, out var skillConfig2))
-                    {
-                        // 传入概率参数，由 AddItemSkill 内部判断是否触发
-                        AddItemSkill(roomId, id, Parent, skillConfig2.TargetItemId, skillConfig2.Probability);
-                    }
-                }
-                Console.WriteLine("GameSlotPacket, Mapping. Skill = {0}", skill);
                 return;
             }
         }
