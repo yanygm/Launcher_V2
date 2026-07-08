@@ -558,19 +558,7 @@ namespace KartRider
                             {
                                 XmlDocument Quest = new XmlDocument();
                                 Quest.Load(stream);
-                                XmlNodeList QuestParams = Quest.GetElementsByTagName("QuestItem");
-                                if (QuestParams.Count > 0)
-                                {
-                                    foreach (XmlNode xn in QuestParams)
-                                    {
-                                        XmlElement xe = (XmlElement)xn;
-                                        uint id = uint.Parse(xe.GetAttribute("id"));
-                                        if (!(GameSupport.quest.Contains(id)))
-                                        {
-                                            GameSupport.quest.Add(id);
-                                        }
-                                    }
-                                }
+                                GameSupport.QuestParams = Quest.GetElementsByTagName("QuestItem");
                             }
                         }
                         if (fullName == $"zeta/{regionCode}/quest/kartPassQuestAutomation.bml")
@@ -580,27 +568,7 @@ namespace KartRider
                             using (MemoryStream stream = new MemoryStream(BmlToXml(fullName, data)))
                             {
                                 XDocument doc = XDocument.Load(stream);
-                                XElement questInfo = doc.Descendants("kartPassQuestInfo").First();
-
-                                string period = questInfo.Attribute("seasonPeriod").Value;
-                                var isInTime = IsCurrentTimeInPeriod(period);
-                                if (isInTime != null)
-                                {
-                                    string seasonId = questInfo.Attribute("seasonId").Value;
-                                    List<uint> ids = new List<uint>();
-                                    foreach (int group in isInTime)
-                                    {
-                                        for (int index = 1; index <= 3; index++)
-                                        {
-                                            string groupStr = group.ToString("D2");  // 1 → 01
-                                            string indexStr = index.ToString("D2");  // 1 → 01
-                                            // 拼接：14500 + 组号 + 序号
-                                            uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
-                                            ids.Add(id);
-                                        }
-                                    }
-                                    GameSupport.QuestEncodeList = ids;
-                                }
+                                GameSupport.questInfo = doc.Descendants("kartPassQuestInfo").First();
                             }
                         }
                         if (fullName == $"zeta/{regionCode}/scenario/scenario.bml")
@@ -755,36 +723,7 @@ namespace KartRider
                             using (MemoryStream stream = new MemoryStream(data))
                             {
                                 // 加载文档并解析任务
-                                XDocument doc = XDocument.Load(stream);
-                                DateTime now = DateTime.Now;
-
-                                // 解析当前流中的任务
-                                var currentMissionList = doc.Descendants("duelMission")
-                                    .Where(mission =>
-                                    {
-                                        string period = mission.Element("missionSet")?.Attribute("period")?.Value;
-                                        if (string.IsNullOrEmpty(period)) return false;
-
-                                        string[] timeRange = period.Split('~');
-                                        if (timeRange.Length != 2) return false;
-
-                                        if (!DateTime.TryParse(timeRange[0], out DateTime startTime)) return false;
-                                        if (!DateTime.TryParse(timeRange[1], out DateTime endTime)) return false;
-
-                                        return now >= startTime && now <= endTime;
-                                    })
-                                    .Select(mission => mission.Attribute("trackId")?.Value)
-                                    .Where(trackId => !string.IsNullOrEmpty(trackId))
-                                    .ToList();
-
-                                if (TimeAttack.MissionList.Count == 0)
-                                {
-                                    TimeAttack.MissionList = currentMissionList;
-                                }
-                                if (TimeAttack.MissionList.Count > 0)
-                                {
-                                    Console.WriteLine(string.Join(", ", TimeAttack.MissionList));
-                                }
+                                TimeAttack.timeAttackMission = XDocument.Load(stream);
                             }
                         }
                         if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackCompetitive.xml")
@@ -794,9 +733,7 @@ namespace KartRider
                             using (MemoryStream stream = new MemoryStream(data))
                             {
                                 // 加载文档并解析任务
-                                XDocument doc = XDocument.Load(stream);
-                                var extractor = new TrackIdExtractor();
-                                TimeAttack.Competitive = extractor.GetCurrentWeekTrackIds(doc);
+                                TimeAttack.timeAttackCompetitive = XDocument.Load(stream);
                             }
                         }
                         if (fullName == $"zeta_/{regionCode}/content/timeAttack/timeAttackCompetitiveData.xml")
@@ -806,9 +743,7 @@ namespace KartRider
                             using (MemoryStream stream = new MemoryStream(data))
                             {
                                 // 加载文档并解析任务
-                                XDocument doc = XDocument.Load(stream);
-                                CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
-                                TimeAttack.TrackDictionary = calculator.LoadFromXml(doc);
+                                TimeAttack.timeAttackCompetitiveData = XDocument.Load(stream);
                             }
                         }
                         if (fullName == $"zeta_/{regionCode}/lottery/lottery.xml")
@@ -1328,39 +1263,6 @@ namespace KartRider
                 Console.WriteLine($"Error extracting regionCode: {ex.Message}");
             }
             return regionCode;
-        }
-
-        private static List<int> IsCurrentTimeInPeriod(string period)
-        {
-            try
-            {
-                var times = period.Split('~');
-                string startStr = times[0];
-                string endStr = times[1];
-
-                DateTime startTime = DateTime.Parse(startStr);
-                DateTime endTime = DateTime.Parse(endStr);
-                DateTime now = DateTime.Now;
-
-                if (now < startTime || now > endTime)
-                    return null;
-
-                int days = (now.Date - startTime.Date).Days;
-
-                // 判断属于哪一段
-                if (days < 7)
-                    return new List<int>(){ 1, 2, 3, 4, 5, 6, 7 };
-                else if (days < 13)
-                    return new List<int>(){ 7, 8, 9, 10, 11, 12, 13 };
-                else if (days < 19)
-                    return new List<int>() { 13, 14, 15, 16, 17, 18, 19 };
-                else
-                    return new List<int>() { 19, 20, 21 };
-            }
-            catch
-            {
-                return null;
-            }
         }
     }
 }

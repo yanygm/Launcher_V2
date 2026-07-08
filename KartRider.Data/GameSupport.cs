@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 using ExcData;
 using KartRider.Common.Security;
 using KartRider.IO.Packet;
@@ -30,8 +32,8 @@ namespace KartRider
     {
         public static List<List<short>> Dictionary = new List<List<short>>();
         public static List<int> scenario = new List<int>();
-        public static List<uint> quest = new List<uint>();
-        public static List<uint> QuestEncodeList = new List<uint>();
+        public static XmlNodeList QuestParams;
+        public static XElement questInfo;
         public static Dictionary<byte, Channel> Channels = new Dictionary<byte, Channel>();
 
         public static Keys[] keys = new Keys[]
@@ -186,8 +188,41 @@ namespace KartRider
 
         public static void PrQuestUX2ndPacket(OutPacket outPacket)
         {
-            int All_Quest = quest.Count;
-            outPacket.WriteInt(All_Quest + QuestEncodeList.Count);
+            List<uint> quest = new List<uint>();
+            if (QuestParams.Count > 0)
+            {
+                foreach (XmlNode xn in QuestParams)
+                {
+                    XmlElement xe = (XmlElement)xn;
+                    uint id = uint.Parse(xe.GetAttribute("id"));
+                    if (!(quest.Contains(id)))
+                    {
+                        quest.Add(id);
+                    }
+                }
+            }
+
+            List<uint> ids = new List<uint>();
+            string period = questInfo.Attribute("seasonPeriod").Value;
+            var isInTime = IsCurrentTimeInPeriod(period);
+            if (isInTime != null)
+            {
+                string seasonId = questInfo.Attribute("seasonId").Value;
+                foreach (int group in isInTime)
+                {
+                    for (int index = 1; index <= 3; index++)
+                    {
+                        string groupStr = group.ToString("D2");  // 1 → 01
+                        string indexStr = index.ToString("D2");  // 1 → 01
+                        // 拼接：14500 + 组号 + 序号
+                        uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
+                        ids.Add(id);
+                    }
+                }
+            }
+
+            int All_Quest = quest.Count + ids.Count;
+            outPacket.WriteInt(All_Quest);
             foreach (var item in quest)
             {
                 outPacket.WriteUInt(item);
@@ -201,7 +236,7 @@ namespace KartRider
                 outPacket.WriteInt(0);
                 outPacket.WriteByte(0);
             }
-            foreach (var item in QuestEncodeList)
+            foreach (var item in ids)
             {
                 outPacket.WriteUInt(item);
                 outPacket.WriteUInt(item);
@@ -437,6 +472,39 @@ namespace KartRider
 
             // 输出结果查看
             return tunes;
+        }
+
+        private static List<int> IsCurrentTimeInPeriod(string period)
+        {
+            try
+            {
+                var times = period.Split('~');
+                string startStr = times[0];
+                string endStr = times[1];
+
+                DateTime startTime = DateTime.Parse(startStr);
+                DateTime endTime = DateTime.Parse(endStr);
+                DateTime now = DateTime.Now;
+
+                if (now < startTime || now > endTime)
+                    return null;
+
+                int days = (now.Date - startTime.Date).Days;
+
+                // 判断属于哪一段
+                if (days < 7)
+                    return new List<int>() { 1, 2, 3, 4, 5, 6, 7 };
+                else if (days < 13)
+                    return new List<int>() { 7, 8, 9, 10, 11, 12, 13 };
+                else if (days < 19)
+                    return new List<int>() { 13, 14, 15, 16, 17, 18, 19 };
+                else
+                    return new List<int>() { 19, 20, 21 };
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

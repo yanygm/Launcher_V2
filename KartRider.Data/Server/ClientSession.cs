@@ -123,8 +123,9 @@ namespace KartRider
                             this.Parent.Client.Send(outPacket);
                         }
                         var manager = new CompetitiveDataManager();
+                        Dictionary<uint, TrackData> TrackDictionary = TimeAttack.GetTrackDictionary();
                         CompleteTrackScoreCalculator calculator = new CompleteTrackScoreCalculator();
-                        var scores = calculator.CalculateTrackScoreDetails(Track, racingTime.Rider.Time, Booster, Crash, TimeAttack.TrackDictionary);
+                        var scores = calculator.CalculateTrackScoreDetails(Track, racingTime.Rider.Time, Booster, Crash, TrackDictionary);
                         if (scores != null)
                         {
                             var data = new CompetitiveData { Track = Track, Kart = Kart, Time = racingTime.Rider.Time, Booster = Booster, BoosterPoint = scores.BoostScore, Crash = Crash, CrashPoint = scores.CrashScore, Point = scores.TotalScore };
@@ -1259,13 +1260,14 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetDuelMissionBulk", 0))
                     {
+                        List<string> MissionList = TimeAttack.GetMissionList();
                         using (OutPacket outPacket = new OutPacket("PrGetDuelMissionBulk"))
                         {
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
                             outPacket.WriteDateTime(DateTime.Now);
-                            outPacket.WriteInt(TimeAttack.MissionList.Count);
-                            foreach (string Track in TimeAttack.MissionList)
+                            outPacket.WriteInt(MissionList.Count);
+                            foreach (string Track in MissionList)
                             {
                                 byte Level = TimeAttack.GetTrackLevel(this.Parent.Client.Nickname, Adler32Helper.GenerateAdler32_UNICODE(Track, 0));
                                 outPacket.WriteByte(Level);
@@ -2398,10 +2400,11 @@ namespace KartRider
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveCount", 0))
                     {
+                        List<string> Competitive = TimeAttack.GetCompetitive();
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveCount"))
                         {
                             //outPacket.WriteHexString("B3 02 52 1B 00 00 B4 02 54 1B 00 00 B9 02 82 1B 00 00");
-                            foreach (var track in TimeAttack.Competitive)
+                            foreach (var track in Competitive)
                             {
                                 outPacket.WriteUInt(Adler32Helper.GenerateAdler32_UNICODE(track, 0));
                                 outPacket.WriteShort(0);
