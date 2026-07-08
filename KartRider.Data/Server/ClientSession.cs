@@ -33,11 +33,7 @@ namespace KartRider
 
         public override void OnDisconnect()
         {
-            if (this.Parent?.Client != null)
-            {
-                this.Parent.Client.Disconnect();
-            }
-            ClientManager.RemoveClient(this.Parent.Client.Socket);
+            ClientManager.RemoveClient(this.Socket);
         }
 
         public override void OnPacket(InPacket iPacket)

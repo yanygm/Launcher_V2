@@ -601,7 +601,7 @@ public class PatchManager
             // 根据用户选择执行对应逻辑
             if (result == DialogResult.Yes)
             {
-                LauncherSystem.CheckGame(RootDirectory);
+                LauncherSystem.CheckGame(RootDirectory, "", single);
                 return;
             }
             else
@@ -609,51 +609,18 @@ public class PatchManager
                 return;
             }
         }
-
-        if (string.IsNullOrWhiteSpace(updateUrl))
+        else
         {
-            if (single)
-                RhoDump(RootDirectory);
-            return;
-        }
-
-        // 拼接补丁程序路径
-        string Patcher = Path.GetFullPath(Path.Combine(RootDirectory, "Patcher.exe"));
-        Console.WriteLine("启动路径：" + Patcher);
-
-        // 安全判断：文件必须存在
-        if (!File.Exists(Patcher))
-        {
-            Console.WriteLine($"错误：找不到文件 {Patcher}");
-            return;
-        }
-
-        string arguments = $"'1' '123' '{updateUrl}' '{RootDirectory}' '{RootDirectory}'";
-
-        try
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            if (string.IsNullOrWhiteSpace(updateUrl))
             {
-                FileName = Patcher,
-                Arguments = arguments,
-                UseShellExecute = true,
-            };
-
-            using (Process process = Process.Start(startInfo))
-            {
-                Console.WriteLine("Patcher 已启动，等待更新完成...");
-
-                // ✅ 异步等待，不卡死，真正等它结束
-                await process.WaitForExitAsync();
-
-                int exitCode = process.ExitCode;
+                if (single)
+                    RhoDump(RootDirectory);
+                return;
             }
-            if (single)
-                RhoDump(RootDirectory);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"更新启动失败：{ex.Message}");
+            else
+            {
+                LauncherSystem.CheckGame(RootDirectory, updateUrl, single);
+            }
         }
     }
 
@@ -698,17 +665,6 @@ public class PatchManager
                 }
             }
             packFolderManager.Reset();
-            PINFile val = new PINFile(Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin")));
-            ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
-            ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
-            ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
-            ProfileService.SaveSettings();
-            // 更新完成后，根据设置恢复终端显示状态
-            if (!wasVisible && !ProfileService.SettingConfig.Console)
-            {
-                Program.isVisible = false;
-                Program.ShowWindow(Program.consoleHandle, Program.SW_HIDE);
-            }
         }
         finally
         {

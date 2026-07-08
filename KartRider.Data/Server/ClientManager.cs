@@ -30,6 +30,12 @@ public static class ClientManager
         string clientId = GetClientId(clientEndPoint);
         _clientSessions.TryAdd(clientId, session);
 
+        // 显式绑定断开事件，IDE 可以直接追踪
+        session.Client.OnDisconnected += (s) =>
+        {
+            RemoveClient(s.Socket);
+        };
+
         uint IV = GameSupport.PcFirstMessageAsync(session);
         session.Client.RIV = IV;
         session.Client.SIV = IV;
@@ -43,10 +49,13 @@ public static class ClientManager
         if (clientEndPoint == null) return;
 
         string clientId = GetClientId(clientEndPoint);
-        _clientSessions.TryGetValue(clientId, out var client);
-        RandomTrack.ClearUsedTracks(client.Client.Nickname);
+
+        if (!_clientSessions.TryGetValue(clientId, out var client) || client == null)
+            return;
+
         if (!string.IsNullOrEmpty(client.Client.Nickname))
         {
+            RandomTrack.ClearUsedTracks(client.Client.Nickname);
             int roomId = RoomManager.TryGetRoomId(client.Client.Nickname);
             int slotId = RoomManager.GetPlayerSlotId(roomId, client.Client.Nickname);
             if (slotId != -1)
@@ -55,6 +64,7 @@ public static class ClientManager
             }
             MyRoomData.TryLeaveMyRoom(client.Client.Nickname);
         }
+
         if (_clientSessions.TryRemove(clientId, out _))
         {
             Console.WriteLine($"客户端 {clientId} 已断开，当前在线数：{_clientSessions.Count}");

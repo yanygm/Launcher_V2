@@ -51,7 +51,7 @@ namespace KartRider
 			}
 		}
 
-		public static async Task CheckGameAsync(string kartRiderDirectory)
+		public static async Task CheckGameAsync(string kartRiderDirectory, string updateUrl = "")
 		{
 			// 强制显示终端窗口
             bool wasVisible = Program.isVisible;
@@ -64,15 +64,30 @@ namespace KartRider
 			try
 			{
 				string filePath = JsonHelper.GetFilePath();
-				var data = await Update.GetUpdateAsync().ConfigureAwait(false);
-				if (data != null)
+				if (string.IsNullOrEmpty(updateUrl))
 				{
-					await new PatchManager().StartPatchAsync(data.update_prefix, kartRiderDirectory).ConfigureAwait(false);
-					Console.WriteLine("游戏更新完成！");
+					var data = await Update.GetUpdateAsync().ConfigureAwait(false);
+					if (data != null)
+					{
+						updateUrl = data.update_prefix;
+					}
+					else
+					{
+						MessageBox.Show("获取游戏版本失败！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					}
 				}
-				else
+				await new PatchManager().StartPatchAsync(updateUrl, kartRiderDirectory).ConfigureAwait(false);
+
+				PINFile val = new PINFile(Path.GetFullPath(Path.Combine(kartRiderDirectory, @"KartRider.pin")));
+				ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
+				ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
+				ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
+				ProfileService.SaveSettings();
+				// 更新完成后，根据设置恢复终端显示状态
+				if (!wasVisible && !ProfileService.SettingConfig.Console)
 				{
-					MessageBox.Show("获取游戏版本失败！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					Program.isVisible = false;
+					Program.ShowWindow(Program.consoleHandle, Program.SW_HIDE);
 				}
 			}
 			catch (Exception ex)
@@ -81,7 +96,7 @@ namespace KartRider
 			}
 		}
 
-		public static void CheckGame(string kartRiderDirectory)
+		public static void CheckGame(string kartRiderDirectory, string updateUrl = "", bool single = true)
 		{
 			Exception capturedException = null;
 
@@ -91,7 +106,7 @@ namespace KartRider
 				try
 				{
 					Console.WriteLine("[CheckGame] 启动更新线程");
-					CheckGameAsync(kartRiderDirectory).GetAwaiter().GetResult();
+					CheckGameAsync(kartRiderDirectory, updateUrl).GetAwaiter().GetResult();
 					Console.WriteLine("[CheckGame] 更新线程完成");
 				}
 				catch (Exception ex)
@@ -118,7 +133,10 @@ namespace KartRider
 			}
 			else
 			{
-				PatchManager.StartUpdateAsync(kartRiderDirectory);
+				if (single)
+				{
+					PatchManager.RhoDump(kartRiderDirectory);
+				}
 			}
 		}
 	}

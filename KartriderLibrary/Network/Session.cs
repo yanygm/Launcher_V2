@@ -16,6 +16,8 @@ namespace KartRider.Common.Network
     {
         private readonly System.Net.Sockets.Socket _socket;
 
+        public event Action<Session> OnDisconnected;
+
         private const int DEFAULT_SIZE = 65536;
 
         private byte[] mBuffer = new byte[65536];
@@ -196,6 +198,7 @@ namespace KartRider.Common.Network
             if (Interlocked.CompareExchange(ref this.mDisconnected, 1, 0) == 0)
             {
                 this.OnDisconnect();
+                this.OnDisconnected?.Invoke(this);
                 try
                 {
                     this.Socket.Shutdown(SocketShutdown.Both);
@@ -223,7 +226,6 @@ namespace KartRider.Common.Network
                         if (num == 0)
                         {
                             // 读取到0字节，说明客户端主动断开
-                            Console.WriteLine("客户端主动断开连接");
                             this.Disconnect();
                             return;
                         }
