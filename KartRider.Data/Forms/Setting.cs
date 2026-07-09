@@ -10,7 +10,7 @@ namespace KartRider
     {
         public string[] AiSpeed = new string[] { "简单", "困难", "地狱" };
 
-        public string[] urls = new string[] { "https://gh-proxy.com/", "https://ghproxy.net/", "https://git.myany.uk/", "" };
+        public string[] urls = new string[] { "https://v6.gh-proxy.org/", "https://gh-proxy.com/", "https://cdn.gh-proxy.org/", "https://ghproxy.net/", "https://git.myany.uk/", "" };
 
         public Setting()
         {
