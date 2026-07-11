@@ -28,7 +28,7 @@ public class PatchManager
     {
         try
         {
-            Uri fullUri = new Uri(baseUri, "NT.txf");
+            Uri fullUri = new Uri(update_prefix, "NT.txf");
             string PatchListUrl = fullUri.ToString();
             string TempPath = Path.Combine(gamePath, "temp");
             string PatchListPath = Path.Combine(gamePath, "NT.txf");
