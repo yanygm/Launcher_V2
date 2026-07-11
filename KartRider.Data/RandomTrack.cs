@@ -24,6 +24,7 @@ namespace KartRider
     {
         public static Dictionary<uint, Track> TrackList = new Dictionary<uint, Track>();
         public static XDocument randomTrack = new XDocument();
+        public static Dictionary<uint, string> RandomName = new Dictionary<uint, string> { { 0, "全部随机" }, { 1, "专业竞速随机" }, { 3, "人气随机（极易）" }, { 4, "人气随机（简单）" }, { 5, "人气随机（普通）" }, { 6, "人气随机（困难）" }, { 7, "人气随机（极难）" }, { 8, "新图随机" }, { 30, "反方向随机" }, { 40, "竞速随机" } };
 
         public static string GameTrack = "village_R01";
 
@@ -34,7 +35,11 @@ namespace KartRider
 
         public static string GetTrackName(uint trackId)
         {
-            if (TrackList.ContainsKey(trackId))
+            if (RandomName.ContainsKey(trackId))
+            {
+                return RandomName[trackId];
+            }
+            else if (TrackList.ContainsKey(trackId))
             {
                 return TrackList[trackId].Name;
             }
