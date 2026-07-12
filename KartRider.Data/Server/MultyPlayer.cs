@@ -238,201 +238,22 @@ public static class MultyPlayer
             BroadCast(roomId, outPacket);
         }
 
-        if (room.TimeData.Count < room.GetCount())
-        {
-            foreach (RoomMember member in room._slots)
-            {
-                if (member is Player player)
-                {
-                    if (!room.TimeData.ContainsKey(player.ID))
-                    {
-                        room.TimeData[player.ID] = uint.MaxValue;
-                    }
-                }
-                else if (member is Ai ai)
-                {
-                    if (!room.TimeData.ContainsKey(ai.ID))
-                    {
-                        room.TimeData[ai.ID] = uint.MaxValue;
-                    }
-                }
-            }
-        }
-        room.Ranking = GetAllRanks(room.TimeData);
-        int redTeam = 0;
-        int blueTeam = 0;
-        var firstId = room.Ranking.First(kv => kv.Value == 0).Key;
-        byte firstTeam = 0;
-        if (RoomManager.TryGetIdDetail(roomId, firstId) is Player p)
-        {
-            firstTeam = p.Team;
-        }
-        else if (RoomManager.TryGetIdDetail(roomId, firstId) is Ai ai)
-        {
-            firstTeam = ai.Team;
-        }
-        Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
-        foreach (RoomMember member in room._slots)
-        {
-            if (member is Player p2)
-            {
-                if (p2.Team == 2 && room.TimeData[p2.ID] != uint.MaxValue)
-                {
-                    blueTeam += teamPoints[room.Ranking[p2.ID]];
-                }
-                else if (p2.Team == 1 && room.TimeData[p2.ID] != uint.MaxValue)
-                {
-                    redTeam += teamPoints[room.Ranking[p2.ID]];
-                }
-            }
-            if (member is Ai a2)
-            {
-                if (a2.Team == 2 && room.TimeData[a2.ID] != uint.MaxValue)
-                {
-                    blueTeam += teamPoints[room.Ranking[a2.ID]];
-                }
-                else if (a2.Team == 1 && room.TimeData[a2.ID] != uint.MaxValue)
-                {
-                    redTeam += teamPoints[room.Ranking[a2.ID]];
-                }
-            }
-        }
-
-        using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
-        {
-            outPacket.WriteByte(room.GameType);
-            outPacket.WriteInt();
-            outPacket.WriteInt();
-            BroadCast(roomId, outPacket);
-        }
-
-        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
-        {
-            if (room.GameType == 3)
-            {
-                if (redTeam == blueTeam)
-                {
-                    outPacket.WriteByte(firstTeam);
-                }
-                else
-                {
-                    outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
-                }
-            }
-            else if (room.GameType == 4)
-            {
-                outPacket.WriteByte(firstTeam);
-            }
-            else
-            {
-                outPacket.WriteByte(0);
-            }
-
-            outPacket.WriteInt(room.GetPlayerCount()); // player count
-            foreach (RoomMember member in room._IDs)
-            {
-                if (member is Player p3)
-                {
-                    var p3Config = ProfileService.GetProfileConfig(p3.Nickname);
-
-                    outPacket.WriteInt(p3.ID); // player id
-                    outPacket.WriteUInt(room.TimeData[p3.ID]);
-                    outPacket.WriteByte();
-                    outPacket.WriteUShort(p3Config.RiderItem.Set_Kart);
-                    int playerRanking = room.Ranking[p3.ID];
-                    int playerPoint = room.TimeData[p3.ID] == uint.MaxValue ? 0 : teamPoints[playerRanking];
-                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p3.ID, playerRanking, playerPoint);
-                    outPacket.WriteInt(playerRanking);
-                    if (room.GameType == 3 || room.GameType == 4)
-                    {
-                        outPacket.WriteShort(2); //2
-                    }
-                    else
-                    {
-                        outPacket.WriteShort(0);
-                    }
-                    outPacket.WriteByte();
-
-                    var reward = TimeReward.Reward(playerRanking);
-                    p3Config.Rider.RP += reward.RP;
-                    outPacket.WriteUInt(p3Config.Rider.RP);
-                    outPacket.WriteUInt(reward.RP); // Earned RP
-                    outPacket.WriteUInt(reward.Lucci); // Earned Lucci
-                    p3Config.Rider.Lucci += reward.Lucci;
-                    outPacket.WriteUInt(p3Config.Rider.Lucci);
-                    ProfileService.Save(p3.Nickname, p3Config);
-                    outPacket.WriteBytes(new byte[29]);
-
-                    if (room.GameType == 3 || room.GameType == 4)
-                    {
-                        outPacket.WriteInt(playerPoint);
-                        outPacket.WriteByte(p3.Team); // Team
-                    }
-                    else
-                    {
-                        outPacket.WriteInt(0);
-                        outPacket.WriteByte(0);
-                    }
-                    outPacket.WriteBytes(new byte[12]);
-                    outPacket.WriteInt(1);
-                    outPacket.WriteByte(0);
-                    outPacket.WriteUShort(p3Config.RiderItem.Set_Character);
-                    outPacket.WriteBytes(new byte[49]);
-                    outPacket.WriteHexString("FF");
-                    outPacket.WriteBytes(new byte[37]);
-                    outPacket.WriteInt(p3Config.Rider.ClubMark_LOGO);
-                    outPacket.WriteBytes(new byte[39]);
-                }
-            }
-
-            outPacket.WriteInt(room.GetAiCount()); // AI count
-            foreach (RoomMember member in room._IDs)
-            {
-                if (member is Ai a3)
-                {
-                    outPacket.WriteInt(a3.ID);
-                    outPacket.WriteUInt(room.TimeData[a3.ID]);
-                    outPacket.WriteByte();
-
-                    // 获取 kart 属性值
-                    outPacket.WriteShort(a3.Kart);
-                    int AiRanking = room.Ranking[a3.ID];
-                    int AiPoint = room.TimeData[a3.ID] == uint.MaxValue ? 0 : teamPoints[AiRanking];
-                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a3.ID, AiRanking, AiPoint);
-                    outPacket.WriteInt(AiRanking);
-                    outPacket.WriteShort(0);
-                    if (room.GameType == 3 || room.GameType == 4)
-                    {
-                        outPacket.WriteByte(a3.Team); // Team
-                        outPacket.WriteInt(AiPoint);
-                    }
-                    else
-                    {
-                        outPacket.WriteByte(0);
-                        outPacket.WriteInt(0);
-                    }
-                }
-            }
-            Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
-            outPacket.WriteBytes(new byte[34]);
-            outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-            BroadCast(roomId, outPacket);
-        }
-
         InitRoom(room);
 
+        GameResultPacket(room, room._IDs, room.TimeData);
+
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
-        if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p4)
+        if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p1)
         {
             room.RoomMaster = firstID;
-            p4.PlayerType = 2;
+            p1.PlayerType = 2;
         }
-        else if (room.GetOBCount() < 1 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p5)
+        else if (room.GetOBCount() < 1 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p2)
         {
             room.RoomMaster = firstID;
-            p5.PlayerType = 2;
+            p2.PlayerType = 2;
         }
-        Console.WriteLine("EndTicks = {0}", room.EndTicks + 5000);
+        Console.WriteLine("EndTicks = {0}", room.EndTicks + 6000);
     }
 
     public static void Clientsession(SessionGroup Parent, uint hash, InPacket iPacket)
@@ -1127,29 +948,25 @@ public static class MultyPlayer
                 BroadCast(roomId, outPacket, Parent.Client.Nickname);
             }
 
-            uint pmap = ProfileService.GetProfileConfig(Parent.Client.Nickname).Rider.pmap;
-            if (pmap == 718 || pmap == 590)
+            if (value.StartsWith("选图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("换图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("選圖", StringComparison.OrdinalIgnoreCase) || value.StartsWith("換圖", StringComparison.OrdinalIgnoreCase))
             {
-                if (value.StartsWith("选图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("换图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("選圖", StringComparison.OrdinalIgnoreCase) || value.StartsWith("換圖", StringComparison.OrdinalIgnoreCase))
+                uint track = RandomTrack.GetHash(value);
+                if (track != 0)
                 {
-                    uint track = RandomTrack.GetHash(value);
-                    if (track != 0)
-                    {
-                        room.track = track;
-                        GrSlotDataPacket(roomId);
-                    }
-                    return;
+                    room.track = track;
+                    GrSlotDataPacket(roomId);
                 }
-                else if (value.StartsWith("开始游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("開始遊戲", StringComparison.OrdinalIgnoreCase))
-                {
-                    GrSessionDataPacket(Parent);
-                    return;
-                }
-                else if (value.StartsWith("结束游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("結束遊戲", StringComparison.OrdinalIgnoreCase))
-                {
-                    StopGame(roomId, Parent);
-                    return;
-                }
+                return;
+            }
+            else if (value.StartsWith("开始游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("開始遊戲", StringComparison.OrdinalIgnoreCase))
+            {
+                GrSessionDataPacket(Parent);
+                return;
+            }
+            else if (value.StartsWith("结束游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("結束遊戲", StringComparison.OrdinalIgnoreCase))
+            {
+                StopGame(roomId, Parent);
+                return;
             }
             return;
         }
@@ -1430,6 +1247,14 @@ public static class MultyPlayer
             outPacket.WriteString("结束游戏");
             BroadCast(roomId, outPacket, Parent.Client.Nickname);
         }
+        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
+        {
+            outPacket.WriteInt(4);
+            outPacket.WriteByte(0);
+            outPacket.WriteUInt(ConvertTick());
+            BroadCast(roomId, outPacket);
+        }
+        InitRoom(room);
         using (OutPacket outPacket = new OutPacket("GameResultPacket"))
         {
             outPacket.WriteByte(0);
@@ -1439,14 +1264,6 @@ public static class MultyPlayer
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
             BroadCast(roomId, outPacket);
         }
-        using (OutPacket outPacket = new OutPacket("GameControlPacket"))
-        {
-            outPacket.WriteInt(4);
-            outPacket.WriteByte(0);
-            outPacket.WriteUInt(ConvertTick());
-            BroadCast(roomId, outPacket);
-        }
-        InitRoom(room);
     }
 
     static void InitRoom(GameRoom room)
@@ -2154,6 +1971,195 @@ public static class MultyPlayer
             }
             oPacket.WriteBytes(new byte[32]);
             BroadCast(roomId, oPacket);
+        }
+    }
+
+    static void GameResultPacket(GameRoom room, RoomMember[] members, Dictionary<int, uint> timeData)
+    {
+        int playerCount = 0;
+        int aiCount = 0;
+        foreach (RoomMember member in members)
+        {
+            if (member is Player p1)
+            {
+                playerCount++;
+                if (!timeData.ContainsKey(p1.ID))
+                {
+                    timeData[p1.ID] = uint.MaxValue;
+                }
+            }
+            else if (member is Ai a1)
+            {
+                aiCount++;
+                if (!timeData.ContainsKey(a1.ID))
+                {
+                    timeData[a1.ID] = uint.MaxValue;
+                }
+            }
+        }
+
+        Dictionary<int, int> ranking = GetAllRanks(timeData);
+        room.Ranking = ranking;
+
+        var firstId = ranking.First(kv => kv.Value == 0).Key;
+        byte firstTeam = 0;
+        if (members[firstId] is Player p2)
+        {
+            firstTeam = p2.Team;
+        }
+        else if (members[firstId] is Ai a2)
+        {
+            firstTeam = a2.Team;
+        }
+        Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
+
+        int redTeam = 0;
+        int blueTeam = 0;
+        foreach (RoomMember member in members)
+        {
+            if (member is Player p3)
+            {
+                if (p3.Team == 2 && timeData[p3.ID] != uint.MaxValue)
+                {
+                    blueTeam += teamPoints[ranking[p3.ID]];
+                }
+                else if (p3.Team == 1 && timeData[p3.ID] != uint.MaxValue)
+                {
+                    redTeam += teamPoints[ranking[p3.ID]];
+                }
+            }
+            if (member is Ai a3)
+            {
+                if (a3.Team == 2 && timeData[a3.ID] != uint.MaxValue)
+                {
+                    blueTeam += teamPoints[ranking[a3.ID]];
+                }
+                else if (a3.Team == 1 && timeData[a3.ID] != uint.MaxValue)
+                {
+                    redTeam += teamPoints[ranking[a3.ID]];
+                }
+            }
+        }
+
+        using (OutPacket outPacket = new OutPacket("GameNextStagePacket"))
+        {
+            outPacket.WriteByte(room.GameType);
+            outPacket.WriteInt();
+            outPacket.WriteInt();
+            BroadCast(room.RoomId, outPacket);
+        }
+
+        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
+        {
+            if (room.GameType == 3)
+            {
+                if (redTeam == blueTeam)
+                {
+                    outPacket.WriteByte(firstTeam);
+                }
+                else
+                {
+                    outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
+                }
+            }
+            else if (room.GameType == 4)
+            {
+                outPacket.WriteByte(firstTeam);
+            }
+            else
+            {
+                outPacket.WriteByte(0);
+            }
+
+            outPacket.WriteInt(playerCount); // player count
+            foreach (RoomMember member in members)
+            {
+                if (member is Player p4)
+                {
+                    var p4Config = ProfileService.GetProfileConfig(p4.Nickname);
+
+                    outPacket.WriteInt(p4.ID); // player id
+                    outPacket.WriteUInt(timeData[p4.ID]);
+                    outPacket.WriteByte();
+                    outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
+                    int playerRanking = ranking[p4.ID];
+                    int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : teamPoints[playerRanking];
+                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p4.ID, playerRanking, playerPoint);
+                    outPacket.WriteInt(playerRanking);
+                    if (room.GameType == 3 || room.GameType == 4)
+                    {
+                        outPacket.WriteShort(2); //2
+                    }
+                    else
+                    {
+                        outPacket.WriteShort(0);
+                    }
+                    outPacket.WriteByte();
+
+                    var reward = TimeReward.Reward(playerRanking);
+                    p4Config.Rider.RP += reward.RP;
+                    outPacket.WriteUInt(p4Config.Rider.RP);
+                    outPacket.WriteUInt(reward.RP); // Earned RP
+                    outPacket.WriteUInt(reward.Lucci); // Earned Lucci
+                    p4Config.Rider.Lucci += reward.Lucci;
+                    outPacket.WriteUInt(p4Config.Rider.Lucci);
+                    ProfileService.Save(p4.Nickname, p4Config);
+                    outPacket.WriteBytes(new byte[29]);
+
+                    if (room.GameType == 3 || room.GameType == 4)
+                    {
+                        outPacket.WriteInt(playerPoint);
+                        outPacket.WriteByte(p4.Team); // Team
+                    }
+                    else
+                    {
+                        outPacket.WriteInt(0);
+                        outPacket.WriteByte(0);
+                    }
+                    outPacket.WriteBytes(new byte[12]);
+                    outPacket.WriteInt(1);
+                    outPacket.WriteByte(0);
+                    outPacket.WriteUShort(p4Config.RiderItem.Set_Character);
+                    outPacket.WriteBytes(new byte[49]);
+                    outPacket.WriteHexString("FF");
+                    outPacket.WriteBytes(new byte[37]);
+                    outPacket.WriteInt(p4Config.Rider.ClubMark_LOGO);
+                    outPacket.WriteBytes(new byte[39]);
+                }
+            }
+
+            outPacket.WriteInt(aiCount); // AI count
+            foreach (RoomMember member in members)
+            {
+                if (member is Ai a4)
+                {
+                    outPacket.WriteInt(a4.ID);
+                    outPacket.WriteUInt(timeData[a4.ID]);
+                    outPacket.WriteByte();
+
+                    // 获取 kart 属性值
+                    outPacket.WriteShort(a4.Kart);
+                    int AiRanking = ranking[a4.ID];
+                    int AiPoint = timeData[a4.ID] == uint.MaxValue ? 0 : teamPoints[AiRanking];
+                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a4.ID, AiRanking, AiPoint);
+                    outPacket.WriteInt(AiRanking);
+                    outPacket.WriteShort(0);
+                    if (room.GameType == 3 || room.GameType == 4)
+                    {
+                        outPacket.WriteByte(a4.Team); // Team
+                        outPacket.WriteInt(AiPoint);
+                    }
+                    else
+                    {
+                        outPacket.WriteByte(0);
+                        outPacket.WriteInt(0);
+                    }
+                }
+            }
+            Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
+            outPacket.WriteBytes(new byte[34]);
+            outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
+            BroadCast(room.RoomId, outPacket);
         }
     }
 }
