@@ -428,7 +428,7 @@ namespace ExcData
                     Kart.chargeInstAccelGaugeByBoost = 0.03f;
                     Kart.chargeInstAccelGaugeByGrip = 0.07f;
                     Kart.chargeInstAccelGaugeByWall = 0.15f;
-                    Kart.instAccelFactor = 1.425f;
+                    Kart.instAccelFactor = 1.1425f;
                     Kart.instAccelGaugeCooldownTime = 3000;
                     Kart.instAccelGaugeLength = 2000f;
                     Kart.instAccelGaugeMinUsable = 400f;
