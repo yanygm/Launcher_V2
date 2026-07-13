@@ -1079,13 +1079,13 @@ public static class MultyPlayer
             if (RoomManager.TryGetIdDetail(roomId, ID) is Player p)
             {
                 var player = RoomManager.RemovePlayer(roomId, p.SlotId, p.Nickname);
+                using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
+                {
+                    outPacket.WriteBool(player);
+                    p.Session.Client.Send(outPacket);
+                }
                 if (player)
                 {
-                    using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
-                    {
-                        outPacket.WriteByte(1);
-                        p.Session.Client.Send(outPacket);
-                    }
                     using (OutPacket outPacket = new OutPacket("GrKickBroadcastPacket"))
                     {
                         outPacket.WriteString(p.Nickname);
