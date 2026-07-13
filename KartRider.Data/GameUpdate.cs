@@ -94,7 +94,7 @@ public class PatchManager
                     try
                     {
                         Console.WriteLine($"[下载开始] {item.LocalPath}");
-                        await ProcessFileDownloadAsync(item, update_prefix, TempPath, gamePath);
+                        await ProcessFileDownloadAsync(item, baseUri, TempPath, gamePath);
                         Console.WriteLine($"[下载完成] {item.LocalPath}");
                     }
                     catch (Exception ex)
@@ -187,15 +187,12 @@ public class PatchManager
     }
 
     // 仅执行下载和安装（不校验）
-    private async Task ProcessFileDownloadAsync(PatchItem item, string update_prefix, string TempPath, string gamePath)
+    private async Task ProcessFileDownloadAsync(PatchItem item, Uri baseUri, string TempPath, string gamePath)
     {
         string localFilePath = item.LocalPath.Replace('/', Path.DirectorySeparatorChar);
         string filePath = Path.Combine(gamePath, localFilePath);
         var tempFile = Path.Combine(TempPath, item.FileName);
 
-        if (!update_prefix.EndsWith("/"))
-            update_prefix += "/";
-        Uri baseUri = new Uri(update_prefix);
         Uri fullUri = new Uri(baseUri, item.LocalPath);
         string url = fullUri.ToString();
 
