@@ -267,8 +267,8 @@ public class GameRoom
                             }
                         }
                     }
-                    RoomManager.RemoveRoom(this);
                     ObIDs[slotId] = null;
+                    RoomManager.RemoveRoom(this);
                     return true;
                 }
             }
@@ -294,8 +294,8 @@ public class GameRoom
                     }
                 }
             }
-            RoomManager.RemoveRoom(this);
             _IDs[player.ID] = null;
+            RoomManager.RemoveRoom(this);
             return true;
         }
         else if (removedMember is Ai ai)
