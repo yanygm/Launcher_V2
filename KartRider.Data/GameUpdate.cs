@@ -192,7 +192,12 @@ public class PatchManager
         string localFilePath = item.LocalPath.Replace('/', Path.DirectorySeparatorChar);
         string filePath = Path.Combine(gamePath, localFilePath);
         var tempFile = Path.Combine(TempPath, item.FileName);
-        var url = update_prefix + "/" + item.LocalPath;
+
+        if (!update_prefix.EndsWith("/"))
+            update_prefix += "/";
+        Uri baseUri = new Uri(update_prefix);
+        Uri fullUri = new Uri(baseUri, item.LocalPath);
+        string url = fullUri.ToString();
 
         try
         {
