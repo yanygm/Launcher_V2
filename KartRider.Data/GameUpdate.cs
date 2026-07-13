@@ -28,6 +28,8 @@ public class PatchManager
     {
         try
         {
+            if (!update_prefix.EndsWith("/"))
+                update_prefix += "/";
             Uri baseUri = new Uri(update_prefix);
             Uri fullUri = new Uri(baseUri, "NT.txf");
             string PatchListUrl = fullUri.ToString();
