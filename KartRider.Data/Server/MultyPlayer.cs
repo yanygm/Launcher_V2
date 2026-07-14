@@ -230,6 +230,10 @@ public static class MultyPlayer
             return;
         }
 
+        var menbers = room.SnapshotMembers ?? room._IDs; // 优先用结束瞬间快照
+        var timeData = new Dictionary<int, uint>(room.TimeData);
+        room.SnapshotMembers = null; // 用后清除
+
         using (OutPacket outPacket = new OutPacket("GameControlPacket"))
         {
             outPacket.WriteInt(4);
@@ -240,7 +244,7 @@ public static class MultyPlayer
 
         InitRoom(room);
 
-        GameResultPacket(room, room._IDs, room.TimeData);
+        GameResultPacket(room, menbers, timeData);
 
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p1)
@@ -305,6 +309,7 @@ public static class MultyPlayer
                 }
                 if (room.EndTicks == 0)
                 {
+                    room.SnapshotMembers = DeepCopyMembers(room._IDs); // 结束瞬间拍快照
                     room.EndTicks = ConvertTick() + 10000;
                     using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                     {
@@ -832,6 +837,7 @@ public static class MultyPlayer
             Console.WriteLine("GameAiGoalinPacket, Id = {0}, Time = {1}", Id, Time);
             if (room.EndTicks == 0)
             {
+                room.SnapshotMembers = DeepCopyMembers(room._IDs);
                 room.EndTicks = ConvertTick() + 10000;
                 using (OutPacket oPacket = new OutPacket("GameControlPacket"))
                 {
@@ -2161,5 +2167,46 @@ public static class MultyPlayer
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
             BroadCast(room.RoomId, outPacket);
         }
+    }
+
+    static RoomMember[] DeepCopyMembers(RoomMember[] source)
+    {
+        var copy = new RoomMember[source.Length];
+        for (int i = 0; i < source.Length; i++)
+        {
+            copy[i] = source[i] switch
+            {
+                Player p => new Player
+                {
+                    SlotId = p.SlotId,
+                    ID = p.ID,
+                    Nickname = p.Nickname,
+                    PlayerType = p.PlayerType,
+                    Team = p.Team,
+                    Session = p.Session,
+                    LastPacketReceived = p.LastPacketReceived,
+                },
+                Ai a => new Ai
+                {
+                    SlotId = a.SlotId,
+                    ID = a.ID,
+                    Character = a.Character,
+                    Rid = a.Rid,
+                    Kart = a.Kart,
+                    Balloon = a.Balloon,
+                    HeadBand = a.HeadBand,
+                    Goggle = a.Goggle,
+                    Team = a.Team,
+                },
+                Close c => new Close
+                {
+                    SlotId = c.SlotId,
+                    ID = c.ID,
+                    PlayerType = c.PlayerType,
+                },
+                _ => null, // null 保持 null
+            };
+        }
+        return copy;
     }
 }
