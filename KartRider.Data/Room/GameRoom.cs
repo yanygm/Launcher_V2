@@ -31,6 +31,9 @@ public class GameRoom
     public Dictionary<int, int> Ranking { get; set; } = new Dictionary<int, int>();
     public Dictionary<string, bool> Ready { get; set; } = new Dictionary<string, bool>();
 
+    // 结束时深拷贝快照，防止结算期间玩家断线
+    public RoomMember[] SnapshotMembers { get; set; }
+
     // 8个格子（0-7）
     public RoomMember[] _slots = new RoomMember[8];
     public RoomMember[] _IDs = new RoomMember[8];
