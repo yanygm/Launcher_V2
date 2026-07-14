@@ -54,9 +54,28 @@ namespace KartRider
             // 保存原始输出流
             var originalOut = Console.Out;
 
-            // 创建缓存编写器并替换控制台输出
+            // 创建缓存编写器并替换控制台输出（stdout + stderr 都拦截）
             CachedConsoleWriter.cachedWriter = new CachedConsoleWriter(originalOut);
             Console.SetOut(CachedConsoleWriter.cachedWriter);
+            Console.SetError(CachedConsoleWriter.cachedWriter);
+
+            // 注册未处理异常：进程终止前立即保存日志并弹窗阻塞
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                CachedConsoleWriter.ForceSaveAndClear();
+
+                var ex = args.ExceptionObject as Exception;
+                string message = ex?.ToString() ?? args.ExceptionObject?.ToString() ?? "未知错误";
+
+                MessageBox.Show(
+                    $"程序发生未处理的异常，日志已保存。\n\n{message}",
+                    "致命错误",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+
+                Environment.Exit(1);
+            };
 
             // 初始化自适应编码
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
