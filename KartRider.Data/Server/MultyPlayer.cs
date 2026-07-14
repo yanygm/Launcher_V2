@@ -208,23 +208,17 @@ public static class MultyPlayer
         Console.WriteLine("StartTicks = {0}", room.StartTicks);
     }
 
-    static void Set_settleTrigger(SessionGroup Parent)
+    static void Set_settleTrigger(GameRoom room)
     {
         var onceTimer = new System.Timers.Timer();
         onceTimer.Interval = 10000;
-        onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(Parent, s, _event));
+        onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(room, s, _event));
         onceTimer.AutoReset = false;
         onceTimer.Start();
     }
 
-    static void settleTrigger(SessionGroup Parent, object sender, System.Timers.ElapsedEventArgs e)
+    static void settleTrigger(GameRoom room, object sender, System.Timers.ElapsedEventArgs e)
     {
-        var roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-        if (roomId == -1)
-        {
-            return;
-        }
-        var room = RoomManager.GetRoom(roomId);
         if (room == null)
         {
             return;
@@ -239,7 +233,7 @@ public static class MultyPlayer
             outPacket.WriteInt(4);
             outPacket.WriteByte(0);
             outPacket.WriteUInt(room.EndTicks + 6000);
-            BroadCast(roomId, outPacket);
+            BroadCast(room.RoomId, outPacket);
         }
 
         InitRoom(room);
@@ -247,12 +241,12 @@ public static class MultyPlayer
         GameResultPacket(room, menbers, timeData);
 
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
-        if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p1)
+        if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p1)
         {
             room.RoomMaster = firstID;
             p1.PlayerType = 2;
         }
-        else if (room.GetOBCount() < 1 && RoomManager.TryGetIdDetail(roomId, firstID) is Player p2)
+        else if (room.GetOBCount() < 1 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p2)
         {
             room.RoomMaster = firstID;
             p2.PlayerType = 2;
@@ -318,7 +312,7 @@ public static class MultyPlayer
                         oPacket.WriteUInt(room.EndTicks);
                         BroadCast(roomId, oPacket, Parent.Client.Nickname);
                     }
-                    Set_settleTrigger(Parent);
+                    Set_settleTrigger(room);
                 }
             }
             return;
@@ -846,7 +840,7 @@ public static class MultyPlayer
                     oPacket.WriteUInt(room.EndTicks);
                     BroadCast(roomId, oPacket);
                 }
-                Set_settleTrigger(Parent);
+                Set_settleTrigger(room);
             }
             return;
         }
