@@ -87,12 +87,12 @@ namespace KartRider
             P2PServer.Start();
             MsgrServer.Start();
 
-            if (RouterListener.Listener == null)
+            // 仅在 Listener 为 null 或未绑定时才需要创建/启动
+            if (RouterListener.Listener == null || !RouterListener.Listener.Server.IsBound)
             {
-                RouterListener.Listener = new TcpListener(IPAddress.Any, ProfileService.SettingConfig.ServerPort);
-            }
-            if (!RouterListener.Listener.Server.IsBound)
-            {
+                // 先收集 IP 列表（在创建 Listener 之前完成，避免中间异常导致
+                // Listener 处于"已创建但未 Start"状态，进而在 Stop() 时触发
+                // .NET 8 的 "Not listening" InvalidOperationException）
                 RouterIPList = new List<string>();
                 RouterIPList = LanIpGetter.GetAllLocalLanIps();
                 RouterIPList.Add("127.0.0.1");
@@ -106,6 +106,9 @@ namespace KartRider
                 {
                     Console.WriteLine("Load Server IP: {0}:{1}", IP, ProfileService.SettingConfig.ServerPort);
                 }
+
+                // 创建 Listener 后立即 Start，避免中间代码抛异常导致不一致状态
+                RouterListener.Listener = new TcpListener(IPAddress.Any, ProfileService.SettingConfig.ServerPort);
                 RouterListener.Listener.Start();
                 RouterListener.Listener.BeginAcceptSocket(OnAcceptSocket, RouterListener.Listener);
             }
@@ -132,11 +135,17 @@ namespace KartRider
             MsgrServer.Stop();
 
             // 停止 TCP 监听器
+            // 注意：.NET 8 中 TcpListener.Stop() 在未 Start 时会抛出
+            // "Not listening. You must call the Start method before calling this method."
+            // 使用 Server.Close() 直接关闭底层 Socket 避免此异常。
             if (Listener != null)
             {
                 try
                 {
-                    Listener.Stop();
+                    if (Listener.Server != null)
+                    {
+                        Listener.Server.Close();
+                    }
                 }
                 catch (Exception ex)
                 {
