@@ -557,17 +557,20 @@ public static class MultyPlayer
                 return;
             }
 
-            player.PlayerType = iPacket.ReadInt();
-            GrSlotStatePacket(roomId);
-            using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
+            if (!room.Started)
             {
-                oPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
-                oPacket.WriteByte(1);
-                oPacket.WriteInt(player.ID);
-                oPacket.WriteInt(player.PlayerType);
-                BroadCast(roomId, oPacket);
+                player.PlayerType = iPacket.ReadInt();
+                GrSlotStatePacket(roomId);
+                using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
+                {
+                    oPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
+                    oPacket.WriteByte(1);
+                    oPacket.WriteInt(player.ID);
+                    oPacket.WriteInt(player.PlayerType);
+                    BroadCast(roomId, oPacket);
+                }
+                GrSlotDataPacket(roomId);
             }
-            GrSlotDataPacket(roomId);
             return;
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("GrRequestClosePacket"))
@@ -979,13 +982,16 @@ public static class MultyPlayer
                 Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
                 return;
             }
-            string Target = iPacket.ReadString();
-            var player = RoomManager.GetPlayer(roomId, Target);
-            if (player != null)
+            if (!room.Started)
             {
-                room.RoomMaster = player.ID;
-                player.PlayerType = 2;
-                GrSlotDataPacket(roomId);
+                string Target = iPacket.ReadString();
+                var player = RoomManager.GetPlayer(roomId, Target);
+                if (player != null)
+                {
+                    room.RoomMaster = player.ID;
+                    player.PlayerType = 2;
+                    GrSlotDataPacket(roomId);
+                }
             }
             return;
         }
@@ -1232,10 +1238,14 @@ public static class MultyPlayer
 
     public static void GrSlotDataPacket(int roomId)
     {
-        using (OutPacket outPacket = new OutPacket("GrSlotDataPacket"))
+        var room = RoomManager.GetRoom(roomId);
+        if (!room.Started)
         {
-            GrSlotDataPacket(roomId, outPacket);
-            BroadCast(roomId, outPacket);
+            using (OutPacket outPacket = new OutPacket("GrSlotDataPacket"))
+            {
+                GrSlotDataPacket(roomId, outPacket);
+                BroadCast(roomId, outPacket);
+            }
         }
     }
 
@@ -1313,14 +1323,7 @@ public static class MultyPlayer
                 Console.WriteLine("Player Nickname = {0}, ID = {1}, SlotId = {2}", p.Nickname, p.ID, p.SlotId);
                 if (enter)
                 {
-                    if (p.ID == room.RoomMaster && p.PlayerType == 2)
-                    {
-                        outPacket.WriteInt(3);
-                    }
-                    else
-                    {
-                        outPacket.WriteInt(p.PlayerType);
-                    }
+                    outPacket.WriteInt(3);
                 }
                 else
                 {
