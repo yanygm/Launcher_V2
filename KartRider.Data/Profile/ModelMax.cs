@@ -51,9 +51,11 @@ public static class ModelMax
     <kart id='1568' name='鹊桥飞光 迅' modelMaxX='0.7837' modelMaxY='1.2089' />
     <kart id='1572' name='小强计划 迅' modelMaxX='0.7734' modelMaxY='0.9811' />
     <kart id='1574' name='黑骑士 迅' modelMaxX='0.7339' modelMaxY='1.1108' />
+    <kart id='1582' name='威龙 迅' modelMaxX='0.77175' modelMaxY='1.344' />
     <kart id='1583' name='赤炎威龙 迅' modelMaxX='0.7599165' modelMaxY='1.323392' />
     <kart id='1587' name='疾影 迅' modelMaxX='0.720975' modelMaxY='0.969122' />
     <kart id='1589' name='冰橇 迅' modelMaxX='0.744729' modelMaxY='1.053629' />
+    <kart id='1595' name='白银威龙 迅' modelMaxX='0.7599165' modelMaxY='1.323392' />
     <kart id='1596' name='黄金威龙 迅' modelMaxX='0.7599165' modelMaxY='1.323392' />
     <kart id='1598' name='小乖计划 迅' modelMaxX='0.8005' modelMaxY='0.8335' />
     <kart id='1614' name='R8 迅' modelMaxX='0.744088' modelMaxY='1.150446' />
