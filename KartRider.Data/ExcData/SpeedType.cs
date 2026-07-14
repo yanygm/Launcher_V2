@@ -11,7 +11,7 @@ namespace ExcData
     {
         public static Dictionary<string, Dictionary<string, byte>> speedNames = new Dictionary<string, Dictionary<string, byte>>
         {
-            { "国服", new Dictionary<string, byte> { { "标准", 7 }, { "慢速", 3 }, { "普通", 0 }, { "快速", 1 }, { "高速", 2 } } },
+            { "国服", new Dictionary<string, byte> { { "标准", 7 }, { "慢速S0", 3 }, { "普通S1", 0 }, { "快速S2", 1 }, { "高速S3", 2 } } },
             { "国服复古", new Dictionary<string, byte> { { "新手", 0 }, { "初级", 1 }, { "L3", 2 }, { "L2", 3 }, { "L1", 4 }, { "Pro", 5 } } },
             { "韩服复古", new Dictionary<string, byte> { { "新手", 0 }, { "初级", 1 }, { "L3", 2 }, { "L2", 3 }, { "L1", 4 }, { "Pro", 5 } } }
         };
