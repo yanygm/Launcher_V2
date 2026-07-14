@@ -104,8 +104,8 @@ namespace KartRider
             Console.WriteLine($"[TCP] {localEp} → {remoteEp}");
 
             var listener = new TcpListener(localEp);
+            listener.Start(); // 先 Start，成功后再加入 _listeners 防止 Stop() 时对未启动 Listener 调用 Dispose 抛异常
             lock (_listeners) _listeners.Add(listener);
-            listener.Start();
             _ = RunTcpForward(listener, remoteEp, ct);
         }
 
