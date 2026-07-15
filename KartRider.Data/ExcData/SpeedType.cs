@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Profile;
 using System.Net;
 using System.Linq;
+using System.Text;
 
 namespace ExcData
 {
@@ -11,7 +12,7 @@ namespace ExcData
     {
         public static Dictionary<string, Dictionary<string, byte>> speedNames = new Dictionary<string, Dictionary<string, byte>>
         {
-            { "国服", new Dictionary<string, byte> { { "标准", 7 }, { "慢速S0", 3 }, { "普通S1", 0 }, { "快速S2", 1 }, { "高速S3", 2 } } },
+            { "国服", new Dictionary<string, byte> { { "标准", 7 }, { "真无限", 6 }, { "慢速S0", 3 }, { "普通S1", 0 }, { "快速S2", 1 }, { "高速S3", 2 } } },
             { "国服复古", new Dictionary<string, byte> { { "新手", 0 }, { "初级", 1 }, { "L3", 2 }, { "L2", 3 }, { "L1", 4 }, { "Pro", 5 } } },
             { "韩服复古", new Dictionary<string, byte> { { "新手", 0 }, { "初级", 1 }, { "L3", 2 }, { "L2", 3 }, { "L1", 4 }, { "Pro", 5 } } }
         };
@@ -550,8 +551,9 @@ namespace ExcData
 
         /// <summary>
         /// 解析返回 3个值：(版本string, 速度byte, 无限模式byte)
-        /// 包含“无限”或“無限”=4，不包含=MaxValue
+        /// 包含"无限"或"無限"=4，不包含=MaxValue
         /// 解析失败（缺版本/速度）返回 MaxValue
+        /// 对于中英混合关键字（如"慢速S0"），会拆分成"慢速"和"S0"分别匹配，两者命中其一即可
         /// </summary>
         public static (string version, byte speed, byte infinite)? Parse(string input)
         {
@@ -572,7 +574,22 @@ namespace ExcData
 
             foreach (var speed in allSpeedKeys)
             {
-                if (lowerInput.Contains(speed.ToLowerInvariant()))
+                var (chinese, nonChinese) = SplitChineseAndNonChinese(speed);
+
+                bool hit;
+                if (!string.IsNullOrEmpty(chinese) && !string.IsNullOrEmpty(nonChinese))
+                {
+                    // 中英混合：文字或非文字任一部分命中即可
+                    hit = lowerInput.Contains(chinese.ToLowerInvariant())
+                       || lowerInput.Contains(nonChinese.ToLowerInvariant());
+                }
+                else
+                {
+                    // 纯中文/纯英文：保持原有完整匹配
+                    hit = lowerInput.Contains(speed.ToLowerInvariant());
+                }
+
+                if (hit)
                 {
                     matchedSpeed = speed;
                     break;
@@ -613,6 +630,28 @@ namespace ExcData
 
             // 返回3个结果
             return (finalVersion, speedValue, infinite);
+        }
+
+        /// <summary>
+        /// 将输入字符串按中文/非中文拆分成两部分
+        /// </summary>
+        private static (string chinese, string nonChinese) SplitChineseAndNonChinese(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return ("", "");
+
+            var chinese = new StringBuilder();
+            var nonChinese = new StringBuilder();
+
+            foreach (char c in input)
+            {
+                if (c >= 0x4E00 && c <= 0x9FFF)
+                    chinese.Append(c);
+                else
+                    nonChinese.Append(c);
+            }
+
+            return (chinese.ToString(), nonChinese.ToString());
         }
     }
 }
