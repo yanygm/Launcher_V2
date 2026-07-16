@@ -1647,5 +1647,9 @@ namespace KartRider_PacketName
 		PrExpeditionBuyMissionPacket = 2719419205,
 		PqExpeditionMissionStartPacket = 3133082658,
 		PrExpeditionMissionStartPacket = 3134983203,
+		PqGetTreasureHuntMileageInfoPacket = 3913157987,
+		PrGetTreasureHuntMileageInfoPacket = 3915320676,
+		SpRqTreasureHuntPacket = 1675167944,
+		SpRpTreasureHuntPacket = 1673922759,
 	}
 }

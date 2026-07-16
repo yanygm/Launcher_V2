@@ -3880,6 +3880,33 @@ namespace KartRider
                         }
                         return;
                     }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetTreasureHuntMileageInfoPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrGetTreasureHuntMileageInfoPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqTreasureHuntPacket", 0))
+                    {
+                        using (OutPacket outPacket = new OutPacket("SpRpTreasureHuntPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0); //stockId
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0); //stockId
+                            outPacket.WriteInt(1);
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(1);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))

@@ -64,5 +64,7 @@ public static class ModelMax
     <kart id='1618' name='精英等离子 迅' modelMaxX='0.773011' modelMaxY='1.128809' />
     <kart id='1621' name='黄金龙车 迅' modelMaxX='0.77347' modelMaxY='0.981104' />
     <kart id='1623' name='暗黑威龙 迅' modelMaxX='0.744729' modelMaxY='1.053629' />
+    <kart id='1626' name='天蝎 迅' modelMaxX='0.75159' modelMaxY='1.03934' />
+    <kart id='1628' name='蓝色威龙 迅' modelMaxX='0.7719' modelMaxY='1.1539' />
 </ModelMax>";
 }
