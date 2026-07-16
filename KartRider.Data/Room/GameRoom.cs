@@ -253,8 +253,7 @@ public class GameRoom
 
         if (!string.IsNullOrEmpty(nickname))
         {
-            uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
-            if (pmap == 718 || pmap == 590)
+            if (slotId > 7)
             {
                 if (ObIDs[slotId] is Player p1)
                 {
