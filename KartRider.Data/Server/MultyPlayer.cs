@@ -997,7 +997,7 @@ public static class MultyPlayer
         }
         else if (hash == Adler32Helper.GenerateAdler32_ASCII("PcStartMatching") || hash == Adler32Helper.GenerateAdler32_ASCII("PcCancelMatching"))
         {
-            var roomList = RoomManager._rooms.Values.Where(r => !r.Lock).ToList();
+            var roomList = RoomManager._rooms.Values.Where(r => !r.Lock && !r.Started && r.GetCount() < (8 - r.CloseSlotIds.Count)).ToList();
             if (roomList.Count > 0)
             {
                 Random random = new Random();
