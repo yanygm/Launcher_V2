@@ -124,9 +124,6 @@ public class GameRoom
 
     public SlotStatus GetSlotStatus(byte slotId)
     {
-        if (!IsValidSlotId(slotId))
-            throw new ArgumentOutOfRangeException(nameof(slotId), "格子ID必须在0-7之间");
-
         var member = _slots[slotId];
         if (member == null)
             return SlotStatus.Empty;       // 空位置
@@ -142,12 +139,12 @@ public class GameRoom
     // 辅助方法：获取指定位置的具体成员（可用于获取详细信息）
     public RoomMember GetSlotMember(byte slotId)
     {
-        return IsValidSlotId(slotId) ? _slots[slotId] : null;
+        return _slots[slotId];
     }
 
     public RoomMember GetIdMember(int Id)
     {
-        return IsValidSlotId((byte)Id) ? _IDs[Id] : null;
+        return _IDs[Id];
     }
 
     // 尝试添加玩家（成功后自动检查是否需要删除房间）
@@ -248,9 +245,6 @@ public class GameRoom
     // 移除指定格子的成员（如果是玩家，需检查是否触发删除）
     public bool RemoveMember(byte slotId, string nickname)
     {
-        if (!IsValidSlotId(slotId))
-            return false;
-
         if (!string.IsNullOrEmpty(nickname))
         {
             uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
@@ -276,40 +270,40 @@ public class GameRoom
                 }
                 return false;
             }
-            return false;
-        }
-
-        RoomMember removedMember = _slots[slotId];
-        if (removedMember == null)
-            return false; // 格子已为空
-
-        _slots[slotId] = null;
-
-        if (removedMember is Player player)
-        {
-            if (player.ID == RoomMaster)
+            else
             {
-                foreach (RoomMember member in _IDs)
+                RoomMember removedMember = _slots[slotId];
+                if (removedMember == null)
+                    return false; // 格子已为空
+
+                if (removedMember is Player player)
                 {
-                    if (member is Player p)
+                    if (player.ID == RoomMaster)
                     {
-                        RoomMaster = p.ID;
-                        p.PlayerType = 2;
-                        break;
+                        foreach (RoomMember member in _IDs)
+                        {
+                            if (member is Player p)
+                            {
+                                RoomMaster = p.ID;
+                                p.PlayerType = 2;
+                                break;
+                            }
+                        }
                     }
+                    _IDs[player.ID] = null;
+                    _slots[slotId] = null;
+                    RoomManager.RemoveRoom(this);
+                    return true;
+                }
+                else if (removedMember is Ai ai)
+                {
+                    _IDs[ai.ID] = null;
+                    _slots[slotId] = null;
+                    MultyPlayer.GrSlotDataPacket(RoomId);
+                    return true;
                 }
             }
-            _IDs[player.ID] = null;
-            RoomManager.RemoveRoom(this);
-            return true;
         }
-        else if (removedMember is Ai ai)
-        {
-            _IDs[ai.ID] = null;
-            MultyPlayer.GrSlotDataPacket(RoomId);
-            return true;
-        }
-
         return false;
     }
 
@@ -378,9 +372,6 @@ public class GameRoom
 
     public bool ChangeSlotId(byte slotId, byte newSlotId)
     {
-        if (!IsValidSlotId(slotId) || !IsValidSlotId(newSlotId))
-            return false;
-
         if (_slots[newSlotId] != null)
             return false;
 
@@ -391,9 +382,6 @@ public class GameRoom
 
     public bool AddClose(byte slotId, int ID)
     {
-        if (!IsValidSlotId(slotId) || !IsValidSlotId((byte)ID))
-            return false;
-
         if (_slots[slotId] != null)
             return false;
 
@@ -411,9 +399,6 @@ public class GameRoom
 
     public bool RemoveClose(byte slotId, int ID)
     {
-        if (!IsValidSlotId(slotId) || !IsValidSlotId((byte)ID))
-            return false;
-
         if (_slots[slotId] == null)
             return false;
 
@@ -429,8 +414,6 @@ public class GameRoom
         }
         return false;
     }
-
-    private bool IsValidSlotId(byte slotId) => slotId >= 0 && slotId < 8;
 }
 
 // 房间成员基类
