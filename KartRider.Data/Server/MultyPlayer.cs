@@ -1299,6 +1299,9 @@ public static class MultyPlayer
 
     static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "")
     {
+        uint pmap = Profile.ProfileService.GetProfileConfig(nickname).Rider.pmap;
+        bool ob = (pmap == 718 || pmap == 590);
+
         var room = RoomManager.GetRoom(roomId);
         outPacket.WriteUInt(room.track); // track name hash
         outPacket.WriteInt(0);
@@ -1333,7 +1336,7 @@ public static class MultyPlayer
                 IPEndPoint client = ClientManager.ClientToIPEndPoint(pConfig.Rider.ClientId);
                 outPacket.WriteEndPoint(new IPEndPoint(client.Address, pConfig.Rider.P2pPort));
                 outPacket.WriteEndPoint(new IPEndPoint(IPAddress.Any, 0));
-                if (room.RoomName.Contains("比赛") && nickname != "" && nickname != p.Nickname)
+                if (room.RoomName.Contains("比赛") && nickname != "" && nickname != p.Nickname && !ob)
                 {
                     outPacket.WriteString("跑跑卡丁车");
                     outPacket.WriteShort(0);

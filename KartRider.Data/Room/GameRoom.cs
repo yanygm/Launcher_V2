@@ -253,7 +253,8 @@ public class GameRoom
 
         if (!string.IsNullOrEmpty(nickname))
         {
-            if (slotId > 7)
+            uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
+            if (pmap == 718 || pmap == 590)
             {
                 if (ObIDs[slotId] is Player p1)
                 {
@@ -273,7 +274,9 @@ public class GameRoom
                     RoomManager.RemoveRoom(this);
                     return true;
                 }
+                return false;
             }
+            return false;
         }
 
         RoomMember removedMember = _slots[slotId];
