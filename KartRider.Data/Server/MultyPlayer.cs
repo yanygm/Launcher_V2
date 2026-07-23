@@ -1299,8 +1299,13 @@ public static class MultyPlayer
 
     static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "")
     {
-        uint pmap = Profile.ProfileService.GetProfileConfig(nickname).Rider.pmap;
-        bool ob = (pmap == 718 || pmap == 590);
+        bool ob = false;
+        if (nickname != "")
+        {
+            var profileConfig = Profile.ProfileService.GetProfileConfig(nickname);
+            uint pmap = profileConfig.Rider.pmap;
+            ob = (pmap == 718 || pmap == 590);
+        }
 
         var room = RoomManager.GetRoom(roomId);
         outPacket.WriteUInt(room.track); // track name hash
