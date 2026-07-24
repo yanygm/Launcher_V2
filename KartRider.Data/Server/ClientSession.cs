@@ -1334,7 +1334,14 @@ namespace KartRider
                         iPacket.ReadByte();
                         uint Lucci = iPacket.ReadUInt();
                         var lucciConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
-                        lucciConfig.Rider.Lucci -= Lucci;
+                        if (Lucci <= lucciConfig.Rider.Lucci)
+                        {
+                            lucciConfig.Rider.Lucci -= Lucci;
+                        }
+                        else
+                        {
+                            lucciConfig.Rider.Lucci = 0;
+                        }
                         ProfileService.Save(this.Parent.Client.Nickname, lucciConfig);
                         return;
                     }
@@ -1358,7 +1365,14 @@ namespace KartRider
                         var StartTimeAttack_RandomTrackGameType = iPacket.ReadByte();
                         if (StartTimeAttack_TimaAttackMpdeType == 1)
                         {
-                            attackConfig.Rider.Lucci -= 1000;
+                            if (attackConfig.Rider.Lucci >= 1000)
+                            {
+                                attackConfig.Rider.Lucci -= 1000;
+                            }
+                            else
+                            {
+                                attackConfig.Rider.Lucci = 0;
+                            }
                         }
                         Console.WriteLine("StartTimeAttack: {0} / {1} / {2} / {3} / {4} / {5} / {6} / {7}", attackConfig.Rider.SpeedType, attackConfig.Rider.GameType, Kart_id, FlyingPet_id, RandomTrack.GetTrackName(StartTimeAttack_Track), StartTimeAttack_StartType, attackConfig.Rider.AttackType, StartTimeAttack_TimaAttackMpdeType);
                         attackConfig.Rider.Track = RandomTrack.GetRandomTrack(this.Parent, this.Parent.Client.Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
@@ -3920,10 +3934,22 @@ namespace KartRider
                     {
                         foreach (var client in ClientManager.GetClients())
                         {
-                            using (OutPacket outPacket = new OutPacket("PrServerTime"))
+                            try
                             {
-                                outPacket.WriteDateTime(DateTime.Now);
-                                client.Client.Send(outPacket);
+                                using (OutPacket outPacket = new OutPacket("PrServerTime"))
+                                {
+                                    outPacket.WriteDateTime(DateTime.Now);
+                                    client.Client.Send(outPacket);
+                                }
+                            }
+                            catch
+                            {
+                                // 发送失败，断开该客户端连接并从在线列表中移除
+                                Console.WriteLine($"[PrServerTime] 玩家 {client.Client.Nickname} 发送失败，主动断开连接");
+                                if (client.Client.Socket != null)
+                                {
+                                    client.Client.Disconnect();
+                                }
                             }
                         }
                         return;
