@@ -209,6 +209,7 @@ public class SpecialKartConfig
             SkillChangeDesc = "特殊道具车：将指定道具变更为特殊道具",
             SkillChange = new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>
             {
+                { 1637, new Dictionary<short, SkillMappingConfig> { {9, new SkillMappingConfig { TargetItemId = 34, Probability = 100 }}, { 4, new SkillMappingConfig { TargetItemId = 118, Probability = 100 }} } },
                 { 1635, new Dictionary<short, SkillMappingConfig> { {8, new SkillMappingConfig { TargetItemId = 83, Probability = 100 }}, { 5, new SkillMappingConfig { TargetItemId = 103, Probability = 100 }} } },
                 { 1631, new Dictionary<short, SkillMappingConfig> { {9, new SkillMappingConfig { TargetItemId = 44, Probability = 100 }}, { 6, new SkillMappingConfig { TargetItemId = 31, Probability = 100 }} } },
                 { 1630, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 102, Probability = 100 }}, { 9, new SkillMappingConfig { TargetItemId = 27, Probability = 100 }} } },
@@ -285,6 +286,8 @@ public class SpecialKartConfig
             SkillAttackedDesc = "特殊道具车：被指定道具攻击后获得特殊道具",
             SkillAttacked = new Dictionary<ushort, Dictionary<short, SkillMappingConfig>>
             {
+                { 1638, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 6, Probability = 100 }}, {8, new SkillMappingConfig { TargetItemId = 6, Probability = 100 }} } },
+                { 1637, new Dictionary<short, SkillMappingConfig> { {4, new SkillMappingConfig { TargetItemId = 6, Probability = 100 }} } },
                 { 1633, new Dictionary<short, SkillMappingConfig> { {9, new SkillMappingConfig { TargetItemId = 7, Probability = 100 }}, {7, new SkillMappingConfig { TargetItemId = 5, Probability = 100 }} } },
                 { 1622, new Dictionary<short, SkillMappingConfig> { {7, new SkillMappingConfig { TargetItemId = 32, Probability = 60 }} } },
                 { 1613, new Dictionary<short, SkillMappingConfig> { {5, new SkillMappingConfig { TargetItemId = 10, Probability = 100 }} } },
