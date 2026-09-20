@@ -77,15 +77,6 @@ namespace KartRider
             Parent.Client.Disconnect();
         }
 
-        public static void SpRpLotteryPacket(SessionGroup Parent)
-        {
-            using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
-            {
-                outPacket.WriteHexString("05 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-                Parent.Client.Send(outPacket);
-            }
-        }
-
         public static void PrGetGameOption(SessionGroup Parent, string Nickname)
         {
             var config = ProfileService.GetProfileConfig(Nickname);

@@ -17,7 +17,7 @@ public class Coupon
 
 public class Gift
 {
-    public int stockId { get; set; }
+    public uint stockId { get; set; }
     public DateTime Sent { get; set; }
     public DateTime Receive { get; set; }
     public string Message { get; set; }
@@ -30,7 +30,7 @@ public class RewardBox
 {
     public long ID { get; set; }
     public byte Type { get; set; }
-    public int stockId { get; set; }
+    public uint stockId { get; set; }
 }
 
 public static class CouponList
@@ -101,20 +101,42 @@ public static class CouponList
         }
     }
 
-    public static void DuplicatedItem(SessionGroup Parent, int stockId)
+    public static void DuplicatedItem(SessionGroup Parent, uint stockId)
     {
-        using (OutPacket outPacket = new OutPacket("SpRpDuplicatedItemPacket"))
+        var PayBool = false;
+        if (Stock.PriceList.ContainsKey(stockId))
         {
-            outPacket.WriteInt(0); // 0-验证成功;1-验证失败
-            outPacket.WriteUShort(0); // itemCatId
-            outPacket.WriteUShort(0); // itemId
-            outPacket.WriteByte(0);
-            outPacket.WriteUShort(0); // itemCount
-            Parent.Client.Send(outPacket);
+            var priceConfig = ProfileService.GetProfileConfig(Parent.Client.Nickname);
+            PayBool = Stock.Pay(Parent.Client.Nickname, stockId, priceConfig);
+        }
+
+        if (PayBool)
+        {
+            using (OutPacket outPacket = new OutPacket("SpRpDuplicatedItemPacket"))
+            {
+                outPacket.WriteInt(0); // 0-验证成功;1-验证失败
+                outPacket.WriteUShort(0); // itemCatId
+                outPacket.WriteUShort(0); // itemId
+                outPacket.WriteByte(0);
+                outPacket.WriteUShort(0); // itemCount
+                Parent.Client.Send(outPacket);
+            }
+        }
+        else
+        {
+            using (OutPacket outPacket = new OutPacket("SpRpDuplicatedItemPacket"))
+            {
+                outPacket.WriteInt(1); // 0-验证成功;1-验证失败
+                outPacket.WriteUShort(0); // itemCatId
+                outPacket.WriteUShort(0); // itemId
+                outPacket.WriteByte(0);
+                outPacket.WriteUShort(0); // itemCount
+                Parent.Client.Send(outPacket);
+            }
         }
     }
 
-    public static void GiveGift(SessionGroup Parent, string UserName, int stockId, string Message, string Password)
+    public static void GiveGift(SessionGroup Parent, string UserName, uint stockId, string Message, string Password)
     {
         using (OutPacket outPacket = new OutPacket("PrCnChkPassword"))
         {
@@ -205,7 +227,7 @@ public static class CouponList
                     outPacket.WriteInt(tempList.Count);
                     foreach (var Gift in tempList)
                     {
-                        outPacket.WriteInt(Gift.stockId);
+                        outPacket.WriteUInt(Gift.stockId);
                         outPacket.WriteDateTime(Gift.Sent);
                         outPacket.WriteDateTime(Gift.Receive);
                         outPacket.WriteString(Gift.Message);
@@ -227,7 +249,7 @@ public static class CouponList
                 outPacket.WriteInt(ReceiveList.Count);
                 foreach (var Gift in ReceiveList)
                 {
-                    outPacket.WriteInt(Gift.stockId);
+                    outPacket.WriteUInt(Gift.stockId);
                     outPacket.WriteDateTime(Gift.Sent);
                     outPacket.WriteDateTime(Gift.Receive);
                     outPacket.WriteString(Gift.Message);
@@ -272,6 +294,7 @@ public static class CouponList
             gift.Received = true;
             gift.Receive = DateTime.Now;
             File.WriteAllText(filename.GiveGift_LoadFile, JsonHelper.Serialize(GiftList));
+            Stock.GetStockItem(Parent, gift.stockId);
         }
         else
         {
@@ -370,7 +393,7 @@ public static class CouponList
                 {
                     outPacket.WriteLong(RewardBox.ID);
                     outPacket.WriteByte(RewardBox.Type);
-                    outPacket.WriteInt(RewardBox.stockId);
+                    outPacket.WriteUInt(RewardBox.stockId);
                     outPacket.WriteDateTime(DateTime.Now);
                     outPacket.WriteDateTime(DateTime.Now.AddDays(7));
                 }
@@ -381,7 +404,7 @@ public static class CouponList
         }
     }
 
-    public static void ReceiveReward(SessionGroup Parent, long RewardBoxId, int stockId)
+    public static void ReceiveReward(SessionGroup Parent, long RewardBoxId, uint stockId)
     {
         if (!FileName.FileNames.ContainsKey(Parent.Client.Nickname))
         {
@@ -410,6 +433,7 @@ public static class CouponList
             }
             RewardBoxList.Remove(RewardBox);
             File.WriteAllText(filename.RewardBox_LoadFile, JsonHelper.Serialize(RewardBoxList));
+            Stock.GetStockItem(Parent, stockId);
         }
         else
         {

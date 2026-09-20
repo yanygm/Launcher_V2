@@ -726,32 +726,85 @@ namespace KartRider
                                 XmlDocument doc = new XmlDocument();
                                 doc.Load(stream);
 
-                                // 获取所有rewardSet节点
-                                XmlNodeList rewardSetNodes = doc.GetElementsByTagName("lottery");
-                                XmlNode targetRewardSet = null;
+                                // 获取所有lottery节点
+                                XmlNodeList lotteryNodes = doc.GetElementsByTagName("lottery");
 
-                                var BingoLotteryID = Bingo.BingoLotteryIDs[Bingo.BingoLotteryIDs.Length - 1].ToString();
-
-                                // 查找指定id的rewardSet
-                                foreach (XmlNode node in rewardSetNodes)
+                                // 遍历所有lottery节点，将各自的reward保存到LotteryList
+                                foreach (XmlNode node in lotteryNodes)
                                 {
-                                    XmlElement rewardSetElement = node as XmlElement;
+                                    XmlElement lotteryElement = node as XmlElement;
+                                    if (lotteryElement == null) continue;
 
-                                    if (rewardSetElement != null && rewardSetElement.GetAttribute("id") == BingoLotteryID)
+                                    // loggingOption下的lottery节点只有itemId没有id，跳过
+                                    if (!ushort.TryParse(lotteryElement.GetAttribute("id"), out ushort lotteryId)) continue;
+
+                                    // 获取该lottery下的所有reward节点
+                                    XmlNodeList rewardNodes = lotteryElement.SelectNodes("./rewardSet/reward");
+                                    if (rewardNodes == null || rewardNodes.Count == 0) continue;
+
+                                    // 按lotteryId缓存对应的奖励数据
+                                    Lottery.GetOrCreate(lotteryId).Initialize(rewardNodes, false);
+                                }
+                            }
+                        }
+                        if (fullName == $"zeta_/{regionCode}/shop/data/stock.kml")
+                        {
+                            Console.WriteLine(fullName);
+                            byte[] data = packFileInfo.GetData();
+                            using (MemoryStream stream = new MemoryStream(data))
+                            {
+                                // 创建XML文档对象
+                                XmlDocument doc = new XmlDocument();
+                                doc.Load(stream);
+
+                                // 获取所有stock节点
+                                XmlNodeList stockNodes = doc.GetElementsByTagName("stock");
+
+                                // 遍历所有stock节点，将各自的item列表保存到StockList
+                                foreach (XmlNode node in stockNodes)
+                                {
+                                    XmlElement stockElement = node as XmlElement;
+                                    if (stockElement == null) continue;
+
+                                    // 没有stockId的节点跳过
+                                    if (!uint.TryParse(stockElement.GetAttribute("stockId"), out uint stockId)) continue;
+
+                                    // 存在salePrice时，按stockId缓存对应的价格数据
+                                    if (stockElement.HasAttribute("salePrice") &&
+                                        uint.TryParse(stockElement.GetAttribute("salePrice"), out uint salePrice))
                                     {
-                                        targetRewardSet = node;
-                                        break;
+                                        // priceType为可选项，解析失败时取默认值
+                                        byte.TryParse(stockElement.GetAttribute("priceType"), out byte priceType);
+
+                                        Stock.PriceList[stockId] = new price(priceType, salePrice);
                                     }
-                                }
-                                if (targetRewardSet == null)
-                                {
-                                    Console.WriteLine($"未找到ID为{BingoLotteryID}的lottery节点");
-                                }
-                                else
-                                {
-                                    // 获取该rewardSet下的所有reward节点
-                                    XmlNodeList rewardNodes = targetRewardSet.SelectNodes("./rewardSet/reward");
-                                    LotteryManager.Initialize(rewardNodes);
+
+                                    // 获取该stock下的所有item节点
+                                    XmlNodeList itemNodes = stockElement.GetElementsByTagName("item");
+                                    if (itemNodes == null || itemNodes.Count == 0) continue;
+
+                                    // 解析该stock下的所有item
+                                    List<item> itemList = new List<item>();
+                                    foreach (XmlNode itemNode in itemNodes)
+                                    {
+                                        XmlElement itemElement = itemNode as XmlElement;
+                                        if (itemElement == null) continue;
+
+                                        // 道具分类Id与道具Id为必填项，解析失败则跳过该item
+                                        if (!ushort.TryParse(itemElement.GetAttribute("itemCatId"), out ushort itemCatId)) continue;
+                                        if (!ushort.TryParse(itemElement.GetAttribute("itemId"), out ushort itemId)) continue;
+
+                                        // 数量与天数为可选项，解析失败时取默认值
+                                        ushort.TryParse(itemElement.GetAttribute("itemCount"), out ushort itemCount);
+                                        double.TryParse(itemElement.GetAttribute("expireDay"), out double expireDay);
+
+                                        itemList.Add(new item(itemCatId, itemId, itemCount, expireDay));
+                                    }
+
+                                    if (itemList.Count == 0) continue;
+
+                                    // 按stockId缓存对应的道具数据
+                                    Stock.StockList[stockId] = itemList;
                                 }
                             }
                         }

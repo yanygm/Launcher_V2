@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml;
 using KartRider.IO.Packet;
+using Profile;
 
 namespace KartRider
 {
@@ -18,151 +20,187 @@ namespace KartRider
         }
     }
 
-    public static class LotteryManager
+    /**
+     * Bingo进度存档结构（保存到 昵称目录/Bingo.json）
+     */
+    public class BingoSaveData
     {
-        // 静态存储所有奖励项及其概率
-        public static List<Reward> RewardList = new List<Reward>();
+        public byte BingoItem { get; set; }
+        public byte BingoNum { get; set; }
+        public short BingoCount { get; set; }
+        public List<BingoNumSave> Nums { get; set; } = new List<BingoNumSave>();
+        public List<BingoItemSave> Items { get; set; } = new List<BingoItemSave>();
+        public List<string> CompletedLines { get; set; } = new List<string>();
+    }
 
-        // 总概率，用于计算抽取概率
-        public static int TotalProbability = 0;
+    public class BingoNumSave
+    {
+        public byte Num { get; set; }
+        public byte Obtained { get; set; }
+    }
+
+    public class BingoItemSave
+    {
+        public int Item { get; set; }
+        public byte Obtained { get; set; }
+    }
+
+    /**
+     * 单个玩家的Bingo数据（每个昵称一份，互不干扰，存到 昵称目录/Bingo.json）
+     */
+    public class BingoData
+    {
+        // 共享随机数生成器（Random非线程安全，加锁使用）
+        private static readonly Random RandomGen = new Random();
+        private static readonly object RandomLock = new object();
+
+        private static int NextRandom(int minValue, int maxValue)
+        {
+            lock (RandomLock)
+            {
+                return RandomGen.Next(minValue, maxValue);
+            }
+        }
+
+        public string Nickname = "";
+        public byte BingoItem = 0;
+        public byte BingoNum = 0;
+        public short BingoCount = 0;
+        public Dictionary<byte, byte> BingoNums = new Dictionary<byte, byte>();
+        public List<byte> BingoNumsList = new List<byte>();
+        public Dictionary<int, byte> BingoItems = new Dictionary<int, byte>();
+        public List<int> BingoItemsList = new List<int>();
+        // 已连成的连线（Key为该连线5个数字排序后的组合），用于跳过重复的控制台输出
+        public HashSet<string> CompletedLines = new HashSet<string>();
+
+        public BingoData(string nickname)
+        {
+            Nickname = nickname ?? "";
+        }
 
         /**
-         * 初始化方法，读取XML文件并加载数据
-         * @param xmlFilePath XML文件路径
+         * 重置Bingo面板（数字、道具、已连成的连线）
          */
-        public static void Initialize(XmlNodeList rewardNodes)
+        public void Reset()
         {
+            BingoItem = 0;
+            BingoNum = 0;
+            BingoCount = 0;
+            BingoNums = new Dictionary<byte, byte>();
+            BingoNumsList = new List<byte>();
+            BingoItems = new Dictionary<int, byte>();
+            BingoItemsList = new List<int>();
+            CompletedLines = new HashSet<string>();
+        }
+
+        /**
+         * 保存当前Bingo进度到 昵称目录/Bingo.json
+         */
+        public void Save()
+        {
+            if (string.IsNullOrEmpty(Nickname)) return;
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+
+            var data = new BingoSaveData
+            {
+                BingoItem = BingoItem,
+                BingoNum = BingoNum,
+                BingoCount = BingoCount,
+                Nums = BingoNumsList.Select(num => new BingoNumSave
+                {
+                    Num = num,
+                    Obtained = BingoNums.TryGetValue(num, out byte numState) ? numState : (byte)0
+                }).ToList(),
+                Items = BingoItemsList.Select(item => new BingoItemSave
+                {
+                    Item = item,
+                    Obtained = BingoItems.TryGetValue(item, out byte itemState) ? itemState : (byte)0
+                }).ToList(),
+                CompletedLines = CompletedLines.ToList()
+            };
+
+            string dir = Path.GetDirectoryName(filename.Bingo_LoadFile);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            File.WriteAllText(filename.Bingo_LoadFile, JsonHelper.Serialize(data));
+        }
+
+        /**
+         * 从 昵称目录/Bingo.json 加载Bingo进度，文件不存在则保持空面板
+         */
+        public void Load()
+        {
+            if (string.IsNullOrEmpty(Nickname)) return;
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+
+            Reset();
+
+            if (!File.Exists(filename.Bingo_LoadFile)) return;
+
+            BingoSaveData data = null;
             try
             {
-                // 清空现有数据
-                RewardList.Clear();
-                TotalProbability = 0;
-
-                // 遍历所有奖励项
-                foreach (XmlNode node in rewardNodes)
-                {
-                    XmlElement rewardElement = node as XmlElement;
-                    if (rewardElement == null) continue;
-
-                    // 获取stockId和概率
-                    if (int.TryParse(rewardElement.GetAttribute("stockId"), out int stockId) &&
-                        int.TryParse(rewardElement.GetAttribute("prob"), out int prob))
-                    {
-                        // 创建奖励对象并添加到列表
-                        Reward reward = new Reward(stockId, prob);
-                        RewardList.Add(reward);
-
-                        // 累加总概率
-                        TotalProbability += prob;
-                    }
-                }
-
-                Console.WriteLine($"成功加载 {RewardList.Count} 个奖励项，总概率为: {TotalProbability}");
+                data = JsonHelper.DeserializeNoBom<BingoSaveData>(filename.Bingo_LoadFile);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载XML文件出错: {ex.Message}");
+                Console.WriteLine($"[Bingo] 读取进度失败：{filename.Bingo_LoadFile} - {ex.Message}");
             }
-        }
+            if (data == null) return;
 
-        /**
-         * 随机获取指定数量的stockId，考虑概率因素
-         * @param count 要获取的数量
-         * @return 随机选中的stockId列表
-         */
-        public static List<int> GetRandomStockIds(int count)
-        {
-            List<int> result = new List<int>();
+            BingoItem = data.BingoItem;
+            BingoNum = data.BingoNum;
+            BingoCount = data.BingoCount;
 
-            // 检查是否已初始化
-            if (RewardList.Count == 0)
+            if (data.Nums != null)
             {
-                Console.WriteLine("请先调用Initialize方法加载数据");
-                return result;
-            }
-
-            // 检查数量是否合理
-            if (count <= 0)
-            {
-                Console.WriteLine("请指定有效的获取数量");
-                return result;
-            }
-
-            // 获取不重复的奖励ID集合
-            HashSet<int> uniqueStockIds = new HashSet<int>(RewardList.Select(r => r.StockId));
-            int uniqueRewardCount = uniqueStockIds.Count;
-
-            // 检查请求数量是否超过可用奖励数量
-            if (count > uniqueRewardCount)
-            {
-                Console.WriteLine($"请求数量超过可用的不重复奖励数量，最多只能返回 {uniqueRewardCount} 个结果");
-                count = uniqueRewardCount;
-            }
-
-            // 创建奖励列表的副本用于操作，避免修改原始数据
-            List<Reward> availableRewards = new List<Reward>(RewardList);
-            // 使用当前时间作为种子创建Random实例，避免短时间内多次调用产生相同序列
-            Random random = new Random(Guid.NewGuid().GetHashCode());
-
-            // 已选中的奖励ID集合，用于双重保证不重复
-            HashSet<int> selectedIds = new HashSet<int>();
-
-            // 循环获取指定数量的不重复奖励
-            while (selectedIds.Count < count && availableRewards.Count > 0)
-            {
-                // 计算当前可用奖励的总概率
-                int currentTotalProb = availableRewards.Sum(r => r.Probability);
-                if (currentTotalProb <= 0) break;
-
-                // 生成0到总概率之间的随机数
-                int randomValue = random.Next(0, currentTotalProb);
-                int currentSum = 0;
-                Reward selectedReward = null;
-
-                // 根据概率分布查找选中的奖励
-                foreach (var reward in availableRewards)
+                foreach (var numSave in data.Nums)
                 {
-                    currentSum += reward.Probability;
-                    if (randomValue < currentSum)
+                    if (!BingoNums.ContainsKey(numSave.Num))
                     {
-                        selectedReward = reward;
-                        break;
+                        BingoNumsList.Add(numSave.Num);
                     }
-                }
-
-                // 添加选中的奖励ID到结果
-                if (selectedReward != null && selectedIds.Add(selectedReward.StockId))
-                {
-                    result.Add(selectedReward.StockId);
-                    // 移除所有相同StockId的奖励，确保不会重复选中
-                    availableRewards.RemoveAll(r => r.StockId == selectedReward.StockId);
+                    BingoNums[numSave.Num] = numSave.Obtained;
                 }
             }
 
-            // 检查最终结果数量是否符合预期
-            if (result.Count < count)
+            if (data.Items != null)
             {
-                Console.WriteLine($"警告：实际返回 {result.Count} 个结果，少于请求的 {count} 个");
+                foreach (var itemSave in data.Items)
+                {
+                    if (!BingoItems.ContainsKey(itemSave.Item))
+                    {
+                        BingoItemsList.Add(itemSave.Item);
+                    }
+                    BingoItems[itemSave.Item] = itemSave.Obtained;
+                }
             }
-            return result;
+
+            if (data.CompletedLines != null)
+            {
+                foreach (string line in data.CompletedLines)
+                {
+                    CompletedLines.Add(line);
+                }
+            }
+
+            Console.WriteLine($"[Bingo] 已加载 {Nickname} 的Bingo进度：格子={BingoNumsList.Count} 道具={BingoItemsList.Count} 已连线={CompletedLines.Count}");
         }
-    }
 
-    public static class Bingo
-    {
-        public static short[] BingoLotteryIDs = new short[] { 1219, 1220 };
-        public static byte BingoItem = 0;
-        public static byte BingoNum = 0;
-        public static short BingoCount = 0;
-        public static Dictionary<byte, byte> BingoNums = new Dictionary<byte, byte>();
-        public static List<byte> BingoNumsList = new List<byte>();
-        public static Dictionary<int, byte> BingoItems = new Dictionary<int, byte>();
-        public static List<int> BingoItemsList = new List<int>();
-
-        public static void BingoNumber()
+        public void BingoNumber()
         {
-            // 创建随机数生成器实例
-            Random random = new Random();
+            // 生成新面板时清空之前的连线记录
+            CompletedLines.Clear();
 
             // 存储不重复随机数的集合
             HashSet<byte> uniqueNumbers = new HashSet<byte>();
@@ -171,7 +209,7 @@ namespace KartRider
             while (uniqueNumbers.Count < 25)
             {
                 // 生成1到50之间的随机数
-                byte number = (byte)random.Next(1, 50);
+                byte number = (byte)NextRandom(1, 50);
 
                 // 只有当集合中不包含该数字时才会添加成功
                 uniqueNumbers.Add(number);
@@ -183,17 +221,21 @@ namespace KartRider
             }
         }
 
-        public static void SpRpLotteryPacket(SessionGroup Parent)
+        public void SpRpLotteryPacket(SessionGroup Parent, ushort lotteryId)
         {
-            int stock1 = LotteryManager.GetRandomStockIds(1)[0];
-            Random random = new Random();
-            BingoNum = (byte)random.Next(1, 50);
+            Lottery.TryGet(lotteryId, out LotteryManager lotteryManager);
+            if (lotteryManager == null)
+            {
+                Console.WriteLine($"抽奖数据尚未初始化，无法执行抽奖（LotteryId: {lotteryId}）");
+                return;
+            }
+            int stock1 = lotteryManager.GetRandomStockIds(1)[0];
             if (BingoNums.Count == 0 && BingoNumsList.Count == 0)
             {
                 BingoNumber();
                 if (BingoItems.Count == 0 && BingoItemsList.Count == 0)
                 {
-                    var srocks = LotteryManager.GetRandomStockIds(12);
+                    var srocks = lotteryManager.GetRandomStockIds(12);
                     foreach (int stock in srocks)
                     {
                         BingoItemsList.Add(stock);
@@ -201,6 +243,8 @@ namespace KartRider
                     }
                 }
             }
+            // 每次都是1~49随机，允许抽到重复数字
+            BingoNum = (byte)NextRandom(1, 50);
             using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
             {
                 outPacket.WriteInt(0);
@@ -211,111 +255,184 @@ namespace KartRider
                 outPacket.WriteBytes(new byte[11]);
                 Parent.Client.Send(outPacket);
             }
-            if (BingoNums.ContainsKey(BingoNum) && BingoNumsList.Contains(BingoNum))
+            Stock.GetStockItem(Parent, (uint)stock1);
+            Stock.DelNewItem(Parent.Client.Nickname, 24, lotteryId, 1);
+            // 只有"未点亮 -> 点亮"才会连成新线；抽到重复数字或面板外的数字时不再做连线判定，避免重复连线动画
+            if (BingoNums.TryGetValue(BingoNum, out byte numState) && numState == 0)
             {
                 BingoNums[BingoNum] = 1;
-                CheckLinesAsArray();
+                List<int> newLines = CheckLinesAsArray();
+                if (newLines.Count > 0)
+                {
+                    Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 本次新连成连线={string.Join(",", newLines)} 道具={string.Join(",", newLines.Where(i => i < BingoItemsList.Count).Select(i => BingoItemsList[i]))}");
+                }
             }
-            Bingo.BingoCount++;
+            else if (BingoNums.ContainsKey(BingoNum))
+            {
+                Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 数字={BingoNum} 已点亮过，跳过连线判定");
+            }
+            BingoCount++;
+            Save();
+            Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 抽奖 数字={BingoNum} 次数={BingoCount} 已点亮={BingoNums.Count(n => n.Value == 1)}/{BingoNumsList.Count} 已连线={CompletedLines.Count}");
         }
 
-        public static void CheckLinesAsArray()
+        /**
+         * 12条连线对应的格子索引（每行5个数字）
+         * 0-4：横线（0是最上方，4是最下方）
+         * 5：右上到左下对角线
+         * 6-10：竖线（6是最左方，10是最右方）
+         * 11：左上到右下对角线
+         */
+        public static List<int[]> GetLineIndexes()
         {
-            // 验证字典包含25个元素
-            if (BingoNums == null)
-                Console.WriteLine("BingoNums字典不能为null");
+            List<int[]> lines = new List<int[]>();
 
-            if (BingoNums.Count != 25)
-                Console.WriteLine("Bingo宫格必须包含25个数字");
-
-            // 将字典转换为5x5的二维数组，左上角为坐标原点(0,0)
-            byte[,] grid = new byte[5, 5];
-
-            // 字典的Key是按从左上角开始的行优先顺序排列：0-24
-            // 0: (0,0)  1: (0,1)  2: (0,2)  3: (0,3)  4: (0,4)  第一行(最上方)
-            // 5: (1,0)  6: (1,1)  ...      9: (1,4)  第二行
-            // ...
-            // 20: (4,0) ...     24: (4,4)  第五行(最下方)
-            // 使用列表填充网格（确保索引顺序正确）
-            for (int index = 0; index < BingoNumsList.Count; index++)
-            {
-                // 只处理前 25 个元素
-                if (index >= 25)
-                    break;
-
-                int row = index / 5; // 计算行（0-4）
-                int col = index % 5; // 计算列（0-4）
-
-                // 二次校验：确保row和col在有效范围内
-                if (row < 0 || row >= 5 || col < 0 || col >= 5)
-                {
-                    Console.WriteLine($"计算出无效的网格坐标：index={index}, row={row}, col={col}");
-                }
-
-                grid[row, col] = BingoNums[BingoNumsList[index]]; // 0 = 未选中，1 = 已选中
-            }
-
-            // 检查横线(0-4) - 0是最上方，4是最下方
-            // 与grid的行直接对应，无需反转
+            // 横线(0-4)
             for (int row = 0; row < 5; row++)
-            {
-                bool isCompleted = true;
-                for (int col = 0; col < 5; col++)
-                {
-                    if (grid[row, col] != 1)
-                    {
-                        isCompleted = false;
-                        break;
-                    }
-                }
-                var item1 = BingoItemsList[row];
-                BingoItems[item1] = (byte)(isCompleted ? 1 : 0);
-            }
+                lines.Add(Enumerable.Range(0, 5).Select(col => row * 5 + col).ToArray());
 
-            // 检查右上到左下对角线(索引5)
-            // 对应坐标: (0,4), (1,3), (2,2), (3,1), (4,0)
-            bool antiDiagonalCompleted = true;
-            for (int i = 0; i < 5; i++)
-            {
-                if (grid[i, 4 - i] != 1)
-                {
-                    antiDiagonalCompleted = false;
-                    break;
-                }
-            }
-            var item5 = BingoItemsList[5];
-            BingoItems[item5] = (byte)(antiDiagonalCompleted ? 1 : 0);
+            // 右上到左下对角线(5)：(0,4), (1,3), (2,2), (3,1), (4,0)
+            lines.Add(Enumerable.Range(0, 5).Select(i => i * 5 + (4 - i)).ToArray());
 
-            // 检查竖线(6-10) - 6是最左方，10是最右方
+            // 竖线(6-10)
             for (int col = 0; col < 5; col++)
+                lines.Add(Enumerable.Range(0, 5).Select(row => row * 5 + col).ToArray());
+
+            // 左上到右下对角线(11)：(0,0), (1,1), (2,2), (3,3), (4,4)
+            lines.Add(Enumerable.Range(0, 5).Select(i => i * 5 + i).ToArray());
+
+            return lines;
+        }
+
+        /**
+         * 检测连线，返回本次"新"连成的连线索引
+         * 已连成过的连线直接跳过，不再重复置道具状态、不再重复输出，避免重复触发连线动画
+         */
+        public List<int> CheckLinesAsArray()
+        {
+            List<int> newLines = new List<int>();
+
+            // 验证字典包含25个元素
+            if (BingoNums == null || BingoNumsList.Count < 25)
             {
-                bool isCompleted = true;
-                for (int row = 0; row < 5; row++)
-                {
-                    if (grid[row, col] != 1)
-                    {
-                        isCompleted = false;
-                        break;
-                    }
-                }
-                var item6 = BingoItemsList[6 + col];
-                BingoItems[item6] = (byte)(isCompleted ? 1 : 0);
+                Console.WriteLine("Bingo宫格必须包含25个数字");
+                return newLines;
             }
 
-            // 检查左上到右下对角线(索引11)
-            // 对应坐标: (0,0), (1,1), (2,2), (3,3), (4,4)
-            bool mainDiagonalCompleted = true;
-            for (int i = 0; i < 5; i++)
+            List<int[]> lines = GetLineIndexes();
+
+            for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
             {
-                if (grid[i, i] != 1)
+                byte[] numbers = lines[lineIndex].Select(index => BingoNumsList[index]).ToArray();
+
+                // 5个格子全部已点亮才算连成（0 = 未点亮，1 = 已点亮）
+                bool isCompleted = numbers.All(number => BingoNums.TryGetValue(number, out byte state) && state == 1);
+
+                // 该连线的Key（5个数字排序后拼接，与格子顺序无关）
+                string lineKey = string.Join(",", numbers.OrderBy(number => number));
+
+                // 已经连成过的连线不再重复处理
+                if (CompletedLines.Contains(lineKey)) continue;
+
+                if (!isCompleted) continue;
+
+                CompletedLines.Add(lineKey);
+                newLines.Add(lineIndex);
+
+                // 同步连线对应的道具状态（保持原有0/1数据格式）
+                if (lineIndex < BingoItemsList.Count)
+                    BingoItems[BingoItemsList[lineIndex]] = 1;
+
+                Console.WriteLine($"[{Nickname}] " + string.Join(" ", numbers));
+            }
+
+            return newLines;
+        }
+    }
+
+    /**
+     * Bingo数据管理器：按昵称缓存各自独立的BingoData，互不干扰
+     */
+    public static class Bingo
+    {
+        private static readonly Dictionary<string, BingoData> Datas = new Dictionary<string, BingoData>();
+        private static readonly object SyncRoot = new object();
+
+        /**
+         * 获取指定昵称的Bingo数据（首次获取时自动从 昵称目录/Bingo.json 加载）
+         * 昵称为空时返回临时对象（不缓存、不落盘），避免空引用
+         */
+        public static BingoData Get(string nickname)
+        {
+            if (string.IsNullOrEmpty(nickname))
+            {
+                return new BingoData("");
+            }
+            lock (SyncRoot)
+            {
+                if (Datas.TryGetValue(nickname, out BingoData existing)) return existing;
+                BingoData data = new BingoData(nickname);
+                Datas[nickname] = data;
+                data.Load();
+                return data;
+            }
+        }
+
+        /**
+         * 登录时预加载指定昵称的Bingo进度
+         */
+        public static void LoadProgress(string nickname)
+        {
+            Get(nickname);
+        }
+
+        /**
+         * 保存指定昵称的Bingo进度
+         */
+        public static void SaveProgress(string nickname)
+        {
+            Get(nickname).Save();
+        }
+
+        /**
+         * 抽奖入口：取当前昵称自己的数据再处理
+         */
+        public static void SpRpLotteryPacket(SessionGroup Parent, ushort lotteryId)
+        {
+            Get(Parent.Client.Nickname).SpRpLotteryPacket(Parent, lotteryId);
+        }
+
+        /**
+         * 昵称变更时把缓存迁到新昵称下并重新保存
+         */
+        public static void MigrateNickname(string oldNickname, string newNickname)
+        {
+            if (string.IsNullOrEmpty(oldNickname) || string.IsNullOrEmpty(newNickname)) return;
+            if (oldNickname == newNickname) return;
+            lock (SyncRoot)
+            {
+                if (!Datas.TryGetValue(oldNickname, out BingoData data)) return;
+                Datas.Remove(oldNickname);
+                data.Nickname = newNickname;
+                Datas[newNickname] = data;
+                data.Save();
+            }
+        }
+
+        /**
+         * 释放指定昵称的缓存（下次获取时重新从文件加载）
+         */
+        public static void Unload(string nickname)
+        {
+            if (string.IsNullOrEmpty(nickname)) return;
+            lock (SyncRoot)
+            {
+                if (Datas.TryGetValue(nickname, out BingoData data))
                 {
-                    mainDiagonalCompleted = false;
-                    break;
+                    data.Save();
+                    Datas.Remove(nickname);
                 }
             }
-            var item11 = BingoItemsList[11];
-            BingoItems[item11] = (byte)(mainDiagonalCompleted ? 1 : 0);
         }
     }
 }
-

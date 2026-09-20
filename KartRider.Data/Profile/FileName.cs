@@ -16,6 +16,7 @@ namespace Profile
         public string config_path;
         public string ItemPresetsConfig;
         public string NewKart_LoadFile;
+        public string NewItem_LoadFile;
         public string Favorite_LoadFile;
         public string Locked_LoadFile;
         public string FavoriteTrack_LoadFile;
@@ -29,6 +30,7 @@ namespace Profile
         public string TrainingMission_LoadFile;
         public string GiveGift_LoadFile;
         public string RewardBox_LoadFile;
+        public string Bingo_LoadFile;
     }
 
     public static class FileName
@@ -55,6 +57,7 @@ namespace Profile
             filename.Locked_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Locked.json"));
             filename.FavoriteTrack_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"FavoriteTrack.json"));
             filename.NewKart_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"NewKart.json"));
+            filename.NewItem_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"NewItem.json"));
             filename.TuneData_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"TuneData.json"));
             filename.PlantData_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"PlantData.json"));
             filename.LevelData_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"LevelData.json"));
@@ -65,6 +68,7 @@ namespace Profile
             filename.TrainingMission_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"TrainingMission.json"));
             filename.GiveGift_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"GiveGift.json"));
             filename.RewardBox_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"RewardBox.json"));
+            filename.Bingo_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Bingo.json"));
             FileNames.TryAdd(nickname, filename);
             if (!Directory.Exists(filename.NicknameDir))
             {

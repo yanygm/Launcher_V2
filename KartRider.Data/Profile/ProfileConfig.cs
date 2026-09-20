@@ -119,11 +119,11 @@ namespace Profile
 
         public uint RP { get; set; } = 2000000000;
 
-        public uint Koin { get; set; } = 10000;
+        public uint Koin { get; set; } = 1000000;
 
-        public uint Cash { get; set; } = 10000;
+        public uint Cash { get; set; } = 1000000;
 
-        public uint TcCash { get; set; } = 10000;
+        public uint TcCash { get; set; } = 1000000;
 
         public int Premium { get; set; } = 5; //100
 

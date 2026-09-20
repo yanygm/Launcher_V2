@@ -563,7 +563,21 @@ public class MyRoomData
         {
             newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
         }
-        int newkartTimes = newkart.Count / range + (newkart.Count % range > 0 ? 1 : 0);
+
+        var newitem = Stock.LoadNewItem(filename);
+        foreach (var kart in newkart)
+        {
+            newitem.Add(new NewItem
+            {
+                itemCatId = 3,
+                itemId = kart.KartID,
+                itemSn = kart.KartSN,
+                itemCount = 1,
+                endTime = DateTime.MinValue
+            });
+        }
+
+        int newitemTimes = newitem.Count / range + (newitem.Count % range > 0 ? 1 : 0);
 
         var PartsList = new List<Parts>();
         if (File.Exists(filename.PartsData_LoadFile))
@@ -579,9 +593,9 @@ public class MyRoomData
         }
         int Parts12ListTimes = Parts12List.Count / range + (Parts12List.Count % range > 0 ? 1 : 0);
 
-        int AllCount = newkartTimes + PartsListTimes + Parts12ListTimes;
+        int AllCount = newitemTimes + PartsListTimes + Parts12ListTimes;
 
-        if (newkart.Count == 0)
+        if (newitem.Count == 0)
         {
             using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
             {
@@ -596,24 +610,23 @@ public class MyRoomData
             return;
         }
 
-        for (int i = 0; i < newkartTimes; i++)
+        for (int i = 0; i < newitemTimes; i++)
         {
-            var tempList = newkart.GetRange(i * range, (i + 1) * range > newkart.Count ? (newkart.Count - i * range) : range);
+            var tempList = newitem.GetRange(i * range, (i + 1) * range > newitem.Count ? (newitem.Count - i * range) : range);
             using (OutPacket oPacket = new OutPacket("RmOwnerItemPacket"))
             {
-                oPacket.WriteInt(newkartTimes);
+                oPacket.WriteInt(newitemTimes);
                 oPacket.WriteInt(i + 1);
                 oPacket.WriteInt(tempList.Count);
-                foreach (var Kart in tempList)
+                foreach (var item in tempList)
                 {
-                    oPacket.WriteUShort(3);
-                    oPacket.WriteUShort(Kart.KartID);
-                    oPacket.WriteUShort(Kart.KartSN);
-                    oPacket.WriteUShort(1);
+                    oPacket.WriteUShort(item.itemCatId);
+                    oPacket.WriteUShort(item.itemId);
+                    oPacket.WriteUShort(item.itemSn);
+                    oPacket.WriteUShort(item.itemCount);
                     oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
                     oPacket.WriteByte(0);
-                    oPacket.WriteShort(-1);
-                    oPacket.WriteShort(0);
+                    oPacket.WriteTime(item.endTime);
                     oPacket.WriteByte(0);
                     oPacket.WriteByte(0);
                     oPacket.WriteShort(0);

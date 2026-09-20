@@ -9,12 +9,6 @@ using Profile;
 
 namespace RiderData
 {
-    public class NewKart
-    {
-        public ushort KartID { get; set; } = 0;
-        public ushort KartSN { get; set; } = 0;
-    }
-
     public static class NewRider
     {
         public static Dictionary<ushort, Dictionary<ushort, string>> items = new Dictionary<ushort, Dictionary<ushort, string>>();
@@ -43,12 +37,14 @@ namespace RiderData
             NewRider.partsBooster12(Parent, Nickname);
             NewRider.Items(Parent, Nickname);
             NewRider.NewKart1(Parent);
-            NewRider.NewKart2(Parent, Nickname);
-            NewRider.NewRiderData(Parent, Nickname);//라이더 인식
+            NewRider.NewKart2(Parent);
+            NewRider.NewItem(Parent);
+            NewRider.NewRiderData(Parent);//라이더 인식
         }
 
-        public static void NewRiderData(SessionGroup Parent, string Nickname)
+        public static void NewRiderData(SessionGroup Parent)
         {
+            string Nickname = Parent.Client.Nickname;
             var riderDataConfig = ProfileService.GetProfileConfig(Nickname);
             if (riderDataConfig?.Rider == null)
             {
@@ -109,8 +105,9 @@ namespace RiderData
             }
         }
 
-        public static void NewKart2(SessionGroup Parent, string Nickname)
+        public static void NewKart2(SessionGroup Parent)
         {
+            string Nickname = Parent.Client.Nickname;
             if (!FileName.FileNames.ContainsKey(Nickname))
             {
                 FileName.Load(Nickname);
@@ -149,59 +146,41 @@ namespace RiderData
             }
         }
 
-        public static void AddNewKart(SessionGroup Parent, string Nickname, ushort Kart)
+        public static void NewItem(SessionGroup Parent)
         {
+            string Nickname = Parent.Client.Nickname;
             if (!FileName.FileNames.ContainsKey(Nickname))
             {
                 FileName.Load(Nickname);
             }
-            var filename = FileName.FileNames[Nickname];
-            var newkart = new List<NewKart>();
-            if (File.Exists(filename.NewKart_LoadFile))
-            {
-                newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
-            }
-            ushort kartid = ProfileService.GetProfileConfig(Nickname)?.RiderItem?.Set_Kart ?? 0;
-            if (kartid == 0)
-                kartid = Kart;
-            ushort newsn = newkart.Any(kart => kart.KartID == kartid) ? (ushort)newkart.Where(kart => kart.KartID == kartid).Max(kart => kart.KartSN) : (ushort)1;
-            var addkart = new NewKart { KartID = kartid, KartSN = (ushort)(newsn + 1) };
-            newkart.Add(addkart);
-            File.WriteAllText(filename.NewKart_LoadFile, JsonHelper.Serialize(newkart));
-            using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
-            {
-                outPacket.WriteByte(1);
-                outPacket.WriteInt(1);
-                outPacket.WriteShort(3);
-                outPacket.WriteUShort(addkart.KartID);
-                outPacket.WriteUShort(addkart.KartSN);
-                outPacket.WriteUShort(1);//数量
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(-1);
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-                outPacket.WriteShort(0);
-                Parent.Client.Send(outPacket);
-            }
-        }
+            var newitem = Stock.DelExpiredNewItem(Nickname);//加载并清除已到期的道具
 
-        public static void DelNewKart(string Nickname, ushort ItemID, ushort SN)
-        {
-            if (!FileName.FileNames.ContainsKey(Nickname))
+            int range = 100;//分批次数
+            int times = newitem.Count / range + (newitem.Count % range > 0 ? 1 : 0);
+            for (int i = 0; i < times; i++)
             {
-                FileName.Load(Nickname);
-            }
-            var filename = FileName.FileNames[Nickname];
-            var newkart = new List<NewKart>();
-            if (File.Exists(filename.NewKart_LoadFile))
-            {
-                newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
-                var targetItems = newkart.Where(kart => kart.KartID == ItemID && kart.KartSN == SN).ToList();
-                foreach (var item in targetItems)
+                var tempList = newitem.GetRange(i * range, (i + 1) * range > newitem.Count ? (newitem.Count - i * range) : range);
+                int Count = tempList.Count;
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
                 {
-                    newkart.Remove(item);
+                    oPacket.WriteInt(times);
+                    oPacket.WriteInt(i + 1);
+                    oPacket.WriteInt(Count);
+                    foreach (var item in tempList)
+                    {
+                        oPacket.WriteUShort(item.itemCatId);
+                        oPacket.WriteUShort(item.itemId);
+                        oPacket.WriteUShort(item.itemSn);
+                        oPacket.WriteUShort(item.itemCount);
+                        oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                        oPacket.WriteByte(0);
+                        oPacket.WriteTime(item.endTime);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(0);
+                    }
+                    Parent.Client.Send(oPacket);
                 }
-                File.WriteAllText(filename.NewKart_LoadFile, JsonHelper.Serialize(newkart));
             }
         }
 
