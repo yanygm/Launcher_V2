@@ -124,7 +124,7 @@ namespace KartRider
             }
         }
 
-        public static void AddNewKart(SessionGroup Parent, ushort Kart, bool Disassemble = false)
+        public static void AddNewKart(SessionGroup Parent, ushort Kart)
         {
             string Nickname = Parent.Client.Nickname;
             if (!FileName.FileNames.ContainsKey(Nickname))
@@ -141,10 +141,6 @@ namespace KartRider
             if (kartid == 0)
                 kartid = Kart;
             ushort newsn = newkart.Any(kart => kart.KartID == kartid) ? (ushort)newkart.Where(kart => kart.KartID == kartid).Max(kart => kart.KartSN) : (ushort)1;
-            if (Disassemble && newsn == 1)
-            {
-                return;
-            }
             var addkart = new NewKart { KartID = kartid, KartSN = (ushort)(newsn + 1) };
             newkart.Add(addkart);
             File.WriteAllText(filename.NewKart_LoadFile, JsonHelper.Serialize(newkart));
