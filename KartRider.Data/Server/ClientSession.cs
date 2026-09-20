@@ -775,7 +775,7 @@ namespace KartRider
                             outPacket.WriteBytes(new byte[20]);
                             this.Parent.Client.Send(outPacket);
                         }
-                        Stock.AddNewKart(this.Parent, Kart);
+                        Stock.AddNewKart(this.Parent, Kart, true);
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelUpProbText", 0))
