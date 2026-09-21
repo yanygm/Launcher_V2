@@ -776,7 +776,10 @@ namespace KartRider
                                         // priceType为可选项，解析失败时取默认值
                                         byte.TryParse(stockElement.GetAttribute("priceType"), out byte priceType);
 
-                                        Stock.PriceList[stockId] = new price(priceType, salePrice);
+                                        if (!Stock.PriceList.ContainsKey(stockId))
+                                        {
+                                            Stock.PriceList[stockId] = new price(priceType, salePrice);
+                                        }
                                     }
 
                                     // 获取该stock下的所有item节点
@@ -804,7 +807,10 @@ namespace KartRider
                                     if (itemList.Count == 0) continue;
 
                                     // 按stockId缓存对应的道具数据
-                                    Stock.StockList[stockId] = itemList;
+                                    if (!Stock.StockList.ContainsKey(stockId))
+                                    {
+                                        Stock.StockList[stockId] = itemList;
+                                    }
                                 }
                             }
                         }

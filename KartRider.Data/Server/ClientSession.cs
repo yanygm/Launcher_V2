@@ -775,7 +775,10 @@ namespace KartRider
                             outPacket.WriteBytes(new byte[20]);
                             this.Parent.Client.Send(outPacket);
                         }
-                        Stock.AddNewKart(this.Parent, Kart);
+                        if (currencyConfig.RiderItem.Set_KartSN != 0)
+                        {
+                            Stock.AddNewKart(this.Parent, Kart);
+                        }
                         return;
                     }
                     else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelUpProbText", 0))
