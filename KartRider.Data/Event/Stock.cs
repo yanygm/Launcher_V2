@@ -127,7 +127,7 @@ namespace KartRider
 
         public static void AddUseKart(SessionGroup Parent, ushort Kart)
         {
-            ushort kartid = ProfileService.GetProfileConfig(Nickname)?.RiderItem?.Set_Kart ?? 0;
+            ushort kartid = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem?.Set_Kart ?? 0;
             if (kartid == 0)
                 kartid = Kart;
             AddNewKart(Parent, kartid);
