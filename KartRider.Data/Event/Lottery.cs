@@ -37,17 +37,18 @@ namespace KartRider
         public static void SpRpLotteryPacket(SessionGroup Parent, ushort LotteryID)
         {
             TryGet(LotteryID, out LotteryManager lotteryManager);
+            uint stock = lotteryManager.GetRandomStockIds(1)[0];
             if (lotteryManager != null)
             {
                 using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
                 {
                     outPacket.WriteInt(0);
-                    int stock = lotteryManager.GetRandomStockIds(1)[0];
-                    outPacket.WriteInt(stock);
+                    outPacket.WriteUInt(stock);
                     outPacket.WriteHexString("FF FF FF FF");
                     outPacket.WriteBytes(new byte[13]);
                     Parent.Client.Send(outPacket);
                 }
+                Stock.GetStockItem(Parent, stock);
                 Stock.DelNewItem(Parent.Client.Nickname, 24, LotteryID, 1);
             }
             else
@@ -70,7 +71,7 @@ namespace KartRider
         public List<Reward> RewardList { get; } = new List<Reward>();
 
         // 总概率，用于计算抽取概率
-        public int TotalProbability { get; private set; }
+        public uint TotalProbability { get; private set; }
 
         public LotteryManager(ushort lotteryId)
         {
@@ -97,8 +98,8 @@ namespace KartRider
                     if (rewardElement == null) continue;
 
                     // 获取stockId和概率
-                    if (int.TryParse(rewardElement.GetAttribute("stockId"), out int stockId) &&
-                        int.TryParse(rewardElement.GetAttribute("prob"), out int prob))
+                    if (uint.TryParse(rewardElement.GetAttribute("stockId"), out uint stockId) &&
+                        uint.TryParse(rewardElement.GetAttribute("prob"), out uint prob))
                     {
                         // 创建奖励对象并添加到列表
                         Reward reward = new Reward(stockId, prob);
@@ -123,9 +124,9 @@ namespace KartRider
          * @param count 要获取的数量
          * @return 随机选中的stockId列表
          */
-        public List<int> GetRandomStockIds(int count)
+        public List<uint> GetRandomStockIds(int count)
         {
-            List<int> result = new List<int>();
+            List<uint> result = new List<uint>();
 
             // 检查是否已初始化
             if (RewardList.Count == 0)
@@ -142,7 +143,7 @@ namespace KartRider
             }
 
             // 获取不重复的奖励ID集合
-            HashSet<int> uniqueStockIds = new HashSet<int>(RewardList.Select(r => r.StockId));
+            HashSet<uint> uniqueStockIds = new HashSet<uint>(RewardList.Select(r => r.StockId));
             int uniqueRewardCount = uniqueStockIds.Count;
 
             // 检查请求数量是否超过可用奖励数量
@@ -158,18 +159,18 @@ namespace KartRider
             Random random = new Random(Guid.NewGuid().GetHashCode());
 
             // 已选中的奖励ID集合，用于双重保证不重复
-            HashSet<int> selectedIds = new HashSet<int>();
+            HashSet<uint> selectedIds = new HashSet<uint>();
 
             // 循环获取指定数量的不重复奖励
             while (selectedIds.Count < count && availableRewards.Count > 0)
             {
                 // 计算当前可用奖励的总概率
-                int currentTotalProb = availableRewards.Sum(r => r.Probability);
+                int currentTotalProb = (int)availableRewards.Sum(r => r.Probability);
                 if (currentTotalProb <= 0) break;
 
                 // 生成0到总概率之间的随机数
                 int randomValue = random.Next(0, currentTotalProb);
-                int currentSum = 0;
+                uint currentSum = 0;
                 Reward selectedReward = null;
 
                 // 根据概率分布查找选中的奖励

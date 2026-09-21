@@ -10,10 +10,10 @@ namespace KartRider
 {
     public class Reward
     {
-        public int StockId { get; set; }
-        public int Probability { get; set; }
+        public uint StockId { get; set; }
+        public uint Probability { get; set; }
 
-        public Reward(int stockId, int probability)
+        public Reward(uint stockId, uint probability)
         {
             StockId = stockId;
             Probability = probability;
@@ -229,7 +229,7 @@ namespace KartRider
                 Console.WriteLine($"抽奖数据尚未初始化，无法执行抽奖（LotteryId: {lotteryId}）");
                 return;
             }
-            int stock1 = lotteryManager.GetRandomStockIds(1)[0];
+            uint stock1 = lotteryManager.GetRandomStockIds(1)[0];
             if (BingoNums.Count == 0 && BingoNumsList.Count == 0)
             {
                 BingoNumber();
@@ -248,14 +248,14 @@ namespace KartRider
             using (OutPacket outPacket = new OutPacket("SpRpLotteryPacket"))
             {
                 outPacket.WriteInt(0);
-                outPacket.WriteInt(stock1);
+                outPacket.WriteUInt(stock1);
                 outPacket.WriteHexString("FFFFFFFF");
                 outPacket.WriteByte(0);
                 outPacket.WriteByte(BingoNum);
                 outPacket.WriteBytes(new byte[11]);
                 Parent.Client.Send(outPacket);
             }
-            Stock.GetStockItem(Parent, (uint)stock1);
+            Stock.GetStockItem(Parent, stock1);
             Stock.DelNewItem(Parent.Client.Nickname, 24, lotteryId, 1);
             // 只有"未点亮 -> 点亮"才会连成新线；抽到重复数字或面板外的数字时不再做连线判定，避免重复连线动画
             if (BingoNums.TryGetValue(BingoNum, out byte numState) && numState == 0)
