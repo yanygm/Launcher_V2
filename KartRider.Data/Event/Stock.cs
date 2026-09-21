@@ -125,6 +125,14 @@ namespace KartRider
             }
         }
 
+        public static void AddUseKart(SessionGroup Parent, ushort Kart)
+        {
+            ushort kartid = ProfileService.GetProfileConfig(Nickname)?.RiderItem?.Set_Kart ?? 0;
+            if (kartid == 0)
+                kartid = Kart;
+            AddNewKart(Parent, kartid);
+        }
+
         public static void AddNewKart(SessionGroup Parent, ushort Kart)
         {
             string Nickname = Parent.Client.Nickname;
@@ -138,11 +146,8 @@ namespace KartRider
             {
                 newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
             }
-            ushort kartid = ProfileService.GetProfileConfig(Nickname)?.RiderItem?.Set_Kart ?? 0;
-            if (kartid == 0)
-                kartid = Kart;
-            ushort newsn = newkart.Any(kart => kart.KartID == kartid) ? (ushort)newkart.Where(kart => kart.KartID == kartid).Max(kart => kart.KartSN) : (ushort)1;
-            var addkart = new NewKart { KartID = kartid, KartSN = (ushort)(newsn + 1) };
+            ushort newsn = newkart.Any(kart => kart.KartID == Kart) ? (ushort)newkart.Where(kart => kart.KartID == Kart).Max(kart => kart.KartSN) : (ushort)1;
+            var addkart = new NewKart { KartID = Kart, KartSN = (ushort)(newsn + 1) };
             newkart.Add(addkart);
             File.WriteAllText(filename.NewKart_LoadFile, JsonHelper.Serialize(newkart));
             using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
@@ -270,7 +275,6 @@ namespace KartRider
                     }
                 }
             }
-
             File.WriteAllText(filename.NewItem_LoadFile, JsonHelper.Serialize(newitem));
         }
 

@@ -777,7 +777,7 @@ namespace KartRider
                         }
                         if (currencyConfig.RiderItem.Set_KartSN != 0)
                         {
-                            Stock.AddNewKart(this.Parent, Kart);
+                            Stock.AddUseKart(this.Parent, Kart);
                         }
                         return;
                     }
