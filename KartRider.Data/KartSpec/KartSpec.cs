@@ -35,6 +35,11 @@ namespace KartRider
         /// <summary>模型尺寸默认值</summary>
         private const float DefaultModelDimension = 0f;
 
+        /// <summary>字符串类型的XML属性名（转速表类型, 不做数值转换）</summary>
+        private const string TachometerTypeAttribute = "TachometerType";
+        /// <summary>转速表类型默认值（XML中不存在时为空字符串）</summary>
+        private const string DefaultTachometerType = "";
+
         /// <summary>卡丁车规格属性配置类（关联XML属性与Kart字段赋值）</summary>
         private class KartSpecConfig
         {
@@ -193,59 +198,104 @@ namespace KartRider
         /// <summary>解析卡丁车规格XML文档</summary>
         private void ParseKartSpecXml(ushort kartId, XmlDocument specDoc)
         {
+            if (specDoc == null)
+            {
+                Console.WriteLine($"[KartSpec] 警告: ID={kartId}的规格XML为空, 使用默认");
+                // 规格缺失时, 转速表类型保持默认空字符串
+                TachometerType = DefaultTachometerType;
+                return;
+            }
+
             var bodyParams = specDoc.GetElementsByTagName("BodyParam");
             // 检查是否存在BodyParam节点且为XmlElement类型
             if (bodyParams.Count > 0 && bodyParams[0] is XmlElement bodyParamElement)
             {
-                AssignKartProperties(kartId, bodyParamElement);
+                AssignKartProperties(kartId, bodyParamElement, specDoc);
             }
             else
             {
                 Console.WriteLine($"[KartSpec] 警告: ID={kartId}的规格XML中无BodyParam节点, 使用默认");
+                AssignKartProperties(kartId, null, specDoc);
             }
         }
 
         /// <summary>给Kart静态字段赋值（核心数据映射）</summary>
-        private void AssignKartProperties(ushort kartId, XmlElement bodyParamElement)
+        private void AssignKartProperties(ushort kartId, XmlElement bodyParamElement, XmlDocument specDoc)
         {
             // 1. 赋值基础规格属性
-            foreach (var config in KartSpecConfigs)
+            if (bodyParamElement != null)
             {
-                var attrValueStr = GetAttributeValue(
-                    bodyParamElement,
-                    config.AttributeName,
-                    config.FallbackValue,
-                    config.DefaultValue,
-                    config.Scale);
+                foreach (var config in KartSpecConfigs)
+                {
+                    var attrValueStr = GetAttributeValue(
+                        bodyParamElement,
+                        config.AttributeName,
+                        config.FallbackValue,
+                        config.DefaultValue,
+                        config.Scale);
 
-                // 解析数值并赋值（失败则用默认值）
-                if (decimal.TryParse(attrValueStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedVal))
-                {
-                    config.SetKartProperty(parsedVal);
-                }
-                else
-                {
-                    Console.WriteLine($"[KartSpec] 警告: 属性{config.AttributeName}值{attrValueStr}无效, 用默认值{config.DefaultValue}");
-                    config.SetKartProperty(config.DefaultValue);
+                    // 解析数值并赋值（失败则用默认值）
+                    if (decimal.TryParse(attrValueStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedVal))
+                    {
+                        config.SetKartProperty(parsedVal);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[KartSpec] 警告: 属性{config.AttributeName}值{attrValueStr}无效, 用默认值{config.DefaultValue}");
+                        config.SetKartProperty(config.DefaultValue);
+                    }
                 }
             }
 
-            // 2. 加载模型尺寸（单独处理ModelMax.xml）
+            // 2. 赋值转速表类型（字符串属性, XML中不存在则为""）
+            TachometerType = GetTachometerType(specDoc, bodyParamElement);
+
+            // 3. 加载模型尺寸（单独处理ModelMax.xml）
             var modelMax = LoadModelMaxDimensions(kartId);
             modelMaxX = modelMax.modelMaxX;
             Console.WriteLine($"[KartSpec] 警告: 属性modelMaxX值为: {modelMaxX}");
             modelMaxY = modelMax.modelMaxY;
             Console.WriteLine($"[KartSpec] 警告: 属性modelMaxY值为: {modelMaxY}");
 
-            // 3. 设置默认部件类型（Engine/Handle等）
+            // 4. 设置默认部件类型（Engine/Handle等）
             EngineType = DefaultPartType;
             HandleType = DefaultPartType;
             WheelType = DefaultPartType;
             BoosterType = DefaultPartType;
 
-            // 4. 初始化物品ID（保持原逻辑）
+            // 5. 初始化物品ID（保持原逻辑）
             startItemTableId = 0;
             startItemId = 0;
+        }
+
+        /// <summary>读取XML中的TachometerType（字符串, 不存在时返回空字符串）</summary>
+        private string GetTachometerType(XmlDocument specDoc, XmlElement bodyParamElement)
+        {
+            // 1. 优先读取BodyParam节点上的TachometerType属性
+            if (bodyParamElement != null && bodyParamElement.HasAttribute(TachometerTypeAttribute))
+            {
+                return bodyParamElement.GetAttribute(TachometerTypeAttribute) ?? DefaultTachometerType;
+            }
+
+            // 2. 在整个文档中查找带TachometerType属性的节点或同名元素
+            if (specDoc != null)
+            {
+                foreach (XmlNode node in specDoc.GetElementsByTagName("*"))
+                {
+                    if (node is XmlElement element && element.HasAttribute(TachometerTypeAttribute))
+                    {
+                        return element.GetAttribute(TachometerTypeAttribute) ?? DefaultTachometerType;
+                    }
+
+                    if (string.Equals(node.Name, TachometerTypeAttribute, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return node.InnerText ?? DefaultTachometerType;
+                    }
+                }
+            }
+
+            Console.WriteLine($"[KartSpec] 警告: 未找到{TachometerTypeAttribute}, 使用默认空字符串");
+            return DefaultTachometerType;
         }
 
         /// <summary>加载ModelMax.xml中的模型尺寸（modelMaxX/modelMaxY）</summary>
@@ -795,5 +845,6 @@ namespace KartRider
         /// 鎖定超越推進器特效欄位
         /// </summary>
         public byte PartsBoosterEffectLock { get; set; } = (byte)(false ? 1 : 0);
+        public string TachometerType { get; set; } = "";
     }
 }

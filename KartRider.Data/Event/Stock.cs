@@ -28,7 +28,8 @@ namespace KartRider
         public static void GetStockItem(SessionGroup Parent, uint stockId)
         {
             TryGet(stockId, out List<item> itemList);
-            foreach(item Item in itemList)
+            Console.WriteLine(itemList.Count);
+            foreach (item Item in itemList)
             {
                 if (Item.itemCatId == 3 && Item.expireDay == 0)
                 {
@@ -159,16 +160,6 @@ namespace KartRider
                 outPacket.WriteShort(0);
                 Parent.Client.Send(outPacket);
             }
-            var KartSpec = new KartSpec();
-            KartSpec.GetKartSpec(addkart.KartID);
-            if (KartSpec.defaultExceedType > 0)
-            {
-                KartExcData.AddPartsList(Nickname, (short)addkart.KartID, (short)addkart.KartSN, 72, (short)KartSpec.defaultEngineType, 0, 0);
-                KartExcData.AddPartsList(Nickname, (short)addkart.KartID, (short)addkart.KartSN, 73, (short)KartSpec.defaultHandleType, 0, 0);
-                KartExcData.AddPartsList(Nickname, (short)addkart.KartID, (short)addkart.KartSN, 74, (short)KartSpec.defaultWheelType, 0, 0);
-                KartExcData.AddPartsList(Nickname, (short)addkart.KartID, (short)addkart.KartSN, 75, (short)KartSpec.defaultBoosterType, 0, 0);
-                KartExcData.AddPartsList(Nickname, (short)addkart.KartID, (short)addkart.KartSN, 0, (short)KartSpec.defaultExceedType, 0, 0);
-            }
         }
 
         /**
@@ -269,6 +260,10 @@ namespace KartRider
                         KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 74, (short)Kart.defaultWheelType, 0, 0);
                         KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 75, (short)Kart.defaultBoosterType, 0, 0);
                         KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 0, (short)Kart.defaultExceedType, 0, 0);
+                    }
+                    else if (Kart.TachometerType == "XGenTacho" || Kart.TachometerType == "V1GenTacho")
+                    {
+                        KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 63, 0, 0, 0);
                     }
                 }
             }
