@@ -513,8 +513,8 @@ internal static class RhoPacker
             case ".xml":
                 return RhoFileProperty.Encrypted;
             case ".png":
-                return (fileSize <= 256) ? RhoFileProperty.Encrypted : RhoFileProperty.PartialEncrypted;
             case ".kap":
+                return (fileSize <= 256) ? RhoFileProperty.Encrypted : RhoFileProperty.PartialEncrypted;
             case ".ogg":
             case ".jpg":
             case ".flac":
