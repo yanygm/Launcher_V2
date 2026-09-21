@@ -11,7 +11,7 @@ namespace KartRider;
 public class Coupon
 {
     public string CouponNO { get; set; } // L25
-    public int stockId { get; set; }
+    public uint stockId { get; set; }
     public int Count { get; set; }
 }
 
@@ -86,6 +86,7 @@ public static class CouponList
                 }
                 value.Count--;
                 File.WriteAllText(FileName.Coupon, JsonHelper.Serialize(CouponList));
+                Stock.GetStockItem(Parent, value.stockId);
                 return;
             }
 
@@ -93,7 +94,7 @@ public static class CouponList
             {
                 outPacket.WriteInt(0); // 成功
                 outPacket.WriteByte(0);
-                outPacket.WriteInt(value.stockId);
+                outPacket.WriteUInt(value.stockId);
                 outPacket.WriteInt(0);
                 outPacket.WriteByte(0);
                 Parent.Client.Send(outPacket);
