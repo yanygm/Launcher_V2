@@ -103,6 +103,19 @@ namespace ExcData
             }
             ushort Set_Kart = config.RiderItem.Set_Kart;
             ushort Set_KartSN = config.RiderItem.Set_KartSN;
+
+            if (Kart.kartName.TryGetValue(Set_Kart, out var kartTable)
+                && kartTable?.defaultEnchant is { Count: > 0 } de)
+            {
+                short t0 = de.Count > 0 ? de[0] : (short)0;
+                short t1 = de.Count > 1 ? de[1] : (short)0;
+                short t2 = de.Count > 2 ? de[2] : (short)0;
+
+                KartExcData.AddTuneList(
+                    Nickname, (short)Set_Kart, (short)Set_KartSN,
+                    t0, t1, t2, -1, 0, -1, 0);
+            }
+
             var existingTune = TuneList.FirstOrDefault(tune => tune.ID == Set_Kart && tune.SN == Set_KartSN);
             if (existingTune != null)
             {

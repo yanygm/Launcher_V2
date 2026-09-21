@@ -297,9 +297,32 @@ namespace KartRider
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
-                                        if (!(Kart.kartName.ContainsKey(id)))
+
+                                        byte grade = byte.Parse(kart.Attribute("grade")?.Value ?? "0");
+
+                                        List<short> defaultEnchant = (kart.Attribute("defaultEnchant")?.Value ?? "")
+                                            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(s => short.TryParse(s.Trim(), out var v) ? (short?)v : null)
+                                            .Where(v => v.HasValue)
+                                            .Select(v => v.Value)
+                                            .ToList();
+
+                                        if (Kart.kartName.ContainsKey(id))
                                         {
-                                            Kart.kartName.Add(id, name);
+                                            var kartTable = Kart.kartName[id];
+                                            if (kartTable.grade == 0 && grade != 0)
+                                            {
+                                                kartTable.grade = grade;
+                                            }
+                                            if (kartTable.defaultEnchant.Count < 1 && defaultEnchant.Count > 0)
+                                            {
+                                                kartTable.defaultEnchant = defaultEnchant;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var kartTable = new KartTable { Name = name, grade = grade, defaultEnchant = defaultEnchant };
+                                            Kart.kartName.Add(id, kartTable);
                                         }
                                     }
                                 }
@@ -333,13 +356,32 @@ namespace KartRider
                                     {
                                         int id = int.Parse(kart.Attribute("id").Value);
                                         string name = kart.Attribute("name").Value;
+
+                                        byte grade = byte.Parse(kart.Attribute("grade")?.Value ?? "0");
+
+                                        List<short> defaultEnchant = (kart.Attribute("defaultEnchant")?.Value ?? "")
+                                            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(s => short.TryParse(s.Trim(), out var v) ? (short?)v : null)
+                                            .Where(v => v.HasValue)
+                                            .Select(v => v.Value)
+                                            .ToList();
+
                                         if (Kart.kartName.ContainsKey(id))
                                         {
-                                            Kart.kartName[id] = name;
+                                            var kartTable = Kart.kartName[id];
+                                            if (kartTable.grade == 0 && grade != 0)
+                                            {
+                                                kartTable.grade = grade;
+                                            }
+                                            if (kartTable.defaultEnchant.Count < 1 && defaultEnchant.Count > 0)
+                                            {
+                                                kartTable.defaultEnchant = defaultEnchant;
+                                            }
                                         }
                                         else
                                         {
-                                            Kart.kartName.Add(id, name);
+                                            var kartTable = new KartTable { Name = name, grade = grade, defaultEnchant = defaultEnchant };
+                                            Kart.kartName.Add(id, kartTable);
                                         }
                                     }
                                 }

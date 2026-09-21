@@ -13,9 +13,16 @@ using System.Xml.Linq;
 
 namespace KartRider
 {
+    public class KartTable
+    {
+        public string Name { get; set; }
+        public byte grade { get; set; }
+        public List<short> defaultEnchant { get; set; }
+    }
+
     public class Kart
     {
-        public static Dictionary<int, string> kartName = new Dictionary<int, string>();
+        public static Dictionary<int, KartTable> kartName = new Dictionary<int, KartTable>();
         public static Dictionary<string, XmlDocument> kartSpec = new Dictionary<string, XmlDocument>();
     }
 
@@ -32,13 +39,9 @@ namespace KartRider
 
         /// <summary>部件默认类型（EngineType/HandleType等的默认值1）</summary>
         private const byte DefaultPartType = 1;
+
         /// <summary>模型尺寸默认值</summary>
         private const float DefaultModelDimension = 0f;
-
-        /// <summary>字符串类型的XML属性名（转速表类型, 不做数值转换）</summary>
-        private const string TachometerTypeAttribute = "TachometerType";
-        /// <summary>转速表类型默认值（XML中不存在时为空字符串）</summary>
-        private const string DefaultTachometerType = "";
 
         /// <summary>卡丁车规格属性配置类（关联XML属性与Kart字段赋值）</summary>
         private class KartSpecConfig
@@ -171,17 +174,17 @@ namespace KartRider
                 else
                 {
                     // 2.1 检查KartName字典是否存在该ID
-                    if (!Kart.kartName.TryGetValue(KartID, out var Name))
+                    if (!Kart.kartName.TryGetValue(KartID, out var KartTable))
                     {
                         Console.WriteLine($"[KartSpec] 警告: KartName中未找到ID={KartID}, 加载练习车数据");
                     }
 
-                    Console.WriteLine($"[KartSpec] 加载卡丁车: ID={KartID}, 名称={Name}");
+                    Console.WriteLine($"[KartSpec] 加载卡丁车: ID={KartID}, 名称={KartTable.Name}");
 
                     // 2.2 检查KartSpec字典是否存在该规格
-                    if (!Kart.kartSpec.TryGetValue(Name, out var kartSpecDoc))
+                    if (!Kart.kartSpec.TryGetValue(KartTable.Name, out var kartSpecDoc))
                     {
-                        Console.WriteLine($"[KartSpec] 警告: KartSpec中未找到名称={Name}的规格, 使用默认");
+                        Console.WriteLine($"[KartSpec] 警告: KartSpec中未找到名称={KartTable.Name}的规格, 使用默认");
                     }
 
                     // 2.3 解析规格XML并赋值
@@ -201,8 +204,6 @@ namespace KartRider
             if (specDoc == null)
             {
                 Console.WriteLine($"[KartSpec] 警告: ID={kartId}的规格XML为空, 使用默认");
-                // 规格缺失时, 转速表类型保持默认空字符串
-                TachometerType = DefaultTachometerType;
                 return;
             }
 
@@ -247,55 +248,22 @@ namespace KartRider
                 }
             }
 
-            // 2. 赋值转速表类型（字符串属性, XML中不存在则为""）
-            TachometerType = GetTachometerType(specDoc, bodyParamElement);
-
-            // 3. 加载模型尺寸（单独处理ModelMax.xml）
+            // 2. 加载模型尺寸（单独处理ModelMax.xml）
             var modelMax = LoadModelMaxDimensions(kartId);
             modelMaxX = modelMax.modelMaxX;
             Console.WriteLine($"[KartSpec] 警告: 属性modelMaxX值为: {modelMaxX}");
             modelMaxY = modelMax.modelMaxY;
             Console.WriteLine($"[KartSpec] 警告: 属性modelMaxY值为: {modelMaxY}");
 
-            // 4. 设置默认部件类型（Engine/Handle等）
+            // 3. 设置默认部件类型（Engine/Handle等）
             EngineType = DefaultPartType;
             HandleType = DefaultPartType;
             WheelType = DefaultPartType;
             BoosterType = DefaultPartType;
 
-            // 5. 初始化物品ID（保持原逻辑）
+            // 4. 初始化物品ID（保持原逻辑）
             startItemTableId = 0;
             startItemId = 0;
-        }
-
-        /// <summary>读取XML中的TachometerType（字符串, 不存在时返回空字符串）</summary>
-        private string GetTachometerType(XmlDocument specDoc, XmlElement bodyParamElement)
-        {
-            // 1. 优先读取BodyParam节点上的TachometerType属性
-            if (bodyParamElement != null && bodyParamElement.HasAttribute(TachometerTypeAttribute))
-            {
-                return bodyParamElement.GetAttribute(TachometerTypeAttribute) ?? DefaultTachometerType;
-            }
-
-            // 2. 在整个文档中查找带TachometerType属性的节点或同名元素
-            if (specDoc != null)
-            {
-                foreach (XmlNode node in specDoc.GetElementsByTagName("*"))
-                {
-                    if (node is XmlElement element && element.HasAttribute(TachometerTypeAttribute))
-                    {
-                        return element.GetAttribute(TachometerTypeAttribute) ?? DefaultTachometerType;
-                    }
-
-                    if (string.Equals(node.Name, TachometerTypeAttribute, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return node.InnerText ?? DefaultTachometerType;
-                    }
-                }
-            }
-
-            Console.WriteLine($"[KartSpec] 警告: 未找到{TachometerTypeAttribute}, 使用默认空字符串");
-            return DefaultTachometerType;
         }
 
         /// <summary>加载ModelMax.xml中的模型尺寸（modelMaxX/modelMaxY）</summary>
@@ -845,6 +813,5 @@ namespace KartRider
         /// 鎖定超越推進器特效欄位
         /// </summary>
         public byte PartsBoosterEffectLock { get; set; } = (byte)(false ? 1 : 0);
-        public string TachometerType { get; set; } = "";
     }
 }
