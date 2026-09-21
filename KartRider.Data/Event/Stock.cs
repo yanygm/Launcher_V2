@@ -264,6 +264,9 @@ namespace KartRider
                     else if (Kart.TachometerType == "XGenTacho" || Kart.TachometerType == "V1GenTacho")
                     {
                         KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 63, 0, 0, 0);
+                        KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 64, 0, 0, 0);
+                        KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 65, 0, 0, 0);
+                        KartExcData.AddPartsList(Nickname, (short)Item.itemId, 0, 66, 0, 0, 0);
                     }
                 }
             }
