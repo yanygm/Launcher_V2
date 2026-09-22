@@ -195,7 +195,7 @@ namespace KartRider
 
             var newitem = LoadNewItem(filename);
             DateTime now = DateTime.Now;
-            var expiredItems = newitem.Where(item => item.endTime != DateTime.MinValue && item.endTime <= now).ToList();
+            var expiredItems = newitem.Where(item => (item.endTime != DateTime.MinValue && item.endTime <= now) || item.itemCount < 1).ToList();
             if (expiredItems.Count > 0)
             {
                 foreach (var item in expiredItems)
