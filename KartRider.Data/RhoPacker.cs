@@ -392,27 +392,18 @@ internal static class RhoPacker
 
     private static void AAAC(string input, string[] files)
     {
-        string[] whitelist =
+        string[] sub =
         {
-            "_I04_sn", "_I05_sn", "_R01_sn", "_R02_sn", "_I02_sn", "_I01_sn", "_I03_sn", "_L01_", "_L02_", "_L03_03_",
-            "_L03_", "_L04_", "bazzi_", "arthur_", "bero_", "brodi_", "camilla_", "chris_", "contender_", "crowdr_",
-            "CSO_", "dao_", "dizni_", "erini_", "ethi_", "Guazi_", "halloween_", "homrunDao_", "innerWearSonogong_",
-            "innerWearWonwon_", "Jianbing_", "kephi_", "kero_", "kwanwoo_", "Lingling_", "lodumani_", "mabi_", "Mahua_",
-            "marid_", "mobi_", "mos_", "narin_", "neoul_", "neo_", "nymph_", "olympos_", "panda_", "referee_", "ren_",
-            "Reto_", "run_", "zombie_", "santa_", "sophi_", "taki_", "tiera_", "tutu_", "twoTop_", "twotop_", "uni_",
-            "wonwon_", "zhindaru_", "zombie_", "flyingBook_", "flyingMechanic_", "flyingRedlight_", "crow_",
-            "dragonBoat_", "GiLin_", "maple_", "beach_", "village_", "china_", "factory_", "ice_", "mine_", "nemo_",
-            "world_", "forest_", "_I", "_R", "_S", "_F", "_P", "_K", "_D", "_jp", "_A0"
+            "boss", "character", "dialog", "dialog2", "effect", "etc_", "flyingPet", "gui", "item", "kart_", "myRoom",
+            "pet", "stage", "stuff", "stuff2", "theme", "track", "trackThumb", "track_",
+            "sound_bgm", "sound_character", "sound_flyingPet", "sound_fx", "sound_pet", "zeta_kr", "zeta_cn", "zeta_tw"
         };
-        string[] blacklist = { "character_" };
 
         var root = new XElement("PackFolder", new XAttribute("name", "KartRider"));
         foreach (var file in files)
         {
             var fileName = Path.GetFileName(file);
-            var result = fileName;
-            foreach (var white in whitelist) result = result.Replace(white, white.Replace("_", "!"));
-            foreach (var black in blacklist) result = result.Replace(black.Replace("_", "!"), black);
+            var result = Prefixes(fileName, sub);
             var splitParts = result.Split('_');
             var currentFolder = root;
             for (var i = 0; i < splitParts.Length - 1; i++)
@@ -422,8 +413,8 @@ internal static class RhoPacker
                     .FirstOrDefault(f => (string)f.Attribute("name") == folderName);
                 if (subFolder == null)
                 {
-                    if (folderName == "character" || folderName == "flyingPet" || folderName == "pet" ||
-                        folderName == "track")
+                    if ((folderName == "character" || folderName == "flyingPet" || folderName == "pet" ||
+                        folderName == "track") && splitParts[0] != "sound")
                         subFolder = new XElement("PackFolder", new XAttribute("name", folderName),
                             new XAttribute("loadPass", "1"));
                     else
@@ -452,6 +443,34 @@ internal static class RhoPacker
         }
 
         root.Save(input + "\\aaa.xml");
+    }
+
+    private static string Prefixes(string fileName, string[] prefixes)
+    {
+        // 1. 找出所有匹配的前缀，取最长（避免短前缀误匹配）
+        string matchedPrefix = prefixes
+            .Where(p => fileName.StartsWith(p))
+            .OrderByDescending(p => p.Length)
+            .FirstOrDefault();
+
+        // 2. 没有匹配则原样返回
+        if (matchedPrefix == null)
+            return fileName;
+
+        // 3. 取出前缀之后的部分
+        string rest = fileName.Substring(matchedPrefix.Length);
+
+        // 4. 如果剩余部分以 '_' 开头，保留这个 '_'，其余 '_' 替换为 '!'
+        if (rest.StartsWith("_"))
+        {
+            string afterFirstUnderscore = rest.Substring(1).Replace('_', '!');
+            return matchedPrefix + "_" + afterFirstUnderscore;
+        }
+        else
+        {
+            // 不以 '_' 开头，直接把剩余部分中的 '_' 替换为 '!'
+            return matchedPrefix + rest.Replace('_', '!');
+        }
     }
 
     private static int Wcscmp(string s1, string s2)
