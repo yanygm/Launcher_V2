@@ -12,41 +12,41 @@ public class SlotData
 {
     // 个人道具赛概率配置（技能 id 取 item 的 idx 属性），Rho.cs 加载资源文件成功时会被覆盖
     public static XDocument itemProb_indi = BuildItemProb(
-        @"<item name=""香蕉皮"" idx=""8"" toprank=""25"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""乌云"" idx=""114"" toprank=""20"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""盾牌"" idx=""10"" toprank=""40"" highrank=""25"" midrank=""0"" lowrank=""0""/>
-          <item name=""电磁波"" idx=""12"" toprank=""15"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""大魔王"" idx=""2"" toprank=""0"" highrank=""2"" midrank=""2"" lowrank=""2""/>
-          <item name=""追踪导弹"" idx=""33"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""3""/>
-          <item name=""飞碟"" idx=""3"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""6""/>
-          <item name=""路障"" idx=""113"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""5""/>
-          <item name=""导弹"" idx=""7"" toprank=""0"" highrank=""23"" midrank=""20"" lowrank=""0""/>
-          <item name=""水炸弹"" idx=""9"" toprank=""0"" highrank=""20"" midrank=""11"" lowrank=""0""/>
-          <item name=""水苍蝇"" idx=""4"" toprank=""0"" highrank=""25"" midrank=""10"" lowrank=""0""/>
-          <item name=""闪电"" idx=""111"" toprank=""0"" highrank=""0"" midrank=""3"" lowrank=""1""/>
-          <item name=""加速器"" idx=""6"" toprank=""0"" highrank=""0"" midrank=""24"" lowrank=""51""/>
-          <item name=""磁铁"" idx=""5"" toprank=""0"" highrank=""5"" midrank=""15"" lowrank=""32""/>");
+        @"<item name='香蕉皮' idx='8' toprank='25' highrank='0' midrank='0' lowrank='0'/>
+          <item name='乌云' idx='114' toprank='20' highrank='0' midrank='0' lowrank='0'/>
+          <item name='盾牌' idx='10' toprank='40' highrank='25' midrank='0' lowrank='0'/>
+          <item name='电磁波' idx='12' toprank='15' highrank='0' midrank='0' lowrank='0'/>
+          <item name='大魔王' idx='2' toprank='0' highrank='2' midrank='2' lowrank='2'/>
+          <item name='追踪导弹' idx='33' toprank='0' highrank='0' midrank='5' lowrank='3'/>
+          <item name='飞碟' idx='3' toprank='0' highrank='0' midrank='5' lowrank='6'/>
+          <item name='路障' idx='113' toprank='0' highrank='0' midrank='5' lowrank='5'/>
+          <item name='导弹' idx='7' toprank='0' highrank='23' midrank='20' lowrank='0'/>
+          <item name='水炸弹' idx='9' toprank='0' highrank='20' midrank='11' lowrank='0'/>
+          <item name='水苍蝇' idx='4' toprank='0' highrank='25' midrank='10' lowrank='0'/>
+          <item name='闪电' idx='111' toprank='0' highrank='0' midrank='3' lowrank='1'/>
+          <item name='加速器' idx='6' toprank='0' highrank='0' midrank='24' lowrank='51'/>
+          <item name='磁铁' idx='5' toprank='0' highrank='5' midrank='15' lowrank='32'/>");
 
     // 组队道具赛概率配置（技能 id 取 item 的 idx 属性），Rho.cs 加载资源文件成功时会被覆盖
     public static XDocument itemProb_team = BuildItemProb(
-        @"<item name=""香蕉皮"" idx=""8"" toprank=""25"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""乌云"" idx=""114"" toprank=""20"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""盾牌"" idx=""10"" toprank=""40"" highrank=""25"" midrank=""0"" lowrank=""0""/>
-          <item name=""电磁波"" idx=""12"" toprank=""13"" highrank=""0"" midrank=""5"" lowrank=""0""/>
-          <item name=""大魔王"" idx=""2"" toprank=""0"" highrank=""2"" midrank=""2"" lowrank=""2""/>
-          <item name=""追踪导弹"" idx=""33"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""3""/>
-          <item name=""飞碟"" idx=""3"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""3""/>
-          <item name=""路障"" idx=""113"" toprank=""0"" highrank=""0"" midrank=""5"" lowrank=""5""/>
-          <item name=""导弹"" idx=""7"" toprank=""0"" highrank=""23"" midrank=""13"" lowrank=""0""/>
-          <item name=""水炸弹"" idx=""9"" toprank=""0"" highrank=""15"" midrank=""7"" lowrank=""0""/>
-          <item name=""水苍蝇"" idx=""4"" toprank=""0"" highrank=""25"" midrank=""10"" lowrank=""0""/>
-          <item name=""闪电"" idx=""111"" toprank=""0"" highrank=""0"" midrank=""3"" lowrank=""1""/>
-          <item name=""加速器"" idx=""6"" toprank=""0"" highrank=""0"" midrank=""20"" lowrank=""55""/>
-          <item name=""磁铁"" idx=""5"" toprank=""0"" highrank=""5"" midrank=""12"" lowrank=""27""/>
-          <item name=""透视镜"" idx=""109"" toprank=""12"" highrank=""0"" midrank=""0"" lowrank=""0""/>
-          <item name=""道具锁"" idx=""110"" toprank=""0"" highrank=""0"" midrank=""3"" lowrank=""2""/>
-          <item name=""天使"" idx=""11"" toprank=""0"" highrank=""2"" midrank=""5"" lowrank=""2""/>
-          <item name=""定时水炸弹"" idx=""13"" toprank=""0"" highrank=""3"" midrank=""5"" lowrank=""0""/>");
+        @"<item name='香蕉皮' idx='8' toprank='25' highrank='0' midrank='0' lowrank='0'/>
+          <item name='乌云' idx='114' toprank='20' highrank='0' midrank='0' lowrank='0'/>
+          <item name='盾牌' idx='10' toprank='40' highrank='25' midrank='0' lowrank='0'/>
+          <item name='电磁波' idx='12' toprank='13' highrank='0' midrank='5' lowrank='0'/>
+          <item name='大魔王' idx='2' toprank='0' highrank='2' midrank='2' lowrank='2'/>
+          <item name='追踪导弹' idx='33' toprank='0' highrank='0' midrank='5' lowrank='3'/>
+          <item name='飞碟' idx='3' toprank='0' highrank='0' midrank='5' lowrank='3'/>
+          <item name='路障' idx='113' toprank='0' highrank='0' midrank='5' lowrank='5'/>
+          <item name='导弹' idx='7' toprank='0' highrank='23' midrank='13' lowrank='0'/>
+          <item name='水炸弹' idx='9' toprank='0' highrank='15' midrank='7' lowrank='0'/>
+          <item name='水苍蝇' idx='4' toprank='0' highrank='25' midrank='10' lowrank='0'/>
+          <item name='闪电' idx='111' toprank='0' highrank='0' midrank='3' lowrank='1'/>
+          <item name='加速器' idx='6' toprank='0' highrank='0' midrank='20' lowrank='55'/>
+          <item name='磁铁' idx='5' toprank='0' highrank='5' midrank='12' lowrank='27'/>
+          <item name='透视镜' idx='109' toprank='12' highrank='0' midrank='0' lowrank='0'/>
+          <item name='道具锁' idx='110' toprank='0' highrank='0' midrank='3' lowrank='2'/>
+          <item name='天使' idx='11' toprank='0' highrank='2' midrank='5' lowrank='2'/>
+          <item name='定时水炸弹' idx='13' toprank='0' highrank='3' midrank='5' lowrank='0'/>");
 
     // 构建道具概率配置 XDocument
     static XDocument BuildItemProb(string itemsXml)
