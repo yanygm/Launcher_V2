@@ -1554,7 +1554,9 @@ namespace KartRider
                             foreach (var num in bingo.BingoNumsList)
                             {
                                 outPacket.WriteByte(num);//Bingo格子数字
-                                outPacket.WriteByte(bingo.BingoNums[num]);//数字是否获得
+                                byte obtainedNum = 0;
+                                bingo.BingoNums.TryGetValue(num, out obtainedNum);
+                                outPacket.WriteByte(obtainedNum);//数字是否获得
                             }
                             this.Parent.Client.Send(outPacket);
                         }
@@ -1572,24 +1574,31 @@ namespace KartRider
                             foreach (var num in bingo.BingoNumsList)
                             {
                                 outPacket.WriteByte(num);//Bingo格子数字
-                                outPacket.WriteByte(bingo.BingoNums[num]);//数字是否获得
+                                byte obtainedNum = 0;
+                                bingo.BingoNums.TryGetValue(num, out obtainedNum);
+                                outPacket.WriteByte(obtainedNum);//数字是否获得
                             }
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(bingo.BingoItemsList.Count);//Bingo道具数量
                             foreach (var item in bingo.BingoItemsList)
                             {
                                 outPacket.WriteInt(item);//Bingo道具
-                                outPacket.WriteByte(bingo.BingoItems[item]);//道具是否获得
+                                byte obtainedItem = 0;
+                                bingo.BingoItems.TryGetValue(item, out obtainedItem);
+                                outPacket.WriteByte(obtainedItem);//道具是否获得
                             }
                             outPacket.WriteInt(0);
                             outPacket.WriteInt(0);
                             outPacket.WriteShort(bingo.BingoCount);
                             outPacket.WriteByte(0);
-                            outPacket.WriteByte(bingo.BingoNum);//上次获取的数字
+                            outPacket.WriteByte(bingo.BingoNum);//获取的数字
+                            byte lastObtained = 0;
+                            bingo.BingoNums.TryGetValue(bingo.BingoNum, out lastObtained);
+                            outPacket.WriteByte(lastObtained);//获取的数字是否已点亮
+                            bingo.BingoLight(this.Parent, bingo.BingoNum);//点亮数字
                             outPacket.WriteByte(0);
                             outPacket.WriteByte(0);
-                            outPacket.WriteByte(0);
-                            outPacket.WriteByte(0);
+                            outPacket.WriteByte(1);
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
@@ -1603,7 +1612,13 @@ namespace KartRider
                             outPacket.WriteInt(0);
                             this.Parent.Client.Send(outPacket);
                         }
-                        bingo.Reset();
+                        uint stockId = 0;
+                        if (Bingo.bingoGachaSet != null && Bingo.bingoGachaSet.TryGetValue(bingo.BingoItem, out uint selectedReward))
+                        {
+                            stockId = selectedReward;
+                        }
+                        Stock.GetStockItem(this.Parent, stockId);
+                        bingo.BingoCount = 0;
                         bingo.Save();
                         return;
                     }

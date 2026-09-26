@@ -707,6 +707,25 @@ namespace KartRider
                                 MultyPlayer.aiKartDict = aiKartDict;
                             }
                         }
+                        if (fullName == $"zeta_/{regionCode}/content/bingoGachaSet.xml")
+                        {
+                            Console.WriteLine(fullName);
+                            byte[] data = packFileInfo.GetData();
+                            using (MemoryStream stream = new MemoryStream(data))
+                            {
+                                XDocument doc = XDocument.Load(stream);
+                                Bingo.bingoGachaSet = doc.Root
+                                    .Element("setRewardList")
+                                    .Elements("set")
+                                    .ToDictionary(
+                                        set => (byte)(int)set.Attribute("id"),
+                                        set => (uint)set.Element("reward")
+                                                      .Element("completeReward")
+                                                      .Element("stock")
+                                                      .Attribute("id")
+                                    );
+                            }
+                        }
                         if (fullName == $"zeta_/{regionCode}/content/itemDictionary.xml")
                         {
                             Console.WriteLine(fullName);

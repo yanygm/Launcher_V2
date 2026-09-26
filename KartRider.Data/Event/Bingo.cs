@@ -72,6 +72,8 @@ namespace KartRider
         public List<int> BingoItemsList = new List<int>();
         // 已连成的连线（Key为该连线5个数字排序后的组合），用于跳过重复的控制台输出
         public HashSet<string> CompletedLines = new HashSet<string>();
+        // 最终大奖单独记录，避免写入 BingoItems，否则会影响正常连线奖励判定
+        private bool GrandPrizeGranted = false;
 
         public BingoData(string nickname)
         {
@@ -91,6 +93,25 @@ namespace KartRider
             BingoItems = new Dictionary<int, byte>();
             BingoItemsList = new List<int>();
             CompletedLines = new HashSet<string>();
+            GrandPrizeGranted = false;
+        }
+
+        private void TryGrantSelectedPrize(SessionGroup parent)
+        {
+            if (parent == null || GrandPrizeGranted)
+            {
+                return;
+            }
+
+            uint selectedStock = GetSelectedGrandPrizeStockId();
+            if (selectedStock == 0)
+            {
+                return;
+            }
+
+            GrandPrizeGranted = true;
+            Stock.GetStockItem(parent, selectedStock);
+            Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，发放所选大奖：stock={selectedStock} setId={BingoItem}");
         }
 
         /**
@@ -199,8 +220,12 @@ namespace KartRider
 
         public void BingoNumber()
         {
-            // 生成新面板时清空之前的连线记录
+            // 生成新面板时清空之前的数据（连线记录、格子与道具）
             CompletedLines.Clear();
+            BingoNumsList.Clear();
+            BingoNums.Clear();
+            BingoItemsList.Clear();
+            BingoItems.Clear();
 
             // 存储不重复随机数的集合
             HashSet<byte> uniqueNumbers = new HashSet<byte>();
@@ -214,10 +239,12 @@ namespace KartRider
                 // 只有当集合中不包含该数字时才会添加成功
                 uniqueNumbers.Add(number);
             }
+
+            // 将生成的数字写入列表与字典，确保初始状态为未点亮(0)
             foreach (byte num in uniqueNumbers)
             {
                 BingoNumsList.Add(num);
-                BingoNums.TryAdd(num, 0);
+                BingoNums[num] = 0;
             }
         }
 
@@ -255,13 +282,24 @@ namespace KartRider
                 outPacket.WriteBytes(new byte[11]);
                 Parent.Client.Send(outPacket);
             }
+            BingoCount++;
             Stock.GetStockItem(Parent, stock1);
             Stock.DelNewItem(Parent.Client.Nickname, 24, lotteryId, 1);
+        }
+
+        public void BingoLight(SessionGroup parent, byte BingoNum)
+        {
             // 只有"未点亮 -> 点亮"才会连成新线；抽到重复数字或面板外的数字时不再做连线判定，避免重复连线动画
             if (BingoNums.TryGetValue(BingoNum, out byte numState) && numState == 0)
             {
                 BingoNums[BingoNum] = 1;
-                List<int> newLines = CheckLinesAsArray();
+                List<int> newLines = CheckLinesAsArray(parent);
+                if (BingoNumsList.Count >= 25 && BingoNumsList.All(num => BingoNums.TryGetValue(num, out byte state) && state == 1))
+                {
+                    TryGrantSelectedPrize(parent);
+                    Reset();
+                    Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，已重置面板");
+                }
                 if (newLines.Count > 0)
                 {
                     Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 本次新连成连线={string.Join(",", newLines)} 道具={string.Join(",", newLines.Where(i => i < BingoItemsList.Count).Select(i => BingoItemsList[i]))}");
@@ -271,9 +309,17 @@ namespace KartRider
             {
                 Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 数字={BingoNum} 已点亮过，跳过连线判定");
             }
-            BingoCount++;
             Save();
             Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 抽奖 数字={BingoNum} 次数={BingoCount} 已点亮={BingoNums.Count(n => n.Value == 1)}/{BingoNumsList.Count} 已连线={CompletedLines.Count}");
+        }
+
+        private uint GetSelectedGrandPrizeStockId()
+        {
+            if (Bingo.bingoGachaSet != null && Bingo.bingoGachaSet.TryGetValue(BingoItem, out uint selectedReward))
+            {
+                return selectedReward;
+            }
+            return 0;
         }
 
         /**
@@ -308,7 +354,7 @@ namespace KartRider
          * 检测连线，返回本次"新"连成的连线索引
          * 已连成过的连线直接跳过，不再重复置道具状态、不再重复输出，避免重复触发连线动画
          */
-        public List<int> CheckLinesAsArray()
+        public List<int> CheckLinesAsArray(SessionGroup parent)
         {
             List<int> newLines = new List<int>();
 
@@ -341,7 +387,13 @@ namespace KartRider
 
                 // 同步连线对应的道具状态（保持原有0/1数据格式）
                 if (lineIndex < BingoItemsList.Count)
+                {
                     BingoItems[BingoItemsList[lineIndex]] = 1;
+                    if (parent != null)
+                    {
+                        Stock.GetStockItem(parent, (uint)BingoItemsList[lineIndex]);
+                    }
+                }
 
                 Console.WriteLine($"[{Nickname}] " + string.Join(" ", numbers));
             }
@@ -355,6 +407,7 @@ namespace KartRider
      */
     public static class Bingo
     {
+        public static Dictionary<byte, uint> bingoGachaSet = new Dictionary<byte, uint>();
         private static readonly Dictionary<string, BingoData> Datas = new Dictionary<string, BingoData>();
         private static readonly object SyncRoot = new object();
 
