@@ -67,7 +67,7 @@ namespace KartRider
                     Console.WriteLine("找到目标文件：" + name);
                     Console.WriteLine($"Digest: {launcherExeAsset.digest}");
                     Console.WriteLine($"Browser_Download_Url: {launcherExeAsset.browser_download_url}");
-                    Console.WriteLine($"更新说明: {releaseData.body}");
+                    Console.WriteLine($"更新说明: \n{releaseData.body}");
                     Console.WriteLine("==============================");
                     if (launcherExeAsset.digest != sha256Hash)
                     {
