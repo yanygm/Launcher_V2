@@ -13,6 +13,34 @@ public class Coupon
     public string CouponNO { get; set; } // L25
     public uint stockId { get; set; }
     public int Count { get; set; }
+    public List<string> RedeemedBy { get; set; } = new List<string>(); // 已兑换过该兑换码的玩家昵称
+
+    /// <summary>
+    /// 判断指定昵称是否已兑换过该兑换码（昵称比较忽略大小写，兼容旧存档中 RedeemedBy 为 null 的情况）
+    /// </summary>
+    public bool IsRedeemedBy(string nickname)
+    {
+        if (RedeemedBy == null)
+        {
+            RedeemedBy = new List<string>();
+            return false;
+        }
+        if (string.IsNullOrEmpty(nickname)) return false;
+        return RedeemedBy.Any(x => string.Equals(x, nickname, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// 记录兑换昵称
+    /// </summary>
+    public void AddRedeemer(string nickname)
+    {
+        if (RedeemedBy == null) RedeemedBy = new List<string>();
+        if (string.IsNullOrEmpty(nickname)) return;
+        if (!RedeemedBy.Any(x => string.Equals(x, nickname, StringComparison.OrdinalIgnoreCase)))
+        {
+            RedeemedBy.Add(nickname);
+        }
+    }
 }
 
 public class Gift
@@ -35,7 +63,17 @@ public class RewardBox
 
 public static class CouponList
 {
+    private static readonly object CouponLock = new object(); // 兑换码文件读写锁，避免并发兑换导致重复兑换
+
     public static void QueryCoupon(SessionGroup Parent, string Coupon, bool Use = false)
+    {
+        lock (CouponLock)
+        {
+            QueryCouponInternal(Parent, Coupon, Use);
+        }
+    }
+
+    private static void QueryCouponInternal(SessionGroup Parent, string Coupon, bool Use = false)
     {
         var CouponList = new List<Coupon>();
         if (File.Exists(FileName.Coupon))
@@ -50,9 +88,10 @@ public static class CouponList
             }
         }
         Coupon value = CouponList.FirstOrDefault(x => x.CouponNO == Coupon);
+        string replyName = Use ? "SpRpUseCoupon" : "SpRpQueryCoupon";
         if (value == null)
         {
-            using (OutPacket outPacket = new OutPacket("SpRpQueryCoupon"))
+            using (OutPacket outPacket = new OutPacket(replyName))
             {
                 outPacket.WriteInt(17); // 17-错误;19-已使用
                 outPacket.WriteByte(0);
@@ -62,9 +101,9 @@ public static class CouponList
                 Parent.Client.Send(outPacket);
             }
         }
-        else if (value.Count <= 0)
+        else if (value.Count <= 0 || value.IsRedeemedBy(Parent.Client.Nickname))
         {
-            using (OutPacket outPacket = new OutPacket("SpRpQueryCoupon"))
+            using (OutPacket outPacket = new OutPacket(replyName))
             {
                 outPacket.WriteInt(19); // 17-错误;19-已使用
                 outPacket.WriteByte(0);
@@ -78,6 +117,8 @@ public static class CouponList
         {
             if (Use)
             {
+                // 记录兑换昵称，防止同一玩家使用同一兑换码重复兑换
+                value.AddRedeemer(Parent.Client.Nickname);
                 // 扣减优惠券数量并发送成功响应
                 using (OutPacket outPacket = new OutPacket("SpRpUseCoupon"))
                 {
@@ -86,6 +127,7 @@ public static class CouponList
                 }
                 value.Count--;
                 File.WriteAllText(FileName.Coupon, JsonHelper.Serialize(CouponList));
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] 玩家 {Parent.Client.Nickname} 兑换了兑换码 {value.CouponNO}(stockId: {value.stockId})，剩余数量: {value.Count}");
                 Stock.GetStockItem(Parent, value.stockId);
                 return;
             }
