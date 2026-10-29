@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Launcher</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* 基础样式 */
+        body {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+            font-family: Arial, sans-serif;
+            line-height: 1.8;
+        }
+        /* 每个仓库的卡片样式 */
+        .repo-card {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .repo-title {
+            color: #24292e;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        /* 下载链接组：代理+原始 */
+        .link-group {
+            margin: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .download-link {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        /* 代理链接样式 */
+        .proxy-link {
+            background: #28a745;
+        }
+        .proxy-link:hover {
+            background: #218838;
+        }
+        /* 原始链接样式 */
+        .original-link {
+            background: #0366d6;
+        }
+        .original-link:hover {
+            background: #0250ac;
+        }
+        .loading {
+            color: #666;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 16px;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        /* 更新说明样式 */
+        .release-body {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .release-body p, 
+        .release-body ul, 
+        .release-body ol,
+        .release-body li {
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+        .release-body a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .release-body a:hover {
+            text-decoration: underline;
+        }
+        .release-body strong {
+            color: #24292e;
+        }
+    </style>
+    <!-- 引入Markdown解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <h1 style="text-align: center;">Launcher</h1>
+    <!-- 所有仓库的Release会渲染到这里 -->
+    <div id="repos-container">
+        <div class="loading">正在获取最新版本信息...</div>
+    </div>
+
+    <script>
+        // ************************* 配置项 *************************
+        // 1. 多仓库配置
+        const REPOS = [
+            { repo: "yanygm/Launcher_V2", name: "Launcher" },
+        ];
+        // 2. 代理地址配置（可替换为其他GH代理）
+        const PROXY_PREFIX = "https://v6.gh-proxy.org/";
+        // 3. GitHub API 基础地址
+        const API_BASE_URL = "https://api.github.com/repos/";
+        // **********************************************************
+
+        // 配置marked：保留换行+安全过滤
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: true
+        });
+
+        // 初始化：循环获取所有仓库的Release
+        async function init() {
+            const container = document.getElementById('repos-container');
+            container.innerHTML = ""; // 清空加载提示
+
+            // 遍历每个仓库，逐个获取并渲染
+            for (const repoConfig of REPOS) {
+                try {
+                    const release = await getRepoLatestRelease(repoConfig.repo);
+                    renderRepoCard(release, repoConfig, container);
+                } catch (error) {
+                    renderRepoError(repoConfig, error, container);
+                    console.error(`获取 ${repoConfig.name || repoConfig.repo} 失败：`, error);
+                }
+            }
+        }
+
+        // 获取单个仓库的最新Release
+        async function getRepoLatestRelease(repo) {
+            const response = await fetch(`${API_BASE_URL}${repo}/releases/latest`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}（可能无Release）`);
+            }
+            return await response.json();
+        }
+
+        // 渲染单个仓库的正常卡片（核心修改：代理+原始链接）
+        function renderRepoCard(release, repoConfig, container) {
+            // 处理下载链接（生成代理+原始）
+            let downloadLinks = '';
+            // 1. 处理附件链接
+            if (release.assets.length > 0) {
+                release.assets.forEach(asset => {
+                    const originalUrl = asset.browser_download_url;
+                    const proxyUrl = PROXY_PREFIX + originalUrl;
+                    downloadLinks += `
+                        <div class="link-group">
+                            <a href="${proxyUrl}" class="download-link proxy-link">
+                                📥 代理下载：${asset.name} (${formatFileSize(asset.size)})
+                            </a>
+                            <a href="${originalUrl}" class="download-link original-link">
+                                📥 原始下载：${asset.name} (${formatFileSize(asset.size)})
+                            </a>
+                        </div>
+                    `;
+                });
+            } 
+            // 2. 处理源码包链接（无附件时）
+            else {
+                // ZIP包
+                const zipOriginal = release.zipball_url;
+                const zipProxy = PROXY_PREFIX + zipOriginal;
+                // TAR.GZ包
+                const tarOriginal = release.tarball_url;
+                const tarProxy = PROXY_PREFIX + tarOriginal;
+
+                downloadLinks = `
+                    <div class="link-group">
+                        <a href="${zipProxy}" class="download-link proxy-link">📥 代理下载：源码包 (ZIP)</a>
+                        <a href="${zipOriginal}" class="download-link original-link">📥 原始下载：源码包 (ZIP)</a>
+                    </div>
+                    <div class="link-group">
+                        <a href="${tarProxy}" class="download-link proxy-link">📥 代理下载：源码包 (TAR.GZ)</a>
+                        <a href="${tarOriginal}" class="download-link original-link">📥 原始下载：源码包 (TAR.GZ)</a>
+                    </div>
+                `;
+            }
+
+            // 解析Markdown更新说明
+            const releaseBody = release.body 
+                ? marked.parse(release.body)
+                : '<p>无更新说明</p>';
+
+            // 仓库展示名称
+            const repoDisplayName = repoConfig.name || repoConfig.repo;
+
+            // 拼接卡片HTML
+            const cardHtml = `
+                <div class="repo-card">
+                    <h2 class="repo-title">${repoDisplayName}</h2>
+                    <p><strong>最新版本：</strong>${release.tag_name}</p>
+                    <p><strong>发布时间：</strong>${formatDate(release.published_at)}</p>
+                    <div><strong>更新说明：</strong></div>
+                    <div class="release-body">${releaseBody}</div>
+                    <div style="margin-top: 20px;">
+                        <strong>下载文件：</strong>
+                        ${downloadLinks}
+                    </div>
+                </div>
+            `;
+
+            // 添加到容器中
+            container.innerHTML += cardHtml;
+        }
+
+        // 渲染单个仓库的错误提示
+        function renderRepoError(repoConfig, error, container) {
+            const repoDisplayName = repoConfig.name || repoConfig.repo;
+            const errorHtml = `
+                <div class="repo-card">
+                    <h2 class="repo-title">${repoDisplayName}</h2>
+                    <div class="error">
+                        获取失败：${error.message}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += errorHtml;
+        }
+
+        // 辅助函数：格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        // 辅助函数：格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        // 页面加载完成后执行
+        window.onload = init;
+    </script>
+</body>
+</html>
