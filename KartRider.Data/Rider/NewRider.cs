@@ -1,0 +1,1015 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using KartRider.IO.Packet;
+using KartRider;
+using ExcData;
+using System.Linq;
+using Profile;
+
+namespace RiderData
+{
+    public static class NewRider
+    {
+        public static Dictionary<ushort, Dictionary<ushort, string>> items = new Dictionary<ushort, Dictionary<ushort, string>>();
+        private static readonly HashSet<ushort> excludedKeys = new HashSet<ushort>{ 3, 6, 10, 15, 19, 24, 25, 29, 33, 34, 35, 40, 41, 47, 48, 50, 51, 56, 57, 58, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
+        private static readonly HashSet<ushort> ValidItemCatIds = new HashSet<ushort> { 1, 2, 4, 8, 11, 12, 13, 14, 16, 18, 20, 21, 26, 27, 28, 31, 52, 61, 70, 71 };
+
+        public static void LoadItemData(SessionGroup Parent, string Nickname)
+        {
+            KartExcData.Tune_ExcData(Parent, Nickname);
+            KartExcData.Plant_ExcData(Parent, Nickname);
+            KartExcData.Level_ExcData(Parent, Nickname);
+            KartExcData.Parts_ExcData(Parent, Nickname);
+            KartExcData.Level12_ExcData(Parent, Nickname);
+            KartExcData.Parts12_ExcData(Parent, Nickname);
+            NewRider.XUniquePartsData(Parent, Nickname);
+            NewRider.XLegendPartsData(Parent, Nickname);
+            NewRider.XRarePartsData(Parent, Nickname);
+            NewRider.XNormalPartsData(Parent, Nickname);
+            NewRider.V1UniquePartsData(Parent, Nickname);
+            NewRider.V1LegendPartsData(Parent, Nickname);
+            NewRider.V1RarePartsData(Parent, Nickname);
+            NewRider.V1NormalPartsData(Parent, Nickname);
+            NewRider.partsEngine12(Parent, Nickname);
+            NewRider.partsHandle12(Parent, Nickname);
+            NewRider.partsWheel12(Parent, Nickname);
+            NewRider.partsBooster12(Parent, Nickname);
+            NewRider.Items(Parent, Nickname);
+            NewRider.NewKart1(Parent);
+            NewRider.NewKart2(Parent);
+            NewRider.NewItem(Parent);
+            NewRider.NewRiderData(Parent);//라이더 인식
+        }
+
+        public static void NewRiderData(SessionGroup Parent)
+        {
+            string Nickname = Parent.Client.Nickname;
+            var riderDataConfig = ProfileService.GetProfileConfig(Nickname);
+            if (riderDataConfig?.Rider == null)
+            {
+                Console.WriteLine("[NewRiderData] Warning: ProfileConfig or Rider is null for {0}", Nickname);
+                return;
+            }
+            using (OutPacket oPacket = new OutPacket("PrGetRider"))
+            {
+                oPacket.WriteByte(1);
+                oPacket.WriteByte(0);
+                oPacket.WriteString(Nickname);
+                oPacket.WriteShort(0);
+                oPacket.WriteShort(0);
+                oPacket.WriteShort(riderDataConfig.Rider.Emblem1);
+                oPacket.WriteShort(riderDataConfig.Rider.Emblem2);
+                oPacket.WriteShort(0);
+                GameSupport.GetRider(Nickname, oPacket);
+                oPacket.WriteString(riderDataConfig.Rider.Card);
+                oPacket.WriteUInt(riderDataConfig.Rider.Lucci);
+                oPacket.WriteUInt(riderDataConfig.Rider.RP);
+                oPacket.WriteBytes(new byte[94]);
+                oPacket.WriteUInt(0);
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void NewKart1(SessionGroup Parent)
+        {
+            ushort sn = 1;
+            int range = 100;//分批次数
+            if (items.TryGetValue(3, out Dictionary<ushort, string> resultDict))
+            {
+                List<ushort> kart = new List<ushort>(resultDict.Keys);
+                int times = kart.Count / range + (kart.Count % range > 0 ? 1 : 0);
+                for (int i = 0; i < times; i++)
+                {
+                    var tempList = kart.GetRange(i * range, (i + 1) * range > kart.Count ? (kart.Count - i * range) : range);
+                    int Count = tempList.Count;
+                    using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                    {
+                        outPacket.WriteByte(1);
+                        outPacket.WriteInt(Count);
+                        foreach (var Kart in tempList)
+                        {
+                            outPacket.WriteShort(3);
+                            outPacket.WriteUShort(Kart);
+                            outPacket.WriteUShort(sn);
+                            outPacket.WriteUShort(1);//数量
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(-1);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(0);
+                            outPacket.WriteShort(0);
+                        }
+                        Parent.Client.Send(outPacket);
+                    }
+                }
+            }
+        }
+
+        public static void NewKart2(SessionGroup Parent)
+        {
+            string Nickname = Parent.Client.Nickname;
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var filename = FileName.FileNames[Nickname];
+            var newkart = new List<NewKart>();
+            if (File.Exists(filename.NewKart_LoadFile))
+            {
+                newkart = JsonHelper.DeserializeNoBom<List<NewKart>>(filename.NewKart_LoadFile) ?? new List<NewKart>();
+            }
+
+            int range = 100;//分批次数
+            int times = newkart.Count / range + (newkart.Count % range > 0 ? 1 : 0);
+            for (int i = 0; i < times; i++)
+            {
+                var tempList = newkart.GetRange(i * range, (i + 1) * range > newkart.Count ? (newkart.Count - i * range) : range);
+                int Count = tempList.Count;
+                using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
+                {
+                    outPacket.WriteByte(1);
+                    outPacket.WriteInt(Count);
+                    foreach (var Kart in tempList)
+                    {
+                        outPacket.WriteShort(3);
+                        outPacket.WriteUShort(Kart.KartID);
+                        outPacket.WriteUShort(Kart.KartSN);
+                        outPacket.WriteUShort(1);//数量
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(-1);
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(0);
+                        outPacket.WriteShort(0);
+                    }
+                    Parent.Client.Send(outPacket);
+                }
+            }
+        }
+
+        public static void NewItem(SessionGroup Parent)
+        {
+            string Nickname = Parent.Client.Nickname;
+            if (!FileName.FileNames.ContainsKey(Nickname))
+            {
+                FileName.Load(Nickname);
+            }
+            var newitem = Stock.DelExpiredNewItem(Nickname);//加载并清除已到期的道具
+
+            int range = 100;//分批次数
+            int times = newitem.Count / range + (newitem.Count % range > 0 ? 1 : 0);
+            for (int i = 0; i < times; i++)
+            {
+                var tempList = newitem.GetRange(i * range, (i + 1) * range > newitem.Count ? (newitem.Count - i * range) : range);
+                int Count = tempList.Count;
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    oPacket.WriteInt(times);
+                    oPacket.WriteInt(i + 1);
+                    oPacket.WriteInt(Count);
+                    foreach (var item in tempList)
+                    {
+                        oPacket.WriteUShort(item.itemCatId);
+                        oPacket.WriteUShort(item.itemId);
+                        oPacket.WriteUShort(item.itemSn);
+                        oPacket.WriteUShort(item.itemCount);
+                        oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                        oPacket.WriteByte(0);
+                        oPacket.WriteTime(item.endTime);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(0);
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+
+        public static void Items(SessionGroup Parent, string Nickname)
+        {
+            foreach (var category in items)
+            {
+                ushort itemCatId = category.Key;
+                if (!excludedKeys.Contains(itemCatId))
+                {
+                    List<List<ushort>> items = new List<List<ushort>>();
+                    foreach (var item in category.Value)
+                    {
+                        ushort sn = 0;
+                        ushort num = ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0;
+                        ushort id = item.Key;
+                        if (ValidItemCatIds.Contains(itemCatId))
+                        {
+                            num = 1;
+                        }
+                        if (itemCatId == 7)
+                        {
+                            if (id == 3 || id == 4)
+                            {
+                                List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, 1 };
+                                items.Add(add);
+                            }
+                            else
+                            {
+                                List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, num };
+                                items.Add(add);
+                            }
+                        }
+                        else if (itemCatId == 23)
+                        {
+                            if (id == 1)
+                            {
+                                List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, num };
+                                items.Add(add);
+                            }
+                            else if (id == 3 || id == 89 || id == 97 || id == 98 || id == 99 || id == 100 || id == 106)
+                            {
+                                List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, 1 };
+                                items.Add(add);
+                            }
+                        }
+                        else if (itemCatId == 28)
+                        {
+                            if (id != 50 && id != 37)
+                            {
+                                List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, num };
+                                items.Add(add);
+                            }
+                        }
+                        else
+                        {
+                            List<ushort> add = new List<ushort> { (ushort)id, (ushort)sn, num };
+                            items.Add(add);
+                        }
+                    }
+                    LoRpGetRiderItemPacket(Parent, itemCatId, items);
+                }
+            }
+        }
+
+        public static void partsEngine12(SessionGroup Parent, string Nickname)
+        {
+            if (items.TryGetValue(72, out Dictionary<ushort, string> resultDict))
+            {
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    int count = resultDict.Count;
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(count);
+                    foreach (var kvp in resultDict)
+                    {
+                        short id = (short)kvp.Key;
+                        oPacket.WriteShort(72);
+                        oPacket.WriteShort(id);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteByte(1);
+                        if (id < 11)
+                        {
+                            oPacket.WriteByte(4);
+                        }
+                        else if (id < 21)
+                        {
+                            oPacket.WriteByte(3);
+                        }
+                        else if (id < 31)
+                        {
+                            oPacket.WriteByte(2);
+                        }
+                        else if (id < 41)
+                        {
+                            oPacket.WriteByte(1);
+                        }
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+
+        public static void partsHandle12(SessionGroup Parent, string Nickname)
+        {
+            if (items.TryGetValue(73, out Dictionary<ushort, string> resultDict))
+            {
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    int count = resultDict.Count;
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(count);
+                    foreach (var kvp in resultDict)
+                    {
+                        short id = (short)kvp.Key;
+                        oPacket.WriteShort(73);
+                        oPacket.WriteShort(id);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteByte(1);
+                        if (id < 11)
+                        {
+                            oPacket.WriteByte(4);
+                        }
+                        else if (id < 21)
+                        {
+                            oPacket.WriteByte(3);
+                        }
+                        else if (id < 31)
+                        {
+                            oPacket.WriteByte(2);
+                        }
+                        else if (id < 41)
+                        {
+                            oPacket.WriteByte(1);
+                        }
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+
+        public static void partsWheel12(SessionGroup Parent, string Nickname)
+        {
+            if (items.TryGetValue(74, out Dictionary<ushort, string> resultDict))
+            {
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    int count = resultDict.Count;
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(count);
+                    foreach (var kvp in resultDict)
+                    {
+                        short id = (short)kvp.Key;
+                        oPacket.WriteShort(74);
+                        oPacket.WriteShort(id);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteByte(1);
+                        if (id < 11)
+                        {
+                            oPacket.WriteByte(4);
+                        }
+                        else if (id < 21)
+                        {
+                            oPacket.WriteByte(3);
+                        }
+                        else if (id < 31)
+                        {
+                            oPacket.WriteByte(2);
+                        }
+                        else if (id < 41)
+                        {
+                            oPacket.WriteByte(1);
+                        }
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+
+        public static void partsBooster12(SessionGroup Parent, string Nickname)
+        {
+            if (items.TryGetValue(75, out Dictionary<ushort, string> resultDict))
+            {
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    int count = resultDict.Count;
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(1);
+                    oPacket.WriteInt(count);
+                    foreach (var kvp in resultDict)
+                    {
+                        short id = (short)kvp.Key;
+                        oPacket.WriteShort(75);
+                        oPacket.WriteShort(id);
+                        oPacket.WriteShort(0);
+                        oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteByte(1);
+                        if (id < 11)
+                        {
+                            oPacket.WriteByte(4);
+                        }
+                        else if (id < 21)
+                        {
+                            oPacket.WriteByte(3);
+                        }
+                        else if (id < 31)
+                        {
+                            oPacket.WriteByte(2);
+                        }
+                        else if (id < 41)
+                        {
+                            oPacket.WriteByte(1);
+                        }
+                        oPacket.WriteShort(V2Specs.Get12Parts(id));
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+
+        public static void XUniquePartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 1;
+                //-----------------------------------------------------------------X 유니크 파츠
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void XLegendPartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 2;
+                //-----------------------------------------------------------------X 레전드 파츠
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void XRarePartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 3;
+                //-----------------------------------------------------------------X 레어 파츠
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void XNormalPartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 4;
+                //-----------------------------------------------------------------X 일반 파츠
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(1);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------V1 파츠 관련
+        public static void V1UniquePartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 1;
+                //-----------------------------------------------------------------V1 유니크 파츠
+                for (short i = 1153; i <= 1180; i += 3)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1153; i <= 1180; i += 3)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1053; i <= 1080; i += 3)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void V1LegendPartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 2;
+                //-----------------------------------------------------------------V1 레전드 파츠
+                for (short i = 1105; i <= 1150; i += 5)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1105; i <= 1150; i += 5)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1005; i <= 1050; i += 5)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void V1RarePartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 3;
+                //-----------------------------------------------------------------V1 레어 파츠
+                for (short i = 1010; i <= 1100; i += 10)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 1010; i <= 1100; i += 10)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void V1NormalPartsData(SessionGroup Parent, string Nickname)
+        {
+            using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+            {
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(1);
+                oPacket.WriteInt(40);
+                byte Grade = 4;
+                //-----------------------------------------------------------------V1 일반 파츠
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(63);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(64);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 910; i <= 1000; i += 10)
+                {
+                    oPacket.WriteShort(65);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                for (short i = 810; i <= 900; i += 10)
+                {
+                    oPacket.WriteShort(66);
+                    oPacket.WriteShort(2);
+                    oPacket.WriteShort(0);
+                    oPacket.WriteUShort(ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteByte(0);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteShort(-1);
+                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(Grade);
+                    oPacket.WriteShort(i);
+                }
+                Parent.Client.Send(oPacket);
+            }
+        }
+
+        public static void LoRpGetRiderItemPacket(SessionGroup Parent, ushort itemCat, List<List<ushort>> item)
+        {
+            int range = 100;//分批次数
+            int times = item.Count / range + (item.Count % range > 0 ? 1 : 0);
+            for (int i = 0; i < times; i++)
+            {
+                var tempList = item.GetRange(i * range, (i + 1) * range > item.Count ? (item.Count - i * range) : range);
+                using (OutPacket oPacket = new OutPacket("LoRpGetRiderItemPacket"))
+                {
+                    oPacket.WriteInt(times);
+                    oPacket.WriteInt(i + 1);
+                    oPacket.WriteInt(tempList.Count);
+                    for (int f = 0; f < tempList.Count; f++)
+                    {
+                        oPacket.WriteUShort(itemCat);
+                        oPacket.WriteUShort(tempList[f][0]);
+                        oPacket.WriteUShort(tempList[f][1]);
+                        oPacket.WriteUShort(tempList[f][2]);
+                        oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                        oPacket.WriteByte(0);
+                        oPacket.WriteShort(-1);
+                        oPacket.WriteShort(0);
+                        bool cosmetic = V1CosmeticParts.IsCosmetic(itemCat);
+                        short cosmeticId = (short)tempList[f][0];
+                        oPacket.WriteByte((byte)(cosmetic ? 1 : 0));
+                        oPacket.WriteByte(cosmetic ? V1CosmeticParts.GetGrade(cosmeticId) : (byte)0);
+                        oPacket.WriteShort(cosmetic ? V1CosmeticParts.GetValue((short)itemCat, cosmeticId) : (short)0);
+                    }
+                    Parent.Client.Send(oPacket);
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,166 @@
+name: Feature request
+description: Suggest an idea for this project / 为项目提出功能建议
+labels: ["enhancement"]
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您对本项目的关注和支持！
+        请详细描述您希望添加的功能，这将帮助开发者更好地理解需求并评估实现可行性。
+        虽然您的意见或请求最后有可能未被采纳或实现，但我们仍致以十分的感谢。
+        
+        ---
+        
+        提交前请确认：
+        - 已在 [Issues 列表](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) 中搜索过类似建议
+        - 该功能不属于 [Feature](https://themagicflute.github.io/Launcher_V2/feature/) 中已有内容
+        - 该功能确实为多数用户所需，而非个人特定需求
+        
+        ---
+        
+        Thank you for your interest and support!
+        Please describe in detail the feature you'd like to see added, which will help developers better understand the requirement and evaluate its feasibility.
+        Thanks a lot even if your opinions or requests may not be accepted or implemented in the end.
+        
+        Before submitting, please confirm:
+        - You have searched the [Issues list](https://github.com/yanygm/Launcher_V2/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) for similar suggestions
+        - This feature is not already covered in the [Feature](https://themagicflute.github.io/Launcher_V2/feature/)
+        - This feature is needed by most users, not just a personal specific need
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "问题描述 / Problem description:"
+      description: |
+        请清晰描述当前存在的问题或不便之处。
+        说明当前缺少该功能时，用户需要如何操作或面临什么困难。
+        
+        ---
+        
+        Please clearly describe the problem or inconvenience.
+        Explain what users need to do or what difficulties they face without this feature.
+      placeholder: |
+        例如：每次启动游戏都需要手动调整分辨率，这很繁琐...
+        Example: Need to manually adjust resolution every time launching the game, which is tedious...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "建议的解决方案 / Proposed solution:"
+      description: |
+        描述你希望如何实现这个功能。
+        尽可能详细，包括界面设计、操作流程等。
+        
+        ---
+        
+        Describe how you would like this feature to be implemented.
+        Be as detailed as possible, including UI design, workflow, etc.
+      placeholder: |
+        例如：在设置中添加"记住分辨率"选项，启动器自动保存上一次使用的分辨率...
+        Example: Add a "Remember resolution" option in settings, the launcher automatically saves the last used resolution...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "备选方案 / Alternatives considered:"
+      description: |
+        描述你考虑过的其他解决方案及其优缺点。
+        或者说明为什么当前的工作流程不够好。
+        
+        ---
+        
+        Describe any alternative solutions you've considered and their pros/cons.
+        Or explain why the current workflow is not sufficient.
+      placeholder: |
+        例如：可以考虑添加预设分辨率列表，但自动记忆方案更简洁...
+        Example: Could add a preset resolution list, but the auto-remember solution is simpler...
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: "预期收益 / Expected benefits:"
+      description: |
+        这个功能将带来什么好处？
+        谁会从中受益？受益程度如何？
+        
+        ---
+        
+        What benefits will this feature bring?
+        Who will benefit from it? How significant are the benefits?
+      placeholder: |
+        例如：节省用户时间，提升使用体验，减少重复操作...
+        Example: Save users' time, improve user experience, reduce repetitive operations...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: "使用场景 / Use cases:"
+      description: |
+        描述这个功能的具体使用场景。
+        在什么情况下用户会使用这个功能？
+        
+        ---
+        
+        Describe specific use cases for this feature.
+        In what situations would users use this feature?
+      placeholder: |
+        例如：用户在更换显示器后，希望快速恢复之前的分辨率设置...
+        Example: When users change monitors, they want to quickly restore previous resolution settings...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "优先级建议 / Priority suggestion:"
+      description: |
+        你认为这个功能的重要程度如何？
+        （开发者会综合评估，此选项仅作为参考）
+        
+        ---
+        
+        How important do you think this feature is?
+        (Developers will evaluate comprehensively, this option is for reference only)
+      multiple: false
+      options:
+        - "P0 (核心功能，对大多数用户至关重要)"
+        - "P1 (重要功能，能显著提升体验)"
+        - "P2 (有用功能，但不是必需的)"
+        - "P3 (锦上添花，有更好)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "附加信息 / Additional context:"
+      description: |
+        添加任何其他有助于理解需求的上下文信息。
+        可以包括截图、示意图、相关链接等。
+        
+        ---
+        
+        Add any other context or information that might help understand the requirement.
+        Can include screenshots, diagrams, related links, etc.
+      placeholder: |
+        例如：附上其他软件类似功能的截图作为参考...
+        Example: Attach screenshots of similar features in other software as reference...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "检查单 / Checklist:"
+      description: |
+        请确认以下事项后提交。
+        Please confirm the following before submitting.
+      options:
+        - label: "我已搜索过现有 Issues，确认没有重复建议"
+          required: true
+        - label: "我已详细描述问题、解决方案和预期收益"
+          required: true
+        - label: "我愿意在需要时提供更多信息或协助测试"

@@ -1,0 +1,134 @@
+name: Documentation issue
+description: Report an issue with documentation or suggest documentation improvements / 报告文档问题或建议文档改进
+labels: ["documentation"]
+title: "[Docs]: "
+assignees: ["TheMagicFlute"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您帮助我们改进文档！
+        无论是拼写错误、信息过时、内容缺失还是难以理解，都欢迎反馈。
+        
+        ---
+        
+        Thank you for helping us improve the documentation!
+        Whether it's typos, outdated information, missing content, or unclear explanations, all feedback is welcome.
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: "问题类型 / Issue type:"
+      description: |
+        选择最符合的文档问题类型。
+        Select the most appropriate documentation issue type.
+      multiple: true
+      options:
+        - "拼写/语法错误 / Spelling/grammar error"
+        - "信息过时 / Outdated information"
+        - "内容缺失 / Missing content"
+        - "描述不清 / Unclear description"
+        - "翻译问题 / Translation issue"
+        - "格式问题 / Formatting issue"
+        - "链接失效 / Broken link"
+        - "其他 / Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: page-url
+    attributes:
+      label: "文档页面链接 / Documentation page URL:"
+      description: |
+        请提供有问题的文档页面链接。
+        如果是离线/源码文档，请说明在具体位置。
+        
+        ---
+        
+        Please provide the URL of the problematic documentation page.
+        If it's offline/source documentation, specify the location.
+      placeholder: |
+        例如：https://themagicflute.github.io/Launcher_V2/FAQ/
+        Example: https://themagicflute.github.io/Launcher_V2/FAQ/
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "问题描述 / Issue description:"
+      description: |
+        详细描述文档中存在的问题。
+        如果是错误，请说明正确的信息应该是什么。
+        如果是缺失内容，请说明需要添加什么。
+        
+        ---
+        
+        Describe the issue in the documentation in detail.
+        If it's an error, explain what the correct information should be.
+        If it's missing content, explain what needs to be added.
+      placeholder: |
+        例如：第3步的说明与截图不符，应该改为...
+        Example: Step 3 description doesn't match the screenshot, it should be changed to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: "建议修改 / Suggested fix (可选/optional):"
+      description: |
+        如果你知道如何修复，请提供具体的修改建议。
+        这可以大大提高处理效率！
+        
+        ---
+        
+        If you know how to fix it, please provide specific suggestions.
+        This can greatly improve processing efficiency!
+      placeholder: |
+        建议将"..."修改为"..."，因为...
+        Suggest changing "..." to "..." because...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "附加信息 / Additional context:"
+      description: |
+        添加任何有助于理解问题的其他信息。
+        
+        ---
+        
+        Add any other information that might help understand the issue.
+      placeholder: |
+        例如：附上显示问题的截图...
+        Example: Attach a screenshot showing the issue...
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "严重程度 / Severity:"
+      description: |
+        你认为这个文档问题的严重程度如何？
+        How severe do you think this documentation issue is?
+      multiple: false
+      options:
+        - "关键：导致用户无法正常使用 / Critical: Prevents users from using normally"
+        - "重要：可能造成误解或错误操作 / Important: May cause misunderstandings or wrong operations"
+        - "一般：有影响但不严重 / Moderate: Has impact but not severe"
+        - "轻微：拼写错误等小问题 / Minor: Spelling errors and other small issues"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "检查单 / Checklist:"
+      description: |
+        请确认以下事项后提交。
+        Please confirm the following before submitting.
+      options:
+        - label: "我已提供准确的文档页面链接 / I have provided an accurate documentation page URL"
+          required: true
+        - label: "我已清晰描述问题所在 / I have clearly described the issue"
+          required: true
+        - label: "我愿意在需要时协助验证修复 / I am willing to assist with verifying fixes when needed"
