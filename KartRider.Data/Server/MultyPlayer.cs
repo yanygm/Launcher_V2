@@ -2190,15 +2190,6 @@ public static class MultyPlayer
     const int CountdownWindowMs = 10000;
 
     /// <summary>
-    /// 结算定时器比客户端读秒提前的毫秒数。
-    ///
-    /// 客户端读到 0 之后会停在赛道画面里等结算包，这时它的最后一秒音效会每帧重放
-    /// （就是「读秒声音频率巨高」），而画面又不动（就是「读完秒也不结算」）。
-    /// 提前 0.8 秒结算，客户端还没读到 0，音效和画面都不会卡在那一帧。
-    /// </summary>
-    const int SettleLeadMs = 800;
-
-    /// <summary>
     /// 开始读秒：广播 state=3（带剩余秒数 + 结束时刻），并挂上结算定时器。
     /// 房间已经进入读秒/已结算时直接返回，保证一局只读一次秒。
     /// </summary>
@@ -2219,7 +2210,7 @@ public static class MultyPlayer
             BroadCast(room.RoomId, oPacket);
         }
 
-        int delay = Math.Max(500, windowMs - SettleLeadMs);
+        int delay = Math.Max(500, windowMs);
         Set_settleTrigger(room, delay);
         Console.WriteLine("[开始读秒] {0}：客户端显示 {1} 秒，{2} 毫秒后结算", reason, (windowMs + 999) / 1000, delay);
     }
