@@ -47,15 +47,6 @@ namespace KartLibrary.File.Lpk
     {
         private readonly LpkFolderInfo _root = new LpkFolderInfo { FolderName = "", FullName = "" };
         private readonly List<string> _allPaths = new List<string>();
-        private readonly int[] _digits;
-        private readonly byte[] _nonce;
-
-        public LpkFolderManager()
-        {
-            var p = LpkV4.Parameters(LpkV4.DEFAULT_MIXING);
-            _digits = p.digits;
-            _nonce = p.nonce;
-        }
 
         /// <summary>
         /// 打开一个 .lpk 文件，或一个包含 .lpk 文件的目录（自动扫描目录下所有 .lpk）。
@@ -88,16 +79,21 @@ namespace KartLibrary.File.Lpk
 
             foreach (string lpk in lpkFiles)
             {
+                // mixing 是整包根密钥，官方包把它以 head + mid 的形式存在包内；
+                // 每个分包单独反推，才能同时打开不同 mixing 的包。
+                string mixing = LpkV4.ReadMixing(lpk);
+                var (digits, nonce) = LpkV4.Parameters(mixing);
+
                 using var fs = new FileStream(lpk, FileMode.Open, FileAccess.Read, FileShare.Read);
-                LpkIndex index = LpkV4.Decode(fs, Path.GetFileName(lpk), LpkV4.DEFAULT_MIXING);
+                LpkIndex index = LpkV4.Decode(fs, Path.GetFileName(lpk), mixing);
                 foreach (var rec in index.Records)
                 {
-                    AddFile(rec.Path, lpk, rec, index.DataBegin);
+                    AddFile(rec.Path, lpk, rec, index.DataBegin, digits, nonce);
                 }
             }
         }
 
-        private void AddFile(string path, string lpkPath, LpkRecord rec, long dataBegin)
+        private void AddFile(string path, string lpkPath, LpkRecord rec, long dataBegin, int[] digits, byte[] nonce)
         {
             path = Normalize(path);
             string[] parts = path.Split('/');
@@ -130,7 +126,7 @@ namespace KartLibrary.File.Lpk
                 using var fs = new FileStream(lp, FileMode.Open, FileAccess.Read, FileShare.Read);
                 try
                 {
-                    return LpkV4.Extract(fs, r, db, _digits, _nonce);
+                    return LpkV4.Extract(fs, r, db, digits, nonce);
                 }
                 catch (LpkException)
                 {

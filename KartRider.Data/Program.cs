@@ -84,94 +84,101 @@ namespace KartRider
                 Update.CleanupOldVersion();
             }
 
-            ProfileService.LoadSettings();
-            // 检查更新：AutoUpdate 开启时静默更新，关闭时弹窗提示
-            await Update.UpdateDataAsync(ProfileService.SettingConfig.AutoUpdate);
-            string TCGame = "HKEY_CURRENT_USER\\Software\\TCGame\\kart";
-            string RootDirectory = (string)Registry.GetValue(TCGame, "gamepath", null);
-            if (File.Exists(FileName.pinFile) && File.Exists(FileName.KartRider))
+            if (args != null && args.Length > 0 && !isUpdatedRestart)
             {
-                RootDirectory = FileName.appDir;
-            }
-            else if (!string.IsNullOrEmpty(RootDirectory) &&
-                File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) &&
-                File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")) &&
-                File.Exists(Path.Combine(RootDirectory, @"Patcher.ex0")))
-            {
-                RootDirectory = Path.GetFullPath(RootDirectory);
+                RhoPacker.PackTool(args);
             }
             else
             {
-                LauncherSystem.MessageBoxType3(RootDirectory);
-                return;
-            }
-            if (!File.Exists(Path.Combine(RootDirectory, @"Patcher.exe")) && File.Exists(Path.Combine(RootDirectory, @"Patcher.ex0")))
-            {
-                File.Copy(Path.Combine(RootDirectory, @"Patcher.ex0"), Path.Combine(RootDirectory, @"Patcher.exe"));
-            }
-            string KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
-            string pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
-            string pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
-            if (!string.IsNullOrEmpty(RootDirectory))
-            {
-                if (File.Exists(pinFileBak))
+                ProfileService.LoadSettings();
+                // 检查更新：AutoUpdate 开启时静默更新，关闭时弹窗提示
+                await Update.UpdateDataAsync(ProfileService.SettingConfig.AutoUpdate);
+                string TCGame = "HKEY_CURRENT_USER\\Software\\TCGame\\kart";
+                string RootDirectory = (string)Registry.GetValue(TCGame, "gamepath", null);
+                if (File.Exists(FileName.pinFile) && File.Exists(FileName.KartRider))
                 {
-                    File.Delete(pinFile);
-                    File.Move(pinFileBak, pinFile);
+                    RootDirectory = FileName.appDir;
                 }
-
-                Load_Data();
-
-                if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
+                else if (!string.IsNullOrEmpty(RootDirectory) &&
+                    File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) &&
+                    File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")) &&
+                    File.Exists(Path.Combine(RootDirectory, @"Patcher.ex0")))
                 {
-                    // IPv6 远程服务器模式：仅启动端口转发（客户端 → IPv6 服务器）
-                    // 不启动 RouterListener，避免端口冲突（SocketError 10048）
-                    TinyMapper.ClientStart();
+                    RootDirectory = Path.GetFullPath(RootDirectory);
                 }
                 else
                 {
-                    try
-                    {
-                        RouterListener.Start();
-                    }
-                    catch (System.Net.Sockets.SocketException)
-                    {
-                        LauncherSystem.MessageBoxType2();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"启动路由器监听失败: {ex.Message}");
-                    }
+                    LauncherSystem.MessageBoxType3(RootDirectory);
+                    return;
                 }
-
-                PatchManager.StartUpdateAsync(RootDirectory).Wait();
-
-                PINFile val = new PINFile(pinFile);
-                ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
-                ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
-                ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
-                ProfileService.SaveSettings();
-
-                if (!ProfileService.SettingConfig.Console)
+                if (!File.Exists(Path.Combine(RootDirectory, @"Patcher.exe")) && File.Exists(Path.Combine(RootDirectory, @"Patcher.ex0")))
                 {
-                    ShowWindow(consoleHandle, SW_HIDE);
-                    isVisible = false;
+                    File.Copy(Path.Combine(RootDirectory, @"Patcher.ex0"), Path.Combine(RootDirectory, @"Patcher.exe"));
                 }
-                if (ProfileService.SettingConfig.EnableMod)
+                string KartRider = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.exe"));
+                string pinFile = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider.pin"));
+                string pinFileBak = Path.GetFullPath(Path.Combine(RootDirectory, @"KartRider-bak.pin"));
+                if (!string.IsNullOrEmpty(RootDirectory))
                 {
-                    // 初始化ModManager
-                    ModManager.Initialize(FileName.appDir);
-                }
+                    if (File.Exists(pinFileBak))
+                    {
+                        File.Delete(pinFile);
+                        File.Move(pinFileBak, pinFile);
+                    }
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Launcher StartLauncher = new Launcher();
-                Program.LauncherDlg = StartLauncher;
-                Program.LauncherDlg.kartRiderDirectory = RootDirectory;
-                Launcher.KartRider = KartRider;
-                Launcher.pinFile = pinFile;
-                Launcher.pinFileBak = pinFileBak;
-                Application.Run(StartLauncher);
+                    Load_Data();
+
+                    if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
+                    {
+                        // IPv6 远程服务器模式：仅启动端口转发（客户端 → IPv6 服务器）
+                        // 不启动 RouterListener，避免端口冲突（SocketError 10048）
+                        TinyMapper.ClientStart();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            RouterListener.Start();
+                        }
+                        catch (System.Net.Sockets.SocketException)
+                        {
+                            LauncherSystem.MessageBoxType2();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"启动路由器监听失败: {ex.Message}");
+                        }
+                    }
+
+                    PatchManager.StartUpdateAsync(RootDirectory).Wait();
+
+                    PINFile val = new PINFile(pinFile);
+                    ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
+                    ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
+                    ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
+                    ProfileService.SaveSettings();
+
+                    if (!ProfileService.SettingConfig.Console)
+                    {
+                        ShowWindow(consoleHandle, SW_HIDE);
+                        isVisible = false;
+                    }
+                    if (ProfileService.SettingConfig.EnableMod)
+                    {
+                        // 初始化ModManager
+                        ModManager.Initialize(FileName.appDir);
+                    }
+
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+                    Launcher StartLauncher = new Launcher();
+                    Program.LauncherDlg = StartLauncher;
+                    Program.LauncherDlg.kartRiderDirectory = RootDirectory;
+                    Launcher.KartRider = KartRider;
+                    Launcher.pinFile = pinFile;
+                    Launcher.pinFileBak = pinFileBak;
+                    Application.Run(StartLauncher);
+                }
             }
         }
 
