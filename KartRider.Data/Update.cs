@@ -19,7 +19,7 @@ namespace KartRider
     class Update
     {
         public static string owner = "yanygm";
-        public static string repo = "Launcher_P3563";
+        public static string repo = "Launcher_V2";
         static string name;
         static string filePath;
 
