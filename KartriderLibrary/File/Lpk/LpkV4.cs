@@ -701,11 +701,20 @@ namespace KartLibrary.File.Lpk
                     }
                     else
                     {
-                        // 原生打包器（以及客户端）对所有重编码文件一律使用 zlib：即便压缩后更大也照写，
-                        // 与官方包/参考工具的 flags=7 保持一致，避免客户端走 flags=6 分支。
-                        flags = 7;
+                        // 官方打包器的策略：压缩确实变小才写 flags=7（zlib），否则写 flags=6 直接存储。
+                        // 若压缩无收益仍写 flags=7，会出现 csize > dsize，客户端按压缩路径读取时崩溃
+                        // （已实测：kart_/slrProXUN/shadow.png 4834 -> 4845）。
                         byte[] compressed = ZlibDeflate(data);
-                        stored = compressed.Length <= 1024 ? PadTo64(compressed) : compressed;
+                        if (compressed.Length < data.Length)
+                        {
+                            flags = 7;
+                            stored = compressed.Length <= 1024 ? PadTo64(compressed) : compressed;
+                        }
+                        else
+                        {
+                            flags = 6;
+                            stored = data.Length <= 1024 ? PadTo64(data) : data;
+                        }
                     }
 
                     var record = new LpkRecord
