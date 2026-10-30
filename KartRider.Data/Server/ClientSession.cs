@@ -399,7 +399,7 @@ namespace KartRider
                     {
                         // 只回“道具列表”（Items）。v103 回全量、v108 回部件表+PrGetRider 都会明显变慢，
                         // 且对 V1 车膜“已装备”判定无效，已回滚。
-                        NewRider.Items(this.Parent, this.Parent.Client.Nickname);
+                        // NewRider.Items(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
                     else if (packetName == "LoRqSetRiderItemOnPacket")

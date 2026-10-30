@@ -447,8 +447,33 @@ namespace KartRider
                             if (fullName == $"zeta_/{regionCode}/shop/data/item.kml")
                             {
                                 Log.Debug(fullName);
-                                ClientItemRules.Load(packFileInfo.GetData());
+                                byte[] data = packFileInfo.GetData();
+                                ClientItemRules.Load(data);
                                 ClientItemRules.LogSummary();
+                                using (MemoryStream stream = new MemoryStream(data))
+                                {
+                                    XmlDocument doc = new XmlDocument();
+                                    doc.Load(stream);
+                                    XmlNodeList bodyParams = doc.GetElementsByTagName("item");
+                                    if (bodyParams.Count > 0)
+                                    {
+                                        foreach (XmlNode xn in bodyParams)
+                                        {
+                                            XmlElement xe = (XmlElement)xn;
+                                            ushort itemCatId = ushort.Parse(xe.GetAttribute("itemCatId"));
+                                            ushort itemId = ushort.Parse(xe.GetAttribute("itemId"));
+                                            string itemName = xe.GetAttribute("itemName");
+                                            if (!NewRider.items.ContainsKey(itemCatId))
+                                            {
+                                                NewRider.items[itemCatId] = new Dictionary<ushort, string>();
+                                            }
+                                            if (!NewRider.items[itemCatId].ContainsKey(itemId))
+                                            {
+                                                NewRider.items[itemCatId][itemId] = itemName;
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             if (fullName == "item/slot/transformByKart.xml")
                             {
@@ -730,32 +755,6 @@ namespace KartRider
                                         if (!Stock.StockList.ContainsKey(stockId))
                                         {
                                             Stock.StockList[stockId] = itemList;
-                                        }
-                                    }
-                                }
-                            }
-                            if (fullName == $"zeta_/{regionCode}/shop/data/item.kml")
-                            {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
-                                {
-                                    XmlDocument doc = new XmlDocument();
-                                    doc.Load(stream);
-                                    XmlNodeList bodyParams = doc.GetElementsByTagName("item");
-                                    if (bodyParams.Count > 0)
-                                    {
-                                        foreach (XmlNode xn in bodyParams)
-                                        {
-                                            XmlElement xe = (XmlElement)xn;
-                                            ushort itemCatId = ushort.Parse(xe.GetAttribute("itemCatId"));
-                                            ushort itemId = ushort.Parse(xe.GetAttribute("itemId"));
-                                            string itemName = xe.GetAttribute("itemName");
-                                            if (!NewRider.items.ContainsKey(itemCatId))
-                                            {
-                                                NewRider.items[itemCatId] = new Dictionary<ushort, string>();
-                                            }
-                                            NewRider.items[itemCatId][itemId] = itemName;
                                         }
                                     }
                                 }
