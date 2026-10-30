@@ -58,7 +58,7 @@ namespace KartRider
                                 if (!(FlyingPet.flyingSpec.ContainsKey(name)))
                                 {
                                     byte[] data = packFileInfo.GetData();
-                                    using (MemoryStream stream = new MemoryStream(data))
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                     {
                                         XmlDocument flying = new XmlDocument();
                                         flying.Load(stream);
@@ -66,48 +66,43 @@ namespace KartRider
                                     }
                                 }
                             }
-                            if (fullName == $"track/common/randomTrack@{regionCode}.xml" ||
-                                fullName == $"track_/common/randomTrack@{regionCode}.xml"
-                                )
+                            if (IsTrackDataFile(fullName, "randomTrack@"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     RandomTrack.randomTrack = XDocument.Load(stream);
                                 }
                             }
-                            if (fullName == $"track/common/track@zz.xml" ||
-                                fullName == $"track_/common/track@zz.xml"
-                                )
+                            // 不再死写 track/ 与 zz：补丁包可能是 track_/ 或其它区服后缀，只要文件名对得上就读取
+                            if (IsTrackDataFile(fullName, "track@"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
-                                    XmlDocument trackLocale = new XmlDocument();
-                                    trackLocale.Load(stream);
-                                    ProcessTrackList(trackLocale);
+                                    XmlDocument trackDocument = new XmlDocument();
+                                    trackDocument.Load(stream);
+                                    ProcessTrackList(trackDocument, fullName);
                                 }
                             }
-                            if (fullName == $"track/common/trackLocale@{regionCode}.xml" ||
-                                fullName == $"track_/common/trackLocale@{regionCode}.xml"
-                                )
+                            if (IsTrackDataFile(fullName, "trackLocale@"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
-                                    XmlDocument trackLocale = new XmlDocument();
-                                    trackLocale.Load(stream);
-                                    ProcessTrackLocale(trackLocale);
+                                    XmlDocument localeDocument = new XmlDocument();
+                                    localeDocument.Load(stream);
+                                    ProcessTrackLocale(localeDocument, fullName);
                                 }
                             }
                             if (fullName == "etc_/itemTable.kml")
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     var kartsWithName = doc.Descendants("kart").Where(kart => kart.Attribute("name") != null);
@@ -162,7 +157,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     var kartsWithName = doc.Descendants("kart").Where(kart => kart.Attribute("name") != null);
@@ -221,7 +216,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XmlDocument doc = new XmlDocument();
                                     doc.Load(stream);
@@ -247,7 +242,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument xdoc = XDocument.Load(stream);
                                     var validCatLevels = xdoc.Descendants("category")
@@ -310,7 +305,7 @@ namespace KartRider
                                         newBytes[0] = 255;
                                         newBytes[1] = 254;
                                         Array.Copy(data, 6, newBytes, 2, data.Length - 6);
-                                        using (MemoryStream stream = new MemoryStream(newBytes))
+                                        using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(newBytes)))
                                         {
                                             XmlDocument kart1 = new XmlDocument();
                                             kart1.Load(stream);
@@ -319,7 +314,7 @@ namespace KartRider
                                     }
                                     else
                                     {
-                                        using (MemoryStream stream = new MemoryStream(data))
+                                        using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                         {
                                             XmlDocument kart2 = new XmlDocument();
                                             kart2.Load(stream);
@@ -344,7 +339,7 @@ namespace KartRider
                                             newBytes[0] = 255;
                                             newBytes[1] = 254;
                                             Array.Copy(data, 6, newBytes, 2, data.Length - 6);
-                                            using (MemoryStream stream = new MemoryStream(newBytes))
+                                            using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(newBytes)))
                                             {
                                                 XmlDocument kart1 = new XmlDocument();
                                                 kart1.Load(stream);
@@ -353,7 +348,7 @@ namespace KartRider
                                         }
                                         else
                                         {
-                                            using (MemoryStream stream = new MemoryStream(data))
+                                            using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                             {
                                                 XmlDocument kart2 = new XmlDocument();
                                                 kart2.Load(stream);
@@ -379,7 +374,7 @@ namespace KartRider
                                             newBytes[0] = 255;
                                             newBytes[1] = 254;
                                             Array.Copy(data, 6, newBytes, 2, data.Length - 6);
-                                            using (MemoryStream stream = new MemoryStream(newBytes))
+                                            using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(newBytes)))
                                             {
                                                 XmlDocument kart1 = new XmlDocument();
                                                 kart1.Load(stream);
@@ -388,7 +383,7 @@ namespace KartRider
                                         }
                                         else
                                         {
-                                            using (MemoryStream stream = new MemoryStream(data))
+                                            using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                             {
                                                 XmlDocument kart2 = new XmlDocument();
                                                 kart2.Load(stream);
@@ -402,7 +397,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XmlDocument Quest = new XmlDocument();
                                     Quest.Load(stream);
@@ -413,7 +408,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     GameSupport.questInfo = doc.Descendants("kartPassQuestInfo").First();
@@ -423,7 +418,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XmlDocument Scenario = new XmlDocument();
                                     Scenario.Load(stream);
@@ -450,7 +445,7 @@ namespace KartRider
                                 byte[] data = packFileInfo.GetData();
                                 ClientItemRules.Load(data);
                                 ClientItemRules.LogSummary();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XmlDocument doc = new XmlDocument();
                                     doc.Load(stream);
@@ -479,7 +474,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] tb = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(tb))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(tb)))
                                 {
                                     ClientItemRules.ApplyTransformByKart(XDocument.Load(ms), false);
                                 }
@@ -488,7 +483,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] td = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(td))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(td)))
                                 {
                                     ClientItemRules.ApplyTransformByKart(XDocument.Load(ms), true);
                                 }
@@ -497,7 +492,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] bd = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(bd))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(bd)))
                                 {
                                     ClientItemRules.ApplyFired2Gain(XDocument.Load(ms), false);
                                 }
@@ -506,7 +501,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(gd))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(gd)))
                                 {
                                     ClientItemRules.ApplyFired2Gain(XDocument.Load(ms), true);
                                 }
@@ -515,7 +510,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] bd = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(bd))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(bd)))
                                 {
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), false);
                                 }
@@ -524,7 +519,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(gd))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(gd)))
                                 {
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), true);
                                 }
@@ -533,7 +528,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] rd = packFileInfo.GetData();
-                                using (MemoryStream ms = new MemoryStream(rd))
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(rd)))
                                 {
                                     ItemRule.LoadRestrictions(XDocument.Load(ms), name => ClientItemRules.ResolveName(name));
                                 }
@@ -542,7 +537,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] probData = packFileInfo.GetData();
-                                using (MemoryStream probStream = new MemoryStream(probData))
+                                using (MemoryStream probStream = new MemoryStream(GameSupport.NormalizeXmlEncoding(probData)))
                                 {
                                     ItemRule.ApplyFromClient(2, XDocument.Load(probStream));
                                 }
@@ -551,7 +546,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] probData = packFileInfo.GetData();
-                                using (MemoryStream probStream = new MemoryStream(probData))
+                                using (MemoryStream probStream = new MemoryStream(GameSupport.NormalizeXmlEncoding(probData)))
                                 {
                                     ItemRule.ApplyFromClient(4, XDocument.Load(probStream));
                                 }
@@ -561,7 +556,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.StripXmlBom(data)))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     XElement aiItem = doc.Descendants("aiItem").First();
@@ -612,7 +607,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     Bingo.bingoGachaSet = doc.Root
@@ -631,7 +626,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     var items = doc.Descendants("item");
@@ -652,7 +647,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     // 加载文档并解析任务
                                     TimeAttack.timeAttackMission = XDocument.Load(stream);
@@ -662,7 +657,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     // 加载文档并解析任务
                                     TimeAttack.timeAttackCompetitive = XDocument.Load(stream);
@@ -672,7 +667,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     // 加载文档并解析任务
                                     TimeAttack.timeAttackCompetitiveData = XDocument.Load(stream);
@@ -682,7 +677,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     // 创建XML文档对象
                                     XmlDocument doc = new XmlDocument();
@@ -708,7 +703,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     // 创建XML文档对象
                                     XmlDocument doc = new XmlDocument();
@@ -765,7 +760,7 @@ namespace KartRider
                                 DateTime now = DateTime.Now;
                                 byte[] data = packFileInfo.GetData();
                                 byte i = 1;
-                                using (MemoryStream stream = new MemoryStream(GameSupport.StripXmlBom(data)))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     // 遍历所有Channel节点
@@ -811,7 +806,7 @@ namespace KartRider
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(data))
+                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
                                     Mix.ParseDocument(doc);
@@ -826,6 +821,8 @@ namespace KartRider
                     foreach (LpkFolderInfo packFolderInfo2 in packFolderInfo1.GetFoldersInfo())
                         packFolderInfoQueue.Enqueue(packFolderInfo2);
                 }
+                // 所有 track/locale 都读完后再收尾：缺名称的用 ID 兜底，避免新增赛道被随机池静默过滤
+                RandomTrack.FinalizeTrackList();
                 return packFolderManager;
             }
             catch (Exception ex)
@@ -923,121 +920,163 @@ namespace KartRider
                 return false;
             }
         }
-        private static void ProcessTrackLocale(XmlDocument trackLocale)
+        /// <summary>
+        /// trackLocale@{regionCode}.xml：内容与 track@zz.xml 重复（这里带本地化名称与 basicAi），
+        /// 统一交给 RandomTrack.AddTrack 合并，同一张地图在 TrackList 里只会保存一份。
+        /// </summary>
+        private static void ProcessTrackLocale(XmlDocument trackLocale, string sourceName)
         {
             if (trackLocale == null) return;
+            int before = RandomTrack.TrackList.Count;
+            int total = 0;
+            int skipped = 0;
             var localeNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (XmlNode xn in trackLocale.GetElementsByTagName("track"))
+            foreach (XmlElement xe in GetTrackElements(trackLocale, "track"))
             {
-                XmlElement xe = xn as XmlElement;
-                if (xe == null) continue;
-                string blocked = xe.GetAttribute("blocked");
-                if (blocked.Equals("true", StringComparison.OrdinalIgnoreCase)) continue;
-                string id = xe.GetAttribute("id");
-                if (string.IsNullOrWhiteSpace(id) || id.Contains("_S", StringComparison.OrdinalIgnoreCase)) continue;
-                string name = xe.GetAttribute("name");
-                bool basicAi = xe.GetAttribute("basicAi").Equals("true", StringComparison.OrdinalIgnoreCase);
-                AddOrUpdateTrackListEntry(id, name, basicAi);
-                localeNames[id] = name;
+                total++;
+                string id = GetAttributeText(xe, "id");
+                if (!IsValidTrackId(id))
+                {
+                    skipped++;
+                    Log.Debug($"[Track] {sourceName}: 跳过赛道 id=\"{id}\"（为空或包含 _S）");
+                    continue;
+                }
+                bool blocked = GetBoolAttribute(xe, "blocked");
+                string name = GetAttributeText(xe, "name");
+                if (!blocked && !string.IsNullOrWhiteSpace(name))
+                {
+                    localeNames[id] = name;
+                }
+                RandomTrack.AddTrack(id, name, null,
+                    GetBoolAttribute(xe, "basicAi"),
+                    GetBoolAttribute(xe, "isOnlyItemTrack"),
+                    blocked);
             }
             void processVariant(string elementName, string suffix)
             {
-                foreach (XmlNode xn in trackLocale.GetElementsByTagName(elementName))
+                foreach (XmlElement xe in GetTrackElements(trackLocale, elementName))
                 {
-                    XmlElement xe = xn as XmlElement;
-                    if (xe == null) continue;
-                    string blocked = xe.GetAttribute("blocked");
-                    if (blocked.Equals("true", StringComparison.OrdinalIgnoreCase)) continue;
-                    string refId = xe.GetAttribute("refId");
-                    if (string.IsNullOrWhiteSpace(refId) || refId.Contains("_S", StringComparison.OrdinalIgnoreCase)) continue;
+                    total++;
+                    string refId = GetAttributeText(xe, "refId");
+                    if (!IsValidTrackId(refId))
+                    {
+                        skipped++;
+                        Log.Debug($"[Track] {sourceName}: 跳过 {elementName} 的 refId=\"{refId}\"（为空或包含 _S）");
+                        continue;
+                    }
                     string variantId = $"{refId}_{suffix}";
-                    bool basicAi = xe.GetAttribute("basicAi").Equals("true", StringComparison.OrdinalIgnoreCase);
+                    bool hasBaseName = localeNames.TryGetValue(refId, out string baseName) && !string.IsNullOrWhiteSpace(baseName);
                     string name;
                     if (elementName == "track_rvs")
                     {
-                        if (localeNames.TryGetValue(refId, out var baseName) && !string.IsNullOrWhiteSpace(baseName))
-                        {
-                            name = $"[反]{baseName}";
-                        }
-                        else
-                        {
-                            name = string.Empty;
-                        }
+                        name = hasBaseName ? $"[反]{baseName}" : string.Empty;
                     }
                     else
                     {
-                        name = xe.GetAttribute("name");
-                        if (string.IsNullOrWhiteSpace(name) && localeNames.TryGetValue(refId, out var baseName))
+                        name = GetAttributeText(xe, "name");
+                        if (string.IsNullOrWhiteSpace(name) && hasBaseName)
                         {
                             name = baseName;
                         }
-                        else if (string.IsNullOrWhiteSpace(name))
-                        {
-                            name = string.Empty;
-                        }
                     }
-                    AddOrUpdateTrackListEntry(variantId, name, basicAi);
+                    RandomTrack.AddTrack(variantId, name, RandomTrack.GetTrackGameType(refId),
+                        GetBoolAttribute(xe, "basicAi"),
+                        GetBoolAttribute(xe, "isOnlyItemTrack"),
+                        GetBoolAttribute(xe, "blocked"));
                 }
             }
             processVariant("track_crz", "crz");
             processVariant("track_rvs", "rvs");
+            Log.Info($"[Track] {sourceName}: 共 {total} 条赛道节点，新增 {RandomTrack.TrackList.Count - before} 条，跳过 {skipped} 条，TrackList 现有 {RandomTrack.TrackList.Count} 条");
         }
-        private static string ResolveVariantGameType(string trackIdentifier)
+        /// <summary>
+        /// 判断 lpk 内文件是否是赛道数据（track@xx.xml / trackLocale@xx.xml / randomTrack@xx.xml）。
+        /// 只比对文件名，允许任意前置目录与任意区服后缀（track/、track_/、补丁包里的新目录都能命中）。
+        /// </summary>
+        private static bool IsTrackDataFile(string filePath, string fileNamePrefix)
         {
-            uint adler32Id = Adler32Helper.GenerateAdler32_UNICODE(trackIdentifier, 0);
-            if (string.IsNullOrWhiteSpace(trackIdentifier)) return string.Empty;
-            int suffixIndex = trackIdentifier.LastIndexOf('_');
-            if (suffixIndex <= 0) return string.Empty;
-            string baseId = trackIdentifier.Substring(0, suffixIndex);
-            if (RandomTrack.TrackList.TryGetValue(adler32Id, out var baseTrack))
+            if (string.IsNullOrEmpty(filePath)) return false;
+            string normalized = filePath.Replace('\\', '/');
+            int slash = normalized.LastIndexOf('/');
+            string fileName = slash >= 0 ? normalized.Substring(slash + 1) : normalized;
+            if (!fileName.StartsWith(fileNamePrefix, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)) return false;
+            return normalized.IndexOf("/common/", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>地图 ID 是否有效（客户端 _S 变体不进地图列表）。</summary>
+        private static bool IsValidTrackId(string trackIdentifier)
+        {
+            return !string.IsNullOrWhiteSpace(trackIdentifier)
+                && !trackIdentifier.Contains("_S", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>取指定名字的元素，忽略大小写（手改的 XML 常见 &lt;track&gt; / &lt;Track&gt; 混用）。</summary>
+        private static List<XmlElement> GetTrackElements(XmlDocument document, string elementName)
+        {
+            var elements = new List<XmlElement>();
+            if (document == null) return elements;
+            foreach (XmlNode node in document.GetElementsByTagName("*"))
             {
-                return baseTrack.gameType ?? string.Empty;
+                if (node is XmlElement element && string.Equals(element.Name, elementName, StringComparison.OrdinalIgnoreCase))
+                {
+                    elements.Add(element);
+                }
+            }
+            return elements;
+        }
+
+        /// <summary>读取属性值：优先精确匹配，取不到再忽略大小写匹配（手改的 XML 常见 ID/Id 混用）。</summary>
+        private static string GetAttributeText(XmlElement element, string attributeName)
+        {
+            if (element == null) return string.Empty;
+            string value = element.GetAttribute(attributeName);
+            if (!string.IsNullOrEmpty(value)) return value.Trim();
+            if (element.Attributes == null) return string.Empty;
+            foreach (XmlAttribute attribute in element.Attributes)
+            {
+                if (string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (attribute.Value ?? string.Empty).Trim();
+                }
             }
             return string.Empty;
         }
-        private static void AddOrUpdateTrackListEntry(string trackIdentifier, string name, bool basicAi = false)
+
+        private static bool GetBoolAttribute(XmlElement element, string attributeName)
         {
-            if (string.IsNullOrWhiteSpace(trackIdentifier)) return;
-            uint adler32Id = Adler32Helper.GenerateAdler32_UNICODE(trackIdentifier, 0);
-            string realName = string.IsNullOrWhiteSpace(name) ? string.Empty : name;
-            if (RandomTrack.TrackList.ContainsKey(adler32Id))
-            {
-                Track existingTrack = RandomTrack.TrackList[adler32Id];
-                if (!string.IsNullOrWhiteSpace(realName))
-                {
-                    existingTrack.Name = realName;
-                }
-                existingTrack.basicAi = basicAi;
-                if (string.IsNullOrWhiteSpace(existingTrack.gameType))
-                {
-                    existingTrack.gameType = ResolveVariantGameType(trackIdentifier);
-                }
-            }
-            else
-            {
-                RandomTrack.TrackList.Add(adler32Id, new Track
-                {
-                    hash = adler32Id,
-                    ID = trackIdentifier,
-                    Name = realName,
-                    gameType = ResolveVariantGameType(trackIdentifier),
-                    basicAi = basicAi
-                });
-            }
+            string value = GetAttributeText(element, attributeName);
+            return value.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("yes", StringComparison.OrdinalIgnoreCase);
         }
-        private static void ProcessTrackList(XmlDocument trackLocale)
+
+        /// <summary>
+        /// track@zz.xml：内容与 trackLocale@{regionCode}.xml 重复（这里带 gameType 与 isOnlyItemTrack），
+        /// 统一交给 RandomTrack.AddTrack 合并，同一张地图在 TrackList 里只会保存一份。
+        /// </summary>
+        private static void ProcessTrackList(XmlDocument trackList, string sourceName)
         {
-            if (trackLocale == null) return;
+            if (trackList == null) return;
+            int before = RandomTrack.TrackList.Count;
+            int total = 0;
+            int skipped = 0;
             var baseGameTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (XmlNode xn in trackLocale.GetElementsByTagName("track"))
+            foreach (XmlElement xe in GetTrackElements(trackList, "track"))
             {
-                XmlElement xe = xn as XmlElement;
-                if (xe == null) continue;
-                string id = xe.GetAttribute("id");
-                if (string.IsNullOrWhiteSpace(id) || id.Contains("_S", StringComparison.OrdinalIgnoreCase)) continue;
-                string gameType = xe.GetAttribute("gameType");
-                string name = xe.GetAttribute("name");
-                AddRandomTrackEntry(id, gameType, name);
+                total++;
+                string id = GetAttributeText(xe, "id");
+                if (!IsValidTrackId(id))
+                {
+                    skipped++;
+                    Log.Debug($"[Track] {sourceName}: 跳过赛道 id=\"{id}\"（为空或包含 _S）");
+                    continue;
+                }
+                string gameType = GetAttributeText(xe, "gameType");
+                RandomTrack.AddTrack(id, GetAttributeText(xe, "name"), gameType,
+                    GetBoolAttribute(xe, "basicAi"),
+                    GetBoolAttribute(xe, "isOnlyItemTrack"),
+                    GetBoolAttribute(xe, "blocked"));
                 if (!baseGameTypes.ContainsKey(id))
                 {
                     baseGameTypes.Add(id, gameType);
@@ -1045,56 +1084,30 @@ namespace KartRider
             }
             void processVariant(string elementName, string suffix)
             {
-                foreach (XmlNode xn in trackLocale.GetElementsByTagName(elementName))
+                foreach (XmlElement xe in GetTrackElements(trackList, elementName))
                 {
-                    XmlElement xe = xn as XmlElement;
-                    if (xe == null) continue;
-                    string refId = xe.GetAttribute("refId");
-                    if (string.IsNullOrWhiteSpace(refId) || refId.Contains("_S", StringComparison.OrdinalIgnoreCase)) continue;
-                    string variantId = $"{refId}_{suffix}";
-                    string gameType = baseGameTypes.TryGetValue(refId, out var gt) ? gt : string.Empty;
-                    string name = xe.GetAttribute("name");
-                    AddRandomTrackEntry(variantId, gameType, name);
+                    total++;
+                    string refId = GetAttributeText(xe, "refId");
+                    if (!IsValidTrackId(refId))
+                    {
+                        skipped++;
+                        Log.Debug($"[Track] {sourceName}: 跳过 {elementName} 的 refId=\"{refId}\"（为空或包含 _S）");
+                        continue;
+                    }
+                    string gameType = baseGameTypes.TryGetValue(refId, out string baseGameType) ? baseGameType : string.Empty;
+                    if (string.IsNullOrWhiteSpace(gameType))
+                    {
+                        gameType = RandomTrack.GetTrackGameType(refId);
+                    }
+                    RandomTrack.AddTrack($"{refId}_{suffix}", GetAttributeText(xe, "name"), gameType,
+                        GetBoolAttribute(xe, "basicAi"),
+                        GetBoolAttribute(xe, "isOnlyItemTrack"),
+                        GetBoolAttribute(xe, "blocked"));
                 }
             }
             processVariant("track_crz", "crz");
             processVariant("track_rvs", "rvs");
-        }
-        private static void AddRandomTrackEntry(string trackIdentifier, string gameType, string name)
-        {
-            if (string.IsNullOrWhiteSpace(trackIdentifier)) return;
-            uint adler32Id = Adler32Helper.GenerateAdler32_UNICODE(trackIdentifier, 0);
-            string realName = string.IsNullOrWhiteSpace(name) ? string.Empty : name;
-            if (!RandomTrack.TrackList.ContainsKey(adler32Id))
-            {
-                if (string.IsNullOrWhiteSpace(gameType))
-                {
-                    gameType = ResolveVariantGameType(trackIdentifier);
-                }
-                RandomTrack.TrackList.Add(adler32Id, new Track
-                {
-                    hash = adler32Id,
-                    ID = trackIdentifier,
-                    Name = realName,
-                    gameType = gameType
-                });
-            }
-            else
-            {
-                Track existingTrack = RandomTrack.TrackList[adler32Id];
-                if (!string.IsNullOrWhiteSpace(gameType))
-                {
-                    existingTrack.gameType = gameType;
-                }
-                else if (string.IsNullOrWhiteSpace(existingTrack.gameType))
-                {
-                    existingTrack.gameType = ResolveVariantGameType(trackIdentifier);
-                }
-                if (!string.IsNullOrWhiteSpace(realName))
-                {
-                    existingTrack.Name = realName;
-                }
-            }
+            Log.Info($"[Track] {sourceName}: 共 {total} 条赛道节点，新增 {RandomTrack.TrackList.Count - before} 条，跳过 {skipped} 条，TrackList 现有 {RandomTrack.TrackList.Count} 条");
         }
         private static List<int> CountChildren(XElement element, int level, List<int> childCounts)
         {

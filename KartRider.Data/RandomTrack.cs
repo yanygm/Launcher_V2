@@ -22,6 +22,9 @@ namespace KartRider
 
         /// <summary>客户端 track@zz 里的 isOnlyItemTrack：只能用于道具赛。</summary>
         public bool onlyItem { get; set; }
+
+        /// <summary>客户端 trackLocale 里的 blocked：仍然保存进 TrackList，但不会进入随机池。</summary>
+        public bool blocked { get; set; }
     }
 
     public class RandomTrack
@@ -31,6 +34,119 @@ namespace KartRider
         public static Dictionary<uint, string> RandomName = new Dictionary<uint, string> { { 0, "全部随机" }, { 1, "专业竞速随机" }, { 3, "人气随机（极易）" }, { 4, "人气随机（简单）" }, { 5, "人气随机（普通）" }, { 6, "人气随机（困难）" }, { 7, "人气随机（极难）" }, { 8, "新图随机" }, { 30, "反方向随机" }, { 40, "竞速随机" } };
 
         public static string GameTrack = "village_R01";
+
+        // track@zz.xml 与 trackLocale@{regionCode}.xml 的内容是重复的（前者带 gameType/仅道具标记，后者带名称/basicAi），
+        // 这里用 地图 ID -> hash 的索引做二次去重，保证同一张地图在 TrackList 里只会保存一份。
+        private static readonly Dictionary<string, uint> _trackIdIndex = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+
+        // 客户端里 refId 派生的地图 ID 后缀
+        private static readonly string[] VariantSuffixes = new[] { "_crz", "_rvs" };
+
+        /// <summary>
+        /// 把一张地图（含 refId 派生的变体）合并进 TrackList：
+        /// hash 相同或 ID 相同（忽略大小写）的条目不会重复添加，只会补齐缺失的字段。
+        /// </summary>
+        public static void AddTrack(string trackIdentifier, string name, string gameType = null, bool basicAi = false, bool onlyItem = false, bool blocked = false)
+        {
+            if (string.IsNullOrWhiteSpace(trackIdentifier)) return;
+            string id = trackIdentifier.Trim();
+            uint hash = Adler32Helper.GenerateAdler32_UNICODE(id, 0);
+            if (hash == 0) return;
+
+            if (_trackIdIndex.TryGetValue(id, out uint indexedHash) && TrackList.TryGetValue(indexedHash, out Track indexed))
+            {
+                MergeTrack(indexed, name, gameType, basicAi, onlyItem, blocked);
+                return;
+            }
+
+            if (TrackList.TryGetValue(hash, out Track existing))
+            {
+                // hash 相同但 ID 不同（Adler32 碰撞）：不新增重复条目，只补齐空字段
+                MergeTrack(existing, name, gameType, basicAi, onlyItem, blocked);
+                _trackIdIndex[id] = hash;
+                return;
+            }
+
+            Track track = new Track
+            {
+                hash = hash,
+                ID = id,
+                Name = string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim(),
+                gameType = gameType == null ? string.Empty : gameType,
+                basicAi = basicAi,
+                onlyItem = onlyItem,
+                blocked = blocked
+            };
+            TrackList.Add(hash, track);
+            _trackIdIndex[id] = hash;
+
+            // 基础地图的 gameType 确定后，把之前已登记但 gameType 为空的 _crz / _rvs 变体补上
+            ApplyGameTypeToVariants(track);
+        }
+
+        /// <summary>按地图 ID 查询 gameType（查不到返回空字符串）。</summary>
+        public static string GetTrackGameType(string trackIdentifier)
+        {
+            if (string.IsNullOrWhiteSpace(trackIdentifier)) return string.Empty;
+            string id = trackIdentifier.Trim();
+            if (_trackIdIndex.TryGetValue(id, out uint indexedHash) && TrackList.TryGetValue(indexedHash, out Track indexed))
+            {
+                return indexed.gameType ?? string.Empty;
+            }
+            uint hash = Adler32Helper.GenerateAdler32_UNICODE(id, 0);
+            return TrackList.TryGetValue(hash, out Track track) ? track.gameType ?? string.Empty : string.Empty;
+        }
+
+        private static void MergeTrack(Track track, string name, string gameType, bool basicAi, bool onlyItem, bool blocked)
+        {
+            if (track == null) return;
+            if (!string.IsNullOrWhiteSpace(name)) track.Name = name.Trim();
+            if (!string.IsNullOrWhiteSpace(gameType))
+            {
+                track.gameType = gameType;
+                ApplyGameTypeToVariants(track);
+            }
+            // 两份文件都可能带这些标记，取并集，避免后读到的文件把标记覆盖掉
+            track.basicAi |= basicAi;
+            track.onlyItem |= onlyItem;
+            track.blocked |= blocked;
+        }
+
+        /// <summary>
+        /// 所有赛道数据加载完成后收尾：缺名称的用 ID 兜底（否则会被随机池过滤掉，表现为“新赛道没读到”）。
+        /// </summary>
+        public static void FinalizeTrackList()
+        {
+            int noName = 0;
+            int noGameType = 0;
+            foreach (Track track in TrackList.Values)
+            {
+                if (string.IsNullOrWhiteSpace(track.Name))
+                {
+                    track.Name = track.ID ?? string.Empty;
+                    noName++;
+                }
+                if (string.IsNullOrWhiteSpace(track.gameType))
+                {
+                    noGameType++;
+                }
+            }
+            Log.Info($"[Track] TrackList 收尾：共 {TrackList.Count} 条，{noName} 条无名称（已用 ID 兜底），{noGameType} 条缺少 gameType");
+        }
+
+        private static void ApplyGameTypeToVariants(Track track)
+        {
+            if (track == null || string.IsNullOrEmpty(track.ID) || string.IsNullOrWhiteSpace(track.gameType)) return;
+            foreach (string suffix in VariantSuffixes)
+            {
+                if (_trackIdIndex.TryGetValue(track.ID + suffix, out uint variantHash) &&
+                    TrackList.TryGetValue(variantHash, out Track variant) &&
+                    string.IsNullOrWhiteSpace(variant.gameType))
+                {
+                    variant.gameType = track.gameType;
+                }
+            }
+        }
 
         // 每个 Nickname 独立记录已使用的随机 track
         private static Dictionary<string, HashSet<uint>> _usedTracks = new Dictionary<string, HashSet<uint>>();
@@ -242,6 +358,9 @@ namespace KartRider
                             .ToList();
                     }
 
+                    // 客户端标了 blocked 的赛道不进随机池
+                    allTracks = allTracks.Where(t => !t.blocked).ToList();
+
                     // 竞速房排除"仅道具"赛道（客户端 isOnlyItemTrack）
                     if (RandomTrackGameType == "speed")
                     {
@@ -288,7 +407,7 @@ namespace KartRider
 
                 var allTracks = TrackList.Values
                     .Where(t => t.gameType == "speed")
-                    .Where(t => !t.onlyItem)
+                    .Where(t => !t.onlyItem && !t.blocked)
                     .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                     .ToList();
 
@@ -305,6 +424,7 @@ namespace KartRider
                 {
                     allTracks = TrackList.Values
                         .Where(t => t.gameType == "speed")
+                        .Where(t => !t.blocked)
                         .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                         .ToList();
                 }
@@ -424,16 +544,18 @@ namespace KartRider
                 }
             }
 
-            // 获取这些 track 对应的 hash
+            // 获取这些 track 对应的 hash（集合里可能有重复项，先去掉）
             List<uint> hashes = availableTrackIds
                 .Select(id => Adler32Helper.GenerateAdler32_UNICODE(id, 0))
                 .Where(hash => hash != 0)
+                .Distinct()
                 .ToList();
 
             // 客户端集合里可能混着竞速/道具赛道：按房间模式过滤（过滤后为空则保留原集合）
             List<uint> filtered = hashes
                 .Where(h => TrackList.TryGetValue(h, out Track track)
                             && !track.onlyItem
+                            && !track.blocked
                             && (track.gameType == gameType || gameType == "speed" && track.gameType == "item"))
                 .ToList();
             return filtered.Count > 0 ? filtered : hashes;

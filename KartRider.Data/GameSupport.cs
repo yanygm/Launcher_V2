@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -56,6 +57,120 @@ namespace KartRider
             byte[] result = new byte[data.Length - offset];
             Buffer.BlockCopy(data, offset, result, 0, result.Length);
             return result;
+        }
+
+        /// <summary>
+        /// 统一处理客户端 XML 的编码差异，返回可直接交给 XDocument.Load / XmlDocument.Load 的 UTF-8 字节：
+        /// 兼容 UTF-8（带/不带 BOM）、UTF-16LE / UTF-16BE（带/不带 BOM）、重复 BOM，
+        /// 并把 XML 声明里的 encoding 改写成 utf-8。
+        /// 否则像「声明 utf-16 但没有 BOM」的文件会直接抛
+        /// “There is no Unicode byte order mark. Cannot switch to Unicode.”。
+        /// 非 XML（二进制）内容原样返回。
+        /// </summary>
+        public static byte[] NormalizeXmlEncoding(byte[] data)
+        {
+            if (data == null || data.Length == 0) return data ?? Array.Empty<byte>();
+            data = StripXmlBom(data);
+            if (!NeedsEncodingNormalize(data)) return data;
+
+            string text = DecodeXmlText(data);
+            if (string.IsNullOrEmpty(text)) return data;
+
+            // 不是 XML（例如二进制资源）就原样返回，避免改坏其它数据
+            string trimmed = text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
+            if (trimmed.Length == 0 || trimmed[0] != '<') return data;
+
+            return new UTF8Encoding(false).GetBytes(RewriteDeclarationToUtf8(text));
+        }
+
+        /// <summary>是否需要做编码归一化（已经是无 BOM 的 UTF-8 且声明也是 utf-8 时直接跳过）。</summary>
+        private static bool NeedsEncodingNormalize(byte[] data)
+        {
+            if (data.Length >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF) return true;
+            if (data.Length >= 2 && ((data[0] == 0xFF && data[1] == 0xFE) || (data[0] == 0xFE && data[1] == 0xFF))) return true;
+            if (IsUtf16WithoutBom(data)) return true;
+
+            int sample = Math.Min(data.Length, 256);
+            string head = Encoding.ASCII.GetString(data, 0, sample);
+            int encodingIndex = head.IndexOf("encoding", StringComparison.OrdinalIgnoreCase);
+            if (encodingIndex < 0) return false;
+            string rest = head.Substring(encodingIndex, Math.Min(head.Length - encodingIndex, 40)).ToLowerInvariant();
+            return !rest.Contains("utf-8");
+        }
+
+        /// <summary>无 BOM 时用零字节比例判断是否为 UTF-16（XML 里 ASCII 居多，UTF-16 会有一半 0 字节）。</summary>
+        private static bool IsUtf16WithoutBom(byte[] data)
+        {
+            int sample = Math.Min(data.Length, 512);
+            if (sample < 4) return false;
+            int zeros = 0;
+            for (int i = 0; i < sample; i++)
+            {
+                if (data[i] == 0) zeros++;
+            }
+            return zeros * 8 >= sample;
+        }
+
+        /// <summary>按字节特征解码 XML 文本（BOM → 无 BOM 的 UTF-16 → UTF-8）。</summary>
+        private static string DecodeXmlText(byte[] data)
+        {
+            int offset = 0;
+            Encoding encoding;
+            if (data.Length >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF)
+            {
+                encoding = new UTF8Encoding(false);
+                offset = 3;
+            }
+            else if (data.Length >= 2 && data[0] == 0xFF && data[1] == 0xFE)
+            {
+                encoding = Encoding.Unicode;
+                offset = 2;
+            }
+            else if (data.Length >= 2 && data[0] == 0xFE && data[1] == 0xFF)
+            {
+                encoding = Encoding.BigEndianUnicode;
+                offset = 2;
+            }
+            else if (IsUtf16WithoutBom(data))
+            {
+                // 大端时首字节是 0（"<\0" 是 LE，"\0<" 是 BE）
+                encoding = data[0] == 0 ? Encoding.BigEndianUnicode : Encoding.Unicode;
+            }
+            else
+            {
+                encoding = new UTF8Encoding(false);
+            }
+
+            try
+            {
+                return encoding.GetString(data, offset, data.Length - offset).TrimStart('\uFEFF');
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>把 XML 声明里的 encoding 统一改写为 utf-8（没有声明则原样返回）。</summary>
+        private static string RewriteDeclarationToUtf8(string text)
+        {
+            int start = text.IndexOf("<?xml", StringComparison.OrdinalIgnoreCase);
+            if (start < 0) return text;
+            int end = text.IndexOf("?>", start, StringComparison.Ordinal);
+            if (end < 0) return text;
+
+            string declaration = text.Substring(start, end - start);
+            int encodingIndex = declaration.IndexOf("encoding", StringComparison.OrdinalIgnoreCase);
+            if (encodingIndex < 0) return text;
+
+            int quoteStart = declaration.IndexOfAny(new[] { '"', '\'' }, encodingIndex);
+            if (quoteStart < 0) return text;
+            char quote = declaration[quoteStart];
+            int quoteEnd = declaration.IndexOf(quote, quoteStart + 1);
+            if (quoteEnd < 0) return text;
+
+            string newDeclaration = declaration.Substring(0, quoteStart + 1) + "utf-8" + declaration.Substring(quoteEnd);
+            return text.Substring(0, start) + newDeclaration + text.Substring(end);
         }
 
         public static bool IsDuoTeamChannel(byte channelIndex) =>
