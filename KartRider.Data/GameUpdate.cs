@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using KartRider.Common.Data;
 using KartRider.IO.Packet;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -37,28 +38,28 @@ public class PatchManager
             string PatchListPath = Path.Combine(gamePath, "NT.txf");
 
             ServicePointManager.DefaultConnectionLimit = 100;
-            Console.WriteLine("=== 跑跑卡丁车自动更新器 ===");
+            Log.Info($"=== 跑跑卡丁车自动更新器 ===");
 
             if (!Directory.Exists(TempPath))
                 Directory.CreateDirectory(TempPath);
 
-            Console.WriteLine("正在下载补丁列表...");
-            Console.WriteLine($"URL: {PatchListUrl}");
-            Console.WriteLine($"保存路径: {PatchListPath}");
+            Log.Info($"正在下载补丁列表...");
+            Log.Info($"URL: {PatchListUrl}");
+            Log.Info($"保存路径: {PatchListPath}");
 
             // 下载补丁列表到 gamePath 目录
             await DownloadFileAsync(PatchListUrl, PatchListPath);
 
-            Console.WriteLine("补丁列表下载完成，正在解析...");
+            Log.Info($"补丁列表下载完成，正在解析...");
 
             // 从本地文件读取内容
             var content = await File.ReadAllTextAsync(PatchListPath);
             var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             var items = ParsePatchLines(lines);
-            Console.WriteLine($"获取到 {items.Count} 个文件，开始校验更新...\n");
+            Log.Info($"获取到 {items.Count} 个文件，开始校验更新...\n");
 
             // 第一阶段：并行校验所有文件，收集需要下载的文件
-            Console.WriteLine("开始并行校验文件...");
+            Log.Info($"开始并行校验文件...");
             var filesToDownload = new List<PatchItem>();
             int checkedCount = 0;
             var checkLock = new object();
@@ -72,34 +73,34 @@ public class PatchManager
                     if (needsDownload)
                     {
                         filesToDownload.Add(item);
-                        Console.WriteLine($"[{checkedCount}/{items.Count}] {item.LocalPath} 需要下载");
+                        Log.Info($"[{checkedCount}/{items.Count}] {item.LocalPath} 需要下载");
                     }
                     else
                     {
-                        Console.WriteLine($"[{checkedCount}/{items.Count}] {item.LocalPath} 已最新");
+                        Log.Info($"[{checkedCount}/{items.Count}] {item.LocalPath} 已最新");
                     }
                 }
             });
 
-            Console.WriteLine($"\n校验完成：{items.Count - filesToDownload.Count} 个文件已最新，{filesToDownload.Count} 个文件需要下载\n");
+            Log.Info($"\n校验完成：{items.Count - filesToDownload.Count} 个文件已最新，{filesToDownload.Count} 个文件需要下载\n");
 
             // 第二阶段：限制并发数并行下载
             if (filesToDownload.Count > 0)
             {
-                Console.WriteLine($"开始并行下载（最多 {MaxParallelDownloads} 个文件同时下载）...\n");
+                Log.Info($"开始并行下载（最多 {MaxParallelDownloads} 个文件同时下载）...\n");
                 var semaphore = new SemaphoreSlim(MaxParallelDownloads);
                 var downloadTasks = filesToDownload.Select(async item =>
                 {
                     await semaphore.WaitAsync();
                     try
                     {
-                        Console.WriteLine($"[下载开始] {item.LocalPath}");
+                        Log.Info($"[下载开始] {item.LocalPath}");
                         await ProcessFileDownloadAsync(item, baseUri, TempPath, gamePath);
-                        Console.WriteLine($"[下载完成] {item.LocalPath}");
+                        Log.Info($"[下载完成] {item.LocalPath}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[下载失败] {item.LocalPath}: {ex.Message}");
+                        Log.Info($"[下载失败] {item.LocalPath}: {ex.Message}");
                     }
                     finally
                     {
@@ -110,7 +111,7 @@ public class PatchManager
                 await Task.WhenAll(downloadTasks);
             }
 
-            Console.WriteLine("\n=== 全部更新完成 ===");
+            Log.Info($"\n=== 全部更新完成 ===");
 
             // 重命名 NT.txf 为 LK.txf
             try
@@ -127,13 +128,13 @@ public class PatchManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"重命名文件失败: {ex.Message}");
+                Log.Info($"重命名文件失败: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n更新过程发生严重错误: {ex.Message}");
-            Console.WriteLine($"堆栈: {ex.StackTrace}");
+            Log.Info($"\n更新过程发生严重错误: {ex.Message}");
+            Log.Info($"堆栈: {ex.StackTrace}");
             throw;
         }
     }
@@ -210,7 +211,7 @@ public class PatchManager
             var downMd5 = await Task.Run(() => GetFileMd5(tempFile));
             if (!string.Equals(downMd5, item.ServerMd5, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"  {item.LocalPath} 下载MD5校验失败！");
+                Log.Info($"  {item.LocalPath} 下载MD5校验失败！");
                 File.Delete(tempFile);
                 throw new Exception("MD5校验失败");
             }
@@ -225,14 +226,14 @@ public class PatchManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  {item.LocalPath} 处理失败：{ex.Message}");
+            Log.Info($"  {item.LocalPath} 处理失败：{ex.Message}");
             throw;
         }
     }
 
     private async Task ProcessFileAsync(PatchItem item, string update_prefix, string TempPath, string gamePath)
     {
-        Console.WriteLine($"检查：{item.LocalPath}");
+        Log.Info($"检查：{item.LocalPath}");
 
         try
         {
@@ -243,26 +244,26 @@ public class PatchManager
             // 检查文件是否存在且MD5匹配
             if (File.Exists(filePath))
             {
-                Console.WriteLine($"→ 计算本地MD5...");
+                Log.Info($"→ 计算本地MD5...");
                 var localMd5 = GetFileMd5(filePath);
                 if (string.Equals(localMd5, item.ServerMd5, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"→ {filePath} 已最新，跳过\n");
+                    Log.Info($"→ {filePath} 已最新，跳过\n");
                     return;
                 }
-                Console.WriteLine($"→ {filePath} MD5不匹配，需要更新");
+                Log.Info($"→ {filePath} MD5不匹配，需要更新");
             }
             else
             {
-                Console.WriteLine($"→ {filePath} 不存在，开始下载");
+                Log.Info($"→ {filePath} 不存在，开始下载");
             }
 
             // 准备下载
             var tempFile = Path.Combine(TempPath, item.FileName);
             var url = update_prefix + "/" + item.LocalPath;
 
-            Console.WriteLine($"→ URL: {url}");
-            Console.WriteLine($"→ 临时文件: {tempFile}");
+            Log.Info($"→ URL: {url}");
+            Log.Info($"→ 临时文件: {tempFile}");
 
             // 确保临时目录存在
             var tempDir = Path.GetDirectoryName(tempFile);
@@ -273,11 +274,11 @@ public class PatchManager
             await DownloadWithRetryAsync(url, tempFile, item.TotalSize);
 
             // 校验MD5
-            Console.WriteLine($"→ 校验下载文件MD5...");
+            Log.Info($"→ 校验下载文件MD5...");
             var downMd5 = GetFileMd5(tempFile);
             if (!string.Equals(downMd5, item.ServerMd5, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"→ {filePath} 下载MD5校验失败！");
+                Log.Info($"→ {filePath} 下载MD5校验失败！");
                 File.Delete(tempFile);
                 return;
             }
@@ -290,12 +291,12 @@ public class PatchManager
                 File.Delete(filePath);
             File.Move(tempFile, filePath);
 
-            Console.WriteLine($"→ {filePath} 更新成功！\n");
+            Log.Info($"→ {filePath} 更新成功！\n");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"→ {item.LocalPath} 处理失败：{ex.GetType().Name}: {ex.Message}");
-            Console.WriteLine($"→ 详细错误：{ex.StackTrace}\n");
+            Log.Info($"→ {item.LocalPath} 处理失败：{ex.GetType().Name}: {ex.Message}");
+            Log.Info($"→ 详细错误：{ex.StackTrace}\n");
             throw;
         }
     }
@@ -312,7 +313,7 @@ public class PatchManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n→ 下载失败 ({i + 1}/{MaxRetryCount}): {ex.Message}");
+                Log.Info($"\n→ 下载失败 ({i + 1}/{MaxRetryCount}): {ex.Message}");
                 if (i < MaxRetryCount - 1)
                     await Task.Delay(1000 * (i + 1));
             }
@@ -326,7 +327,7 @@ public class PatchManager
         var fileName = Path.GetFileName(savePath);
         var startTime = DateTime.Now;
 
-        Console.WriteLine($"→ 开始下载: {url}");
+        Log.Info($"→ 开始下载: {url}");
 
         // 使用 WebRequest 替代 HttpClient，避免同步上下文问题
         try
@@ -384,11 +385,11 @@ public class PatchManager
 
             var elapsed = DateTime.Now - startTime;
             var avgSpeed = downloadedBytes / elapsed.TotalSeconds;
-            Console.WriteLine($"\r→ 下载 {fileName}: 完成 [{FormatBytes(downloadedBytes)}] [{FormatSpeed(avgSpeed)}]       ");
+            Log.Info($"\r→ 下载 {fileName}: 完成 [{FormatBytes(downloadedBytes)}] [{FormatSpeed(avgSpeed)}]       ");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n→ 下载异常: {ex.GetType().Name}: {ex.Message}");
+            Log.Info($"\n→ 下载异常: {ex.GetType().Name}: {ex.Message}");
             throw;
         }
     }
@@ -432,7 +433,7 @@ public class PatchManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  计算MD5失败: {ex.Message}");
+            Log.Info($"  计算MD5失败: {ex.Message}");
             throw;
         }
     }
@@ -502,7 +503,7 @@ public class PatchManager
 
     private async Task DownloadFileAsync(string url, string path)
     {
-        Console.WriteLine($"  [DownloadFile] 开始下载到: {path}");
+        Log.Info($"  [DownloadFile] 开始下载到: {path}");
         try
         {
             var request = (HttpWebRequest)WebRequest.Create(url);
@@ -514,11 +515,11 @@ public class PatchManager
             using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
 
             await responseStream.CopyToAsync(fileStream);
-            Console.WriteLine($"  [DownloadFile] 下载完成");
+            Log.Info($"  [DownloadFile] 下载完成");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  [DownloadFile] 错误: {ex.GetType().Name}: {ex.Message}");
+            Log.Info($"  [DownloadFile] 错误: {ex.GetType().Name}: {ex.Message}");
             throw;
         }
     }

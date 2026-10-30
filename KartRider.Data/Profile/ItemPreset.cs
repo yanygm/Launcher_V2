@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using KartRider.Logging;
 
 namespace Profile
 {
@@ -152,7 +153,7 @@ namespace Profile
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载配置失败：{ex.Message}");
+                Log.Info($"加载配置失败：{ex.Message}");
                 return new ItemPresetConfig();
             }
         }
@@ -182,7 +183,7 @@ namespace Profile
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"保存配置失败：{ex.Message}");
+                Log.Info($"保存配置失败：{ex.Message}");
             }
         }
     }

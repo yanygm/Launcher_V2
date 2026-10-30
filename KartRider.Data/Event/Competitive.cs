@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using KartRider;
 using KartRider.Common.Utilities;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -98,7 +99,7 @@ namespace KartRider
 
                 if (currentCompetitive == null)
                 {
-                    Console.WriteLine("未找到当前时间所在的Competitive周期");
+                    Log.Info($"未找到当前时间所在的Competitive周期");
                     return new List<string>();
                 }
 
@@ -116,7 +117,7 @@ namespace KartRider
 
                 if (targetSet == null)
                 {
-                    Console.WriteLine($"未找到setId为{weekNumber}的Set节点");
+                    Log.Info($"未找到setId为{weekNumber}的Set节点");
                     return new List<string>();
                 }
 
@@ -129,7 +130,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"处理过程中发生错误: {ex.Message}");
+                Log.Info($"处理过程中发生错误: {ex.Message}");
                 return new List<string>();
             }
         }
@@ -223,7 +224,7 @@ namespace KartRider
         {
             if (!TrackDictionary.ContainsKey(trackId))
             {
-                Console.WriteLine($"找不到赛道ID: {trackId}");
+                Log.Info($"找不到赛道ID: {trackId}");
                 return null;
             }
 
@@ -294,12 +295,12 @@ namespace KartRider
             try
             {
                 // 输出计算过程，方便调试
-                Console.WriteLine($"\n时间得分计算过程:");
-                Console.WriteLine($"标准时间: {standardTime}, 实际时间: {actualTime}");
+                Log.Info($"\n时间得分计算过程:");
+                Log.Info($"标准时间: {standardTime}, 实际时间: {actualTime}");
 
                 // 计算偏差值
                 long deviation = (long)actualTime - standardTime; // 使用long避免溢出
-                Console.WriteLine($"偏差值: {deviation}");
+                Log.Info($"偏差值: {deviation}");
 
                 double score;
                 if (deviation < 0)
@@ -307,14 +308,14 @@ namespace KartRider
                     // 实际时间更少，加分
                     double bonus = Math.Abs(deviation) * 0.5;
                     score = 10000 + bonus;
-                    Console.WriteLine($"加分计算: 10000 + {Math.Abs(deviation)} × 0.5 = {10000} + {bonus} = {score}");
+                    Log.Info($"加分计算: 10000 + {Math.Abs(deviation)} × 0.5 = {10000} + {bonus} = {score}");
                 }
                 else
                 {
                     // 实际时间更多，扣分
                     double penalty = deviation * 0.2;
                     score = 10000 - penalty;
-                    Console.WriteLine($"扣分计算: 10000 - {deviation} × 0.2 = {10000} - {penalty} = {score}");
+                    Log.Info($"扣分计算: 10000 - {deviation} × 0.2 = {10000} - {penalty} = {score}");
                 }
 
                 uint integerPart = (uint)score;
@@ -322,7 +323,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"计算错误: {ex.Message}");
+                Log.Info($"计算错误: {ex.Message}");
                 return 0; // 出错时返回0
             }
         }

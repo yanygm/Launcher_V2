@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using KartRider.Logging;
 
-namespace LoggerLibrary
+namespace KartRider.Logging
 {
     /// <summary>
     /// 控制台重定向 + 崩溃转储。

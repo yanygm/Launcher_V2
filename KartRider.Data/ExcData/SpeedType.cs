@@ -5,6 +5,7 @@ using Profile;
 using System.Net;
 using System.Linq;
 using System.Text;
+using KartRider.Logging;
 
 namespace ExcData
 {
@@ -52,7 +53,7 @@ namespace ExcData
                 {
                     if (SpeedType == 3)//S0 慢速
                     {
-                        Console.WriteLine("SpeedType:S0");
+                        Log.Info($"SpeedType:S0");
                         AddSpec_SteerConstraint = -0.3f;
                         AddSpec_DriftEscapeForce = -350f;
                         AddSpec_TransAccelFactor = -0.015f;
@@ -80,7 +81,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 0)//S1 普通
                     {
-                        Console.WriteLine("SpeedType:S1");
+                        Log.Info($"SpeedType:S1");
                         AddSpec_SteerConstraint = 1.7f;
                         AddSpec_DriftEscapeForce = 150f;
                         AddSpec_TransAccelFactor = 0.199f;
@@ -108,7 +109,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 1)//S2 快速
                     {
-                        Console.WriteLine("SpeedType:S2");
+                        Log.Info($"SpeedType:S2");
                         AddSpec_SteerConstraint = 2.2f;
                         AddSpec_DriftEscapeForce = 1100f;
                         AddSpec_TransAccelFactor = 0.202f;
@@ -136,7 +137,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 2)//S3 高速
                     {
-                        Console.WriteLine("SpeedType:S3");
+                        Log.Info($"SpeedType:S3");
                         AddSpec_SteerConstraint = 2.7f;
                         AddSpec_DriftEscapeForce = 1500f;
                         AddSpec_TransAccelFactor = 0.2f;
@@ -164,13 +165,13 @@ namespace ExcData
                     }
                     else if (SpeedType == 4)//S4 无限
                     {
-                        Console.WriteLine("SpeedType:S4");
+                        Log.Info($"SpeedType:S4");
                         Default();
                         DriftMaxGauge = 1f;
                     }
                     else if (SpeedType == 5)//S5 CGS LTE
                     {
-                        Console.WriteLine("SpeedType:S5");
+                        Log.Info($"SpeedType:S5");
                         AddSpec_SteerConstraint = 2.7f;
                         AddSpec_DriftEscapeForce = 1500f;
                         AddSpec_TransAccelFactor = 0.2f;
@@ -199,7 +200,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 6)//S6 真·无限
                     {
-                        Console.WriteLine("SpeedType:S6");
+                        Log.Info($"SpeedType:S6");
                         AddSpec_SteerConstraint = 1.7f;
                         AddSpec_DriftEscapeForce = 150f;
                         AddSpec_TransAccelFactor = 0.199f;
@@ -227,12 +228,12 @@ namespace ExcData
                     }
                     else if (SpeedType == 7)//S7 标准速度
                     {
-                        Console.WriteLine("SpeedType:S7");
+                        Log.Info($"SpeedType:S7");
                         Default();
                     }
                     else if (SpeedType == 8)//S8 标准速度
                     {
-                        Console.WriteLine("SpeedType:S8");
+                        Log.Info($"SpeedType:S8");
                         AddSpec_SteerConstraint = 1.95f;
                         AddSpec_DriftEscapeForce = 400f;
                         AddSpec_TransAccelFactor = 0.2005f;
@@ -267,17 +268,17 @@ namespace ExcData
                 {
                     if (SpeedType == 0 || SpeedType == 1)//Rookie
                     {
-                        Console.WriteLine("SpeedType:Rookie");
+                        Log.Info($"SpeedType:Rookie");
                         Rookie();
                     }
                     else if (SpeedType == 2)//L3, S2
                     {
-                        Console.WriteLine("SpeedType:L3");
+                        Log.Info($"SpeedType:L3");
                         L3();
                     }
                     else if (SpeedType == 3)//L2
                     {
-                        Console.WriteLine("SpeedType:L2");
+                        Log.Info($"SpeedType:L2");
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
@@ -305,7 +306,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 4)//L1, S3
                     {
-                        Console.WriteLine("SpeedType:L1");
+                        Log.Info($"SpeedType:L1");
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
@@ -333,7 +334,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 5)//Pro
                     {
-                        Console.WriteLine("SpeedType:Pro");
+                        Log.Info($"SpeedType:Pro");
                         Pro();
                     }
                     else
@@ -345,17 +346,17 @@ namespace ExcData
                 {
                     if (SpeedType == 0 || SpeedType == 1)//Rookie
                     {
-                        Console.WriteLine("SpeedType:Rookie");
+                        Log.Info($"SpeedType:Rookie");
                         Rookie();
                     }
                     else if (SpeedType == 2)//L3, S2
                     {
-                        Console.WriteLine("SpeedType:L3");
+                        Log.Info($"SpeedType:L3");
                         L3();
                     }
                     else if (SpeedType == 3)//L2
                     {
-                        Console.WriteLine("SpeedType:L2");
+                        Log.Info($"SpeedType:L2");
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
@@ -383,7 +384,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 4)//L1, S3
                     {
-                        Console.WriteLine("SpeedType:L1");
+                        Log.Info($"SpeedType:L1");
                         AddSpec_SteerConstraint = 0f;
                         AddSpec_DriftEscapeForce = 0f;
                         AddSpec_TransAccelFactor = 0f;
@@ -411,7 +412,7 @@ namespace ExcData
                     }
                     else if (SpeedType == 5)//Pro
                     {
-                        Console.WriteLine("SpeedType:Pro");
+                        Log.Info($"SpeedType:Pro");
                         Pro();
                     }
                     else

@@ -1,4 +1,4 @@
-using ExcData;
+﻿using ExcData;
 using KartRider;
 using KartRider.Common.Network;
 using KartRider.Common.Utilities;
@@ -104,6 +104,8 @@ namespace KartRider
             {
                 iPacket.Position = 0;
                 uint hash = iPacket.ReadUInt();
+                var packetEmu = (PacketName)hash;
+                var packetName = packetEmu.ToString();
 
                 // 先记录、后分发：聊天服(MsgrServer)的包原来在 Dispatch 命中后直接 return，会被漏记。
                 // 用底层缓冲直接记录，避免每包 ToArray() 复制。
@@ -112,12 +114,12 @@ namespace KartRider
                     Log.Packet("C", this.Parent.Client.Nickname, iPacket.GetRawBuffer(), iPacket.Length);
                 }
 
-                if (PacketDispatcher.Dispatch(typeof(MsgrServer), (PacketName)hash, iPacket, iPacket.ToArray(), this.Parent, null))
+                if (PacketDispatcher.Dispatch(typeof(MsgrServer), packetEmu, iPacket, iPacket.ToArray(), this.Parent, null))
                     return;
 
                 // 开局等待期：任意包都算“客户端已就绪”（UDP 同步包要等进赛道才发，不可靠）
                 RoomManager.MarkPlayerPacket(this.Parent.Client.Nickname);
-                if (hash == PacketHash.PqCnAuthenLogin)
+                if (packetName == "PqCnAuthenLogin")
                 {
                     iPacket.ReadInt();
                     iPacket.ReadInt();
@@ -169,9 +171,9 @@ namespace KartRider
                     ProfileService.Save(packet.Nickname, loginConfig);
                     return;
                 }
-                if (hash != PacketHash.PcReportRaidOccur && hash != PacketHash.PqGameReportMyBadUdp)
+                if (packetName != "PcReportRaidOccur" && packetName != "PqGameReportMyBadUdp")
                 {
-                    if (hash == PacketHash.LoRqAddRacingTimePacket)
+                    if (packetName == "LoRqAddRacingTimePacket")
                     {
                         if (iPacket.Length < 24)
                         {
@@ -231,11 +233,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoRqUploadFilePacket)
+                    else if (packetName == "LoRqUploadFilePacket")
                     {
                         return;
                     }
-                    else if (hash == PacketHash.LoRqStartSinglePacket)
+                    else if (packetName == "LoRqStartSinglePacket")
                     {
                         int TimeAttackStartTicks = iPacket.ReadInt();
                         this.Parent.TimeAttackStartTicks = TimeAttackStartTicks;
@@ -244,10 +246,10 @@ namespace KartRider
                         ALLnum = (int)key;
                         this.Parent.SendPlaneCount = (int)key;
                         this.Parent.TotalSendPlaneCount = 0;
-                        Console.WriteLine("PlaneCheckMax: {0}", this.Parent.SendPlaneCount);
+                        Log.Info($"PlaneCheckMax: {this.Parent.SendPlaneCount}");
                         return;
                     }
-                    else if (hash == PacketHash.GameReportPacket)
+                    else if (packetName == "GameReportPacket")
                     {
                         byte[] DateTime1 = iPacket.ReadBytes(18);
                         int GetItem = iPacket.ReadInt();
@@ -272,10 +274,10 @@ namespace KartRider
                         int hash4 = iPacket.ReadInt();
                         byte[] hashArray3 = iPacket.ReadBytes(16);
                         this.Parent.TotalSendPlaneCount += PlaneCheck;
-                        Console.WriteLine("PlaneCheck: {0}, Total: {1}, Max: {2}, Dist: {3}", PlaneCheck, this.Parent.TotalSendPlaneCount, this.Parent.SendPlaneCount, single3);
+                        Log.Info($"PlaneCheck: {PlaneCheck}, Total: {this.Parent.TotalSendPlaneCount}, Max: {this.Parent.SendPlaneCount}, Dist: {single3}");
                         return;
                     }
-                    else if (hash == PacketHash.SpRqRenameRidPacket)
+                    else if (packetName == "SpRqRenameRidPacket")
                     {
                         var oldNickname = this.Parent.Client.Nickname;
                         var newNickname = iPacket.ReadString(false);
@@ -369,19 +371,19 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetRider)
+                    else if (packetName == "PqGetRider")
                     {
                         NewRider.LoadItemData(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.LoRqGetRiderItemPacket)
+                    else if (packetName == "LoRqGetRiderItemPacket")
                     {
                         // 只回“道具列表”（Items）。v103 回全量、v108 回部件表+PrGetRider 都会明显变慢，
                         // 且对 V1 车膜“已装备”判定无效，已回滚。
-                                    NewRider.Items(this.Parent, this.Parent.Client.Nickname);
+                        NewRider.Items(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.LoRqSetRiderItemOnPacket)
+                    else if (packetName == "LoRqSetRiderItemOnPacket")
                     {
                         var riderItemConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         riderItemConfig.RiderItem.Set_Character = iPacket.ReadUShort();
@@ -438,7 +440,7 @@ namespace KartRider
                                 nonZero.Add(prop.Name.Substring(4) + "=" + value);
                             }
                         }
-                                    ProfileService.Save(this.Parent.Client.Nickname, riderItemConfig);
+                        ProfileService.Save(this.Parent.Client.Nickname, riderItemConfig);
                         int roomId = RoomManager.TryGetRoomId(this.Parent.Client.Nickname);
                         if (roomId != -1)
                         {
@@ -455,7 +457,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetRiderInfo)
+                    else if (packetName == "PqGetRiderInfo")
                     {
                         uint UserID = iPacket.ReadUInt();
                         iPacket.ReadInt();
@@ -485,14 +487,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUpdateRiderIntro)
+                    else if (packetName == "PqUpdateRiderIntro")
                     {
                         var introConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         introConfig.Rider.RiderIntro = iPacket.ReadString(false);
                         ProfileService.Save(this.Parent.Client.Nickname, introConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqUpdateRiderSchoolLevelPacket)
+                    else if (packetName == "PqUpdateRiderSchoolLevelPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrUpdateRiderSchoolLevelPacket"))
                         {
@@ -502,7 +504,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSetPlaytimeEventTick)
+                    else if (packetName == "PqSetPlaytimeEventTick")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSetPlaytimeEventTick"))
                         {
@@ -512,7 +514,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUpdateGameOption)
+                    else if (packetName == "PqUpdateGameOption")
                     {
                         var gameOptionConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         gameOptionConfig.GameOption.Set_BGM = iPacket.ReadFloat();
@@ -567,12 +569,12 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, gameOptionConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqGetGameOption)
+                    else if (packetName == "PqGetGameOption")
                     {
                         GameSupport.PrGetGameOption(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqVipInfo)
+                    else if (packetName == "PqVipInfo")
                     {
                         using (OutPacket outPacket = new OutPacket("PrVipInfo"))
                         {
@@ -585,7 +587,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoRqEventRewardPacket)
+                    else if (packetName == "LoRqEventRewardPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
                         {
@@ -595,7 +597,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqVipGradeCheck)
+                    else if (packetName == "PqVipGradeCheck")
                     {
                         using (OutPacket outPacket = new OutPacket("PrVipGradeCheck"))
                         {
@@ -607,7 +609,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqLoginVipInfo)
+                    else if (packetName == "PqLoginVipInfo")
                     {
                         var vipConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrLoginVipInfo"))
@@ -641,7 +643,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.ChReRqEnterMyRoomPacket || hash == PacketHash.ChRqEnterRandomMyRoomPacket)
+                    else if (packetName == "ChReRqEnterMyRoomPacket" || packetName == "ChRqEnterRandomMyRoomPacket")
                     {
                         var availableNicknames = ClientManager.NicknameToUserNO.Keys.Where(n => n != this.Parent.Client.Nickname).ToList();
                         if (availableNicknames.Count == 0)
@@ -655,23 +657,23 @@ namespace KartRider
                         MyRoomData.ChRpEnterMyRoomPacket(this.Parent, this.Parent.Client.Nickname, targetNickname);
                         return;
                     }
-                    else if (hash == PacketHash.ChRqEnterMyRoomPacket)
+                    else if (packetName == "ChRqEnterMyRoomPacket")
                     {
                         string nickname = iPacket.ReadString(false);
                         MyRoomData.ChRpEnterMyRoomPacket(this.Parent, this.Parent.Client.Nickname, nickname);
                         return;
                     }
-                    else if (hash == PacketHash.RmFirstRequestPacket)
+                    else if (packetName == "RmFirstRequestPacket")
                     {
                         MyRoomData.RmSlotDataPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.RmRequestItemsPacket)
+                    else if (packetName == "RmRequestItemsPacket")
                     {
                         MyRoomData.RmRequestItemsPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.RmNotiMyRoomInfoPacket)
+                    else if (packetName == "RmNotiMyRoomInfoPacket")
                     {
                         var myRoomConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         myRoomConfig.MyRoom.MyRoom = iPacket.ReadShort();
@@ -689,19 +691,19 @@ namespace KartRider
                         MyRoomData.RmNotiMyRoomInfoPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.ChRqSecedeMyRoomPacket)
+                    else if (packetName == "ChRqSecedeMyRoomPacket")
                     {
                         // 마이룸 나갈 때
                         MyRoomData.ChRpSecedeMyRoomPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.RmRiderTalkPacket)
+                    else if (packetName == "RmRiderTalkPacket")
                     {
                         string message = iPacket.ReadString(false);
                         MyRoomData.RmRiderTalkPacket(this.Parent.Client.Nickname, message);
                         return;
                     }
-                    else if (hash == PacketHash.ChRqMyroomCheckPassEtcPacket)
+                    else if (packetName == "ChRqMyroomCheckPassEtcPacket")
                     {
                         int id = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("ChRpMyroomCheckPassEtcPacket"))
@@ -719,7 +721,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqStartScenario)
+                    else if (packetName == "PqStartScenario")
                     {
                         var scenarioConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         scenarioConfig.Rider.ScenarioType = iPacket.ReadInt();
@@ -732,7 +734,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, scenarioConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqCompleteScenarioSingle)
+                    else if (packetName == "PqCompleteScenarioSingle")
                     {
                         var completeConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrCompleteScenarioSingle"))
@@ -743,7 +745,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartSpec)
+                    else if (packetName == "PqKartSpec")
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
                         var Kart_id = iPacket.ReadUShort();
@@ -752,7 +754,7 @@ namespace KartRider
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == PacketHash.PqChapterInfoPacket)
+                    else if (packetName == "PqChapterInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrChapterInfoPacket"))
                         {
@@ -768,7 +770,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqChallengerInfoPacket)
+                    else if (packetName == "PqChallengerInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrChallengerInfoPacket"))
                         {
@@ -784,7 +786,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqStartChallenger)
+                    else if (packetName == "PqStartChallenger")
                     {
                         int stage_id = iPacket.ReadInt();
                         int GameType = iPacket.ReadInt();
@@ -802,7 +804,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqchallengerKartSpec)
+                    else if (packetName == "PqchallengerKartSpec")
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
                         var Kart_id = iPacket.ReadUShort();
@@ -811,7 +813,7 @@ namespace KartRider
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == PacketHash.PqCompleteChallenger)
+                    else if (packetName == "PqCompleteChallenger")
                     {
                         int stage = 40;
                         byte StageType = iPacket.ReadByte();
@@ -838,13 +840,13 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqExChangePacket)
+                    else if (packetName == "PqExChangePacket")
                     {
                         // 原实现直接断线且不回包；改为记录并忽略，避免玩家正常操作被踢
                         Log.Warn($"[Exchange] PqExChangePacket 未实现，已忽略（{this.Parent.Client.Nickname}）");
                         return;
                     }
-                    else if (hash == PacketHash.PqKartLevelPointClear)
+                    else if (packetName == "PqKartLevelPointClear")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -867,14 +869,14 @@ namespace KartRider
                         KartExcData.AddLevelList(this.Parent.Client.Nickname, Kart, SN, 5, 35, 0, 0, 0, 0, 0);
                         return;
                     }
-                    else if (hash == PacketHash.PqDisassembleXPartsItem)
+                    else if (packetName == "PqDisassembleXPartsItem")
                     {
                         iPacket.ReadByte();
                         iPacket.ReadShort();
                         ushort Kart = iPacket.ReadUShort();
                         iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
-                        Console.WriteLine("DisassembleXPartsItem: " + Kart + " " + SN);
+                        Log.Info($"DisassembleXPartsItem: " + Kart + " " + SN);
                         var currencyConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrDisassembleXPartsItem"))
                         {
@@ -904,7 +906,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartLevelUpProbText)
+                    else if (packetName == "PqKartLevelUpProbText")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -917,7 +919,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartLevelUp)
+                    else if (packetName == "PqKartLevelUp")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -947,7 +949,7 @@ namespace KartRider
                         KartExcData.AddLevelList(this.Parent.Client.Nickname, Kart, SN, 5, 35, 0, 0, 0, 0, 0);
                         return;
                     }
-                    else if (hash == PacketHash.PqKartLevelPointUpdate)
+                    else if (packetName == "PqKartLevelPointUpdate")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -999,7 +1001,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqGetMaxGiftIdPacket)
+                    else if (packetName == "SpRqGetMaxGiftIdPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
                         {
@@ -1008,7 +1010,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartLevelSpecialSlotUpdate)
+                    else if (packetName == "PqKartLevelSpecialSlotUpdate")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -1057,7 +1059,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUseSocketItem)
+                    else if (packetName == "PqUseSocketItem")
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1079,7 +1081,7 @@ namespace KartRider
                         KartExcData.AddTuneList(this.Parent.Client.Nickname, Kart, KartSN, 0, 0, 0, -1, 0, -1, 0);
                         return;
                     }
-                    else if (hash == PacketHash.PqUseTuneItem)
+                    else if (packetName == "PqUseTuneItem")
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1154,7 +1156,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUseProtectSpannerItem)
+                    else if (packetName == "PqUseProtectSpannerItem")
                     {
                         short Protect = iPacket.ReadShort();
                         short v2 = iPacket.ReadShort();
@@ -1222,7 +1224,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUseResetSocketItem)
+                    else if (packetName == "PqUseResetSocketItem")
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1280,8 +1282,8 @@ namespace KartRider
                             {
                                 existingList.Count2 = (short)((int)existingList.Count2 - 1);
                             }
-                            Console.WriteLine("TuneProtect: " + existingList.Slot1 + ", " + existingList.Slot2);
-                            Console.WriteLine("TuneProtectCount: " + existingList.Count1 + ", " + existingList.Count2);
+                            Log.Info($"TuneProtect: " + existingList.Slot1 + ", " + existingList.Slot2);
+                            Log.Info($"TuneProtectCount: " + existingList.Count1 + ", " + existingList.Count2);
                             for (int i = 2; i <= 4; i++)
                             {
                                 if (existingList.Slot1 != -1 && (int)(existingList.Slot1) + 2 == i)
@@ -1297,12 +1299,12 @@ namespace KartRider
                                     else if (i == 4) existingList.Tune3 = 0;
                                 }
                             }
-                            Console.WriteLine("TuneList: " + existingList.Tune1 + ", " + existingList.Tune2 + ", " + existingList.Tune3);
+                            Log.Info($"TuneList: " + existingList.Tune1 + ", " + existingList.Tune2 + ", " + existingList.Tune3);
                             KartExcData.AddTuneList(this.Parent.Client.Nickname, Kart, KartSN, existingList.Tune1, existingList.Tune2, existingList.Tune3, existingList.Slot1, existingList.Count1, existingList.Slot2, existingList.Count2);
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEquipTuningExPacket)
+                    else if (packetName == "PqEquipTuningExPacket")
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1322,7 +1324,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUnequipXPartsItem)
+                    else if (packetName == "PqUnequipXPartsItem")
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -1339,7 +1341,7 @@ namespace KartRider
                         KartExcData.AddPartsList(this.Parent.Client.Nickname, Kart, SN, item, 0, 0, 0);
                         return;
                     }
-                    else if (hash == PacketHash.PqEquipXPartsItem)
+                    else if (packetName == "PqEquipXPartsItem")
                     {
                         short Kart = iPacket.ReadShort();
                         short KartSN = iPacket.ReadShort();
@@ -1368,10 +1370,10 @@ namespace KartRider
                             this.Parent.Client.Send(outPacket);
                         }
                         KartExcData.AddPartsList(this.Parent.Client.Nickname, Kart, KartSN, Item_Cat_Id, Item_Id, Grade, PartsValue);
-                        Console.WriteLine("ClientSession : Kart: {0}, KartSN: {1}, Item: {2}:{3}, Quantity: {4}, Grade: {5}, PartsValue: {6}", Kart, KartSN, Item_Cat_Id, Item_Id, Quantity, Grade, PartsValue);
+                        Log.Info($"ClientSession : Kart: {Kart}, KartSN: {KartSN}, Item: {Item_Cat_Id}:{Item_Id}, Quantity: {Quantity}, Grade: {Grade}, PartsValue: {PartsValue}");
                         return;
                     }
-                    else if (hash == PacketHash.PqGetTrainingMission)
+                    else if (packetName == "PqGetTrainingMission")
                     {
                         int type = iPacket.ReadInt();
                         uint track = iPacket.ReadUInt();
@@ -1390,7 +1392,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetDuelMissionBulk)
+                    else if (packetName == "PqGetDuelMissionBulk")
                     {
                         List<string> MissionList = TimeAttack.GetMissionList();
                         using (OutPacket outPacket = new OutPacket("PrGetDuelMissionBulk"))
@@ -1410,9 +1412,9 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqAdjustDuelMissionDifficulty)
+                    else if (packetName == "PqAdjustDuelMissionDifficulty")
                     {
-                        Console.WriteLine("PqAdjustDuelMissionDifficulty: {0}", iPacket);
+                        Log.Info($"PqAdjustDuelMissionDifficulty: {iPacket}");
                         int type = iPacket.ReadInt();
                         int unk = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrAdjustDuelMissionDifficulty"))
@@ -1425,7 +1427,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBlueMarble)
+                    else if (packetName == "PqBlueMarble")
                     {
                         using (OutPacket outPacket = new OutPacket("PrBlueMarble"))
                         {
@@ -1434,7 +1436,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoRqGetTrackRankPacket)
+                    else if (packetName == "LoRqGetTrackRankPacket")
                     {
                         uint track = iPacket.ReadUInt();
                         var trackConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -1445,7 +1447,7 @@ namespace KartRider
                         TrackRankData.LoRpGetTrackRankPacket(this.Parent, track, SpeedType, GameType);
                         return;
                     }
-                    else if (hash == PacketHash.PqFavoriteTrackUpdate)
+                    else if (packetName == "PqFavoriteTrackUpdate")
                     {
                         iPacket.ReadByte();
                         int tracks = iPacket.ReadInt(); //赛道数量
@@ -1465,7 +1467,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoRqDecLucciPacket)
+                    else if (packetName == "LoRqDecLucciPacket")
                     {
                         iPacket.ReadByte();
                         uint Lucci = iPacket.ReadUInt();
@@ -1481,7 +1483,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, lucciConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqStartTimeAttack)
+                    else if (packetName == "PqStartTimeAttack")
                     {
                         var attackConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         var StartTimeAttack_Unk1 = iPacket.ReadInt();
@@ -1510,14 +1512,14 @@ namespace KartRider
                                 attackConfig.Rider.Lucci = 0;
                             }
                         }
-                        Console.WriteLine("StartTimeAttack: {0} / {1} / {2} / {3} / {4} / {5} / {6} / {7}", attackConfig.Rider.SpeedType, attackConfig.Rider.GameType, Kart_id, FlyingPet_id, RandomTrack.GetTrackName(StartTimeAttack_Track), StartTimeAttack_StartType, attackConfig.Rider.AttackType, StartTimeAttack_TimaAttackMpdeType);
+                        Log.Info($"StartTimeAttack: {attackConfig.Rider.SpeedType} / {attackConfig.Rider.GameType} / {Kart_id} / {FlyingPet_id} / {RandomTrack.GetTrackName(StartTimeAttack_Track)} / {StartTimeAttack_StartType} / {attackConfig.Rider.AttackType} / {StartTimeAttack_TimaAttackMpdeType}");
                         attackConfig.Rider.Track = RandomTrack.GetRandomTrack(this.Parent, this.Parent.Client.Nickname, StartTimeAttack_RandomTrackGameType, StartTimeAttack_Track);
                         ProfileService.Save(this.Parent.Client.Nickname, attackConfig);
                         byte StartType = 3;
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, attackConfig.Rider.Track, attackConfig.Rider.SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == PacketHash.PqFinishTimeAttack)
+                    else if (packetName == "PqFinishTimeAttack")
                     {
                         int type = iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -1533,7 +1535,7 @@ namespace KartRider
                         finishConfig.Rider.Lucci += finishReward.Lucci;
                         ProfileService.Save(this.Parent.Client.Nickname, finishConfig);
                         var timeSpan = TrackRankData.GetTimeSpan(finishConfig.Rider.Time);
-                        Console.WriteLine("FinishTimeAttack: {0} / {1} / {2}:{3}:{4}", RewardType, RandomTrack.GetTrackName(finishConfig.Rider.Track), timeSpan.min, timeSpan.sec, timeSpan.mil);
+                        Log.Info($"FinishTimeAttack: {RewardType} / {RandomTrack.GetTrackName(finishConfig.Rider.Track)} / {timeSpan.min}:{timeSpan.sec}:{timeSpan.mil}");
                         using (OutPacket outPacket = new OutPacket("PrFinishTimeAttack"))
                         {
                             outPacket.WriteInt(type);
@@ -1575,7 +1577,7 @@ namespace KartRider
                         });
                         return;
                     }
-                    else if (hash == PacketHash.PqRewardTimeAttack)
+                    else if (packetName == "PqRewardTimeAttack")
                     {
                         byte RewardType = iPacket.ReadByte();
                         int RP = iPacket.ReadInt();
@@ -1584,14 +1586,14 @@ namespace KartRider
                         uint Track = iPacket.ReadUInt();
                         var rewardConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         rewardConfig.Rider.Track = Track;
-                        Console.WriteLine("RewardTimeAttack : ResultType: {0}, RP: {1}, Lucci: {2}, Track: {3}", RewardType, RP, Lucci, RandomTrack.GetTrackName(Track));
+                        Log.Info($"RewardTimeAttack : ResultType: {RewardType}, RP: {RP}, Lucci: {Lucci}, Track: {RandomTrack.GetTrackName(Track)}");
                         var finishReward = TimeReward.FinishReward(RewardType);
                         rewardConfig.Rider.RP += finishReward.RP;
                         rewardConfig.Rider.Lucci += finishReward.Lucci;
                         ProfileService.Save(this.Parent.Client.Nickname, rewardConfig);
                         return;
                     }
-                    else if (hash == PacketHash.LoRqUseItemPacket)
+                    else if (packetName == "LoRqUseItemPacket")
                     {
                         short ItemType = iPacket.ReadShort();
                         short Type = iPacket.ReadShort();
@@ -1602,7 +1604,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqQuestUX2ndPacket)
+                    else if (packetName == "PqQuestUX2ndPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
                         {
@@ -1613,7 +1615,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGameOutRunUX2ndClearPacket)
+                    else if (packetName == "PqGameOutRunUX2ndClearPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGameOutRunUX2ndClearPacket"))
                         {
@@ -1622,12 +1624,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetTrainingMissionReward)
+                    else if (packetName == "PqGetTrainingMissionReward")
                     {
-                        Console.WriteLine("PqGetTrainingMissionReward: {0}", iPacket);
+                        Log.Info($"PqGetTrainingMissionReward: {iPacket}");
                         return;
                     }
-                    else if (hash == PacketHash.PqRequestKartInfoPacket)
+                    else if (packetName == "PqRequestKartInfoPacket")
                     {
                         int count = 0;
                         using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
@@ -1651,11 +1653,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqBingoGachaSelectSetPacket)
+                    else if (packetName == "SpRqBingoGachaSelectSetPacket")
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
                         bingo.BingoItem = iPacket.ReadByte();//选择的Bingo道具
-                        Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 选择道具 SpRqBingoGachaSelectSetPacket 道具={bingo.BingoItem}");
+                        Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 选择道具 SpRqBingoGachaSelectSetPacket 道具={bingo.BingoItem}");
                         bingo.Save();
                         using (OutPacket outPacket = new OutPacket("SpRpBingoGachaSelectSetPacket"))
                         {
@@ -1665,10 +1667,10 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqBingoGachaInfoPacket)
+                    else if (packetName == "SpRqBingoGachaInfoPacket")
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
-                        Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 请求面板 SpRqBingoGachaInfoPacket 格子={bingo.BingoNumsList.Count} 已获取={bingo.BingoNums.Count(n => n.Value == 1)} 道具={bingo.BingoItem}");
+                        Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 请求面板 SpRqBingoGachaInfoPacket 格子={bingo.BingoNumsList.Count} 已获取={bingo.BingoNums.Count(n => n.Value == 1)} 道具={bingo.BingoItem}");
                         using (OutPacket outPacket = new OutPacket("SpRpBingoGachaInfoPacket"))
                         {
                             outPacket.WriteInt(0);
@@ -1687,11 +1689,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqBingoGachaPacket)
+                    else if (packetName == "SpRqBingoGachaPacket")
                     {
                         int BingoType = iPacket.ReadInt();
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
-                        Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 请求面板 SpRqBingoGachaPacket type={BingoType} 次数={bingo.BingoCount} 上次数字={bingo.BingoNum} 已达成道具={bingo.BingoItems.Count(i => i.Value == 1)}");
+                        Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 请求面板 SpRqBingoGachaPacket type={BingoType} 次数={bingo.BingoCount} 上次数字={bingo.BingoNum} 已达成道具={bingo.BingoItems.Count(i => i.Value == 1)}");
                         using (OutPacket outPacket = new OutPacket("SpRpBingoGachaPacket"))
                         {
                             outPacket.WriteInt(BingoType);
@@ -1728,10 +1730,10 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqLotteryMileagePrizePacket)
+                    else if (packetName == "PqLotteryMileagePrizePacket")
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
-                        Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 领取奖励 PqLotteryMileagePrizePacket，重置面板（原已连线={bingo.CompletedLines.Count}）");
+                        Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 领取奖励 PqLotteryMileagePrizePacket，重置面板（原已连线={bingo.CompletedLines.Count}）");
                         using (OutPacket outPacket = new OutPacket("PrLotteryMileagePrizePacket"))
                         {
                             outPacket.WriteInt(0);
@@ -1747,12 +1749,12 @@ namespace KartRider
                         bingo.Save();
                         return;
                     }
-                    else if (hash == PacketHash.PqCheckMyClubStatePacket)
+                    else if (packetName == "PqCheckMyClubStatePacket")
                     {
                         GameSupport.PrCheckMyClubStatePacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqCheckMyLeaveDatePacket)
+                    else if (packetName == "PqCheckMyLeaveDatePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckMyLeaveDatePacket"))
                         {
@@ -1761,7 +1763,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetUserWaitingJoinClubPacket)
+                    else if (packetName == "PqGetUserWaitingJoinClubPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetUserWaitingJoinClubPacket"))
                         {
@@ -1775,7 +1777,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, joinClubConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqCheckCreateClubConditionPacket)
+                    else if (packetName == "PqCheckCreateClubConditionPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckCreateClubConditionPacket"))
                         {
@@ -1784,7 +1786,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqCreateClubPacket)
+                    else if (packetName == "PqCreateClubPacket")
                     {
                         var createClubConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         createClubConfig.Rider.ClubName = iPacket.ReadString();
@@ -1804,7 +1806,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitClubPacket)
+                    else if (packetName == "PqInitClubPacket")
                     {
                         var clubSwitchConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
@@ -1821,7 +1823,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqClubChannelSwitch)
+                    else if (packetName == "PqClubChannelSwitch")
                     {
                         using (OutPacket outPacket = new OutPacket("PrChannelSwitch"))
                         {
@@ -1833,7 +1835,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitClubInfoPacket)
+                    else if (packetName == "PqInitClubInfoPacket")
                     {
                         var initClubConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrInitClubInfoPacket"))
@@ -1859,7 +1861,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSearchClubListPacket)
+                    else if (packetName == "PqSearchClubListPacket")
                     {
                         int ClubID = iPacket.ReadInt();
                         int ClubCount = 1;
@@ -1890,7 +1892,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetClubListCountPacket)
+                    else if (packetName == "PqGetClubListCountPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubListCountPacket"))
                         {
@@ -1899,7 +1901,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetClubWaitingCrewCountPacket)
+                    else if (packetName == "PqGetClubWaitingCrewCountPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubWaitingCrewCountPacket"))
                         {
@@ -1908,7 +1910,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqClubInitFirstPacket)
+                    else if (packetName == "PqClubInitFirstPacket")
                     {
                         int ClubMemberCount = 1;
                         var initFirstConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -1968,7 +1970,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetClubRealCrewListPacket)
+                    else if (packetName == "PqGetClubRealCrewListPacket")
                     {
                         int ClubID = iPacket.ReadInt();
                         int ClubMemberCount = 1;
@@ -2009,7 +2011,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqCheckClubDirtyTimePacket)
+                    else if (packetName == "PqCheckClubDirtyTimePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckClubDirtyTimePacket"))
                         {
@@ -2021,7 +2023,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetClubRecordPacket)
+                    else if (packetName == "PqGetClubRecordPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubRecordPacket"))
                         {
@@ -2032,12 +2034,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBlockWordLogPacket)
+                    else if (packetName == "PqBlockWordLogPacket")
                     {
                         iPacket.ReadString();
                         return;
                     }
-                    else if (hash == PacketHash.PqLeaveClubPacket)
+                    else if (packetName == "PqLeaveClubPacket")
                     {
                         int ClubID = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrLeaveClubPacket"))
@@ -2048,7 +2050,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBreakUpClubPacket)
+                    else if (packetName == "PqBreakUpClubPacket")
                     {
                         int ClubID = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrBreakUpClubPacket"))
@@ -2062,7 +2064,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, profileConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqChangeClubAutoJoinStatePacket)
+                    else if (packetName == "PqChangeClubAutoJoinStatePacket")
                     {
                         byte AutoJoin = iPacket.ReadByte();
                         using (OutPacket outPacket = new OutPacket("PrChangeClubAutoJoinStatePacket"))
@@ -2073,7 +2075,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitClubHousePacket)
+                    else if (packetName == "PqInitClubHousePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubHousePacket"))
                         {
@@ -2092,7 +2094,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitClubHQPacket)
+                    else if (packetName == "PqInitClubHQPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubHQPacket"))
                         {
@@ -2103,7 +2105,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitClubBankPacket)
+                    else if (packetName == "PqInitClubBankPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubBankPacket"))
                         {
@@ -2122,7 +2124,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqClubSupportPacket)
+                    else if (packetName == "PqClubSupportPacket")
                     {
                         int LUCCI = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrClubSupportPacket"))
@@ -2139,7 +2141,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitRacingCenterPacket)
+                    else if (packetName == "PqInitRacingCenterPacket")
                     {
                         byte[] levels = new byte[] { 2, 3, 4, 5, 0 };
                         using (OutPacket outPacket = new OutPacket("PrInitRacingCenterPacket"))
@@ -2158,7 +2160,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqInitRiderCenterPacket)
+                    else if (packetName == "PqInitRiderCenterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitRiderCenterPacket"))
                         {
@@ -2167,7 +2169,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqChangeClubNamePacket)
+                    else if (packetName == "PqChangeClubNamePacket")
                     {
                         string oldClubName = iPacket.ReadString();
                         string newClubName = iPacket.ReadString();
@@ -2182,7 +2184,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqChangeClubMarkPacket)
+                    else if (packetName == "PqChangeClubMarkPacket")
                     {
                         int oldClubMark = iPacket.ReadInt();
                         int newClubMark = iPacket.ReadInt();
@@ -2197,7 +2199,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqChangeClubIntroPacket)
+                    else if (packetName == "PqChangeClubIntroPacket")
                     {
                         var changeIntroConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         changeIntroConfig.Rider.ClubIntro = iPacket.ReadString();
@@ -2209,7 +2211,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqLotteryPacket)
+                    else if (packetName == "SpRqLotteryPacket")
                     {
                         ushort LotteryID = iPacket.ReadUShort();
                         byte Unk = iPacket.ReadByte();
@@ -2224,7 +2226,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEventBuyCount)
+                    else if (packetName == "PqEventBuyCount")
                     {
                         int buyCount = iPacket.ReadInt();
                         if (buyCount < 0 || buyCount > 64 || buyCount * 4 > iPacket.Available)
@@ -2242,7 +2244,7 @@ namespace KartRider
                         EventBuyCount.PrEventBuyCount(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqGetRiderTaskContext)
+                    else if (packetName == "PqGetRiderTaskContext")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderTaskContext"))
                         {
@@ -2251,7 +2253,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqVersusModeRankOnePacket)
+                    else if (packetName == "PqVersusModeRankOnePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrVersusModeRankOnePacket"))
                         {
@@ -2260,22 +2262,22 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRiderSchoolDataPacket)
+                    else if (packetName == "PqRiderSchoolDataPacket")
                     {
                         RiderSchool.PrRiderSchoolData(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqRiderSchoolProPacket)
+                    else if (packetName == "PqRiderSchoolProPacket")
                     {
                         RiderSchool.PrRiderSchoolPro(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqStartRiderSchool)
+                    else if (packetName == "PqStartRiderSchool")
                     {
                         RiderSchool.PrStartRiderSchool(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqRiderSchoolExpiredCheck)
+                    else if (packetName == "PqRiderSchoolExpiredCheck")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRiderSchoolExpiredCheck"))
                         {
@@ -2284,7 +2286,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRankerInfoPacket)
+                    else if (packetName == "PqRankerInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRankerInfoPacket"))
                         {
@@ -2295,7 +2297,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRequestExtradata)
+                    else if (packetName == "PqRequestExtradata")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestExtradata"))
                         {
@@ -2304,17 +2306,17 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.ChRequestChStaticRequestPacket)
+                    else if (packetName == "ChRequestChStaticRequestPacket")
                     {
                         GameSupport.ChRequestChStaticReplyPacket(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqDynamicCommand)
+                    else if (packetName == "PqDynamicCommand")
                     {
                         GameSupport.PrDynamicCommand(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqPubCommandPacket)
+                    else if (packetName == "PqPubCommandPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPubCommandPacket"))
                         {
@@ -2325,7 +2327,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqWebEventCompleteCheckPacket)
+                    else if (packetName == "PqWebEventCompleteCheckPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrWebEventCompleteCheckPacket"))
                         {
@@ -2333,7 +2335,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqKoinBalance)
+                    else if (packetName == "SpRqKoinBalance")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpKoinBalance"))
                         {
@@ -2343,12 +2345,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqFavoriteTrackMapGet)
+                    else if (packetName == "PqFavoriteTrackMapGet")
                     {
                         FavoriteItem.Favorite_Track(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqGetFavoriteChannel)
+                    else if (packetName == "PqGetFavoriteChannel")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetFavoriteChannel"))
                         {
@@ -2357,7 +2359,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartPassInitPacket)
+                    else if (packetName == "PqKartPassInitPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassInitPacket"))
                         {
@@ -2368,7 +2370,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqGetCashInventoryPacket)
+                    else if (packetName == "SpRqGetCashInventoryPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpGetCashInventoryPacket"))
                         {
@@ -2378,7 +2380,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqRemainCashPacket)
+                    else if (packetName == "SpRqRemainCashPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpRemainCashPacket"))
                         {
@@ -2397,7 +2399,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqRemainTcCashPacket)
+                    else if (packetName == "SpRqRemainTcCashPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
                         {
@@ -2407,14 +2409,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpReqNormalShopBuyItemPacket || hash == PacketHash.SpReqItemPresetShopBuyItemPacket)
+                    else if (packetName == "SpReqNormalShopBuyItemPacket" || packetName == "SpReqItemPresetShopBuyItemPacket")
                     {
                         uint stockId = iPacket.ReadUInt();
                         int unk = iPacket.ReadInt();
                         byte priceType = iPacket.ReadByte();//货币类型0:电池 1:金币 3:KOIN
                         Stock.ShopBuy(this.Parent, stockId, priceType);
                     }
-                    else if (hash == PacketHash.PqGetCurrentRid)
+                    else if (packetName == "PqGetCurrentRid")
                     {
                         string UserName = iPacket.ReadString();
                         if (Directory.Exists(Path.GetFullPath(Path.Combine(FileName.ProfileDir, UserName))))
@@ -2435,13 +2437,13 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqDuplicatedItemPacket)
+                    else if (packetName == "SpRqDuplicatedItemPacket")
                     {
                         string UserName = iPacket.ReadString();
                         uint stockId = iPacket.ReadUInt();
                         CouponList.DuplicatedItem(this.Parent, stockId);
                     }
-                    else if (hash == PacketHash.SpReqNormalShopGiveGiftPacket)
+                    else if (packetName == "SpReqNormalShopGiveGiftPacket")
                     {
                         string UserName = iPacket.ReadString();
                         uint stockId = iPacket.ReadUInt();
@@ -2452,7 +2454,7 @@ namespace KartRider
                         string Password = iPacket.ReadString();
                         CouponList.GiveGift(this.Parent, UserName, stockId, Message, Password);
                     }
-                    else if (hash == PacketHash.PqGetMyCouponList)
+                    else if (packetName == "PqGetMyCouponList")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetMyCouponList"))
                         {
@@ -2461,7 +2463,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqDisassembleFeeInfo)
+                    else if (packetName == "PqDisassembleFeeInfo")
                     {
                         using (OutPacket outPacket = new OutPacket("PrDisassembleFeeInfo"))
                         {
@@ -2470,7 +2472,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRequestExchangeInitPacket)
+                    else if (packetName == "PqRequestExchangeInitPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestExchangeInitPacket"))
                         {
@@ -2479,7 +2481,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRequestPeriodExchangeInitPacket)
+                    else if (packetName == "PqRequestPeriodExchangeInitPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestPeriodExchangeInitPacket"))
                         {
@@ -2488,39 +2490,39 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqEnterRewardBoxStage)
+                    else if (packetName == "SpRqEnterRewardBoxStage")
                     {
                         CouponList.GetRewardBox(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.SpRqReceiveRewardItemPacket)
+                    else if (packetName == "SpRqReceiveRewardItemPacket")
                     {
                         long RewardBoxId = iPacket.ReadLong();
                         uint stockId = iPacket.ReadUInt();
                         CouponList.ReceiveReward(this.Parent, RewardBoxId, stockId);
                         return;
                     }
-                    else if (hash == PacketHash.SpRqExitRewardBoxStage)
+                    else if (packetName == "SpRqExitRewardBoxStage")
                     {
                         return;
                     }
-                    else if (hash == PacketHash.SpRqGetGiftListIncomingPacket)
+                    else if (packetName == "SpRqGetGiftListIncomingPacket")
                     {
                         CouponList.GetGiftList(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.SpRqGetGiftListReceivedPacket)
+                    else if (packetName == "SpRqGetGiftListReceivedPacket")
                     {
                         CouponList.GetGiftList(this.Parent, true);
                         return;
                     }
-                    else if (hash == PacketHash.SpReqReceiveGiftPacket)
+                    else if (packetName == "SpReqReceiveGiftPacket")
                     {
                         int giftId = iPacket.ReadInt();
                         CouponList.ReceiveGift(this.Parent, giftId);
                         return;
                     }
-                    else if (hash == PacketHash.SpReqDeleteGiftPacket)
+                    else if (packetName == "SpReqDeleteGiftPacket")
                     {
                         iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -2529,13 +2531,13 @@ namespace KartRider
                         CouponList.Delete(this.Parent, giftId);
                         return;
                     }
-                    else if (hash == PacketHash.SpReqDeleteReceiveLogPacket)
+                    else if (packetName == "SpReqDeleteReceiveLogPacket")
                     {
                         int giftId = iPacket.ReadInt();
                         CouponList.Delete(this.Parent, giftId, true);
                         return;
                     }
-                    else if (hash == PacketHash.PqGetCompetitiveRankInfo)
+                    else if (packetName == "PqGetCompetitiveRankInfo")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveRankInfo"))
                         {
@@ -2544,7 +2546,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetCompetitiveSlotInfo)
+                    else if (packetName == "PqGetCompetitiveSlotInfo")
                     {
                         var manager = new CompetitiveDataManager();
                         var competitiveData = manager.LoadAllData(this.Parent.Client.Nickname);
@@ -2569,7 +2571,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetCompetitiveCount)
+                    else if (packetName == "PqGetCompetitiveCount")
                     {
                         List<string> Competitive = TimeAttack.GetCompetitive();
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveCount"))
@@ -2584,7 +2586,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSearchCompetitiveRankPacket)
+                    else if (packetName == "PqSearchCompetitiveRankPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSearchCompetitiveRankPacket"))
                         {
@@ -2594,7 +2596,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetCompetitivePreRankPacket)
+                    else if (packetName == "PqGetCompetitivePreRankPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitivePreRankPacket"))
                         {
@@ -2604,12 +2606,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.RmRequestEmblemsPacket)
+                    else if (packetName == "RmRequestEmblemsPacket")
                     {
                         Emblem.RmOwnerEmblemPacket(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.RmRqUpdateMainEmblemPacket)
+                    else if (packetName == "RmRqUpdateMainEmblemPacket")
                     {
                         var emblemConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         emblemConfig.Rider.Emblem1 = iPacket.ReadShort();
@@ -2623,7 +2625,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, emblemConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqSyncDictionaryInfoPacket)
+                    else if (packetName == "PqSyncDictionaryInfoPacket")
                     {
                         int Dictionary = iPacket.ReadInt();
                         int Count = GameSupport.Dictionary.Count;
@@ -2642,7 +2644,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetDictionaryRewardInfoPacket)
+                    else if (packetName == "PqGetDictionaryRewardInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetDictionaryRewardInfoPacket"))
                         {
@@ -2652,7 +2654,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqNewCareerListPacket)
+                    else if (packetName == "PqNewCareerListPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrNewCareerListPacket"))
                         {
@@ -2664,7 +2666,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoRqDeleteItemPacket)
+                    else if (packetName == "LoRqDeleteItemPacket")
                     {
                         iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -2687,19 +2689,19 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqQueryCoupon)
+                    else if (packetName == "SpRqQueryCoupon")
                     {
                         string Coupon = iPacket.ReadString();
                         CouponList.QueryCoupon(this.Parent, Coupon);
                         return;
                     }
-                    else if (hash == PacketHash.SpRqUseCoupon)
+                    else if (packetName == "SpRqUseCoupon")
                     {
                         string Coupon = iPacket.ReadString();
                         CouponList.QueryCoupon(this.Parent, Coupon, true);
                         return;
                     }
-                    else if (hash == PacketHash.PqShopCashPage)
+                    else if (packetName == "PqShopCashPage")
                     {
                         using (OutPacket outPacket = new OutPacket("PrShopCashPage"))
                         {
@@ -2708,7 +2710,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqShopURLPage)
+                    else if (packetName == "PqShopURLPage")
                     {
                         int URLPageType = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrShopURLPage"))
@@ -2719,7 +2721,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBingoSync)
+                    else if (packetName == "PqBingoSync")
                     {
                         using (OutPacket outPacket = new OutPacket("PrBingoSync"))
                         {
@@ -2734,7 +2736,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEnterKartPassPacket)
+                    else if (packetName == "PqEnterKartPassPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrEnterKartPassPacket"))
                         {
@@ -2743,7 +2745,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartPassPlayTimePacket)
+                    else if (packetName == "PqKartPassPlayTimePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassPlayTimePacket"))
                         {
@@ -2752,7 +2754,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartPassRewardPacket)
+                    else if (packetName == "PqKartPassRewardPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassRewardPacket"))
                         {
@@ -2765,7 +2767,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEnterSeasonPassPacket)
+                    else if (packetName == "PqEnterSeasonPassPacket")
                     {
                         byte SeasonPassType = iPacket.ReadByte();
                         using (OutPacket outPacket = new OutPacket("PrEnterSeasonPassPacket"))
@@ -2777,7 +2779,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSeasonPassRewardPacket)
+                    else if (packetName == "PqSeasonPassRewardPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSeasonPassRewardPacket"))
                         {
@@ -2786,7 +2788,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqCheckPassword)
+                    else if (packetName == "PqCheckPassword")
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckPassword"))
                         {
@@ -2795,7 +2797,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUnLockedItem)
+                    else if (packetName == "PqUnLockedItem")
                     {
                         int useType = iPacket.ReadInt();
                         int stringType = iPacket.ReadInt();
@@ -2808,12 +2810,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqFavoriteItemGet) //즐겨 찾기 목록
+                    else if (packetName == "PqFavoriteItemGet") //즐겨 찾기 목록
                     {
                         FavoriteItem.Favorite_Item(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqFavoriteItemUpdate)
+                    else if (packetName == "PqFavoriteItemUpdate")
                     {
                         iPacket.ReadByte();
                         int j = iPacket.ReadInt();
@@ -2834,12 +2836,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqLockedItemGet)//아이템 보호
+                    else if (packetName == "PqLockedItemGet")//아이템 보호
                     {
                         LockedItem.LockedItemGet(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == PacketHash.PqLockedItemUpdate)
+                    else if (packetName == "PqLockedItemUpdate")
                     {
                         iPacket.ReadByte();
                         int j = iPacket.ReadInt();
@@ -2860,7 +2862,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSimGameSimpleInfoAndRankPacket)
+                    else if (packetName == "PqSimGameSimpleInfoAndRankPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSimGameSimpleInfoAndRankPacket"))
                         {
@@ -2872,7 +2874,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSimGameEnterPacket)
+                    else if (packetName == "PqSimGameEnterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSimGameEnterPacket"))
                         {
@@ -2881,7 +2883,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqExchangeXPartsItem)
+                    else if (packetName == "PqExchangeXPartsItem")
                     {
                         short KartType = iPacket.ReadShort();
                         iPacket.ReadShort();
@@ -2906,7 +2908,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqTimeShopPacket)
+                    else if (packetName == "SpRqTimeShopPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))
                         {
@@ -2915,7 +2917,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSecretShopEnterPacket)
+                    else if (packetName == "PqSecretShopEnterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSecretShopEnterPacket"))
                         {
@@ -2924,7 +2926,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEnterUpgradeGearPacket)
+                    else if (packetName == "PqEnterUpgradeGearPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrEnterUpgradeGearPacket"))
                         {
@@ -2933,7 +2935,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBlockCatchEnterPacket)
+                    else if (packetName == "PqBlockCatchEnterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrBlockCatchEnterPacket"))
                         {
@@ -2956,7 +2958,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.RqEnterFishingStagePacket)
+                    else if (packetName == "RqEnterFishingStagePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("RpEnterFishingStagePacket"))
                         {
@@ -2965,7 +2967,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqPcCafeShowcaseCoupon)
+                    else if (packetName == "PqPcCafeShowcaseCoupon")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPcCafeShowcaseCoupon"))
                         {
@@ -2975,7 +2977,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetRiderCareerSummary)
+                    else if (packetName == "PqGetRiderCareerSummary")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderCareerSummary"))
                         {
@@ -2985,7 +2987,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.checkSecondAuthenPacket)
+                    else if (packetName == "checkSecondAuthenPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("checkSecondAuthenPacket"))
                         {
@@ -2995,7 +2997,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqTestServerAddItemPacket)
+                    else if (packetName == "PqTestServerAddItemPacket")
                     {
                         TestServer.Type = iPacket.ReadShort();
                         TestServer.ItemID = iPacket.ReadShort();
@@ -3003,7 +3005,7 @@ namespace KartRider
                         TestServer.TestServerAddItem(this.Parent);
                         return;
                     }
-                    else if (hash == PacketHash.PqServerTime)
+                    else if (packetName == "PqServerTime")
                     {
                         using (OutPacket outPacket = new OutPacket("PrServerTime"))
                         {
@@ -3012,7 +3014,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqLogin)
+                    else if (packetName == "PqLogin")
                     {
                         GameDataReset.DataReset(this.Parent.Client.Nickname);
 
@@ -3142,7 +3144,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqSyncJackpotPointCS)
+                    else if (packetName == "PqSyncJackpotPointCS")
                     {
                         using (OutPacket outPacket = new OutPacket("PrSyncJackpotPointCS"))
                         {
@@ -3151,11 +3153,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqEnterShopPacket)
+                    else if (packetName == "PqEnterShopPacket")
                     {
                         return;
                     }
-                    else if (hash == PacketHash.PqGetlotteryMileageInfoPacket)
+                    else if (packetName == "PqGetlotteryMileageInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetlotteryMileageInfoPacket"))
                         {
@@ -3164,7 +3166,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqTcCashEventUserInfoPacket)
+                    else if (packetName == "PqTcCashEventUserInfoPacket")
                     {
                         uint unk1 = iPacket.ReadUInt();
                         byte unk2 = iPacket.ReadByte();
@@ -3178,11 +3180,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqServerSideUdpBindCheck)
+                    else if (packetName == "PqServerSideUdpBindCheck")
                     {
                         return;
                     }
-                    else if (hash == PacketHash.PqBoomhillExchangeInfo)
+                    else if (packetName == "PqBoomhillExchangeInfo")
                     {
                         short Type = iPacket.ReadShort();
                         iPacket.ReadInt();
@@ -3196,7 +3198,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqBoomhillExchangeNeedNotice)
+                    else if (packetName == "PqBoomhillExchangeNeedNotice")
                     {
                         using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
                         {
@@ -3205,7 +3207,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqMixItemExchangeCount)
+                    else if (packetName == "PqMixItemExchangeCount")
                     {
                         using (OutPacket outPacket = new OutPacket("PrMixItemExchangeCount"))
                         {
@@ -3214,14 +3216,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqMixItem)
+                    else if (packetName == "PqMixItem")
                     {
                         uint MixID = iPacket.ReadUInt();
                         int Type = iPacket.ReadInt();
                         Mix.GrtMixItem(this.Parent, MixID, Type);
                         return;
                     }
-                    else if (hash == PacketHash.RqBoomhillExchangeKoin)
+                    else if (packetName == "RqBoomhillExchangeKoin")
                     {
                         short Type = iPacket.ReadShort();
                         int Value = iPacket.ReadInt();
@@ -3237,7 +3239,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqUseInitialCardPacket)
+                    else if (packetName == "SpRqUseInitialCardPacket")
                     {
                         var cardConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         cardConfig.Rider.Card = iPacket.ReadString();
@@ -3249,7 +3251,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12TuningLevelUp)
+                    else if (packetName == "PqKart12TuningLevelUp")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3323,7 +3325,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12UnlockTuningSkill)
+                    else if (packetName == "PqKart12UnlockTuningSkill")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3350,7 +3352,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12RestictTuningSkill)
+                    else if (packetName == "PqKart12RestictTuningSkill")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3399,7 +3401,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12ChangeTuningSkill)
+                    else if (packetName == "PqKart12ChangeTuningSkill")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3417,7 +3419,7 @@ namespace KartRider
                         KartExcData.AddLevel12List(this.Parent.Client.Nickname, kart, sn, -1, field, Skill, -1, -1);
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12TuningPointUpdate)
+                    else if (packetName == "PqKart12TuningPointUpdate")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3483,7 +3485,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12PartsLevelUp)
+                    else if (packetName == "PqKart12PartsLevelUp")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3522,7 +3524,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKart12PartsLevelReset)
+                    else if (packetName == "PqKart12PartsLevelReset")
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3558,7 +3560,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqKartExceedTypeChange)
+                    else if (packetName == "PqKartExceedTypeChange")
                     {
                         short kart1 = iPacket.ReadShort();
                         short sn1 = iPacket.ReadShort();
@@ -3602,10 +3604,10 @@ namespace KartRider
                             this.Parent.Client.Send(outPacket);
                         }
                         KartExcData.AddPartsList(this.Parent.Client.Nickname, kart1, sn1, 0, (short)ExceedType2, 0, 0);
-                        Console.WriteLine("ExceedType: " + ExceedType2);
+                        Log.Info($"ExceedType: " + ExceedType2);
                         return;
                     }
-                    else if (hash == PacketHash.PqMissionAttendNRUserStatePacket)
+                    else if (packetName == "PqMissionAttendNRUserStatePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendNRUserStatePacket"))
                         {
@@ -3614,7 +3616,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqMissionAttendUserStatePacket)
+                    else if (packetName == "PqMissionAttendUserStatePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
                         {
@@ -3623,7 +3625,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetlotteryMileageMultiInfoPacket)
+                    else if (packetName == "PqGetlotteryMileageMultiInfoPacket")
                     {
                         int Count = iPacket.ReadInt();
                         if (Count < 0 || Count > 64 || Count * 4 > iPacket.Available)
@@ -3648,7 +3650,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqReturnMissionSetPacket)
+                    else if (packetName == "PqReturnMissionSetPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrReturnMissionSetPacket"))
                         {
@@ -3657,7 +3659,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqPromiseEventEnterPacket)
+                    else if (packetName == "PqPromiseEventEnterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPromiseEventEnterPacket"))
                         {
@@ -3666,7 +3668,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqReturnMissionRequestDataPacket)
+                    else if (packetName == "PqReturnMissionRequestDataPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrReturnMissionRequestDataPacket"))
                         {
@@ -3675,7 +3677,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqHitPangPangEnterPacket)
+                    else if (packetName == "PqHitPangPangEnterPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangEnterPacket"))
                         {
@@ -3684,7 +3686,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqHitPangPangInitPacket)
+                    else if (packetName == "PqHitPangPangInitPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangInitPacket"))
                         {
@@ -3693,7 +3695,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqHitPangPangResultPacket)
+                    else if (packetName == "PqHitPangPangResultPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangResultPacket"))
                         {
@@ -3702,7 +3704,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqPlaytimePacket)
+                    else if (packetName == "PqPlaytimePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPlaytimePacket"))
                         {
@@ -3711,7 +3713,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqPersonalShopUserDataPacket)
+                    else if (packetName == "PqPersonalShopUserDataPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPersonalShopUserDataPacket"))
                         {
@@ -3721,7 +3723,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqTimeShopOpenTimePacket)
+                    else if (packetName == "PqTimeShopOpenTimePacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrTimeShopOpenTimePacket"))
                         {
@@ -3731,7 +3733,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqItemPresetSlotDataList)
+                    else if (packetName == "PqItemPresetSlotDataList")
                     {
                         var itemPresetConfig = ItemPresetsService.GetItemPresetConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrItemPresetSlotDataList"))
@@ -3797,7 +3799,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqItemPresetUpdateSlotData)
+                    else if (packetName == "PqItemPresetUpdateSlotData")
                     {
                         using (OutPacket outPacket = new OutPacket("PrItemPresetUpdateSlotData"))
                         {
@@ -3860,7 +3862,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqItemPresetUseSlotData)
+                    else if (packetName == "PqItemPresetUseSlotData")
                     {
                         short id = iPacket.ReadShort();
                         using (OutPacket outPacket = new OutPacket("PrItemPresetUseSlotData"))
@@ -3883,7 +3885,7 @@ namespace KartRider
                         ItemPresetsService.Save(this.Parent.Client.Nickname, usePresetConfig);
                         return;
                     }
-                    else if (hash == PacketHash.PqGetMyMsgrInfoPacket)
+                    else if (packetName == "PqGetMyMsgrInfoPacket")
                     {
                         uint unk1 = iPacket.ReadUInt();
                         using (OutPacket outPacket = new OutPacket("PrGetMyMsgrInfoPacket"))
@@ -3895,7 +3897,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqWebEventCompleteCheckPacket)
+                    else if (packetName == "PqWebEventCompleteCheckPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrWebEventCompleteCheckPacket"))
                         {
@@ -3904,7 +3906,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetMsgrFriendList)
+                    else if (packetName == "PqGetMsgrFriendList")
                     {
                         uint unk1 = iPacket.ReadUInt();
                         var users = ClientManager.UserNOToNickname.Where(u => u.Value != this.Parent.Client.Nickname).ToList();
@@ -3938,7 +3940,7 @@ namespace KartRider
 
                         return;
                     }
-                    else if (hash == PacketHash.PqRepeatGetMsgrFriendList)
+                    else if (packetName == "PqRepeatGetMsgrFriendList")
                     {
                         var users = ClientManager.UserNOToNickname.Where(u => u.Value != this.Parent.Client.Nickname).ToList();
 
@@ -3968,7 +3970,7 @@ namespace KartRider
 
                         return;
                     }
-                    else if (hash == PacketHash.PqRefreshRecommendFriendList)
+                    else if (packetName == "PqRefreshRecommendFriendList")
                     {
                         using (OutPacket outPacket = new OutPacket("PrRefreshRecommendFriendList"))
                         {
@@ -3977,7 +3979,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqRequestAddFriendPacket)
+                    else if (packetName == "PqRequestAddFriendPacket")
                     {
                         uint UserID = iPacket.ReadUInt();
                         string UserName = ClientManager.GetNickname(UserID);
@@ -3996,7 +3998,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqMsgrReceiveSendInfo)
+                    else if (packetName == "PqMsgrReceiveSendInfo")
                     {
                         using (OutPacket outPacket = new OutPacket("PrMsgrReceiveSendInfo"))
                         {
@@ -4010,17 +4012,16 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqExpeditionActiveMissionListPacket)
+                    else if (packetName == "PqExpeditionActiveMissionListPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionActiveMissionListPacket"))
                         {
-                            // 对照官服日志：远征任务列表不是全 0，而是 3 条任务的结构
                             outPacket.WriteHexString("00 00 00 00 03 00 00 00 00 00 01 F2 B4 C8 37 47 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 F2 B4 C8 37 24 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 09 00 01 F2 B4 C8 37 1D 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 00 00 00 F2 B4 9C 27 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F2 B4 9C 27 02 B6 39 00 13 07 00 00 00 73 00 61 00 64 00 73 00 64 00 77 00 72 00 03 00 00 00 01 1E 00 F2 B4 9C 27 02 EC FC 49 7B 04 00 00 00 91 4E 77 6D 46 80 1D 52 02 00 00 00 02 0F 00 F2 B4 9C 27 02 65 1A 52 7D 05 00 00 00 89 91 84 76 05 6E CE 98 4A 55 02 00 00 00 01 14 00 03 00 00 00 00 00 00 03 00 00 00 00 07 00 00 F9 B4 18 15 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqExpeditionBuyMissionPacket)
+                    else if (packetName == "PqExpeditionBuyMissionPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionBuyMissionPacket"))
                         {
@@ -4030,7 +4031,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqExpeditionMissionStartPacket)
+                    else if (packetName == "PqExpeditionMissionStartPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionMissionStartPacket"))
                         {
@@ -4041,7 +4042,27 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetRiderQuestUX2ndData)
+                    else if (packetName == "PqExpeditionFriendInfoListPacket")
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrExpeditionFriendInfoListPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (packetName == "PqExpeditionMissionReduceTimePacket")
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrExpeditionMissionReduceTimePacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (packetName == "PqGetRiderQuestUX2ndData")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderQuestUX2ndData"))
                         {
@@ -4052,7 +4073,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqPlaytimeEventCompleteCheck)
+                    else if (packetName == "PqPlaytimeEventCompleteCheck")
                     {
                         using (OutPacket outPacket = new OutPacket("PrPlaytimeEventCompleteCheck"))
                         {
@@ -4061,7 +4082,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PcGameRequestRelay)
+                    else if (packetName == "PcGameRequestRelay")
                     {
                         int roomId = RoomManager.TryGetRoomId(this.Parent.Client.Nickname);
                         var room = RoomManager.GetRoom(roomId);
@@ -4080,25 +4101,25 @@ namespace KartRider
                         // }
                         return;
                     }
-                    else if (hash == PacketHash.ChClientP2pAddrPacket)
+                    else if (packetName == "ChClientP2pAddrPacket")
                     {
                         var ClientP2pAddr = iPacket.ReadEndPoint();
                         var p2pConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         p2pConfig.Rider.P2pPort = (ushort)ClientP2pAddr.Port;
                         ProfileService.Save(this.Parent.Client.Nickname, p2pConfig);
-                        Console.WriteLine($"[{this.Parent.Client.Nickname}] {ClientP2pAddr.Address}:{ClientP2pAddr.Port}");
+                        Log.Info($"[{this.Parent.Client.Nickname}] {ClientP2pAddr.Address}:{ClientP2pAddr.Port}");
                         return;
                     }
-                    else if (hash == PacketHash.ChClientUdpAddrPacket)
+                    else if (packetName == "ChClientUdpAddrPacket")
                     {
                         var ClientUdpAddr = iPacket.ReadEndPoint();
                         var udpConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         udpConfig.Rider.UdpPort = (ushort)ClientUdpAddr.Port;
                         ProfileService.Save(this.Parent.Client.Nickname, udpConfig);
-                        Console.WriteLine($"[{this.Parent.Client.Nickname}] {ClientUdpAddr.Address}:{ClientUdpAddr.Port}");
+                        Log.Info($"[{this.Parent.Client.Nickname}] {ClientUdpAddr.Address}:{ClientUdpAddr.Port}");
                         return;
                     }
-                    else if (hash == PacketHash.PqStartTrainingCenter)
+                    else if (packetName == "PqStartTrainingCenter")
                     {
                         using (OutPacket outPacket = new OutPacket("PrStartTrainingCenter"))
                         {
@@ -4108,7 +4129,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqMIssionAttendGetCurUserInfoPacket)
+                    else if (packetName == "PqMIssionAttendGetCurUserInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrMIssionAttendGetCurUserInfoPacket"))
                         {
@@ -4119,7 +4140,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqGetTreasureHuntMileageInfoPacket)
+                    else if (packetName == "PqGetTreasureHuntMileageInfoPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetTreasureHuntMileageInfoPacket"))
                         {
@@ -4128,7 +4149,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.SpRqTreasureHuntPacket)
+                    else if (packetName == "SpRqTreasureHuntPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTreasureHuntPacket"))
                         {
@@ -4146,7 +4167,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.PqUseItemAccumCard)
+                    else if (packetName == "PqUseItemAccumCard")
                     {
                         ushort itemCatId = iPacket.ReadUShort();
                         ushort itemId = iPacket.ReadUShort();
@@ -4154,7 +4175,7 @@ namespace KartRider
                         Stock.ItemAccumCard(this.Parent, itemCatId, itemId, count);
                         return;
                     }
-                    else if (hash == PacketHash.PqQuestUX2ndForShutDownPacket)
+                    else if (packetName == "PqQuestUX2ndForShutDownPacket")
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))
                         {
@@ -4163,13 +4184,13 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == PacketHash.LoPingRequestPacket)
+                    else if (packetName == "LoPingRequestPacket")
                     {
                         return;
                     }
                     else
                     {
-                        MultyPlayer.Clientsession(this.Parent, hash, iPacket);
+                        MultyPlayer.Clientsession(this.Parent, packetName, iPacket);
                         return;
                     }
                 }

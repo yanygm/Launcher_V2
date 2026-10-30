@@ -79,13 +79,12 @@ namespace KartLibrary.File.Lpk
 
             foreach (string lpk in lpkFiles)
             {
-                // mixing 是整包根密钥，官方包把它以 head + mid 的形式存在包内；
-                // 每个分包单独反推，才能同时打开不同 mixing 的包。
-                string mixing = LpkV4.ReadMixing(lpk);
-                var (digits, nonce) = LpkV4.Parameters(mixing);
-
+                // mixing 是整包根密钥，官方包把它以 head + mid 的形式存在包内。
+                // Decode 不传 mixing 时会自行反推并回填到 index.Mixing，
+                // 因此每个分包用各自的 mixing，且只读一遍头部。
                 using var fs = new FileStream(lpk, FileMode.Open, FileAccess.Read, FileShare.Read);
-                LpkIndex index = LpkV4.Decode(fs, Path.GetFileName(lpk), mixing);
+                LpkIndex index = LpkV4.Decode(fs, Path.GetFileName(lpk));
+                var (digits, nonce) = LpkV4.Parameters(index.Mixing);
                 foreach (var rec in index.Records)
                 {
                     AddFile(rec.Path, lpk, rec, index.DataBegin, digits, nonce);

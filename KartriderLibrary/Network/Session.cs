@@ -286,7 +286,7 @@ namespace KartRider.Common.Network
                 return "?";
             }
             uint opcode = BitConverter.ToUInt32(payload, 0);
-            return Enum.GetName(typeof(PacketName), opcode) ?? "0x" + opcode.ToString("X8");
+            return Enum.GetName(typeof(PacketName), opcode) ?? opcode.ToString();
         }
 
         private void BeginSend()

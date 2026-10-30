@@ -13,17 +13,17 @@ namespace KartRider
         {
             if (StartType == 1)
             {
-                Console.WriteLine("故事模式");
+                Log.Info($"故事模式");
                 StartGameData.PrKartSpec(Parent, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
             }
             else if (StartType == 2)
             {
-                Console.WriteLine("挑战者");
+                Log.Info($"挑战者");
                 StartGameData.PrchallengerKartSpec(Parent, Nickname, StartTimeAttack_SpeedType, KartID, FlyingPetID);
             }
             else if (StartType == 3)
             {
-                Console.WriteLine("排行计时");
+                Log.Info($"排行计时");
                 if (StartTimeAttack_StartType == 0)
                 {
                     StartGameData.PrStartTimeAttack(Parent, Nickname, Unk1, Track, StartTimeAttack_SpeedType, KartID, FlyingPetID);

@@ -233,7 +233,7 @@ namespace KartRider
         {
             if (specDoc == null)
             {
-                Console.WriteLine($"[KartSpec] 警告: ID={kartId}的规格XML为空, 使用默认");
+                Log.Info($"[KartSpec] 警告: ID={kartId}的规格XML为空, 使用默认");
                 return;
             }
 
@@ -245,7 +245,7 @@ namespace KartRider
             }
             else
             {
-                Console.WriteLine($"[KartSpec] 警告: ID={kartId}的规格XML中无BodyParam节点, 使用默认");
+                Log.Info($"[KartSpec] 警告: ID={kartId}的规格XML中无BodyParam节点, 使用默认");
                 AssignKartProperties(kartId, null, specDoc);
             }
         }
@@ -272,7 +272,7 @@ namespace KartRider
                     }
                     else
                     {
-                        Console.WriteLine($"[KartSpec] 警告: 属性{config.AttributeName}值{attrValueStr}无效, 用默认值{config.DefaultValue}");
+                        Log.Info($"[KartSpec] 警告: 属性{config.AttributeName}值{attrValueStr}无效, 用默认值{config.DefaultValue}");
                         config.SetKartProperty(config.DefaultValue);
                     }
                 }
@@ -306,7 +306,7 @@ namespace KartRider
                 {
                     return (boolVal ? 1M : 0M).ToString(CultureInfo.InvariantCulture);
                 }
-                Console.WriteLine($"[KartSpec] 警告: 布尔属性{attributeName}值{attrValue}无效, 用默认值{defaultValue}");
+                Log.Info($"[KartSpec] 警告: 布尔属性{attributeName}值{attrValue}无效, 用默认值{defaultValue}");
                 return defaultValue.ToString(CultureInfo.InvariantCulture);
             }
 
@@ -342,7 +342,7 @@ namespace KartRider
                 return result.ToString(CultureInfo.InvariantCulture);
             }
 
-            Console.WriteLine($"[KartSpec] 警告: 属性{actualAttrName}值{attrValue}无效, 用默认值{defaultValue}");
+            Log.Info($"[KartSpec] 警告: 属性{actualAttrName}值{attrValue}无效, 用默认值{defaultValue}");
             return defaultValue.ToString(CultureInfo.InvariantCulture);
         }
 

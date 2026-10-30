@@ -1,4 +1,4 @@
-using ExcData;
+﻿using ExcData;
 using KartRider.Common.Network;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
@@ -111,7 +111,7 @@ public static class MultyPlayer
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
         {
-            Console.WriteLine($"房间 {roomId} 不存在");
+            Log.Info($"房间 {roomId} 不存在");
             return;
         }
 
@@ -164,7 +164,7 @@ public static class MultyPlayer
         catch (Exception ex)
         {
             // 玩家就绪包并发更新字典导致遍历异常时，返回 false 让下一轮重试
-            Console.WriteLine($"就绪状态检查异常: {ex.Message}");
+            Log.Info($"就绪状态检查异常: {ex.Message}");
             return false;
         }
     }
@@ -315,7 +315,7 @@ public static class MultyPlayer
     {
         if (room.StartTicks != 0)
         {
-            Console.WriteLine("startTrigger: room.StartTicks 已经设置,跳过执行");
+            Log.Info($"startTrigger: room.StartTicks 已经设置,跳过执行");
             return;
         }
         room.StartTicks = ConvertTick() + 3000;
@@ -372,36 +372,9 @@ public static class MultyPlayer
         using (OutPacket outPacket = new OutPacket("GameControlPacket"))
         {
             outPacket.WriteInt(4);
-            outPacket.WriteByte(0);
             outPacket.WriteUInt(settleTick);
             BroadCast(retryRoomId, outPacket);
         }
-
-        var resendTimer = new System.Timers.Timer(1800);
-        resendTimer.Elapsed += (s2, e2) =>
-        {
-            try
-            {
-                using (OutPacket retry = new OutPacket("GameControlPacket"))
-                {
-                    retry.WriteInt(4);
-                    retry.WriteByte(0);
-                    retry.WriteUInt(settleTick);
-                    BroadCast(retryRoomId, retry);
-                }
-                using (OutPacket stage = new OutPacket("GameNextStagePacket"))
-                {
-                    stage.WriteByte(retryMode);
-                    stage.WriteInt();
-                    stage.WriteInt();
-                    BroadCast(retryRoomId, stage);
-                }
-            }
-            catch { }
-            resendTimer.Dispose();
-        };
-        resendTimer.AutoReset = false;
-        resendTimer.Start();
 
         InitRoom(room);
 
@@ -418,10 +391,10 @@ public static class MultyPlayer
             room.RoomMaster = firstID;
             p2.PlayerType = 2;
         }
-        Console.WriteLine("EndTicks = {0}", room.EndTicks + 6000);
+        Log.Info($"EndTicks = {room.EndTicks + 6000}");
     }
 
-    public static void Clientsession(SessionGroup Parent, uint hash, InPacket iPacket)
+    public static void Clientsession(SessionGroup Parent, string packetName, InPacket iPacket)
     {
         if (!string.IsNullOrEmpty(Parent.Client.Nickname))
         {
@@ -432,12 +405,12 @@ public static class MultyPlayer
             ProfileService.Load(Parent.Client.Nickname);
         }
 
-        if (hash == PacketHash.GameSlotPacket)
+        if (packetName == "GameSlotPacket")
         {
             SlotData.GameSlotPacket(Parent, iPacket);
             return;
         }
-        else if (hash == PacketHash.GameControlPacket)
+        else if (packetName == "GameControlPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -445,7 +418,7 @@ public static class MultyPlayer
             {
                 return;
             }
-            var state = iPacket.ReadByte();
+            var state = iPacket.ReadInt();
             //start
             if (state == 0 && room.StartTicks == 0)
             {
@@ -454,7 +427,6 @@ public static class MultyPlayer
             //finish
             else if (state == 2)
             {
-                iPacket.ReadInt();
                 var time = iPacket.ReadUInt();
                 var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
                 if (player != null)
@@ -466,7 +438,7 @@ public static class MultyPlayer
                         BroadCast(roomId, oPacket);
                     }
                     room.TimeData.TryAdd(player.ID, time);
-                    Console.WriteLine("GameControlPacket, ID = {0}, Time = {1}", player.ID, time);
+                    Log.Info($"GameControlPacket, ID = {player.ID}, Time = {time}");
                 }
                 if (room.EndTicks == 0)
                 {
@@ -483,7 +455,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.ChGetRoomListRequestPacket)
+        else if (packetName == "ChGetRoomListRequestPacket")
         {
             int page = iPacket.ReadInt();
             // 请求体第二个字段是模式(gameType)，不是频道；频道由 PqChannelMovein 记录在玩家档案里
@@ -498,7 +470,7 @@ public static class MultyPlayer
             Log.Info($"[RoomList] {Parent.Client.Nickname} channel={channel} gameType={gameType} isolate={isolate} page={page} -> total={total}");
             using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
             {
-                Console.WriteLine($"Room Count: {total} (channel={channel}, isolate={isolate})");
+                Log.Info($"Room Count: {total} (channel={channel}, isolate={isolate})");
                 oPacket.WriteInt(total); // 房间总数（本频道）
                 oPacket.WriteInt(page);
                 oPacket.WriteInt(rooms.Count); // 房间数量
@@ -521,7 +493,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqChannelSwitch)
+        else if (packetName == "PqChannelSwitch")
         {
             int length = iPacket.ReadInt();
             iPacket.ReadBytes(length);
@@ -529,7 +501,7 @@ public static class MultyPlayer
             var channelData = GameSupport.Channels.ContainsKey(channel) ? GameSupport.Channels[channel] : null;
             if (channelData == null) return;
             StartTimeAttack[Parent.Client.Nickname] = channelData.CreateSpeed;
-            Console.WriteLine("Channel Switch, channel = {0}", channelData.Name);
+            Log.Info($"Channel Switch, channel = {channelData.Name}");
 
             // 获取服务器IP地址
             IPEndPoint serverIPEndPoint = GetServerEndPoint(Parent);
@@ -544,7 +516,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqChannelMovein)
+        else if (packetName == "PqChannelMovein")
         {
             uint UserNO = iPacket.ReadUInt();
             // 第二个 int 是频道号（0-based）：[hash][UserNO][channel]...
@@ -578,7 +550,7 @@ public static class MultyPlayer
                 var nicknameConfig = ProfileService.GetProfileConfig(nickname);
                 if (nicknameConfig?.Rider == null)
                 {
-                    Console.WriteLine("[PrChannelMoveIn] Warning: ProfileConfig or Rider is null for {0}", nickname);
+                    Log.Info($"[PrChannelMoveIn] Warning: ProfileConfig or Rider is null for {nickname}");
                     return;
                 }
                 nicknameConfig.Rider.ClientId = clientId;
@@ -594,7 +566,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.ChCreateRoomRequestPacket)
+        else if (packetName == "ChCreateRoomRequestPacket")
         {
             // 房间人数不在已解析的字段里，而是紧跟在标记 BA 7C 70 之后的一个字节（2/4/6/8）
             byte[] rawCreate = iPacket.GetRawBuffer();
@@ -688,13 +660,13 @@ public static class MultyPlayer
                     : RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 2, 2, Parent);
                 if (slot == 255)
                 {
-                    Console.WriteLine("CreateRoom Failed");
+                    Log.Info($"CreateRoom Failed");
                     return;
                 }
                 Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
                 if (player == null)
                 {
-                    Console.WriteLine("GetPlayer Failed");
+                    Log.Info($"GetPlayer Failed");
                     return;
                 }
                 Room.RoomMaster = player.ID;
@@ -717,13 +689,13 @@ public static class MultyPlayer
                 byte slot = RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 0, 2, Parent);
                 if (slot == 255)
                 {
-                    Console.WriteLine("CreateRoom Failed");
+                    Log.Info($"CreateRoom Failed");
                     return;
                 }
                 Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
                 if (player == null)
                 {
-                    Console.WriteLine("GetPlayer Failed");
+                    Log.Info($"GetPlayer Failed");
                     return;
                 }
                 Room.RoomMaster = player.ID;
@@ -752,7 +724,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrFirstRequestPacket)
+        else if (packetName == "GrFirstRequestPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             if (roomId == -1)
@@ -772,7 +744,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrChangeTrackPacket)
+        else if (packetName == "GrChangeTrackPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -785,7 +757,7 @@ public static class MultyPlayer
             GrSlotDataPacket(roomId);
             return;
         }
-        else if (hash == PacketHash.GrRequestSetSlotStatePacket)
+        else if (packetName == "GrRequestSetSlotStatePacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -797,7 +769,7 @@ public static class MultyPlayer
             var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
             if (player == null)
             {
-                Console.WriteLine("GetPlayer Failed, roomId = {0}, Parent.Client.Nickname = {1}", roomId, Parent.Client.Nickname);
+                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
                 return;
             }
 
@@ -817,7 +789,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrRequestClosePacket)
+        else if (packetName == "GrRequestClosePacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             if (roomId == -1)
@@ -990,22 +962,22 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrRequestStartPacket)
+        else if (packetName == "GrRequestStartPacket")
         {
             GrSessionDataPacket(Parent);
             return;
         }
-        else if (hash == PacketHash.PcReportStateInGame)
+        else if (packetName == "PcReportStateInGame")
         {
             return;
         }
-        else if (hash == PacketHash.ChLeaveRoomRequestPacket)
+        else if (packetName == "ChLeaveRoomRequestPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             int slotId = RoomManager.GetPlayerSlotId(roomId, Parent.Client.Nickname);
             if (slotId != -1)
             {
-                Console.WriteLine($"Leave roomId: {roomId} slotId: {slotId}");
+                Log.Info($"Leave roomId: {roomId} slotId: {slotId}");
                 var Leave = RoomManager.RemovePlayer(roomId, (byte)slotId, Parent.Client.Nickname);
                 using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
                 {
@@ -1015,7 +987,7 @@ public static class MultyPlayer
             }
             else
             {
-                Console.WriteLine($"Leave Failed roomId: {roomId} slotId: {slotId}");
+                Log.Info($"Leave Failed roomId: {roomId} slotId: {slotId}");
                 using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
                 {
                     oPacket.WriteBool(false);
@@ -1024,7 +996,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrRequestBasicAiPacket)
+        else if (packetName == "GrRequestBasicAiPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1058,7 +1030,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GameAiGoalinPacket)
+        else if (packetName == "GameAiGoalinPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1075,7 +1047,7 @@ public static class MultyPlayer
                 BroadCast(roomId, oPacket);
             }
             room.TimeData.TryAdd(Id, Time);
-            Console.WriteLine("GameAiGoalinPacket, Id = {0}, Time = {1}", Id, Time);
+            Log.Info($"GameAiGoalinPacket, Id = {Id}, Time = {Time}");
             if (room.EndTicks == 0)
             {
                 room.SnapshotMembers = DeepCopyMembers(room._IDs);
@@ -1090,7 +1062,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GameTeamBoosterRequestAddGaugePacket)
+        else if (packetName == "GameTeamBoosterRequestAddGaugePacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1100,7 +1072,7 @@ public static class MultyPlayer
             }
             var team = iPacket.ReadByte();
             var value = iPacket.ReadFloat();
-            Console.WriteLine("GameTeamBoosterRequestAddGaugePacket, teams = {0}, value = {1}", team, value);
+            Log.Info($"GameTeamBoosterRequestAddGaugePacket, teams = {team}, value = {value}");
 
             if (!room.IsValidTeam(team))
             {
@@ -1118,7 +1090,7 @@ public static class MultyPlayer
             if (gauge >= 1f) room.ResetTeamGauge(team);
             return;
         }
-        else if (hash == PacketHash.GrChangeTeamPacket)
+        else if (packetName == "GrChangeTeamPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1129,14 +1101,14 @@ public static class MultyPlayer
             var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
             if (player == null)
             {
-                Console.WriteLine("GetPlayer Failed, roomId = {0}, Parent.Client.Nickname = {1}", roomId, Parent.Client.Nickname);
+                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
                 return;
             }
             byte team = iPacket.ReadByte();
             bool Bool;
             if (room.DuoTeam) Bool = RoomManager.ChangeDuoTeam(roomId, player.SlotId, team);
             else Bool = RoomManager.ChangeMemberTeam(roomId, player.SlotId, team);
-            Console.WriteLine("ChangeMemberTeam, roomId = {0}, SlotId = {1}, Team = {2}, {3}", roomId, player.SlotId, team, Bool);
+            Log.Info($"ChangeMemberTeam, roomId = {roomId}, SlotId = {player.SlotId}, Team = {team}, {Bool}");
             using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
             {
                 oPacket.WriteInt(player.ID);
@@ -1147,17 +1119,17 @@ public static class MultyPlayer
             GrSlotDataPacket(roomId);
             return;
         }
-        else if (hash == PacketHash.ChJoinRoomRequestPacket)
+        else if (packetName == "ChJoinRoomRequestPacket")
         {
             var roomId = iPacket.ReadByte();
             var unk = iPacket.ReadByte();
             var pwd = iPacket.ReadString();
-            Console.WriteLine("ChJoinRoomRequestPacket, roomId = {0}, unk = {1}, pwd = {2}", roomId, unk, pwd);
+            Log.Info($"ChJoinRoomRequestPacket, roomId = {roomId}, unk = {unk}, pwd = {pwd}");
 
             ChJoinRoomReplyPacket(Parent, roomId, pwd);
             return;
         }
-        else if (hash == PacketHash.GrRiderTalkPacket)
+        else if (packetName == "GrRiderTalkPacket")
         {
             string value = iPacket.ReadString();
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
@@ -1168,14 +1140,14 @@ public static class MultyPlayer
             var room = RoomManager.GetRoom(roomId);
             if (room == null)
             {
-                Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+                Log.Info($"GetRoom Failed, roomId = {roomId}");
                 return;
             }
 
             var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
             if (player == null)
             {
-                Console.WriteLine("GetPlayer Failed, roomId = {0}, Parent.Client.Nickname = {1}", roomId, Parent.Client.Nickname);
+                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
                 return;
             }
 
@@ -1208,13 +1180,13 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqRoomMasterChangePacket)
+        else if (packetName == "PqRoomMasterChangePacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
             if (room == null)
             {
-                Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+                Log.Info($"GetRoom Failed, roomId = {roomId}");
                 return;
             }
             if (!room.Started)
@@ -1230,7 +1202,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PcStartMatching || hash == PacketHash.PcCancelMatching)
+        else if (packetName == "PcStartMatching" || packetName == "PcCancelMatching")
         {
             var roomList = RoomManager._rooms.Values.Where(r => !r.Lock && !r.Started && r.GetCount() < (8 - r.CloseSlotIds.Count)).ToList();
             if (roomList.Count > 0)
@@ -1249,7 +1221,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.ChGetCurrentCmpRequestPacket)
+        else if (packetName == "ChGetCurrentCmpRequestPacket")
         {
             using (OutPacket outPacket = new OutPacket("ChGetCurrentCmpReplyPacket"))
             {
@@ -1258,7 +1230,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqRotationModeDataPacket)
+        else if (packetName == "PqRotationModeDataPacket")
         {
             using (OutPacket outPacket = new OutPacket("PrRotationModeDataPacket"))
             {
@@ -1267,7 +1239,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqChangeRoomInfoPacket)
+        else if (packetName == "PqChangeRoomInfoPacket")
         {
             string RoomName = iPacket.ReadString();
             string RoomPassword = iPacket.ReadString();
@@ -1277,13 +1249,13 @@ public static class MultyPlayer
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             if (roomId == -1)
             {
-                Console.WriteLine("TryGetRoomId Failed, Parent.Client.Nickname = {0}", Parent.Client.Nickname);
+                Log.Info($"TryGetRoomId Failed, Parent.Client.Nickname = {Parent.Client.Nickname}");
                 return;
             }
             var room = RoomManager.GetRoom(roomId);
             if (room == null)
             {
-                Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+                Log.Info($"GetRoom Failed, roomId = {roomId}");
                 return;
             }
             room.RoomName = RoomName;
@@ -1308,12 +1280,12 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.GrRequestKickPacket)
+        else if (packetName == "GrRequestKickPacket")
         {
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             if (roomId == -1)
             {
-                Console.WriteLine("TryGetRoomId Failed, Parent.Client.Nickname = {0}", Parent.Client.Nickname);
+                Log.Info($"TryGetRoomId Failed, Parent.Client.Nickname = {Parent.Client.Nickname}");
                 return;
             }
             int ID = iPacket.ReadInt();
@@ -1341,7 +1313,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.ChGetCurrentGpRequestPacket)
+        else if (packetName == "ChGetCurrentGpRequestPacket")
         {
             using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
             {
@@ -1355,7 +1327,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqWhereIsRider)
+        else if (packetName == "PqWhereIsRider")
         {
             uint UserID = iPacket.ReadUInt();
             string nickname = ClientManager.GetNickname(UserID);
@@ -1387,7 +1359,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqWhereAmI)
+        else if (packetName == "PqWhereAmI")
         {
             uint UserID = iPacket.ReadUInt();
             int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
@@ -1410,7 +1382,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqInviteGamePacket)
+        else if (packetName == "PqInviteGamePacket")
         {
             uint UserID = iPacket.ReadUInt();
             string nickname = ClientManager.GetNickname(UserID);
@@ -1437,7 +1409,7 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (hash == PacketHash.PqSendMacroChat)
+        else if (packetName == "PqSendMacroChat")
         {
             var roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
@@ -1475,6 +1447,15 @@ public static class MultyPlayer
                         StopGame(roomId, Parent);
                     }
                 }
+            }
+            return;
+        }
+        else if (packetName == "ChGetCurrentMpRequestPacket")
+        {
+            using (OutPacket outPacket = new OutPacket("ChGetCurrentMpReplyPacket"))
+            {
+                outPacket.WriteHexString("83 08 00 00 83 08 00 00 08 00 00 00 04 01 00 00 C8 00 00 00 00 00 68 41 01 00 00 01 00 01");
+                Parent.Client.Send(outPacket);
             }
             return;
         }
@@ -1597,7 +1578,7 @@ public static class MultyPlayer
                 var pConfig = profileComplete ? rawConfig : new ProfileConfig();
                 if (!profileComplete)
                 {
-                    Console.WriteLine("[GrSlotDataPacket] Warning: ProfileConfig incomplete for player {0}, using defaults", p.Nickname);
+                    Log.Info($"[GrSlotDataPacket] Warning: ProfileConfig incomplete for player {p.Nickname}, using defaults");
                 }
 
                 if (Log.IsPacketTraceEnabled)
@@ -1669,7 +1650,7 @@ public static class MultyPlayer
             }
             else if (member is Ai a)
             {
-                Console.WriteLine("Ai ID = {0}, SlotId = {1}", a.ID, a.SlotId);
+                Log.Info($"Ai ID = {a.ID}, SlotId = {a.SlotId}");
                 outPacket.WriteInt(7);
                 outPacket.WriteShort(a.Character);
                 outPacket.WriteShort(a.Rid);
@@ -1707,7 +1688,7 @@ public static class MultyPlayer
                 var pConfig = profileComplete ? rawConfig : new ProfileConfig();
                 if (!profileComplete)
                 {
-                    Console.WriteLine("[GrSlotDataPacket] Warning: ProfileConfig incomplete for observer {0}, using defaults", p.Nickname);
+                    Log.Info($"[GrSlotDataPacket] Warning: ProfileConfig incomplete for observer {p.Nickname}, using defaults");
                 }
                 outPacket.WriteInt(p.PlayerType);
                 outPacket.WriteUInt(ClientManager.GetUserNO(p.Nickname));
@@ -1893,10 +1874,10 @@ public static class MultyPlayer
         var room = RoomManager.GetRoom(roomId);
         using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
         {
-            oPacket.WriteUInt(PacketHash.GrSessionDataPacket);
+            oPacket.WriteUInt((uint)PacketName.GrSessionDataPacket);
             GrSessionDataPacket(p.Nickname, oPacket);
 
-            oPacket.WriteUInt(PacketHash.GrSlotDataPacket);
+            oPacket.WriteUInt((uint)PacketName.GrSlotDataPacket);
             GrSlotDataPacket(roomId, oPacket, true, p.Nickname);
             oPacket.WriteInt();
 
@@ -1926,7 +1907,7 @@ public static class MultyPlayer
             oPacket.WriteInt(10000);
 
             oPacket.WriteInt();
-            oPacket.WriteUInt(PacketHash.MissionInfo);
+            oPacket.WriteUInt((uint)PacketName.MissionInfo);
             oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00");
             //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
             Log.Debug($"Track : {RandomTrack.GetTrackName(room.trackTemp)}");
@@ -1949,7 +1930,7 @@ public static class MultyPlayer
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
         {
-            Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+            Log.Info($"GetRoom Failed, roomId = {roomId}");
             return;
         }
         outPacket.WriteString(room.RoomName);
@@ -2128,7 +2109,7 @@ public static class MultyPlayer
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"BroadCast OB Send Error [{p.Nickname}]: {ex.Message}");
+                        Log.Info($"BroadCast OB Send Error [{p.Nickname}]: {ex.Message}");
                     }
                 }
             }
@@ -2148,7 +2129,7 @@ public static class MultyPlayer
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"BroadCast Send Error [{p.Nickname}]: {ex.Message}");
+                            Log.Info($"BroadCast Send Error [{p.Nickname}]: {ex.Message}");
                         }
                     }
                     else if (p.Team == team)
@@ -2159,7 +2140,7 @@ public static class MultyPlayer
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"BroadCast TeamSend Error [{p.Nickname}]: {ex.Message}");
+                            Log.Info($"BroadCast TeamSend Error [{p.Nickname}]: {ex.Message}");
                         }
                     }
                 }
@@ -2325,7 +2306,7 @@ public static class MultyPlayer
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
         {
-            Console.WriteLine("GetRoom Failed, roomId = {0}", roomId);
+            Log.Info($"GetRoom Failed, roomId = {roomId}");
         }
         var selector = new DictionaryRandomSelector();
         List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 2);
@@ -2562,7 +2543,7 @@ public static class MultyPlayer
         {
             firstTeam = a2.Team;
         }
-        Console.WriteLine("第一名 ID: {0} Team: {1}", firstId, firstTeam);
+        Log.Info($"第一名 ID: {firstId} Team: {firstTeam}");
 
         int redTeam = 0;
         int blueTeam = 0;
@@ -2648,7 +2629,7 @@ public static class MultyPlayer
                     var p4Config = p4Complete ? rawConfig : new ProfileConfig();
                     if (!p4Complete)
                     {
-                        Console.WriteLine("[GrGameResultPacket] Warning: ProfileConfig incomplete for {0}, using defaults", p4.Nickname);
+                        Log.Info($"[GrGameResultPacket] Warning: ProfileConfig incomplete for {p4.Nickname}, using defaults");
                     }
 
                     outPacket.WriteInt(p4.ID); // player id
@@ -2657,7 +2638,7 @@ public static class MultyPlayer
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
                     int playerRanking = ranking[p4.ID];
                     int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : teamPoints[playerRanking];
-                    Console.WriteLine("Player {0} 排名 {1} 得分 {2}", p4.ID, playerRanking, playerPoint);
+                    Log.Info($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
                     outPacket.WriteInt(playerRanking);
                     if (room.GameType == 3 || room.GameType == 4)
                     {
@@ -2725,7 +2706,7 @@ public static class MultyPlayer
                     outPacket.WriteShort(a4.Kart);
                     int AiRanking = ranking[a4.ID];
                     int AiPoint = timeData[a4.ID] == uint.MaxValue ? 0 : teamPoints[AiRanking];
-                    Console.WriteLine("AI {0} 排名 {1} 得分 {2}", a4.ID, AiRanking, AiPoint);
+                    Log.Info($"AI {a4.ID} 排名 {AiRanking} 得分 {AiPoint}");
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteShort(0);
                     if (room.GameType == 3 || room.GameType == 4)
@@ -2740,7 +2721,7 @@ public static class MultyPlayer
                     }
                 }
             }
-            Console.WriteLine("红队得分 {0} 蓝队得分 {1}", redTeam, blueTeam);
+            Log.Info($"红队得分 {redTeam} 蓝队得分 {blueTeam}");
             outPacket.WriteBytes(new byte[34]);
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
             BroadCast(room.RoomId, outPacket);

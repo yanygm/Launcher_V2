@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -147,7 +148,7 @@ public static class RoomManager
         _playerRoomMap.TryRemove(nickname, out _);
         if (!_playerRoomMap.TryAdd(nickname, roomId))
         {
-            Console.WriteLine("[DuoAdd] {0} 注册房间 {1} 失败", nickname, roomId);
+            Log.Info($"[DuoAdd] {nickname} 注册房间 {roomId} 失败");
             return 255;
         }
         if (!Profile.FileName.FileNames.ContainsKey(nickname))
@@ -159,7 +160,7 @@ public static class RoomManager
         {
             return added;
         }
-        Console.WriteLine("[DuoAdd] {0} 入座失败（room={1}, slots full?）", nickname, roomId);
+        Log.Info($"[DuoAdd] {nickname} 入座失败（room={roomId}, slots full?）");
         _playerRoomMap.TryRemove(nickname, out _);
         return 255;
     }

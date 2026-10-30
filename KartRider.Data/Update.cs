@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows.Forms;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -26,15 +27,15 @@ namespace KartRider
         public static async Task<bool> UpdateDataAsync(bool silent = false)
         {
             filePath = JsonHelper.GetFilePath();
-            Console.WriteLine("当前程序路径: " + filePath);
+            Log.Info($"当前程序路径: " + filePath);
             name = Path.GetFileName(filePath);
             // 计算文件的SHA256哈希值
             string sha256Hash = "sha256:" + CalculateSHA256(filePath);
-            Console.WriteLine("当前程序SHA256: " + sha256Hash);
+            Log.Info($"当前程序SHA256: " + sha256Hash);
             string Update_Folder = Path.Combine(Path.GetDirectoryName(filePath), "Update");
             string Update_File = Path.Combine(Update_Folder, name);
-            Console.WriteLine("开始读取GitHub Releases API数据...");
-            Console.WriteLine("==============================");
+            Log.Info($"开始读取GitHub Releases API数据...");
+            Log.Info($"==============================");
             try
             {
                 // 2. 创建HttpClient（设置User-Agent，避免GitHub API拒绝请求）
@@ -54,7 +55,7 @@ namespace KartRider
                 // 5. 筛选name="Launcher.exe"的资产
                 if (releaseData?.Assets == null || releaseData.Assets.Length == 0)
                 {
-                    Console.WriteLine("错误：API返回的资产列表为空");
+                    Log.Info($"错误：API返回的资产列表为空");
                     return false;
                 }
 
@@ -64,11 +65,11 @@ namespace KartRider
                 // 6. 输出结果
                 if (launcherExeAsset != null)
                 {
-                    Console.WriteLine("找到目标文件：" + name);
-                    Console.WriteLine($"Digest: {launcherExeAsset.digest}");
-                    Console.WriteLine($"Browser_Download_Url: {launcherExeAsset.browser_download_url}");
-                    Console.WriteLine($"更新说明: \n{releaseData.body}");
-                    Console.WriteLine("==============================");
+                    Log.Info($"找到目标文件：" + name);
+                    Log.Info($"Digest: {launcherExeAsset.digest}");
+                    Log.Info($"Browser_Download_Url: {launcherExeAsset.browser_download_url}");
+                    Log.Info($"更新说明: \n{releaseData.body}");
+                    Log.Info($"==============================");
                     if (launcherExeAsset.digest != sha256Hash)
                     {
                         // 非静默模式（AutoUpdate 关闭）：先弹窗询问，用户确认后才开始下载
@@ -82,7 +83,7 @@ namespace KartRider
 
                             if (result != DialogResult.Yes)
                             {
-                                Console.WriteLine("用户取消更新，保留当前版本");
+                                Log.Info($"用户取消更新，保留当前版本");
                                 return false;
                             }
                         }
@@ -118,38 +119,38 @@ namespace KartRider
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"下载过程中出现错误: {ex.Message}");
+                            Log.Info($"下载过程中出现错误: {ex.Message}");
                             return false;
                         }
                     }
                     else
                     {
-                        Console.WriteLine("当前已是最新版本，无需更新。");
+                        Log.Info($"当前已是最新版本，无需更新。");
                         return false;
                     }
                 }
                 else
                 {
-                    Console.WriteLine("未找到名称为\"" + name + "\"的文件");
+                    Log.Info($"未找到名称为\"" + name + "\"的文件");
                     return false;
                 }
                 return false;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"网络请求错误：{ex.Message}");
-                Console.WriteLine("可能原因：API地址无效、网络断开、GitHub API限流");
+                Log.Info($"网络请求错误：{ex.Message}");
+                Log.Info($"可能原因：API地址无效、网络断开、GitHub API限流");
                 return false;
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"JSON反序列化错误：{ex.Message}");
-                Console.WriteLine("可能原因：API返回格式异常");
+                Log.Info($"JSON反序列化错误：{ex.Message}");
+                Log.Info($"可能原因：API返回格式异常");
                 return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"未知错误：{ex.Message}");
+                Log.Info($"未知错误：{ex.Message}");
                 return false;
             }
         }
@@ -170,7 +171,7 @@ namespace KartRider
                 string actualHash = "sha256:" + CalculateSHA256(updateFilePath);
                 if (!string.Equals(actualHash, expectedDigest, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("校验失败：下载文件的哈希与官方发布不一致，已取消更新");
+                    Log.Info($"校验失败：下载文件的哈希与官方发布不一致，已取消更新");
                     return false;
                 }
 
@@ -180,7 +181,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"应用更新时出错: {ex.Message}");
+                Log.Info($"应用更新时出错: {ex.Message}");
                 return false;
             }
         }
@@ -223,7 +224,7 @@ namespace KartRider
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"清理更新目录时出错: {ex.Message}");
+                    Log.Info($"清理更新目录时出错: {ex.Message}");
                 }
 
                 // 4. 启动新版本，由新实例完成旧备份清理
@@ -240,7 +241,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n应用更新时出错: {ex.Message}");
+                Log.Info($"\n应用更新时出错: {ex.Message}");
                 return false;
             }
         }
@@ -256,12 +257,12 @@ namespace KartRider
                 if (File.Exists(oldFile))
                 {
                     File.Delete(oldFile);
-                    Console.WriteLine("已清理旧版本备份: " + oldFile);
+                    Log.Info($"已清理旧版本备份: " + oldFile);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"清理旧版本备份时出错: {ex.Message}");
+                Log.Info($"清理旧版本备份时出错: {ex.Message}");
             }
         }
 
@@ -282,14 +283,14 @@ namespace KartRider
                     }
                     else
                     {
-                        Console.WriteLine($"请求失败，状态码: {response.StatusCode}");
+                        Log.Info($"请求失败，状态码: {response.StatusCode}");
                         return null;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"发生异常: {ex.Message}");
+                Log.Info($"发生异常: {ex.Message}");
                 return null;
             }
         }
@@ -363,7 +364,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"请求或解析失败: {ex.Message}");
+                Log.Info($"请求或解析失败: {ex.Message}");
                 return null;
             }
         }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Xml;
 using KartRider.IO.Packet;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -111,7 +112,7 @@ namespace KartRider
 
             GrandPrizeGranted = true;
             Stock.GetStockItem(parent, selectedStock);
-            Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，发放所选大奖：stock={selectedStock} setId={BingoItem}");
+            Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，发放所选大奖：stock={selectedStock} setId={BingoItem}");
         }
 
         /**
@@ -175,7 +176,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Bingo] 读取进度失败：{filename.Bingo_LoadFile} - {ex.Message}");
+                Log.Info($"[Bingo] 读取进度失败：{filename.Bingo_LoadFile} - {ex.Message}");
             }
             if (data == null) return;
 
@@ -215,7 +216,7 @@ namespace KartRider
                 }
             }
 
-            Console.WriteLine($"[Bingo] 已加载 {Nickname} 的Bingo进度：格子={BingoNumsList.Count} 道具={BingoItemsList.Count} 已连线={CompletedLines.Count}");
+            Log.Info($"[Bingo] 已加载 {Nickname} 的Bingo进度：格子={BingoNumsList.Count} 道具={BingoItemsList.Count} 已连线={CompletedLines.Count}");
         }
 
         public void BingoNumber()
@@ -253,7 +254,7 @@ namespace KartRider
             Lottery.TryGet(lotteryId, out LotteryManager lotteryManager);
             if (lotteryManager == null)
             {
-                Console.WriteLine($"抽奖数据尚未初始化，无法执行抽奖（LotteryId: {lotteryId}）");
+                Log.Info($"抽奖数据尚未初始化，无法执行抽奖（LotteryId: {lotteryId}）");
                 return;
             }
             uint stock1 = lotteryManager.GetRandomStockIds(1)[0];
@@ -298,19 +299,19 @@ namespace KartRider
                 {
                     TryGrantSelectedPrize(parent);
                     Reset();
-                    Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，已重置面板");
+                    Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 全盘点亮，已重置面板");
                 }
                 if (newLines.Count > 0)
                 {
-                    Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 本次新连成连线={string.Join(",", newLines)} 道具={string.Join(",", newLines.Where(i => i < BingoItemsList.Count).Select(i => BingoItemsList[i]))}");
+                    Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 本次新连成连线={string.Join(",", newLines)} 道具={string.Join(",", newLines.Where(i => i < BingoItemsList.Count).Select(i => BingoItemsList[i]))}");
                 }
             }
             else if (BingoNums.ContainsKey(BingoNum))
             {
-                Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 数字={BingoNum} 已点亮过，跳过连线判定");
+                Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 数字={BingoNum} 已点亮过，跳过连线判定");
             }
             Save();
-            Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 抽奖 数字={BingoNum} 次数={BingoCount} 已点亮={BingoNums.Count(n => n.Value == 1)}/{BingoNumsList.Count} 已连线={CompletedLines.Count}");
+            Log.Info($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{Nickname}] 抽奖 数字={BingoNum} 次数={BingoCount} 已点亮={BingoNums.Count(n => n.Value == 1)}/{BingoNumsList.Count} 已连线={CompletedLines.Count}");
         }
 
         private uint GetSelectedGrandPrizeStockId()
@@ -361,7 +362,7 @@ namespace KartRider
             // 验证字典包含25个元素
             if (BingoNums == null || BingoNumsList.Count < 25)
             {
-                Console.WriteLine("Bingo宫格必须包含25个数字");
+                Log.Info($"Bingo宫格必须包含25个数字");
                 return newLines;
             }
 
@@ -395,7 +396,7 @@ namespace KartRider
                     }
                 }
 
-                Console.WriteLine($"[{Nickname}] " + string.Join(" ", numbers));
+                Log.Info($"[{Nickname}] " + string.Join(" ", numbers));
             }
 
             return newLines;

@@ -1,6 +1,7 @@
 ﻿using System;
 using ExcData;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -11,7 +12,7 @@ namespace KartRider
             var resetConfig = ProfileService.GetProfileConfig(Nickname);
             if (resetConfig?.Rider == null)
             {
-                Console.WriteLine("[DataReset] Warning: ProfileConfig or Rider is null for {0}", Nickname);
+                Log.Info($"[DataReset] Warning: ProfileConfig or Rider is null for {Nickname}");
                 return;
             }
             // 注意: Lucci/RP/Koin/Cash/TcCash 均为 uint 类型，合法范围 0 ~ 4294967295
@@ -41,7 +42,7 @@ namespace KartRider
             }
             ProfileService.Save(Nickname, resetConfig);
             //GameSupport.PrLogin();
-            Console.WriteLine("Login...OK");
+            Log.Info($"Login...OK");
         }
     }
 }

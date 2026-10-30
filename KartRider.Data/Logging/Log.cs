@@ -374,7 +374,7 @@ namespace KartRider.Logging
             {
                 Info($"[Log] 包输出已开启：S/U/M 过滤='{(_traceFilter == "" ? "全部" : _traceFilter)}'，采样 1/{_traceSample}，"
                      + $"每秒上限 {_traceMaxPerSecond}，控制台={(toConsole ? "是" : "否")}；C（客户端上行）全量记录，不采样、不过滤、不限速");
-                Info("[Log] 格式: [方向][时间][昵称] 包名: 十六进制(每4字符空格)；"
+                Info("[Log] 格式: [方向][时间][昵称] 包名: 十六进制(每4字符空格)；未知包名显示为 uint 十进制值；"
                      + "C=客户端→服务端(全量), S=服务端→客户端, U=UDP对局, M=聊天服" + (showUdp ? "" : "（U 已隐藏）"));
                 if (!toConsole)
                 {
@@ -395,11 +395,11 @@ namespace KartRider.Logging
         {
             try
             {
-                return Enum.GetName(typeof(KartRider_PacketName.PacketName), opcode) ?? "0x" + opcode.ToString("X8");
+                return Enum.GetName(typeof(KartRider_PacketName.PacketName), opcode) ?? opcode.ToString();
             }
             catch
             {
-                return "0x" + opcode.ToString("X8");
+                return opcode.ToString();
             }
         }
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using KartLibrary.File.Lpk;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -34,7 +35,7 @@ internal static class RhoPacker
                     }
                     else
                     {
-                        Console.WriteLine($"[跳过] 不是 .lpk 文件：{arg}");
+                        Log.Info($"[跳过] 不是 .lpk 文件：{arg}");
                         failed++;
                     }
                 }
@@ -45,19 +46,19 @@ internal static class RhoPacker
                 }
                 else
                 {
-                    Console.WriteLine($"[跳过] 路径不存在：{arg}");
+                    Log.Info($"[跳过] 路径不存在：{arg}");
                     failed++;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[失败] {arg}");
-                Console.WriteLine($"       {ex.Message}");
+                Log.Info($"[失败] {arg}");
+                Log.Info($"       {ex.Message}");
                 failed++;
             }
         }
 
-        Console.WriteLine($"全部完成：成功 {success} 项，失败 {failed} 项。");
+        Log.Info($"全部完成：成功 {success} 项，失败 {failed} 项。");
         WaitForExit();
     }
 
@@ -78,8 +79,8 @@ internal static class RhoPacker
         WriteFolder(root, outputDir, ref count);
         manager.Reset();
 
-        Console.WriteLine($"[解包] {Path.GetFileName(fullPath)} → {outputDir}");
-        Console.WriteLine($"       共导出 {count} 个文件");
+        Log.Info($"[解包] {Path.GetFileName(fullPath)} → {outputDir}");
+        Log.Info($"       共导出 {count} 个文件");
     }
 
     private static void WriteFolder(LpkFolderInfo folder, string dir, ref int count)
@@ -123,8 +124,8 @@ internal static class RhoPacker
 
         // 完全按目录内容重新打包，不读取同目录下的旧包
         LpkV4.Encode(outputPath, entries);
-        Console.WriteLine($"[打包] {fullDir} → {outputPath}");
-        Console.WriteLine($"       共写入 {entries.Count} 个文件");
+        Log.Info($"[打包] {fullDir} → {outputPath}");
+        Log.Info($"       共写入 {entries.Count} 个文件");
     }
 
     private static void CollectEntries(string rootDir, string relative, List<LpkV4.LpkEntry> entries)
@@ -156,8 +157,8 @@ internal static class RhoPacker
     {
         try
         {
-            Console.WriteLine();
-            Console.WriteLine("按任意键退出...");
+            Log.Info("");
+            Log.Info($"按任意键退出...");
             Console.ReadKey(true);
         }
         catch

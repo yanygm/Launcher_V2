@@ -10,6 +10,7 @@ using KartRider.Common.Security;
 using KartRider.IO.Packet;
 using Profile;
 using RiderData;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -106,7 +107,7 @@ namespace KartRider
             var config = ProfileService.GetProfileConfig(Nickname);
             if (config?.GameOption == null)
             {
-                Console.WriteLine("[PrGetGameOption] Warning: ProfileConfig or GameOption is null for {0}", Nickname);
+                Log.Info($"[PrGetGameOption] Warning: ProfileConfig or GameOption is null for {Nickname}");
                 return;
             }
             using (OutPacket outPacket = new OutPacket("PrGetGameOption"))
@@ -225,23 +226,23 @@ namespace KartRider
             List<uint> ids = new List<uint>();
             if (questInfo != null)
             {
-            string period = questInfo.Attribute("seasonPeriod").Value;
-            var isInTime = IsCurrentTimeInPeriod(period);
-            if (isInTime != null)
-            {
-                string seasonId = questInfo.Attribute("seasonId").Value;
-                foreach (int group in isInTime)
+                string period = questInfo.Attribute("seasonPeriod").Value;
+                var isInTime = IsCurrentTimeInPeriod(period);
+                if (isInTime != null)
                 {
-                    for (int index = 1; index <= 3; index++)
+                    string seasonId = questInfo.Attribute("seasonId").Value;
+                    foreach (int group in isInTime)
                     {
-                        string groupStr = group.ToString("D2");  // 1 → 01
-                        string indexStr = index.ToString("D2");  // 1 → 01
-                        // 拼接：14500 + 组号 + 序号
-                        uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
-                        ids.Add(id);
+                        for (int index = 1; index <= 3; index++)
+                        {
+                            string groupStr = group.ToString("D2");  // 1 → 01
+                            string indexStr = index.ToString("D2");  // 1 → 01
+                                                                     // 拼接：14500 + 组号 + 序号
+                            uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
+                            ids.Add(id);
+                        }
                     }
                 }
-            }
             }
 
             int All_Quest = quest.Count + ids.Count;
@@ -280,7 +281,7 @@ namespace KartRider
             if (config?.RiderItem == null)
             {
                 // 档案缺失：使用 RiderItemData 默认初始数据补齐，保证包结构完整，避免畸形包影响其他玩家
-                Console.WriteLine("[GetRider] Warning: ProfileConfig or RiderItem is null for {0}, writing default rider data", Nickname);
+                Log.Info($"[GetRider] Warning: ProfileConfig or RiderItem is null for {Nickname}, writing default rider data");
                 WriteRiderItem(new RiderItemData(), outPacket);
                 return;
             }
@@ -338,7 +339,7 @@ namespace KartRider
             var config = ProfileService.GetProfileConfig(nickname);
             if (config?.Rider == null)
             {
-                Console.WriteLine("[PrGetRiderInfo] Warning: ProfileConfig or Rider is null for {0}", nickname);
+                Log.Info($"[PrGetRiderInfo] Warning: ProfileConfig or Rider is null for {nickname}");
                 return;
             }
             using (OutPacket outPacket = new OutPacket("PrGetRiderInfo"))
@@ -401,7 +402,7 @@ namespace KartRider
             var config = ProfileService.GetProfileConfig(Nickname);
             if (config?.Rider == null)
             {
-                Console.WriteLine("[PrCheckMyClubStatePacket] Warning: ProfileConfig or Rider is null for {0}", Nickname);
+                Log.Info($"[PrCheckMyClubStatePacket] Warning: ProfileConfig or Rider is null for {Nickname}");
                 return;
             }
             var server = MultyPlayer.GetServerEndPoint(Parent);

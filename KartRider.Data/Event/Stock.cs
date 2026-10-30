@@ -52,7 +52,7 @@ namespace KartRider
         public static void GetStockItem(SessionGroup Parent, uint stockId)
         {
             TryGet(stockId, out List<item> itemList);
-            Console.WriteLine(itemList.Count);
+            Log.Info($"{itemList.Count}");
             foreach (item Item in itemList)
             {
                 if (ItemBlacklist.IsBlocked(Item.itemCatId, Item.itemId))

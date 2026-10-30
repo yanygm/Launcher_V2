@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using KartRider.Common.Network;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -43,7 +44,7 @@ namespace KartRider
                 }
                 _running = true;
                 _timer = new Timer(MonitorTick, null, CheckIntervalMs, CheckIntervalMs);
-                Console.WriteLine($"[Heartbeat] 掉线检测监控已启动，每 {CheckIntervalMs / 1000} 秒扫描一次");
+                Log.Info($"[Heartbeat] 掉线检测监控已启动，每 {CheckIntervalMs / 1000} 秒扫描一次");
             }
         }
 
@@ -61,7 +62,7 @@ namespace KartRider
                 _running = false;
                 _timer?.Dispose();
                 _timer = null;
-                Console.WriteLine("[Heartbeat] 掉线检测监控已停止");
+                Log.Info($"[Heartbeat] 掉线检测监控已停止");
             }
         }
 
@@ -149,7 +150,7 @@ namespace KartRider
 
                     if (idle >= timeoutMs)
                     {
-                        Console.WriteLine($"[Heartbeat] 玩家 {nickname} 超时无网络活动（{idle / 1000}s），强制断开连接");
+                        Log.Info($"[Heartbeat] 玩家 {nickname} 超时无网络活动（{idle / 1000}s），强制断开连接");
                         try
                         {
                             // Disconnect 内部会触发 OnDisconnect -> ClientManager.RemoveClient，
@@ -158,14 +159,14 @@ namespace KartRider
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[Heartbeat] 强制断开 {nickname} 失败：{ex.Message}");
+                            Log.Info($"[Heartbeat] 强制断开 {nickname} 失败：{ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Heartbeat] 扫描异常：{ex.Message}");
+                Log.Info($"[Heartbeat] 扫描异常：{ex.Message}");
             }
         }
     }

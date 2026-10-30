@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using KartRider.Logging;
 using Profile;
 
 namespace KartRider
@@ -169,7 +170,7 @@ namespace KartRider
                     return new List<float>() { a, b, c, d, e, f };
                 }
             }
-            Console.WriteLine(ProfileService.SettingConfig.AiSpeedType);
+            Log.Info($"{ProfileService.SettingConfig.AiSpeedType}");
             return null;
         }
     }

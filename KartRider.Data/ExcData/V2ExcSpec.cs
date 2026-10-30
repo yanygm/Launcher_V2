@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartRider.Logging;
 
 namespace ExcData
 {
@@ -36,7 +37,7 @@ namespace ExcData
             var config = ProfileService.GetProfileConfig(Nickname);
             if (config?.RiderItem == null)
             {
-                Console.WriteLine("[Level12_ExcData] Warning: ProfileConfig or RiderItem is null for {0}", Nickname);
+                Log.Info($"[Level12_ExcData] Warning: ProfileConfig or RiderItem is null for {Nickname}");
                 return skills;
             }
             var existingLevel = Level12List.FirstOrDefault(Level12 => Level12.ID == config.RiderItem.Set_Kart && Level12.SN == config.RiderItem.Set_KartSN);
@@ -177,7 +178,7 @@ namespace ExcData
                 var v2config = ProfileService.GetProfileConfig(Nickname);
                 if (v2config?.RiderItem == null)
                 {
-                    Console.WriteLine("[Parts12_ExcData] Warning: ProfileConfig or RiderItem is null for {0}", Nickname);
+                    Log.Info($"[Parts12_ExcData] Warning: ProfileConfig or RiderItem is null for {Nickname}");
                     return;
                 }
                 var KartAndSN = new { Kart = v2config.RiderItem.Set_Kart, SN = v2config.RiderItem.Set_KartSN };
@@ -207,30 +208,30 @@ namespace ExcData
                     Booster = existingParts.Booster > 1 ? existingParts.Booster : Booster;
                 }
 
-                Console.WriteLine("-------------------------------------------------------------");
+                Log.Info($"-------------------------------------------------------------");
 
                 V2Parts_TransAccelFactor = (float)((Get12Parts(Engine) * 1.0M - 800M) / 25000.0M + 0.4765M);
                 V2Default_TransAccelFactor = (float)((Get12Parts((short)Kart.defaultEngineType) * 1.0M - 800M) / 25000.0M + 0.4765M);
-                Console.WriteLine($"[{Nickname}]V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
+                Log.Info($"[{Nickname}]V2Parts_TransAccelFactor: {V2Parts_TransAccelFactor}");
 
                 V2Parts_SteerConstraint = (float)((Get12Parts(Handle) * 1.0M - 800M) / 250.0M + 2.7M);
                 V2Default_SteerConstraint = (float)((Get12Parts((short)Kart.defaultHandleType) * 1.0M - 800M) / 250.0M + 2.7M);
-                Console.WriteLine($"[{Nickname}]V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
+                Log.Info($"[{Nickname}]V2Parts_SteerConstraint: {V2Parts_SteerConstraint}");
 
                 V2Parts_DriftEscapeForce = (float)(Get12Parts(Wheel) * 2.0M);
                 V2Default_DriftEscapeForce = (float)(Get12Parts((short)Kart.defaultWheelType) * 2.0M);
-                Console.WriteLine($"[{Nickname}]V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
+                Log.Info($"[{Nickname}]V2Parts_DriftEscapeForce: {V2Parts_DriftEscapeForce}");
 
                 V2Parts_NormalBoosterTime = (float)(Get12Parts(Booster) * 1.0M - 260M);
                 V2Default_NormalBoosterTime = (float)(Get12Parts((short)Kart.defaultBoosterType) * 1.0M - 260M);
-                Console.WriteLine($"[{Nickname}]V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
+                Log.Info($"[{Nickname}]V2Parts_NormalBoosterTime: {V2Parts_NormalBoosterTime}");
 
-                Console.WriteLine("-------------------------------------------------------------");
+                Log.Info($"-------------------------------------------------------------");
 
                 var existingLevel = Level12List.FirstOrDefault(level => level.ID == KartAndSN.Kart && level.SN == KartAndSN.SN);
                 if (existingLevel != null)
                 {
-                    Console.WriteLine("-------------------------------------------------------------");
+                    Log.Info($"-------------------------------------------------------------");
 
                     var skillData = new Dictionary<short, (string Name, float[] Values)>
                     {
@@ -248,21 +249,21 @@ namespace ExcData
                     {
                         typeof(V2Specs).GetProperty($"V2Level_{data1.Name}")?
                             .SetValue(this, data1.Values[existingLevel.SkillGrade1]);
-                        Console.WriteLine($"[{Nickname}]V2Level_{data1.Name}: {data1.Values[existingLevel.SkillGrade1]}");
+                        Log.Info($"[{Nickname}]V2Level_{data1.Name}: {data1.Values[existingLevel.SkillGrade1]}");
                     }
                     if (skillData.TryGetValue(existingLevel.Skill2, out var data2))
                     {
                         typeof(V2Specs).GetProperty($"V2Level_{data2.Name}")?
                             .SetValue(this, data2.Values[existingLevel.SkillGrade2]);
-                        Console.WriteLine($"[{Nickname}]V2Level_{data2.Name}: {data2.Values[existingLevel.SkillGrade2]}");
+                        Log.Info($"[{Nickname}]V2Level_{data2.Name}: {data2.Values[existingLevel.SkillGrade2]}");
                     }
                     if (skillData.TryGetValue(existingLevel.Skill3, out var data3))
                     {
                         typeof(V2Specs).GetProperty($"V2Level_{data3.Name}")?
                             .SetValue(this, data3.Values[existingLevel.SkillGrade3]);
-                        Console.WriteLine($"[{Nickname}]V2Level_{data3.Name}: {data3.Values[existingLevel.SkillGrade3]}");
+                        Log.Info($"[{Nickname}]V2Level_{data3.Name}: {data3.Values[existingLevel.SkillGrade3]}");
                     }
-                    Console.WriteLine("-------------------------------------------------------------");
+                    Log.Info($"-------------------------------------------------------------");
                 }
                 if (Kart.defaultExceedType == 1)//item S
                 {

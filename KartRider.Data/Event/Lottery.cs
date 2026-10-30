@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -111,11 +112,11 @@ namespace KartRider
                 }
 
                 if (writeLog)
-                    Console.WriteLine($"成功加载 {RewardList.Count} 个奖励项，总概率为: {TotalProbability}");
+                    Log.Info($"成功加载 {RewardList.Count} 个奖励项，总概率为: {TotalProbability}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载XML文件出错: {ex.Message}");
+                Log.Info($"加载XML文件出错: {ex.Message}");
             }
         }
 
@@ -131,14 +132,14 @@ namespace KartRider
             // 检查是否已初始化
             if (RewardList.Count == 0)
             {
-                Console.WriteLine("请先调用Initialize方法加载数据");
+                Log.Info($"请先调用Initialize方法加载数据");
                 return result;
             }
 
             // 检查数量是否合理
             if (count <= 0)
             {
-                Console.WriteLine("请指定有效的获取数量");
+                Log.Info($"请指定有效的获取数量");
                 return result;
             }
 
@@ -149,7 +150,7 @@ namespace KartRider
             // 检查请求数量是否超过可用奖励数量
             if (count > uniqueRewardCount)
             {
-                Console.WriteLine($"请求数量超过可用的不重复奖励数量，最多只能返回 {uniqueRewardCount} 个结果");
+                Log.Info($"请求数量超过可用的不重复奖励数量，最多只能返回 {uniqueRewardCount} 个结果");
                 count = uniqueRewardCount;
             }
 
@@ -196,7 +197,7 @@ namespace KartRider
             // 检查最终结果数量是否符合预期
             if (result.Count < count)
             {
-                Console.WriteLine($"警告：实际返回 {result.Count} 个结果，少于请求的 {count} 个");
+                Log.Info($"警告：实际返回 {result.Count} 个结果，少于请求的 {count} 个");
             }
             return result;
         }

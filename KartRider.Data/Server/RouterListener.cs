@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using KartRider.Common.Network;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -64,7 +65,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"发生异常：{ex.Message}");
+                Log.Debug($"发生异常：{ex.Message}");
             }
             finally
             {
@@ -98,7 +99,7 @@ namespace KartRider
                 RouterIPList.Add("127.0.0.1");
                 foreach (var IP in RouterIPList)
                 {
-                    Console.WriteLine("Load Server IP: {0}:{1}", IP, ProfileService.SettingConfig.ServerPort);
+                    Log.Info($"Load Server IP: {IP}:{ProfileService.SettingConfig.ServerPort}");
                 }
 
                 // 后台异步获取公网 IP，避免 .Result 同步阻塞服务器启动
@@ -119,12 +120,12 @@ namespace KartRider
                                 }
                             }
                             RouterListener.ServerIP = ip;
-                            Console.WriteLine("Load Server IP: {0}:{1}", ip, ProfileService.SettingConfig.ServerPort);
+                            Log.Info($"Load Server IP: {ip}:{ProfileService.SettingConfig.ServerPort}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"获取公网 IP 失败: {ex.Message}");
+                        Log.Debug($"获取公网 IP 失败: {ex.Message}");
                     }
                 });
 
@@ -173,7 +174,7 @@ namespace KartRider
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[RouterListener] 停止 TCP 监听器异常: {ex.Message}");
+                    Log.Debug($"[RouterListener] 停止 TCP 监听器异常: {ex.Message}");
                 }
                 Listener = null;
             }
@@ -184,7 +185,7 @@ namespace KartRider
             // 停止心跳/掉线检测监控
             HeartbeatMonitor.Stop();
 
-            Console.WriteLine("[RouterListener] 所有服务已停止");
+            Log.Info("[RouterListener] 所有服务已停止");
         }
     }
 }

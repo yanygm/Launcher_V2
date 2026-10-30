@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -49,21 +50,21 @@ class MultiThreadedDownloader
         _downloadCancellationToken = _downloadCancellationTokenSource.Token;
         // 初始化进度显示取消令牌源
         _progressCancellationTokenSource = new CancellationTokenSource();
-        
+
         try
         {
             // 1. 获取文件总大小
             _fileTotalSize = await GetFileSizeAsync(_downloadUrl);
             if (_fileTotalSize <= 0)
             {
-                Console.WriteLine("无法获取文件大小，可能服务器不支持分片下载");
+                Log.Info($"无法获取文件大小，可能服务器不支持分片下载");
                 return false;
             }
 
-            Console.WriteLine("==============================");
-            Console.WriteLine($"下载地址: {_downloadUrl}");
-            Console.WriteLine($"文件总大小: {FormatFileSize(_fileTotalSize)}");
-            Console.WriteLine($"使用 {_threadCount} 线程下载...");
+            Log.Info($"==============================");
+            Log.Info($"下载地址: {_downloadUrl}");
+            Log.Info($"文件总大小: {FormatFileSize(_fileTotalSize)}");
+            Log.Info($"使用 {_threadCount} 线程下载...");
 
             // 2. 创建临时目录
             if (!Directory.Exists(_tempDir))
@@ -98,14 +99,14 @@ class MultiThreadedDownloader
             // 7. 检查是否被取消（下载失败导致的取消）
             if (_downloadCancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine($"\n下载已取消");
+                Log.Info($"\n下载已取消");
                 return false;
             }
 
             // 8. 停止进度显示
             _progressCancellationTokenSource.Cancel();
             progressTask.Wait(1000);
-            Console.WriteLine("");
+            Log.Info($"");
 
             // 9. 合并文件片段
             await MergeChunksAsync();
@@ -120,12 +121,12 @@ class MultiThreadedDownloader
             // 区分是下载取消还是进度显示取消
             if (ex.CancellationToken == _downloadCancellationToken)
             {
-                Console.WriteLine($"\n下载已取消");
+                Log.Info($"\n下载已取消");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n下载出错: {ex.Message}");
+            Log.Info($"\n下载出错: {ex.Message}");
         }
         finally
         {
@@ -179,7 +180,7 @@ class MultiThreadedDownloader
                 {
                     // 检查是否需要取消下载
                     _downloadCancellationToken.ThrowIfCancellationRequested();
-                    
+
                     await fileStream.WriteAsync(buffer, 0, bytesRead, _downloadCancellationToken);
                     downloaded += bytesRead;
                     // 线程安全地更新总下载字节数
@@ -193,7 +194,7 @@ class MultiThreadedDownloader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n线程 {threadIndex} 下载失败: {ex.Message}");
+            Log.Info($"\n线程 {threadIndex} 下载失败: {ex.Message}");
             // 下载失败，取消所有下载线程
             _downloadCancellationTokenSource.Cancel();
             throw;
@@ -211,7 +212,7 @@ class MultiThreadedDownloader
             {
                 // 检查是否需要取消
                 _downloadCancellationToken.ThrowIfCancellationRequested();
-                
+
                 string tempFilePath = Path.Combine(_tempDir, $"chunk_{i}.tmp");
                 if (File.Exists(tempFilePath))
                 {
@@ -236,7 +237,7 @@ class MultiThreadedDownloader
             {
                 // 检查是否需要取消
                 _progressCancellationTokenSource.Token.ThrowIfCancellationRequested();
-                
+
                 // 计算整体进度
                 double totalProgress = (double)_totalDownloadedBytes / _fileTotalSize * 100;
 

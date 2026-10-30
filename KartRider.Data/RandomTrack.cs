@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -124,7 +125,7 @@ namespace KartRider
             // 如果 TrackList 为空，直接返回默认 Track 的 hash，避免返回无效值
             if (TrackList == null || TrackList.Count == 0)
             {
-                Console.WriteLine("[RandomTrack] Warning: TrackList is empty, returning default track: {0}", GameTrack);
+                Log.Info($"[RandomTrack] Warning: TrackList is empty, returning default track: {GameTrack}");
                 return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
             }
 
@@ -208,7 +209,7 @@ namespace KartRider
                     return Track;
                 }
 
-                Console.WriteLine("[RandomTrack] Warning: 未识别的随机模式 {0}，按全部随机处理", Track);
+                Log.Info($"[RandomTrack] Warning: 未识别的随机模式 {Track}，按全部随机处理");
                 RandomTrackSetRandomTrack = "all";
             }
 
@@ -253,7 +254,7 @@ namespace KartRider
                 // 如果仍然没有可用 track（TrackList 中没有对应 gameType 的 track），返回默认
                 if (availableTracks == null || availableTracks.Count == 0)
                 {
-                    Console.WriteLine("[RandomTrack] Warning: No available tracks for gameType={0}, ai={1}, returning default track: {2}", RandomTrackGameType, ai, GameTrack);
+                    Log.Info($"[RandomTrack] Warning: No available tracks for gameType={RandomTrackGameType}, ai={ai}, returning default track: {GameTrack}");
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
 
@@ -275,7 +276,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("[RandomTrack] Warning: No unused tracks available, returning default track: {0}", GameTrack);
+                    Log.Info($"[RandomTrack] Warning: No unused tracks available, returning default track: {GameTrack}");
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
             }
@@ -313,7 +314,7 @@ namespace KartRider
                 // 如果仍然没有可用 track，返回默认
                 if (availableTracks == null || availableTracks.Count == 0)
                 {
-                    Console.WriteLine("[RandomTrack] Warning: No available tracks for speedAll, ai={0}, returning default track: {1}", ai, GameTrack);
+                    Log.Info($"[RandomTrack] Warning: No available tracks for speedAll, ai={ai}, returning default track: {GameTrack}");
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
 
@@ -335,7 +336,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("[RandomTrack] Warning: No unused tracks available, returning default track: {0}", GameTrack);
+                    Log.Info($"[RandomTrack] Warning: No unused tracks available, returning default track: {GameTrack}");
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
             }
@@ -347,7 +348,7 @@ namespace KartRider
                 // 如果 XML 中没有配置该类型的 track，返回默认
                 if (availableHashes.Count == 0)
                 {
-                    Console.WriteLine("[RandomTrack] Warning: No tracks found in XML for gameType={0}, randomType={1}, returning default track: {2}", RandomTrackGameType, RandomTrackSetRandomTrack, GameTrack);
+                    Log.Info($"[RandomTrack] Warning: No tracks found in XML for gameType={RandomTrackGameType}, randomType={RandomTrackSetRandomTrack}, returning default track: {GameTrack}");
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
 
@@ -369,7 +370,7 @@ namespace KartRider
                     return selectedHash;
                 }
 
-                Console.WriteLine("[RandomTrack] Warning: No unused hashes available, returning default track: {0}", GameTrack);
+                Log.Info($"[RandomTrack] Warning: No unused hashes available, returning default track: {GameTrack}");
                 return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
             }
         }

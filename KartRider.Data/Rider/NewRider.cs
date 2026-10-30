@@ -6,13 +6,14 @@ using KartRider;
 using ExcData;
 using System.Linq;
 using Profile;
+using KartRider.Logging;
 
 namespace RiderData
 {
     public static class NewRider
     {
         public static Dictionary<ushort, Dictionary<ushort, string>> items = new Dictionary<ushort, Dictionary<ushort, string>>();
-        private static readonly HashSet<ushort> excludedKeys = new HashSet<ushort>{ 3, 6, 10, 15, 19, 24, 25, 29, 33, 34, 35, 40, 41, 47, 48, 50, 51, 56, 57, 58, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
+        private static readonly HashSet<ushort> excludedKeys = new HashSet<ushort> { 3, 6, 10, 15, 19, 24, 25, 29, 33, 34, 35, 40, 41, 47, 48, 50, 51, 56, 57, 58, 60, 62, 63, 64, 65, 66, 72, 73, 74, 75 };
         private static readonly HashSet<ushort> ValidItemCatIds = new HashSet<ushort> { 1, 2, 4, 8, 11, 12, 13, 14, 16, 18, 20, 21, 26, 27, 28, 31, 52, 61, 70, 71 };
 
         public static void LoadItemData(SessionGroup Parent, string Nickname)
@@ -48,7 +49,7 @@ namespace RiderData
             var riderDataConfig = ProfileService.GetProfileConfig(Nickname);
             if (riderDataConfig?.Rider == null)
             {
-                Console.WriteLine("[NewRiderData] Warning: ProfileConfig or Rider is null for {0}", Nickname);
+                Log.Info($"[NewRiderData] Warning: ProfileConfig or Rider is null for {Nickname}");
                 return;
             }
             using (OutPacket oPacket = new OutPacket("PrGetRider"))

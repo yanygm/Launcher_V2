@@ -1651,5 +1651,7 @@ namespace KartRider_PacketName
 		PrGetTreasureHuntMileageInfoPacket = 3915320676,
 		SpRqTreasureHuntPacket = 1675167944,
 		SpRpTreasureHuntPacket = 1673922759,
+		PqExpeditionFriendInfoListPacket = 3500870834,
+		PqExpeditionMissionReduceTimePacket = 4223667707,
 	}
 }

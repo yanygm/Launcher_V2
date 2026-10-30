@@ -28,6 +28,7 @@ namespace KartLibrary.File.Lpk
         public uint Dsize;
         public uint Csize;
         public string Md5;           // 32 字符小写十六进制
+        public byte[] Md5Raw;        // 解码时保留的原始 16 字节摘要（避免 Extract 反复解析十六进制）
         public uint TagLow;          // 原生打包器写入的 8 字节 tag（算法未知，不参与解密）
         public uint TagHigh;
         public uint Csum;            // 记录校验值
@@ -63,6 +64,8 @@ namespace KartLibrary.File.Lpk
         public int FileCount;
         public uint HeaderChecksum;
         public long DataBegin;
+        /// <summary>实际使用的格式串（调用方未指定时由 head + mid 反推）。</summary>
+        public string Mixing = LpkV4.DEFAULT_MIXING;
         public List<LpkRecord> Records = new List<LpkRecord>();
     }
 
@@ -159,12 +162,20 @@ namespace KartLibrary.File.Lpk
 
         private sealed class NativeReadStream
         {
+            /// <summary>预读窗口大小。记录表是顺序读取的，一次读入可把 Seek 次数从“每 64 字节一次”降到“每窗口一次”。</summary>
+            private const int WindowSize = 1 << 18;
+
             private readonly Stream _stream;
             private readonly byte[] _key;
             private long _rawPosition;
             private long _position;
-            private byte[] _buffer;
+            private byte[] _buffer = Array.Empty<byte>();
+            private int _bufferOffset;
             private ulong _counter;
+
+            private byte[] _window = Array.Empty<byte>();
+            private long _windowStart;
+            private int _windowLength;
 
             public NativeReadStream(Stream stream, byte[] key, long start)
             {
@@ -181,39 +192,57 @@ namespace KartLibrary.File.Lpk
                 if (!(0 < size && size <= (1 << 20)))
                     throw new LpkException("bad read size: " + size);
                 int requested = size;
-                var ms = new MemoryStream();
+                byte[] output = new byte[size];
+                int written = 0;
                 while (size > 0)
                 {
-                    if (_buffer == null || _buffer.Length == 0)
+                    if (_bufferOffset >= _buffer.Length)
                     {
                         int length = ((size + 63) / 64) * 64;
-                        byte[] raw = new byte[length];
-                        _stream.Seek(_rawPosition, SeekOrigin.Begin);
-                        ReadExact(_stream, raw, length);
+                        byte[] raw = TakeRaw(length);
                         byte[] dec = new byte[length];
-                        var chacha = new ChaCha20(_key, _counter, new byte[8]);
-                        chacha.Process(raw, 0, length, dec, 0);
+                        new ChaCha20(_key, _counter, new byte[8]).Process(raw, 0, length, dec, 0);
                         _buffer = dec;
+                        _bufferOffset = 0;
                         _counter += (ulong)(length / 64);
                         _rawPosition += length;
                     }
-                    int bufLen = _buffer.Length;
-                    int take = Math.Min(size, bufLen);
-                    ms.Write(_buffer, 0, take);
-                    if (take == bufLen)
-                        _buffer = null;
-                    else
-                    {
-                        byte[] nb = new byte[bufLen - take];
-                        Array.Copy(_buffer, take, nb, 0, bufLen - take);
-                        _buffer = nb;
-                    }
+                    int take = Math.Min(size, _buffer.Length - _bufferOffset);
+                    Buffer.BlockCopy(_buffer, _bufferOffset, output, written, take);
+                    _bufferOffset += take;
+                    written += take;
                     size -= take;
-                    if (take == bufLen && size == 0)
+                    // 缓冲被精确排空时计数器归零（与原生读取行为一致）
+                    if (_bufferOffset == _buffer.Length && size == 0)
                         _counter = 0;
                 }
                 _position += requested;
-                return ms.ToArray();
+                return output;
+            }
+
+            private byte[] TakeRaw(int length)
+            {
+                if (_windowLength == 0
+                    || _rawPosition < _windowStart
+                    || _rawPosition + length > _windowStart + _windowLength)
+                    FillWindow(length);
+                byte[] raw = new byte[length];
+                Buffer.BlockCopy(_window, (int)(_rawPosition - _windowStart), raw, 0, length);
+                return raw;
+            }
+
+            private void FillWindow(int minLength)
+            {
+                long available = _stream.Length - _rawPosition;
+                if (available < minLength)
+                    throw new LpkException("unexpected EOF");
+                int want = (int)Math.Min(Math.Max(minLength, WindowSize), available);
+                byte[] window = new byte[want];
+                _stream.Seek(_rawPosition, SeekOrigin.Begin);
+                ReadExact(_stream, window, want);
+                _window = window;
+                _windowStart = _rawPosition;
+                _windowLength = want;
             }
 
             public uint U32()
@@ -230,7 +259,7 @@ namespace KartLibrary.File.Lpk
         /// <summary>
         /// 解码一个 LPK 文件，返回索引（记录路径、标志、大小、MD5 与数据区起点）。
         /// </summary>
-        public static LpkIndex Decode(Stream stream, string fileName, string mixing)
+        public static LpkIndex Decode(Stream stream, string fileName, string mixing = null)
         {
             long fileLength = stream.Length;
             string name = fileName.ToLowerInvariant();
@@ -239,18 +268,20 @@ namespace KartLibrary.File.Lpk
                 nameSum += (int)c;
             int h = nameSum % 312 + 30;
 
-            stream.Seek(0, SeekOrigin.Begin);
-            int firstByte = stream.ReadByte();
-            if (firstByte < 0)
+            if (h + 5 > fileLength)
                 throw new LpkException("empty file");
 
-            stream.Seek(h, SeekOrigin.Begin);
+            // 头部的 head / mark / mid 三块一次读齐：既用于校验，也用于反推 mixing。
+            stream.Seek(0, SeekOrigin.Begin);
+            byte[] head = new byte[h];
+            ReadExact(stream, head, head.Length);
             byte[] b5 = new byte[5];
-            ReadExact(stream, b5, 5);
+            ReadExact(stream, b5, b5.Length);
+
             // 原生判定（0x1400e0e1c: xor esi,edx / cmp sil,4）：
             //   (disk[h] ^ ((sbyte)disk[0] >> 1)) & 0xFF == 4
             // disk[0] 以有符号字节解读（struct.unpack('b', ...)）。
-            sbyte firstByteSigned = (sbyte)firstByte;
+            sbyte firstByteSigned = (sbyte)head[0];
             if (((b5[0] ^ (byte)(firstByteSigned >> 1)) & 0xFF) != 4)
                 throw new LpkException("Invalid LPK data (header tag mismatch)");
 
@@ -260,6 +291,13 @@ namespace KartLibrary.File.Lpk
                 throw new LpkException("Invalid LPK data (rawLength=" + rawLength + ")");
 
             int headerEnd = h + 5 + 2 * (int)rawLength;
+            byte[] mid = new byte[2 * (int)rawLength];
+            ReadExact(stream, mid, mid.Length);
+
+            // 官方包把 mixing 以 head + mid 的形式存在包内；调用方未指定时按原生规则反推。
+            if (string.IsNullOrEmpty(mixing))
+                mixing = DeriveMixing(head, b5, mid);
+
             string text = name + mixing;
 
             byte[] headerKey = new byte[32];
@@ -323,6 +361,7 @@ namespace KartLibrary.File.Lpk
                     Dsize = dsize,
                     Csize = csize,
                     Md5 = ToHex(digest),
+                    Md5Raw = digest,
                     TagLow = tagLow,
                     TagHigh = tagHigh,
                     Csum = csum,
@@ -344,6 +383,7 @@ namespace KartLibrary.File.Lpk
                 FileCount = (int)count,
                 HeaderChecksum = checksum,
                 DataBegin = dataBegin,
+                Mixing = mixing,
                 Records = records
             };
         }
@@ -412,7 +452,7 @@ namespace KartLibrary.File.Lpk
         /// </summary>
         private static byte[] ComputeExtractKey(LpkRecord record, int[] digits)
         {
-            byte[] md5 = FromHex(record.Md5);
+            byte[] md5 = record.Md5Raw ?? FromHex(record.Md5);
             byte[] pathUtf16 = Encoding.Unicode.GetBytes(record.Path);
             ushort[] units = new ushort[pathUtf16.Length / 2];
             Buffer.BlockCopy(pathUtf16, 0, units, 0, pathUtf16.Length);
@@ -1060,9 +1100,22 @@ namespace KartLibrary.File.Lpk
             if (plain.Length < total)
                 Array.Resize(ref plain, total);
 
+            // 相邻且计数器连续的块合并成一次处理：省掉每块的 ChaCha20 状态初始化与 keystream 分配
+            // （官方 10 MB 分包的表区有 3000+ 块，合并后只剩寥寥几次）。
             byte[] cipher = new byte[total];
-            foreach (var block in blocks)
-                new ChaCha20(key, block.Counter, new byte[8]).Process(plain, block.Offset, block.Length, cipher, block.Offset);
+            int i = 0;
+            while (i < blocks.Count)
+            {
+                int j = i;
+                while (j + 1 < blocks.Count
+                       && blocks[j + 1].Offset == blocks[j].Offset + blocks[j].Length
+                       && blocks[j + 1].Counter == blocks[j].Counter + (ulong)(blocks[j].Length / 64))
+                    j++;
+                int runOffset = blocks[i].Offset;
+                int runLength = blocks[j].Offset + blocks[j].Length - runOffset;
+                new ChaCha20(key, blocks[i].Counter, new byte[8]).Process(plain, runOffset, runLength, cipher, runOffset);
+                i = j + 1;
+            }
             return cipher;
         }
 

@@ -1,4 +1,5 @@
 using KartNew.Utilities;
+using KartRider.Logging;
 using System;
 using System.Net;
 using System.Text;
@@ -58,7 +59,7 @@ namespace KartRider.IO.Packet
 		{
 			if ((this._index + length > (int)this._buffer.Length ? true : length < 0))
 			{
-				throw new PacketReadException("Not enough space");
+				Log.Debug("Not enough space");
 			}
 		}
 

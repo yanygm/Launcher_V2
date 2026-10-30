@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml.Linq;
+using KartRider.Logging;
 
 namespace XmlFileUpdater
 {
@@ -20,7 +21,7 @@ namespace XmlFileUpdater
                 // 验证本地文件是否存在
                 if (!File.Exists(localFilePath))
                 {
-                    Console.WriteLine($"本地文件不存在: {localFilePath}");
+                    Log.Info($"本地文件不存在: {localFilePath}");
                     return;
                 }
 
@@ -31,36 +32,36 @@ namespace XmlFileUpdater
                 XDocument resourceXml = null;
                 if (string.IsNullOrEmpty(resourceName))
                 {
-                    Console.WriteLine("警告: 资源内容为空，将使用默认更新逻辑");
+                    Log.Info($"警告: 资源内容为空，将使用默认更新逻辑");
                     return;
                 }
-                
+
                 try
                 {
                     resourceXml = XDocument.Parse(resourceName);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"资源XML解析失败: {ex.Message}");
+                    Log.Info($"资源XML解析失败: {ex.Message}");
                     return;
                 }
-                
+
                 if (resourceXml == null || resourceXml.Root == null)
                 {
-                    Console.WriteLine($"无法加载资源文件");
+                    Log.Info($"无法加载资源文件");
                     return;
                 }
 
                 // 调试：输出资源中的Kart数量和本地文件中的Kart数量
                 int resourceKartCount = resourceXml.Root.Elements("Kart").Count();
                 int localKartCount = localXml.Root?.Elements("Kart").Count() ?? 0;
-                Console.WriteLine($"资源文件包含 {resourceKartCount} 个Kart节点");
-                Console.WriteLine($"本地文件包含 {localKartCount} 个Kart节点");
+                Log.Info($"资源文件包含 {resourceKartCount} 个Kart节点");
+                Log.Info($"本地文件包含 {localKartCount} 个Kart节点");
 
                 // 验证XML根节点
                 if (localXml.Root == null || resourceXml.Root == null)
                 {
-                    Console.WriteLine("XML文件结构不完整，缺少根节点");
+                    Log.Info($"XML文件结构不完整，缺少根节点");
                     return;
                 }
 
@@ -72,17 +73,17 @@ namespace XmlFileUpdater
                 {
                     // 保存时保留缩进格式
                     localXml.Save(localFilePath, SaveOptions.None);
-                    Console.WriteLine("ModelMax.xml文件已更新");
+                    Log.Info($"ModelMax.xml文件已更新");
                 }
                 else
                 {
-                    Console.WriteLine("ModelMax.xml文件已是最新，无需更新");
+                    Log.Info($"ModelMax.xml文件已是最新，无需更新");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"处理ModelMax.xml文件时出错: {ex.Message}");
-                Console.WriteLine($"堆栈跟踪: {ex.StackTrace}");
+                Log.Info($"处理ModelMax.xml文件时出错: {ex.Message}");
+                Log.Info($"堆栈跟踪: {ex.StackTrace}");
             }
         }
 
@@ -107,7 +108,7 @@ namespace XmlFileUpdater
                     localRoot.Add(new XElement(resourceElement));
                     isUpdated = true;
                     string elementInfo = GetElementIdentifier(resourceElement, uniqueAttribute);
-                    Console.WriteLine($"已添加元素: {elementInfo}");
+                    Log.Info($"已添加元素: {elementInfo}");
                 }
                 else
                 {

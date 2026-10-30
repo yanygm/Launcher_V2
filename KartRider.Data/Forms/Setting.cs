@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows.Forms;
 using ExcData;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -107,7 +108,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("Invalid speed type selected.");
+                    Log.Info($"Invalid speed type selected.");
                 }
             }
         }
@@ -124,7 +125,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("Invalid speed type selected.");
+                    Log.Info($"Invalid speed type selected.");
                 }
             }
         }
@@ -141,7 +142,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("Invalid AiSpeed type selected.");
+                    Log.Info($"Invalid AiSpeed type selected.");
                 }
             }
         }
@@ -158,7 +159,7 @@ namespace KartRider
                 }
                 else
                 {
-                    Console.WriteLine("Invalid Proxy type selected.");
+                    Log.Info($"Invalid Proxy type selected.");
                 }
             }
         }

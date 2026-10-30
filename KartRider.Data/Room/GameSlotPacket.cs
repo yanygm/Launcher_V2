@@ -330,7 +330,7 @@ public class SlotData
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
         {
-            Console.WriteLine("[SimulateAttack] 房间 {0} 不存在，模拟攻击失败", roomId);
+            Log.Info($"[SimulateAttack] 房间 {roomId} 不存在，模拟攻击失败");
             return;
         }
 
@@ -404,7 +404,6 @@ public class SlotData
             oPacket.WriteBytes(new byte[11]);                   // 00×11（真实包全零）
             MultyPlayer.BroadCast(roomId, oPacket);             // 广播被攻击包，客户端触发被攻击
         }
-        Console.WriteLine("[SimulateAttack] 房间 {0}: 玩家 {1} 投掷道具 {2}（type=12 提醒 + type=11 被攻击双包，位置 ({3:0.0}, {4:0.0}, {5:0.0})）",
-            roomId, attackerName ?? attackerId.ToString(), itemId, ax, ay, az);
+        Log.Info($"[SimulateAttack] 房间 {roomId}: 玩家 {attackerName ?? attackerId.ToString()} 投掷道具 {itemId}（type=12 提醒 + type=11 被攻击双包，位置 ({ax:0.0}, {ay:0.0}, {az:0.0})）");
     }
 }

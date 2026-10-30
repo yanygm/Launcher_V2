@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -30,15 +31,15 @@ public static class ModManager
     public static void Initialize(string RootDirectory)
     {
         ModPath = Path.Combine(RootDirectory, "Mods");
-        Console.WriteLine($"Mod加载路径: {ModPath}");
+        Log.Info($"Mod加载路径: {ModPath}");
 
         if (!Directory.Exists(ModPath))
         {
             Directory.CreateDirectory(ModPath);
-            Console.WriteLine($"Mod文件夹已创建: {ModPath}");
+            Log.Info($"Mod文件夹已创建: {ModPath}");
         }
         LoadMods(ModPath);
-        Console.WriteLine($"Mod加载完成，共加载 {ModList.Count} 个 Mod。");
+        Log.Info($"Mod加载完成，共加载 {ModList.Count} 个 Mod。");
 
         try
         {
@@ -46,7 +47,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] OnAllModLoaded 事件处理程序抛出异常: {ex.Message}");
+            Log.Info($"[错误] OnAllModLoaded 事件处理程序抛出异常: {ex.Message}");
         }
     }
 
@@ -61,7 +62,7 @@ public static class ModManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[警告] 加载 {Path.GetFileName(file)} 时发生未预期错误: {ex.Message}，跳过");
+                Log.Info($"[警告] 加载 {Path.GetFileName(file)} 时发生未预期错误: {ex.Message}，跳过");
             }
         }
     }
@@ -70,20 +71,20 @@ public static class ModManager
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[错误] 文件不存在: {Path.GetFileName(filePath)}");
+            Log.Info($"[错误] 文件不存在: {Path.GetFileName(filePath)}");
             return false;
         }
 
         if (ModList.Any(m => m.FilePath == filePath))
         {
-            Console.WriteLine($"[警告] Mod 已加载: {Path.GetFileName(filePath)}");
+            Log.Info($"[警告] Mod 已加载: {Path.GetFileName(filePath)}");
             return false;
         }
 
         try
         {
             byte[] dllBytes = File.ReadAllBytes(filePath);
-            
+
             ModLoadContext? tempAlc = null;
             bool isDependencyMod = false;
             Type? modType = null;
@@ -113,13 +114,13 @@ public static class ModManager
 
             if (isDependencyMod)
             {
-                Console.WriteLine($"[ModManager] 检测到依赖 Mod: {tempMod.Name}");
+                Log.Info($"[ModManager] 检测到依赖 Mod: {tempMod.Name}");
                 tempAlc.Unload();
-                
+
                 assembly = Assembly.LoadFrom(filePath);
                 Type finalType = assembly.GetType(modType.FullName!);
                 mod = (IMod)Activator.CreateInstance(finalType);
-                
+
                 alc = new ModLoadContext(filePath, isCollectible: false);
             }
             else
@@ -128,7 +129,7 @@ public static class ModManager
                 alc = tempAlc;
                 assembly = tempAssembly;
                 mod = tempMod;
-                Console.WriteLine($"[ModManager] 检测到普通 Mod: {mod.Name}");
+                Log.Info($"[ModManager] 检测到普通 Mod: {mod.Name}");
             }
 
             mod.OnInitialize();
@@ -137,7 +138,7 @@ public static class ModManager
             if (isPacketHandler)
             {
                 PacketDispatcher.RegisterHandler((IPacketHandler)mod);
-                Console.WriteLine(
+                Log.Info(
                     $">>> Mod [{mod.Name}] 已注册数据包拦截，监听 {(mod as IPacketHandler).TargetPackets.Count} 种数据包"
                 );
             }
@@ -154,11 +155,11 @@ public static class ModManager
             // 依赖 Mod 也会注册，消费者统一通过 ServiceRegistry.Invoke 调用
             ServiceRegistry.Register(mod.Name, mod);
 
-            Console.WriteLine(
+            Log.Info(
                 $">>> 成功加载 Mod: [{mod.Name}] 来自 {Path.GetFileName(filePath)}"
             );
-            Console.WriteLine("Mod描述:" + mod.Description);
-            Console.WriteLine("Mod版本:" + mod.Version);
+            Log.Info($"Mod描述:" + mod.Description);
+            Log.Info($"Mod版本:" + mod.Version);
 
             try
             {
@@ -166,14 +167,14 @@ public static class ModManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[错误] OnModLoaded 事件处理程序抛出异常: {ex.Message}");
+                Log.Info($"[错误] OnModLoaded 事件处理程序抛出异常: {ex.Message}");
             }
 
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] 无法加载文件 {Path.GetFileName(filePath)}: {ex.Message}");
+            Log.Info($"[错误] 无法加载文件 {Path.GetFileName(filePath)}: {ex.Message}");
             return false;
         }
     }
@@ -183,13 +184,13 @@ public static class ModManager
         var modInfo = ModList.FirstOrDefault(m => m.Instance.Name == modName);
         if (modInfo == null)
         {
-            Console.WriteLine($"[警告] 未找到 Mod: [{modName}]");
+            Log.Info($"[警告] 未找到 Mod: [{modName}]");
             return false;
         }
 
         if (modInfo.Instance.IsDependencyMod)
         {
-            Console.WriteLine($"[警告] 依赖 Mod [{modName}] 不可卸载，跳过");
+            Log.Info($"[警告] 依赖 Mod [{modName}] 不可卸载，跳过");
             return false;
         }
 
@@ -200,7 +201,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] Mod [{modName}] OnUninitialize 抛出异常: {ex.Message}");
+            Log.Info($"[错误] Mod [{modName}] OnUninitialize 抛出异常: {ex.Message}");
         }
 
         // 清理操作：卸载 handler、移除注册、卸载 ALC
@@ -224,7 +225,7 @@ public static class ModManager
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
-            Console.WriteLine($">>> 成功卸载 Mod: [{modName}]");
+            Log.Info($">>> 成功卸载 Mod: [{modName}]");
 
             try
             {
@@ -232,14 +233,14 @@ public static class ModManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
+                Log.Info($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
             }
 
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] 卸载 Mod [{modName}] 失败: {ex.Message}");
+            Log.Info($"[错误] 卸载 Mod [{modName}] 失败: {ex.Message}");
             return false;
         }
     }
@@ -249,7 +250,7 @@ public static class ModManager
         var modInfo = ModList.FirstOrDefault(m => m.Instance.Name == modName);
         if (modInfo == null)
         {
-            Console.WriteLine($"[警告] 未找到 Mod: [{modName}]");
+            Log.Info($"[警告] 未找到 Mod: [{modName}]");
             return false;
         }
 
@@ -261,7 +262,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] OnModReloading 事件处理程序抛出异常: {ex.Message}");
+            Log.Info($"[错误] OnModReloading 事件处理程序抛出异常: {ex.Message}");
         }
 
         if (!UnloadMod(modName))
@@ -271,7 +272,7 @@ public static class ModManager
 
         if (!LoadMod(filePath))
         {
-            Console.WriteLine($"[警告] Mod [{modName}] 重新加载失败，文件路径: {filePath}");
+            Log.Info($"[警告] Mod [{modName}] 重新加载失败，文件路径: {filePath}");
             return false;
         }
 
@@ -281,7 +282,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] OnModReloaded 事件处理程序抛出异常: {ex.Message}");
+            Log.Info($"[错误] OnModReloaded 事件处理程序抛出异常: {ex.Message}");
         }
 
         return true;
@@ -302,7 +303,7 @@ public static class ModManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[错误] Mod [{modInfo.Instance.Name}] OnUninitialize 抛出异常: {ex.Message}");
+                Log.Info($"[错误] Mod [{modInfo.Instance.Name}] OnUninitialize 抛出异常: {ex.Message}");
             }
         }
 
@@ -328,7 +329,7 @@ public static class ModManager
                 modInfo.Instance = null;
                 modInfo.LoadContext = null;
 
-                Console.WriteLine($">>> 成功卸载 Mod: [{modName}]");
+                Log.Info($">>> 成功卸载 Mod: [{modName}]");
 
                 try
                 {
@@ -336,19 +337,19 @@ public static class ModManager
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
+                    Log.Info($"[错误] OnModUnloaded 事件处理程序抛出异常: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[错误] 卸载 Mod 失败: {ex.Message}");
+                Log.Info($"[错误] 卸载 Mod 失败: {ex.Message}");
             }
         }
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        Console.WriteLine(">>> 所有 Mod 已卸载");
+        Log.Info($">>> 所有 Mod 已卸载");
 
         // 清空 ServiceRegistry 中的 MethodInfo 缓存，
         // 避免下次 Invoke 时命中旧 Assembly 的缓存（抛 TargetException）
@@ -360,7 +361,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] OnAllModUnloaded 事件处理程序抛出异常: {ex.Message}");
+            Log.Info($"[错误] OnAllModUnloaded 事件处理程序抛出异常: {ex.Message}");
         }
     }
 
@@ -368,7 +369,7 @@ public static class ModManager
     {
         UnloadAllMods();
         LoadMods(ModPath);
-        Console.WriteLine(">>> 所有 Mod 已重新加载");
+        Log.Info($">>> 所有 Mod 已重新加载");
 
         try
         {
@@ -376,7 +377,7 @@ public static class ModManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[错误] OnAllModReloaded 事件处理程序抛出异常: {ex.Message}");
+            Log.Info($"[错误] OnAllModReloaded 事件处理程序抛出异常: {ex.Message}");
         }
     }
 

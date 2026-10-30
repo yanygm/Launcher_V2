@@ -167,11 +167,11 @@ namespace KartRider.Logging
         {
             try
             {
-                return Enum.GetName(typeof(KartRider_PacketName.PacketName), opcode) ?? "0x" + opcode.ToString("X8");
+                return Enum.GetName(typeof(KartRider_PacketName.PacketName), opcode) ?? opcode.ToString();
             }
             catch
             {
-                return "0x" + opcode.ToString("X8");
+                return opcode.ToString();
             }
         }
     }

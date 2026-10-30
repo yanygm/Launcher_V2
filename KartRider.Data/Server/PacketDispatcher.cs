@@ -1,4 +1,5 @@
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using KartRider_PacketName;
 using System;
 using System.Collections.Generic;
@@ -106,7 +107,7 @@ namespace KartRider
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[PacketDispatcher] Handler '{handler.Name}' 异常: {ex.Message}");
+                    Log.Debug($"[PacketDispatcher] Handler '{handler.Name}' 异常: {ex.Message}");
                 }
             }
 

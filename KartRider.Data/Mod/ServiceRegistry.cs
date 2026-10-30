@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -191,7 +192,7 @@ public static class ServiceRegistry
             method = targetType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
             if (method == null)
             {
-                Console.WriteLine($"[警告] 类型 {typeFullName} 中找不到静态方法 {methodName}");
+                Log.Info($"[警告] 类型 {typeFullName} 中找不到静态方法 {methodName}");
                 return null;
             }
             else

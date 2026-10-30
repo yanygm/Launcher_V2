@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -31,20 +32,20 @@ namespace KartRider
 				"确认操作",
 				MessageBoxButtons.OKCancel,
 				MessageBoxIcon.Question);
-			
+
 			if (result == DialogResult.OK)
 			{
 				// 使用本程序目录作为游戏目录进行下载
 				string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                if (string.IsNullOrEmpty(RootDirectory))
+				if (string.IsNullOrEmpty(RootDirectory))
 				{
-                    CheckGame(currentDirectory);
-                }
+					CheckGame(currentDirectory);
+				}
 				else
 				{
-                    CheckGame(RootDirectory);
-                }
-            }
+					CheckGame(RootDirectory);
+				}
+			}
 			else
 			{
 				Environment.Exit(1);
@@ -54,12 +55,12 @@ namespace KartRider
 		public static async Task CheckGameAsync(string kartRiderDirectory, string updateUrl = "")
 		{
 			// 强制显示终端窗口
-            bool wasVisible = Program.isVisible;
-            if (!Program.isVisible)
-            {
-                Program.isVisible = true;
-                Program.ShowWindow(Program.consoleHandle, Program.SW_SHOW);
-            }
+			bool wasVisible = Program.isVisible;
+			if (!Program.isVisible)
+			{
+				Program.isVisible = true;
+				Program.ShowWindow(Program.consoleHandle, Program.SW_SHOW);
+			}
 
 			try
 			{
@@ -105,14 +106,14 @@ namespace KartRider
 			{
 				try
 				{
-					Console.WriteLine("[CheckGame] 启动更新线程");
+					Log.Info($"[CheckGame] 启动更新线程");
 					CheckGameAsync(kartRiderDirectory, updateUrl).GetAwaiter().GetResult();
-					Console.WriteLine("[CheckGame] 更新线程完成");
+					Log.Info($"[CheckGame] 更新线程完成");
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"[CheckGame] 更新线程异常: {ex.GetType().Name}: {ex.Message}");
-					Console.WriteLine($"[CheckGame] 堆栈: {ex.StackTrace}");
+					Log.Info($"[CheckGame] 更新线程异常: {ex.GetType().Name}: {ex.Message}");
+					Log.Info($"[CheckGame] 堆栈: {ex.StackTrace}");
 					capturedException = ex;
 				}
 			})
@@ -121,11 +122,11 @@ namespace KartRider
 				Name = "GameUpdateThread"
 			};
 
-			Console.WriteLine("[CheckGame] 启动线程");
+			Log.Info($"[CheckGame] 启动线程");
 			thread.Start();
-			Console.WriteLine("[CheckGame] 等待线程完成...");
+			Log.Info($"[CheckGame] 等待线程完成...");
 			thread.Join(); // 等待线程完成
-			Console.WriteLine("[CheckGame] 线程已结束");
+			Log.Info($"[CheckGame] 线程已结束");
 
 			if (capturedException != null)
 			{

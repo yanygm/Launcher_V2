@@ -4,8 +4,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using LoggerLibrary;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider
 {
@@ -33,7 +33,7 @@ namespace KartRider
 
             if (!File.Exists(pinFileBak))
             {
-                Console.WriteLine("[PIN] 备份文件不存在，无法恢复");
+                Log.Info($"[PIN] 备份文件不存在，无法恢复");
                 return false;
             }
 
@@ -46,7 +46,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[PIN] 恢复 PIN 文件失败: {ex.Message}");
+                Log.Info($"[PIN] 恢复 PIN 文件失败: {ex.Message}");
                 return false;
             }
         }
@@ -59,10 +59,10 @@ namespace KartRider
         private void OnLoad(object sender, EventArgs e)
         {
             ClientVersion.Text = ProfileService.SettingConfig.ClientVersion.ToString();
-            Console.WriteLine($"ClientVersion: {ClientVersion.Text}");
-            Console.WriteLine($"程序编译时间: {CompileTime.Time}");
+            Log.Info($"ClientVersion: {ClientVersion.Text}");
+            Log.Info($"程序编译时间: {CompileTime.Time}");
             VersionLabel.Text = CompileTime.Time;
-            Console.WriteLine("Process: {0}", KartRider);
+            Log.Info($"Process: {KartRider}");
             string[] UserPaths = Directory.GetDirectories(FileName.ProfileDir);
             foreach (string userPath in UserPaths)
             {
@@ -79,22 +79,22 @@ namespace KartRider
             // }
             // else
             // {
-                var thread = new Thread(() =>
+            var thread = new Thread(() =>
+            {
+                try
                 {
-                    try
-                    {
-                        LaunchGame();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"启动游戏失败: {ex.Message}");
-                    }
-                })
+                    LaunchGame();
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true,
-                    Name = "GameLauncherThread"
-                };
-                thread.Start();
+                    Log.Info($"启动游戏失败: {ex.Message}");
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "GameLauncherThread"
+            };
+            thread.Start();
             // }
         }
 
@@ -105,7 +105,7 @@ namespace KartRider
         {
             if (string.IsNullOrEmpty(pinFile))
             {
-                Console.WriteLine("[PIN] 文件不存在，无法启动游戏");
+                Log.Info($"[PIN] 文件不存在，无法启动游戏");
                 return;
             }
 
@@ -128,7 +128,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"错误: {ex.Message}");
+                Log.Info($"错误: {ex.Message}");
             }
         }
 
@@ -143,7 +143,7 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"检查更新时出错: {ex.Message}");
+                Log.Info($"检查更新时出错: {ex.Message}");
                 MessageBox.Show($"检查更新失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

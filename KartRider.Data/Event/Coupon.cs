@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using KartRider.IO.Packet;
 using Profile;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -85,7 +86,7 @@ public static class CouponList
                 }
                 value.Count--;
                 File.WriteAllText(FileName.Coupon, JsonHelper.Serialize(CouponList));
-                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] 玩家 {Parent.Client.Nickname} 兑换了兑换码 {value.CouponNO}(stockId: {value.stockId})，剩余数量: {value.Count}");
+                Log.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] 玩家 {Parent.Client.Nickname} 兑换了兑换码 {value.CouponNO}(stockId: {value.stockId})，剩余数量: {value.Count}");
                 Stock.GetStockItem(Parent, value.stockId);
                 return;
             }
