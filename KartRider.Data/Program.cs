@@ -1,4 +1,9 @@
+using KartLibrary.Consts;
+using KartLibrary.Data;
+using KartLibrary.File;
+using KartLibrary.Xml;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using Microsoft.Win32;
 using Profile;
 using LoggerLibrary;
@@ -8,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 using System.Linq;
@@ -33,75 +39,100 @@ namespace KartRider
         public const int SW_HIDE = 0;
         public const int SW_SHOW = 5;
         public static bool isVisible = true;
-        public static readonly IntPtr consoleHandle = GetConsoleWindow();
+        /// <summary>控制台窗口句柄：必须在 AllocConsole() 之后获取，静态初始化时还是 0。</summary>
+        public static IntPtr consoleHandle;
 
         public static Launcher LauncherDlg;
         public static Setting SettingDlg;
-        public static bool SpeedPatch;
-        public static bool PreventItem;
         public static Encoding targetEncoding = Encoding.UTF8;
+
+        private static Mutex _singleInstance;
 
         [STAThread]
         private static async Task Main(string[] args)
         {
+            // ===== 无界面自检模式：不分配控制台、不加载 WinForms =====
+            if (args != null && args.Length > 0 && string.Equals(args[0], "--selftest", StringComparison.OrdinalIgnoreCase))
+            {
+                Environment.ExitCode = SelfTest.RunAll(args.Length > 1 && args[1] == "--verbose");
+                return;
+            }
+
+                        // ===== 单实例保护：避免两个启动器抢端口 / 互相干扰客户端 =====
+            try
+            {
+                _singleInstance = new Mutex(true, @"Global\KartRiderLauncher_V2_Optimized", out bool createdNew);
+                if (!createdNew)
+                {
+                    MessageBox.Show("启动器已经在运行，请先关闭已有窗口（可在任务管理器结束 Launcher.exe）。",
+                                    "重复启动", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            catch
+            {
+                // 拿不到互斥量时继续启动，不能因此挡住正常使用
+            }
+
             // 分配控制台
             AllocConsole();
+            consoleHandle = GetConsoleWindow();
 
             // 保存原始输出流
             var originalOut = Console.Out;
 
-            // 创建缓存编写器并替换控制台输出（stdout + stderr 都拦截）
+            // 崩溃转储只保留最近若干行（有界，不再无限增长）
             CachedConsoleWriter.cachedWriter = new CachedConsoleWriter(originalOut);
             Console.SetOut(CachedConsoleWriter.cachedWriter);
             Console.SetError(CachedConsoleWriter.cachedWriter);
 
-            // 注册未处理异常：进程终止前立即保存日志并弹窗阻塞
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            {
-                CachedConsoleWriter.ForceSaveAndClear();
+            Log.Init(Path.Combine(FileName.appDir, "Logs"), LogLevel.Info, packetTrace: false, announce: false);
 
-                var ex = args.ExceptionObject as Exception;
-                string message = ex?.ToString() ?? args.ExceptionObject?.ToString() ?? "未知错误";
+            // --no-kartrules：本次运行不使用客户端词条规则（二分定位用）
+            bool noKartRules = args != null && args.Any(a => string.Equals(a, "--no-kartrules", StringComparison.OrdinalIgnoreCase));
 
-                MessageBox.Show(
-                    $"程序发生未处理的异常，日志已保存。\n\n{message}",
-                    "致命错误",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-
-                Environment.Exit(1);
-            };
-
-            // 初始化自适应编码
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            SetAdaptiveConsoleEncoding();
-
-            // 自更新后由新实例启动：清理旧版本备份文件，随后继续正常主流程
-            bool isUpdatedRestart = args != null && args.Length > 0 && string.Equals(args[0], "/updated", StringComparison.OrdinalIgnoreCase);
-            if (isUpdatedRestart)
-            {
-                Update.CleanupOldVersion();
-            }
-
-            if (args != null && args.Length > 0 && !isUpdatedRestart)
+            if (args != null && args.Length > 0 && !noKartRules)
             {
                 RhoPacker.PackTool(args);
             }
             else
             {
                 ProfileService.LoadSettings();
-                // 检查更新：AutoUpdate 开启时静默更新，关闭时弹窗提示
-                await Update.UpdateDataAsync(ProfileService.SettingConfig.AutoUpdate);
+                ApplyLogSettings();
+                ClientItemRules.SetEnabled(!noKartRules);
+
+                // 打印构建标识，避免"跑的是哪个 exe"这种问题再次发生
+                try
+                {
+                    string exePath = Application.ExecutablePath;
+                    string sha = "";
+                    try
+                    {
+                        sha = Update.CalculateSHA256(exePath);
+                        if (sha.Length > 16)
+                        {
+                            sha = sha.Substring(0, 16) + "…";
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    Log.Info($"[Build] Launcher_V2 优化版（编译 {CompileTime.Time}）| {exePath} | sha256:{sha}");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug("[Build] 打印构建标识失败: " + ex.Message);
+                }
+
                 string TCGame = "HKEY_CURRENT_USER\\Software\\TCGame\\kart";
                 string RootDirectory = (string)Registry.GetValue(TCGame, "gamepath", null);
                 if (File.Exists(FileName.pinFile) && File.Exists(FileName.KartRider))
                 {
                     RootDirectory = FileName.appDir;
                 }
-                else if (!string.IsNullOrEmpty(RootDirectory) &&
-                    File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) &&
-                    File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")) &&
+                else if (!string.IsNullOrEmpty(RootDirectory) && 
+                    File.Exists(Path.Combine(RootDirectory, @"KartRider.pin")) && 
+                    File.Exists(Path.Combine(RootDirectory, @"KartRider.exe")) && 
                     File.Exists(Path.Combine(RootDirectory, @"Patcher.ex0")))
                 {
                     RootDirectory = Path.GetFullPath(RootDirectory);
@@ -128,6 +159,8 @@ namespace KartRider
 
                     Load_Data();
 
+                    // 启动时把"词条→道具"生效表写进日志，便于与客户端仓库的文案逐条对照
+        
                     if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
                     {
                         // IPv6 远程服务器模式：仅启动端口转发（客户端 → IPv6 服务器）
@@ -140,35 +173,44 @@ namespace KartRider
                         {
                             RouterListener.Start();
                         }
-                        catch (System.Net.Sockets.SocketException)
+                        catch (System.Net.Sockets.SocketException ex)
                         {
+                            Log.Error("启动端口监听失败（可能端口被占用）", ex);
                             LauncherSystem.MessageBoxType2();
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"启动路由器监听失败: {ex.Message}");
+                            Log.Error("启动路由器监听失败", ex);
                         }
                     }
 
                     PatchManager.StartUpdateAsync(RootDirectory).Wait();
 
+                    Metrics.StartSampler();
+                    if (ProfileService.SettingConfig.AdminPort > 0)
+                    {
+                        LocalAdminApi.Start(ProfileService.SettingConfig.AdminPort, ProfileService.SettingConfig.AdminToken);
+                    }
+
                     PINFile val = new PINFile(pinFile);
+                    // 只有客户端版本等字段真的变了才写盘：否则每次启动都会 File.Replace 一次，
+                    // 把用户手改的 Settings.json 挤成 .bak（用户改的配置就"永远不生效"）
+                    bool settingsChanged = ProfileService.SettingConfig.ClientVersion != val.Header.MinorVersion
+                                           || ProfileService.SettingConfig.LocaleID != val.Header.LocaleID
+                                           || ProfileService.SettingConfig.nClientLoc != val.Header.Unk2;
                     ProfileService.SettingConfig.ClientVersion = val.Header.MinorVersion;
                     ProfileService.SettingConfig.LocaleID = val.Header.LocaleID;
                     ProfileService.SettingConfig.nClientLoc = val.Header.Unk2;
-                    ProfileService.SaveSettings();
+                    if (settingsChanged)
+                    {
+                        ProfileService.SaveSettings();
+                    }
 
                     if (!ProfileService.SettingConfig.Console)
                     {
                         ShowWindow(consoleHandle, SW_HIDE);
                         isVisible = false;
                     }
-                    if (ProfileService.SettingConfig.EnableMod)
-                    {
-                        // 初始化ModManager
-                        ModManager.Initialize(FileName.appDir);
-                    }
-
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
                     Launcher StartLauncher = new Launcher();
@@ -182,63 +224,154 @@ namespace KartRider
             }
         }
 
+        /// <summary>
+        /// 把设置里的日志级别/包跟踪应用到日志器（设置变更后可再次调用）。
+        /// </summary>
+        /// <summary>
+        /// --kartrules &lt;item.kml&gt; [卡丁车 id]：解析客户端词条并打印结果，用于人工核对。
+        /// </summary>
+        private static int RunKartRules(string itemKmlPath, string kartIdText)
+        {
+            try
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+            }
+            catch
+            {
+            }
+
+            Log.Init(Path.Combine(FileName.appDir, "Logs"), LogLevel.Info, packetTrace: false, announce: false);
+            if (!File.Exists(itemKmlPath))
+            {
+                Console.WriteLine("[KartRules] 找不到文件: " + itemKmlPath);
+                return 2;
+            }
+
+            ClientItemRules.Load(File.ReadAllBytes(itemKmlPath));
+            ClientItemRules.LogSummary();
+
+            if (int.TryParse(kartIdText, out int kartId) && ClientItemRules.TryGet(kartId, out var rule))
+            {
+                Console.WriteLine($"--- 卡丁车 {kartId} ---");
+                Console.WriteLine("开局: " + string.Join(",", rule.StartItems));
+                foreach (var r in rule.Convert)
+                {
+                    Console.WriteLine($"变更: {r.From} → {r.To} ({r.Probability}%)");
+                }
+                foreach (var r in rule.OnUse)
+                {
+                    Console.WriteLine($"使用后: {r.From} → {r.To} ({r.Probability}%)");
+                }
+                foreach (var r in rule.OnAttacked)
+                {
+                    Console.WriteLine($"被攻击: {r.From} → {r.To} ({r.Probability}%)");
+                }
+            }
+
+            Log.Shutdown();
+            return 0;
+        }
+
+        /// <summary>
+        /// --tracetest：造几个假包走一遍"记录 + 控制台输出"链路，用于确认包输出功能本身是通的。
+        /// </summary>
+        private static int RunTraceTest()
+        {
+            try
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+            }
+            catch
+            {
+            }
+
+            Console.WriteLine("=== 包输出链路自检（--tracetest）===");
+            Log.Init(Path.Combine(FileName.appDir, "Logs"), LogLevel.Info, packetTrace: true);
+            Log.ConfigurePacketTrace(liveTrace: true, filter: "", sample: 1, toConsole: true, ringEnabled: true, maxPerSecond: 100);
+
+            byte[] payload = new byte[32];
+            for (int i = 0; i < 5; i++)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(PacketHash.PqServerTime), 0, payload, 0, 4);
+                payload[4] = (byte)i;
+                Log.Packet("C", "测试玩家", payload, payload.Length);
+            }
+
+            List<string> recent = PacketRing.Snapshot(5);
+            Console.WriteLine($"--- 环形缓冲回看（{recent.Count} 条）---");
+            foreach (string line in recent)
+            {
+                Console.WriteLine(line);
+            }
+
+            Console.WriteLine("=== 上面应有 5 条 [C] 输出 + 5 条环形缓冲记录，否则链路有问题 ===");
+            Log.Shutdown();
+            return 0;
+        }
+
+        /// <summary>
+        /// 把设置里的日志级别/包跟踪应用到日志器（设置变更后可再次调用）。
+        /// </summary>
+        public static void ApplyLogSettings()
+        {
+            Profile.Setting setting = ProfileService.SettingConfig ?? new Profile.Setting();
+            LogLevel level = LogLevel.Info;
+            if (!string.IsNullOrEmpty(setting.LogLevel))
+            {
+                Enum.TryParse(setting.LogLevel, true, out level);
+            }
+            Log.MinLevel = level;
+            Log.SetEnabled(setting.LogEnabled);
+            // 控制台窗口是否显示只由 Setting.Console 决定，与日志开关无关
+            Log.Init(Path.Combine(FileName.appDir, "Logs"), level, setting.PacketTrace, console: true, announce: setting.LogEnabled);
+            if (setting.LogEnabled)
+            {
+                Log.ConfigurePacketTrace(setting.PacketTrace, setting.PacketTraceFilter, setting.PacketTraceSample,
+                                         setting.PacketTraceConsole, setting.PacketRing, 500, setting.PacketTraceShowUdp);
+            }
+        }
+
         public static void SetAdaptiveConsoleEncoding()
         {
             try
             {
-                // 1. 检测操作系统类型
                 bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
-                // 2. 优先尝试 UTF-8（跨平台通用）
                 targetEncoding = Encoding.UTF8;
 
-                // 3. Windows 中文环境特殊处理（部分终端默认 GBK）
                 if (isWindows)
                 {
                     try
                     {
-                        // 注册表路径
                         string codePageRegPath = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage";
-
-                        // 读取 OEMCP 值（返回 object 类型，需判断是否为 null）
                         object oemcpObj = Registry.GetValue(codePageRegPath, "OEMCP", null);
-
-                        // 正确判断：是否读取到有效值，且能转换为 int
                         if (oemcpObj != null && int.TryParse(oemcpObj.ToString(), out int oemcp))
                         {
                             try
                             {
-                                // 获取对应编码
                                 targetEncoding = Encoding.GetEncoding(oemcp);
                             }
                             catch (ArgumentException)
                             {
-                                // 编码不支持时回退到 UTF-8
                                 targetEncoding = Encoding.UTF8;
                             }
                         }
                         else
                         {
-                            // 未读取到 OEMCP 值
                             targetEncoding = Encoding.UTF8;
                         }
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        // 捕获注册表读取异常（如权限不足）
                         targetEncoding = Encoding.UTF8;
                     }
                 }
-                // 4. 应用编码设置（输出/输入保持一致）
+
                 Console.OutputEncoding = targetEncoding;
                 Console.InputEncoding = targetEncoding;
-
-                // 5. 验证编码是否生效（可选）
                 Console.WriteLine($"已适配编码: {targetEncoding.EncodingName}");
             }
             catch (Exception ex)
             {
-                // 异常时使用系统默认编码作为最后保障
                 Console.WriteLine($"编码设置失败，使用默认编码: {ex.Message}");
             }
         }
@@ -249,28 +382,24 @@ namespace KartRider
             {
                 string localFilePath = FileName.ModelMax_LoadFile;
                 
-                // 确保目录存在
                 string directory = Path.GetDirectoryName(localFilePath);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                // 如果本地文件不存在，直接创建
                 if (!File.Exists(localFilePath))
                 {
                     File.WriteAllText(localFilePath, ModelMax.XmlContent);
-                    Console.WriteLine($"ModelMax.xml已创建: {localFilePath}");
+                    Log.Info($"ModelMax.xml已创建: {localFilePath}");
                 }
-                else
+                else if (ProfileService.SettingConfig.ModelMaxAutoUpdate)
                 {
-                    // 加载本地和资源XML
                     XDocument localXml = XDocument.Load(localFilePath);
                     XDocument resourceXml = XDocument.Parse(ModelMax.XmlContent);
                     
                     int addedCount = 0;
                     
-                    // 遍历资源中的所有 kart 节点
                     foreach (var resourceKart in resourceXml.Root!.Elements("kart"))
                     {
                         string? id = resourceKart.Attribute("id")?.Value;
@@ -278,15 +407,13 @@ namespace KartRider
                         
                         if (id != null)
                         {
-                            // 检查本地是否已存在该ID
                             bool exists = localXml.Root!.Elements("kart")
                                 .Any(k => k.Attribute("id")?.Value == id);
                             
                             if (!exists)
                             {
-                                // 复制 kart 元素（包含所有属性）
                                 localXml.Root.Add(new XElement(resourceKart));
-                                Console.WriteLine($"已添加 kart: {name ?? id}");
+                                Log.Debug($"已添加 kart: {name ?? id}");
                                 addedCount++;
                             }
                         }
@@ -295,19 +422,18 @@ namespace KartRider
                     if (addedCount > 0)
                     {
                         localXml.Save(localFilePath, SaveOptions.None);
-                        Console.WriteLine($"ModelMax.xml已更新，新增 {addedCount} 个kart");
+                        Log.Info($"ModelMax.xml已更新，新增 {addedCount} 个kart");
                     }
                     else
                     {
-                        Console.WriteLine("ModelMax.xml已是最新，无需更新");
+                        Log.Debug("ModelMax.xml已是最新，无需更新");
                     }
                 }
 
-                SpecialKartConfig.SaveConfigToFile(FileName.SpecialKartConfig);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载数据失败: {ex.Message}");
+                Log.Error("加载数据失败", ex);
             }
         }
     }

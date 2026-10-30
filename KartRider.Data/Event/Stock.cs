@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using ExcData;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using Profile;
 using RiderData;
 
@@ -54,6 +55,11 @@ namespace KartRider
             Console.WriteLine(itemList.Count);
             foreach (item Item in itemList)
             {
+                if (ItemBlacklist.IsBlocked(Item.itemCatId, Item.itemId))
+                {
+                    Log.Info($"[ItemBlacklist] 拒绝发放 cat={Item.itemCatId} id={Item.itemId}");
+                    continue;
+                }
                 if (Item.itemCatId == 3 && Item.expireDay == 0)
                 {
                     AddNewKart(Parent, Item.itemId);

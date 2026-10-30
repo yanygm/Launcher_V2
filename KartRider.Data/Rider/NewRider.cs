@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using KartRider.IO.Packet;
@@ -172,7 +172,7 @@ namespace RiderData
                         oPacket.WriteUShort(item.itemId);
                         oPacket.WriteUShort(item.itemSn);
                         oPacket.WriteUShort(item.itemCount);
-                        oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                        oPacket.WriteByte(0); // 禁止道具开关已移除，恒 0
                         oPacket.WriteByte(0);
                         oPacket.WriteTime(item.endTime);
                         oPacket.WriteByte(0);
@@ -194,6 +194,11 @@ namespace RiderData
                     List<List<ushort>> items = new List<List<ushort>>();
                     foreach (var item in category.Value)
                     {
+                        // 黑名单：客户端字典里有、但无获取途径的内部/占位条目，不下发
+                        if (ItemBlacklist.IsBlocked(itemCatId, item.Key))
+                        {
+                            continue;
+                        }
                         ushort sn = 0;
                         ushort num = ProfileService.GetProfileConfig(Nickname)?.Rider?.SlotChanger ?? 0;
                         ushort id = item.Key;
@@ -997,7 +1002,7 @@ namespace RiderData
                         oPacket.WriteUShort(tempList[f][0]);
                         oPacket.WriteUShort(tempList[f][1]);
                         oPacket.WriteUShort(tempList[f][2]);
-                        oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                        oPacket.WriteByte(0); // 禁止道具开关已移除，恒 0
                         oPacket.WriteByte(0);
                         oPacket.WriteShort(-1);
                         oPacket.WriteShort(0);

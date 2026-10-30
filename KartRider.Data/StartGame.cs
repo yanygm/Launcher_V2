@@ -1,19 +1,27 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using KartRider.Common.Data;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using Profile;
 
 namespace KartRider;
 
+/// <summary>
+/// 启动客户端。
+///
+/// 原实现用"每秒起两个 netstat 进程 + 字符串匹配"判断客户端是否连上，
+/// 最多 30 轮（60 个进程），并且 detectThread.Join() 会阻塞调用线程 30 秒。
+/// 现在改成：服务端接受连接时直接通知（ClientManager.ClientConnected），
+/// 无进程创建、无字符串解析，超时行为一致。
+/// </summary>
 class StartGame
 {
-    // PIN 文件路径
+    private const int ConnectTimeoutSeconds = 30;
+
     private string _pinFile;
     private string _pinFileBak;
     private string _kartRiderDirectory;
@@ -38,7 +46,7 @@ class StartGame
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"备份 PIN 文件失败: {ex.Message}");
+            Log.Error($"备份 PIN 文件失败: {ex.Message}", ex);
             return;
         }
 
@@ -49,7 +57,7 @@ class StartGame
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"读取 PIN 文件失败: {ex.Message}");
+            Log.Error($"读取 PIN 文件失败: {ex.Message}", ex);
             return;
         }
 
@@ -77,7 +85,7 @@ class StartGame
                     {
                         if (bml.SubObjects[i].Item1 == "NgsOn")
                         {
-                            Console.WriteLine("Removing {0}", bml.SubObjects[i].Item1);
+                            Log.Info($"Removing {bml.SubObjects[i].Item1}");
                             bml.SubObjects.RemoveAt(i);
                             break;
                         }
@@ -92,14 +100,15 @@ class StartGame
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"写入 PIN 文件失败: {ex.Message}");
+            Log.Error($"写入 PIN 文件失败: {ex.Message}", ex);
             return;
         }
+
+        Task<SessionGroup> waitForClient = ClientManager.WaitForClientAsync(TimeSpan.FromSeconds(ConnectTimeoutSeconds));
 
         Process process = null;
         try
         {
-            // 1. 启动目标进程
             string passport = Base64Helper.Encode(JsonHelper.Serialize(packet));
             ProcessStartInfo startInfo = new ProcessStartInfo("KartRider.exe", $"TGC -region:3 -passport:{passport}")
             {
@@ -108,81 +117,36 @@ class StartGame
             };
 
             process = Process.Start(startInfo);
-            Console.WriteLine($"进程已启动, ID: {process.Id}");
+            Log.Info($"客户端进程已启动, ID: {process?.Id}");
 
-            // 保存进程 ID，避免后续访问已释放的 Process 对象
-            int processId = process.Id;
-
-            // 2. 等待进程初始化
-            Thread.Sleep(2000);
-
-            // 3. 启动后台线程持续检测 TCP 连接
-            string serverIP = LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP) ? "127.0.0.1" : ProfileService.SettingConfig.ServerIP;
-            int serverPort = ProfileService.SettingConfig.ServerPort;
-            bool pinRestored = false;
-            bool connectionEstablished = false;
-
-            Thread detectThread = new Thread(() =>
+            // 等待"客户端真正连上本机服务端"，而不是盲等固定时长
+            SessionGroup connected = waitForClient.GetAwaiter().GetResult();
+            if (connected != null)
             {
-                int checkCount = 0;
-                while (!pinRestored && checkCount < 30) // 最多检测30秒
+                if (!RestorePinFile())
                 {
-                    if (CheckTcpConnection(processId, serverIP, serverPort))
-                    {
-                        if (!connectionEstablished)
-                        {
-                            connectionEstablished = true;
-                        }
-
-                        // 连接成功，恢复 PIN 文件
-                        if (RestorePinFile())
-                        {
-                            pinRestored = true;
-                        }
-                        else
-                        {
-                            Thread.Sleep(1000);
-                        }
-                    }
-                    else
-                    {
-                        if (connectionEstablished)
-                        {
-                            // 之前连接过，现在断开了
-                            connectionEstablished = false;
-                        }
-                    }
-
-                    Thread.Sleep(1000);
-                    checkCount++;
+                    Log.Warn("[PIN] 客户端已连接，但恢复 PIN 文件失败");
                 }
-
-                if (!pinRestored)
+                else
                 {
-                    Console.WriteLine("[TCP检测] 超过30秒未检测到连接，停止检测");
+                    Log.Info("[PIN] 客户端已连接，PIN 文件已恢复");
                 }
-            })
+            }
+            else
             {
-                IsBackground = true,
-                Name = "TcpDetectThread"
-            };
-            detectThread.Start();
-
-            // 等待检测线程执行完毕
-            detectThread.Join();
-            Console.WriteLine("[TCP检测] 检测线程已结束");
-
-            // 释放进程资源
-            process?.Dispose();
+                Log.Warn($"[TCP检测] 超过 {ConnectTimeoutSeconds} 秒未检测到连接，停止等待");
+            }
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            Console.WriteLine($"UAC取消或权限不足: {ex.Message}");
-            process?.Dispose();
+            Log.Error($"UAC取消或权限不足: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"操作失败: {ex.Message}");
+            Log.Error($"操作失败: {ex.Message}", ex);
+        }
+        finally
+        {
             process?.Dispose();
         }
     }
@@ -197,7 +161,6 @@ class StartGame
         {
             if (string.IsNullOrEmpty(_pinFileBak) || !File.Exists(_pinFileBak))
             {
-                Console.WriteLine("[PIN] 备份文件不存在，无法恢复");
                 return false;
             }
 
@@ -209,77 +172,7 @@ class StartGame
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[PIN] 恢复 PIN 文件失败: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 检测进程是否连接到指定 TCP 服务器
-    /// </summary>
-    /// <param name="processId">目标进程ID</param>
-    /// <param name="serverIP">服务器IP</param>
-    /// <param name="serverPort">服务器端口</param>
-    /// <returns>是否已建立连接</returns>
-    private bool CheckTcpConnection(int processId, string serverIP, int serverPort)
-    {
-        try
-        {
-            // 使用 netstat 命令查找该进程的 TCP 连接
-            ProcessStartInfo psi = new ProcessStartInfo("netstat", $"-ano | findstr \"{processId}\"")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (Process netstatProcess = Process.Start(psi))
-            {
-                string output = netstatProcess.StandardOutput.ReadToEnd();
-                netstatProcess.WaitForExit();
-
-                // 解析输出，查找到目标服务器的 ESTABLISHED 连接
-                string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string line in lines)
-                {
-                    // 格式: TCP    192.168.1.100:12345    127.0.0.1:8080    ESTABLISHED    12345
-                    if (line.Contains("ESTABLISHED") && line.Contains($"{serverIP}:{serverPort}"))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 尝试更精确的查询方式
-            psi = new ProcessStartInfo("netstat", "-ano")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (Process netstatProcess = Process.Start(psi))
-            {
-                string output = netstatProcess.StandardOutput.ReadToEnd();
-                netstatProcess.WaitForExit();
-
-                string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string line in lines)
-                {
-                    if (line.Contains($" {processId}") && 
-                        line.Contains("ESTABLISHED") && 
-                        line.Contains($"{serverIP}:{serverPort}"))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[TCP检测] 检测失败: {ex.Message}");
+            Log.Warn($"[PIN] 恢复 PIN 文件失败: {ex.Message}");
             return false;
         }
     }

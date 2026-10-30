@@ -1,124 +1,145 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using KartRider.Logging;
 
 namespace LoggerLibrary
 {
     /// <summary>
-    /// 控制台日志记录器，用于将控制台输出缓存并在崩溃时保存到日志文件。
+    /// 控制台重定向 + 崩溃转储。
+    ///
+    /// 原实现把所有 Console 输出无界追加进 StringBuilder（且非线程安全），
+    /// 每包一行 hex 时一小时能涨到 GB 级。
+    /// 现在：固定容量环形缓冲（只保留最近 N 行，供崩溃时落盘），写入加锁。
     /// </summary>
     public class CachedConsoleWriter : TextWriter
     {
+        private const int MaxLines = 50000;
+        private const int MaxLineLength = 4096;
+
         public static CachedConsoleWriter cachedWriter;
+
         private readonly TextWriter _originalOut;
-        private readonly StringBuilder _cache;
-
-        // ---- 自动落盘：把控制台每一行同时写进 AutoLogs\Server_时间.log ----
-        // 目的：联机时出问题（结算包异常、掉线等）不再依赖手动点「保存日志」，
-        // 事后直接看文件里的十六进制包就能定位。
-        private static StreamWriter _autoLog;
-        private static readonly object _autoLogLock = new object();
-        private static bool _autoLogOpened;
-        private static long _autoLogBytes;
-        private const long AutoLogMaxBytes = 40L * 1024 * 1024; // 单文件上限 40MB
-
-        private static void AutoLogLine(string line)
-        {
-            if (_autoLogBytes > AutoLogMaxBytes)
-            {
-                return;
-            }
-            try
-            {
-                lock (_autoLogLock)
-                {
-                    if (!_autoLogOpened)
-                    {
-                        _autoLogOpened = true;
-                        try
-                        {
-                            string dir = Path.Combine(AppContext.BaseDirectory, "AutoLogs");
-                            Directory.CreateDirectory(dir);
-                            string file = Path.Combine(dir, $"Server_{DateTime.Now:yyyyMMdd_HHmmss}.log");
-                            _autoLog = new StreamWriter(new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), new UTF8Encoding(false))
-                            {
-                                AutoFlush = true
-                            };
-                        }
-                        catch
-                        {
-                            _autoLog = null;
-                        }
-                    }
-                    if (_autoLog != null)
-                    {
-                        _autoLog.WriteLine($"[{DateTime.Now:HH:mm:ss}] {line}");
-                        _autoLogBytes += line.Length + 12;
-                    }
-                }
-            }
-            catch
-            {
-                // 落盘失败不能影响主流程
-            }
-        }
-
-        public string Cache => _cache.ToString();
-
-        public void ClearCache() => _cache.Clear();
+        private readonly Queue<string> _lines = new Queue<string>(1024);
+        private readonly object _gate = new object();
 
         public CachedConsoleWriter(TextWriter originalOut)
         {
             _originalOut = originalOut;
-            _cache = new StringBuilder();
         }
 
         public override Encoding Encoding => _originalOut.Encoding;
 
+        public string Cache
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    var sb = new StringBuilder();
+                    foreach (string line in _lines)
+                    {
+                        sb.AppendLine(line);
+                    }
+                    return sb.ToString();
+                }
+            }
+        }
+
+        public void ClearCache()
+        {
+            lock (_gate)
+            {
+                _lines.Clear();
+            }
+        }
+
         public override void Write(char value)
         {
-            _originalOut.Write(value);
-            _cache.Append(value);
+            try
+            {
+                _originalOut.Write(value);
+            }
+            catch
+            {
+            }
+            Append(value.ToString());
         }
 
         public override void Write(string value)
         {
-            _originalOut.Write(value);
-            _cache.Append(value);
+            try
+            {
+                _originalOut.Write(value);
+            }
+            catch
+            {
+            }
+            Append(value);
         }
 
         public override void WriteLine(string value)
         {
-            _originalOut.WriteLine(value);
-            _cache.AppendLine(value);
-            // AutoLogLine(value);
+            try
+            {
+                _originalOut.WriteLine(value);
+            }
+            catch
+            {
+            }
+            Append(value);
+        }
+
+        private void Append(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+            if (text.Length > MaxLineLength)
+            {
+                text = text.Substring(0, MaxLineLength) + "…(截断)";
+            }
+            lock (_gate)
+            {
+                if (_lines.Count >= MaxLines)
+                {
+                    _lines.Dequeue();
+                }
+                _lines.Enqueue(text.TrimEnd('\r', '\n'));
+            }
         }
 
         public static void SaveToFile()
         {
             try
             {
-                if (cachedWriter == null || string.IsNullOrEmpty(cachedWriter.Cache))
+                if (cachedWriter == null)
+                {
                     return;
-
-                string fileName = $"{DateTime.Now:yyyyMMddHHmmss}.log";
-                File.WriteAllText(fileName, cachedWriter.Cache);
+                }
+                string text = cachedWriter.Cache;
+                if (string.IsNullOrEmpty(text))
+                {
+                    return;
+                }
+                string fileName = Path.Combine(AppContext.BaseDirectory, $"{DateTime.Now:yyyyMMddHHmmss}.log");
+                // 带 BOM：避免 Notepad / PowerShell 5.1 把 UTF-8 当 ANSI 显示成乱码
+                File.WriteAllText(fileName, text, new UTF8Encoding(true));
             }
             catch (Exception ex)
             {
-                // 保存失败时不再触发 Console.WriteLine 避免递归
                 System.Diagnostics.Debug.WriteLine($"保存日志失败: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// 立即同步保存缓存到文件并清空，用于 UnhandledException 等进程崩溃场景。
-        /// </summary>
         public static void ForceSaveAndClear()
         {
-            if (cachedWriter == null || string.IsNullOrEmpty(cachedWriter.Cache))
+            if (cachedWriter == null)
+            {
                 return;
-
+            }
             SaveToFile();
             cachedWriter.ClearCache();
         }

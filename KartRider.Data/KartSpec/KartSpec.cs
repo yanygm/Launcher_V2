@@ -1,5 +1,6 @@
 using ExcData;
 using KartRider;
+using KartRider.Logging;
 using Profile;
 using RiderData;
 using System;
@@ -168,34 +169,63 @@ namespace KartRider
                 // 1. 处理卡丁车ID为0的默认情况
                 if (School || KartID == 0)
                 {
-                    Console.WriteLine("[KartSpec] 卡丁车ID=0, 加载练习车数据");
+                    Log.Debug($"[KartSpec] 使用默认规格（KartID={KartID}, School={School}）");
                 }
                 // 2. 处理非默认卡丁车ID
                 else
                 {
                     // 2.1 检查KartName字典是否存在该ID
-                    if (!Kart.kartName.TryGetValue(KartID, out var KartTable))
+                    if (!Kart.kartName.TryGetValue(KartID, out var KartTable) || KartTable == null)
                     {
-                        Console.WriteLine($"[KartSpec] 警告: KartName中未找到ID={KartID}, 加载练习车数据");
+                        // 原实现这里继续解引用 KartTable.Name → 空引用被外层 catch 吞掉，
+                        // 连带把整份规格（含 modelMaxX/Y）都留成 0，且只打印一条误导性的"加载练习车数据"。
+                        Log.Warn($"[KartSpec] KartName 中未找到 ID={KartID}，使用默认规格（车型数据可能不完整）");
                     }
-
-                    Console.WriteLine($"[KartSpec] 加载卡丁车: ID={KartID}, 名称={KartTable.Name}");
-
-                    // 2.2 检查KartSpec字典是否存在该规格
-                    if (!Kart.kartSpec.TryGetValue(KartTable.Name, out var kartSpecDoc))
+                    else
                     {
-                        Console.WriteLine($"[KartSpec] 警告: KartSpec中未找到名称={KartTable.Name}的规格, 使用默认");
-                    }
+                        // 2.2 检查KartSpec字典是否存在该规格
+                        if (!Kart.kartSpec.TryGetValue(KartTable.Name, out var kartSpecDoc))
+                        {
+                            Log.Warn($"[KartSpec] KartSpec 中未找到名称={KartTable.Name} 的规格，使用默认值");
+                        }
 
-                    // 2.3 解析规格XML并赋值
-                    ParseKartSpecXml(KartID, kartSpecDoc);
+                        // 2.3 解析规格XML并赋值
+                        ParseKartSpecXml(KartID, kartSpecDoc);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[KartSpec] 错误: 获取规格时异常 - {ex.Message}\n堆栈: {ex.StackTrace}, 使用默认");
-                // 异常降级: 确保加载默认规格, 避免程序崩溃
+                Log.Error($"[KartSpec] 获取规格异常 KartID={KartID}，使用默认规格", ex);
             }
+            finally
+            {
+                // 无论走哪条分支（ID=0 / 车手学校 / 缺 KartName / 缺 KartSpec / 解析异常），
+                // 都按 kartId 从 ModelMax.xml 解析一次模型尺寸。
+                // 这样同一辆车在任何路径下都得到同一个值，不会出现"有的车有 modelMax、有的车是 0"。
+                ApplyModelDimensions(KartID);
+            }
+        }
+
+        /// <summary>
+        /// 统一解析模型尺寸：命中 ModelMax.xml 就用文件值，未配置则显式回退为 0（并只告警一次）。
+        /// </summary>
+        private void ApplyModelDimensions(ushort kartId)
+        {
+            if (ModelMaxTable.TryGet(kartId, out float x, out float y))
+            {
+                modelMaxX = x;
+                modelMaxY = y;
+            }
+            else
+            {
+                modelMaxX = DefaultModelDimension;
+                modelMaxY = DefaultModelDimension;
+                ModelMaxTable.ReportMissing(kartId);
+            }
+
+            // 首次调用时做一次覆盖率校验：直接列出"哪些车会退化成 0"
+            ModelMaxTable.ValidateOnce(Kart.kartName?.Keys);
         }
 
         /// <summary>解析卡丁车规格XML文档</summary>
@@ -248,78 +278,16 @@ namespace KartRider
                 }
             }
 
-            // 2. 加载模型尺寸（单独处理ModelMax.xml）
-            var modelMax = LoadModelMaxDimensions(kartId);
-            modelMaxX = modelMax.modelMaxX;
-            Console.WriteLine($"[KartSpec] 警告: 属性modelMaxX值为: {modelMaxX}");
-            modelMaxY = modelMax.modelMaxY;
-            Console.WriteLine($"[KartSpec] 警告: 属性modelMaxY值为: {modelMaxY}");
 
-            // 3. 设置默认部件类型（Engine/Handle等）
+            // 2. 设置默认部件类型（Engine/Handle等）
             EngineType = DefaultPartType;
             HandleType = DefaultPartType;
             WheelType = DefaultPartType;
             BoosterType = DefaultPartType;
 
-            // 4. 初始化物品ID（保持原逻辑）
+            // 3. 初始化物品ID（保持原逻辑）
             startItemTableId = 0;
             startItemId = 0;
-        }
-
-        /// <summary>加载ModelMax.xml中的模型尺寸（modelMaxX/modelMaxY）</summary>
-        private (float modelMaxX, float modelMaxY) LoadModelMaxDimensions(ushort kartId)
-        {
-            // 检查文件是否存在
-            if (!File.Exists(FileName.ModelMax_LoadFile))
-            {
-                Console.WriteLine($"[KartSpec] 警告: ModelMax.xml不存在 - 路径: {FileName.ModelMax_LoadFile}");
-                return (DefaultModelDimension, DefaultModelDimension);
-            }
-
-            try
-            {
-                // 只对文件流使用using, XDocument不实现IDisposable, 不需要using
-                using (var fileStream = File.OpenRead(FileName.ModelMax_LoadFile))
-                {
-                    var xdoc = XDocument.Load(fileStream);
-
-                    var targetNode = xdoc.Descendants("kart").FirstOrDefault(kart => (short)kart.Attribute("id") == kartId);
-
-                    if (targetNode == null)
-                    {
-                        Console.WriteLine($"[KartSpec] 警告: ModelMax.xml中无节点ID={kartId}");
-                        return (DefaultModelDimension, DefaultModelDimension);
-                    }
-
-                    var maxXAttr = targetNode.Attribute("modelMaxX");
-                    var maxYAttr = targetNode.Attribute("modelMaxY");
-
-                    if (maxXAttr == null || maxYAttr == null)
-                    {
-                        Console.WriteLine($"[KartSpec] 警告: ID={kartId} 缺少modelMaxX或modelMaxY属性");
-                        return (DefaultModelDimension, DefaultModelDimension);
-                    }
-
-                    if (!float.TryParse(maxXAttr.Value, CultureInfo.InvariantCulture, out float modelMaxX) ||
-                        !float.TryParse(maxYAttr.Value, CultureInfo.InvariantCulture, out float modelMaxY))
-                    {
-                        Console.WriteLine($"[KartSpec] 警告: ID={kartId} 的属性值无法解析为浮点数");
-                        return (DefaultModelDimension, DefaultModelDimension);
-                    }
-
-                    return (modelMaxX, modelMaxY);
-                }
-            }
-            catch (XmlException ex)
-            {
-                Console.WriteLine($"[KartSpec] 错误: 解析ModelMax.xml失败 - {ex.Message}");
-                return (DefaultModelDimension, DefaultModelDimension);
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"[KartSpec] 错误: 读取ModelMax.xml失败 - {ex.Message}");
-                return (DefaultModelDimension, DefaultModelDimension);
-            }
         }
 
         /// <summary>获取XML属性值（处理布尔/特殊数值逻辑）</summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -25,16 +24,12 @@ namespace KartRider
     public class Channel
     {
         public string Name { get; set; }
-
-        /// <summary>内部基础模式：3 = 竞速组队，4 = 道具组队（channel.xml 里的双人模式会被归一化到这里）</summary>
-        public byte GameType { get; set; }
-
-        /// <summary>channel.xml 中的原始模式号（双人组队为 68），建出的房间用它下发给客户端</summary>
-        public byte WireGameType { get; set; }
-
         public byte CreateSpeed { get; set; }
-
-        /// <summary>是否为双人组队频道（在该频道建出的房间按「每队 N 人」拆分成多支队伍）</summary>
+        /// <summary>内部基础模式（双人组队归一化为 3/4）</summary>
+        public byte GameType { get; set; }
+        /// <summary>下发给客户端的原始模式号（双人组队为 67/68）</summary>
+        public byte WireGameType { get; set; }
+        /// <summary>是否双人组队频道</summary>
         public bool DuoTeam { get; set; }
     }
 
@@ -46,122 +41,24 @@ namespace KartRider
         public static XElement questInfo;
         public static Dictionary<byte, Channel> Channels = new Dictionary<byte, Channel>();
 
-        /// <summary>玩家当前所在频道（PqChannelSwitch 时记录），用于判断建房时是否处于双人组队频道</summary>
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, byte> PlayerChannels =
-            new System.Collections.Concurrent.ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
-
-        /// <summary>记录玩家当前频道</summary>
-        public static void SetPlayerChannel(string nickname, byte channel)
-        {
-            if (string.IsNullOrEmpty(nickname))
-                return;
-            PlayerChannels[nickname] = channel;
-        }
-
-        /// <summary>获取玩家当前频道，未记录时返回 255</summary>
-        public static byte GetPlayerChannel(string nickname)
-        {
-            if (string.IsNullOrEmpty(nickname))
-                return 255;
-            return PlayerChannels.TryGetValue(nickname, out byte channel) ? channel : (byte)255;
-        }
-
-        /// <summary>
-        /// 去掉重复的 XML BOM。补丁包如果被写成了双 BOM（FF FE FF FE），
-        /// XDocument.Load 会直接抛「Data at the root level is invalid. Line 1, position 1.」，
-        /// 之前就是整个 Data 加载因此中断。
-        /// </summary>
+        /// <summary>去掉重复的 XML BOM（FF FE FF FE），避免 XDocument.Load 抛异常。</summary>
         public static byte[] StripXmlBom(byte[] data)
         {
-            if (data == null)
-                return Array.Empty<byte>();
+            if (data == null) return Array.Empty<byte>();
             int offset = 0;
-            while (true)
+            while (data.Length - offset >= 4 && data[offset] == 0xFF && data[offset + 1] == 0xFE
+                   && data[offset + 2] == 0xFF && data[offset + 3] == 0xFE)
             {
-                if (data.Length - offset >= 4 && data[offset] == 0xFF && data[offset + 1] == 0xFE &&
-                    data[offset + 2] == 0xFF && data[offset + 3] == 0xFE)
-                {
-                    offset += 2;
-                    continue;
-                }
-                if (data.Length - offset >= 6 && data[offset] == 0xEF && data[offset + 1] == 0xBB &&
-                    data[offset + 2] == 0xBF && data[offset + 3] == 0xEF && data[offset + 4] == 0xBB &&
-                    data[offset + 5] == 0xBF)
-                {
-                    offset += 3;
-                    continue;
-                }
-                break;
+                offset += 2;
             }
-            if (offset == 0)
-                return data;
+            if (offset == 0) return data;
             byte[] result = new byte[data.Length - offset];
             Buffer.BlockCopy(data, offset, result, 0, result.Length);
             return result;
         }
 
-        /// <summary>该频道是否为双人组队频道</summary>
         public static bool IsDuoTeamChannel(byte channelIndex) =>
-            Channels.TryGetValue(channelIndex, out var channel) && channel.DuoTeam;
-
-        /// <summary>
-        /// 按房间反查它所属的频道索引：优先匹配「模式号 + 是否双人组队」，
-        /// 保证双人组队房间不会被错误地定位到普通组队频道（两者内部 GameType 都是 3/4）
-        /// </summary>
-        public static int FindChannelIndex(byte wireGameType, bool duoTeam)
-        {
-            foreach (var pair in Channels)
-            {
-                if (pair.Value.WireGameType == wireGameType && pair.Value.DuoTeam == duoTeam)
-                    return pair.Key;
-            }
-            byte baseType = DuoTeamMode.ToBaseGameType(wireGameType);
-            foreach (var pair in Channels)
-            {
-                if (pair.Value.GameType == baseType)
-                    return pair.Key;
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// 解析一份 channel.xml 并写入频道表（索引从 1 开始，按文件中的出现顺序编号）。
-        /// openPeriod 只检查开始时间，与官方客户端的开放逻辑保持一致。
-        /// </summary>
-        public static int ApplyChannels(XDocument doc, bool clear = true)
-        {
-            if (clear)
-                Channels.Clear();
-
-            DateTime now = DateTime.Now;
-            byte index = 1;
-            foreach (var channel in doc.Descendants("Channel"))
-            {
-                XAttribute openPeriodAttr = channel.Attribute("openPeriod");
-                byte channelGameType = byte.Parse(channel.Attribute("gameType").Value);
-                var info = new Channel
-                {
-                    Name = channel.Attribute("name").Value,
-                    CreateSpeed = byte.Parse(channel.Attribute("createSpeed").Value),
-                    DuoTeam = DuoTeamMode.IsDuoGameType(channelGameType),
-                    GameType = DuoTeamMode.ToBaseGameType(channelGameType),
-                    WireGameType = channelGameType,
-                };
-
-                if (openPeriodAttr == null)
-                {
-                    Channels.TryAdd(index++, info);
-                    continue;
-                }
-
-                string[] periodParts = openPeriodAttr.Value.Split('~');
-                if (periodParts.Length != 2 || !DateTime.TryParse(periodParts[0], out DateTime startTime))
-                    continue;
-                if (now >= startTime)
-                    Channels.TryAdd(index++, info);
-            }
-            return Channels.Count;
-        }
+            Channels.TryGetValue(channelIndex, out var ch) && ch.DuoTeam;
 
         public static Keys[] keys = new Keys[]
         {
@@ -180,7 +77,7 @@ namespace KartRider
             Random random = new Random();
             int index = random.Next(keys.Length);
             Keys key = keys[index];
-            string updateUrl = ProfileService.SettingConfig.PatchUrl;
+            string updateUrl = ""; // PatchUrl 配置项已移除，客户端不再检查更新
             ushort ClientVersion = ProfileService.SettingConfig.ClientVersion;
             using (OutPacket outPacket = new OutPacket("PcFirstMessage"))
             {
@@ -312,7 +209,7 @@ namespace KartRider
         public static void PrQuestUX2ndPacket(OutPacket outPacket)
         {
             List<uint> quest = new List<uint>();
-            if (QuestParams != null)
+            if (QuestParams != null && QuestParams.Count > 0)
             {
                 foreach (XmlNode xn in QuestParams)
                 {
@@ -328,28 +225,23 @@ namespace KartRider
             List<uint> ids = new List<uint>();
             if (questInfo != null)
             {
-                XAttribute seasonPeriod = questInfo.Attribute("seasonPeriod");
-                XAttribute seasonIdAttr = questInfo.Attribute("seasonId");
-                if (seasonPeriod != null && seasonIdAttr != null)
+            string period = questInfo.Attribute("seasonPeriod").Value;
+            var isInTime = IsCurrentTimeInPeriod(period);
+            if (isInTime != null)
+            {
+                string seasonId = questInfo.Attribute("seasonId").Value;
+                foreach (int group in isInTime)
                 {
-                    string period = seasonPeriod.Value;
-                    var isInTime = IsCurrentTimeInPeriod(period);
-                    if (isInTime != null)
+                    for (int index = 1; index <= 3; index++)
                     {
-                        string seasonId = seasonIdAttr.Value;
-                        foreach (int group in isInTime)
-                        {
-                            for (int index = 1; index <= 3; index++)
-                            {
-                                string groupStr = group.ToString("D2");  // 1 → 01
-                                string indexStr = index.ToString("D2");  // 1 → 01
-                                // 拼接：14500 + 组号 + 序号
-                                uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
-                                ids.Add(id);
-                            }
-                        }
+                        string groupStr = group.ToString("D2");  // 1 → 01
+                        string indexStr = index.ToString("D2");  // 1 → 01
+                        // 拼接：14500 + 组号 + 序号
+                        uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
+                        ids.Add(id);
                     }
                 }
+            }
             }
 
             int All_Quest = quest.Count + ids.Count;

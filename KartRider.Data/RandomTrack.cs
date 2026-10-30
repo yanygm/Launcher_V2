@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartRider.Common.Utilities;
 using Profile;
 using RiderData;
@@ -18,6 +18,9 @@ namespace KartRider
         public string Name { get; set; }
         public string gameType { get; set; }
         public bool basicAi { get; set; }
+
+        /// <summary>客户端 track@zz 里的 isOnlyItemTrack：只能用于道具赛。</summary>
+        public bool onlyItem { get; set; }
     }
 
     public class RandomTrack
@@ -157,7 +160,8 @@ namespace KartRider
             }
             else if (Track == 1)
             {
-                RandomTrackSetRandomTrack = "clubSpeed";
+                // 道具赛的"专业"集合叫 clubItem，竞速才叫 clubSpeed
+                RandomTrackSetRandomTrack = GameType == 1 ? "clubItem" : "clubSpeed";
             }
             else if (Track == 3)
             {
@@ -197,24 +201,21 @@ namespace KartRider
             }
             else
             {
-                RandomTrackSetRandomTrack = "Unknown";
+                // 具体地图（单人选择/计时赛）：Track 本身就是赛道 hash，直接返回，
+                // 不能落到"全部随机"——v24 把这里改成随机后，选单图会变成随机图。
+                if (TrackList.ContainsKey(Track))
+                {
+                    return Track;
+                }
+
+                Console.WriteLine("[RandomTrack] Warning: 未识别的随机模式 {0}，按全部随机处理", Track);
+                RandomTrackSetRandomTrack = "all";
             }
 
             if (RandomTrackSetRandomTrack == "all")
             {
                 Random random = new Random();
                 List<uint> availableTracks = new List<uint>();
-                if (FileName.FileNames.ContainsKey(Parent.Client.Nickname))
-                {
-                    var filename = FileName.FileNames[Parent.Client.Nickname];
-                    var FavoriteTrackList = new Favorite_Track();
-                    if (File.Exists(filename.FavoriteTrack_LoadFile))
-                    {
-                        FavoriteTrackList = JsonHelper.DeserializeNoBom<Favorite_Track>(filename.FavoriteTrack_LoadFile) ?? new Favorite_Track();
-                    }
-                    availableTracks = FavoriteTrackList.GetAllTracks();
-                }
-
                 if (availableTracks == null || availableTracks.Count == 0)
                 {
                     // RandomTrackGameType == "speed"：取出 speed + item 的赛道；== "item"：只取出 item 的赛道
@@ -238,6 +239,12 @@ namespace KartRider
                             .Where(t => t.gameType == RandomTrackGameType || (RandomTrackGameType == "speed" && t.gameType == "item"))
                             .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                             .ToList();
+                    }
+
+                    // 竞速房排除"仅道具"赛道（客户端 isOnlyItemTrack）
+                    if (RandomTrackGameType == "speed")
+                    {
+                        allTracks = allTracks.Where(t => !t.onlyItem).ToList();
                     }
 
                     availableTracks = allTracks.Select(t => t.hash).ToList();
@@ -280,6 +287,7 @@ namespace KartRider
 
                 var allTracks = TrackList.Values
                     .Where(t => t.gameType == "speed")
+                    .Where(t => !t.onlyItem)
                     .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                     .ToList();
 
@@ -330,18 +338,6 @@ namespace KartRider
                     Console.WriteLine("[RandomTrack] Warning: No unused tracks available, returning default track: {0}", GameTrack);
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
-            }
-            else if (RandomTrackSetRandomTrack == "Unknown")
-            {
-                if (TrackList.ContainsKey(Track))
-                {
-                    return Track;
-                }
-                else
-                {
-                    return Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
-                }
-                Console.WriteLine("RandomTrack: {0} / {1} / {2}", RandomTrackGameType, RandomTrackSetRandomTrack, RandomTrack.GameTrack);
             }
             else
             {
@@ -428,10 +424,18 @@ namespace KartRider
             }
 
             // 获取这些 track 对应的 hash
-            return availableTrackIds
+            List<uint> hashes = availableTrackIds
                 .Select(id => Adler32Helper.GenerateAdler32_UNICODE(id, 0))
                 .Where(hash => hash != 0)
                 .ToList();
+
+            // 客户端集合里可能混着竞速/道具赛道：按房间模式过滤（过滤后为空则保留原集合）
+            List<uint> filtered = hashes
+                .Where(h => TrackList.TryGetValue(h, out Track track)
+                            && !track.onlyItem
+                            && (track.gameType == gameType || gameType == "speed" && track.gameType == "item"))
+                .ToList();
+            return filtered.Count > 0 ? filtered : hashes;
         }
     }
 }

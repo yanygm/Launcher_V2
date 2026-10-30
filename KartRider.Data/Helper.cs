@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using KartRider.Logging;
 
 namespace KartRider;
 
@@ -24,9 +24,7 @@ public static class Base64Helper
         if (string.IsNullOrEmpty(input))
             return string.Empty;
 
-        // 将字符串转换为 UTF8 字节数组
         byte[] bytes = Encoding.UTF8.GetBytes(input);
-        // 转换为 Base64 字符串
         return Convert.ToBase64String(bytes);
     }
 
@@ -38,25 +36,18 @@ public static class Base64Helper
 
         try
         {
-            // 将 Base64 字符串转换为字节数组
             byte[] bytes = Convert.FromBase64String(base64String);
-            // 将字节数组转换为 UTF8 字符串
             return Encoding.UTF8.GetString(bytes);
         }
         catch
         {
-            // 处理无效的 Base64 格式
             return string.Empty;
-            Console.WriteLine("输入不是有效的 Base64 字符串", nameof(base64String));
         }
     }
 }
 
 /// <summary>
 /// 安全的 uint 反序列化转换器，处理越界数值和异常格式
-/// - 负数 → 0
-/// - 超过 uint.MaxValue → uint.MaxValue
-/// - 非数字字符串 → 0
 /// </summary>
 public class UInt32SafeConverter : System.Text.Json.Serialization.JsonConverter<uint>
 {
@@ -66,19 +57,13 @@ public class UInt32SafeConverter : System.Text.Json.Serialization.JsonConverter<
         {
             if (reader.TryGetUInt32(out uint value))
                 return value;
-            // 尝试作为 Int64 读取（处理溢出的正数）
             if (reader.TryGetInt64(out long longValue))
             {
                 if (longValue < 0)
-                {
-                    Console.WriteLine($"[UInt32SafeConverter] 负数 {longValue}，已重置为 0");
                     return 0;
-                }
                 if (longValue > uint.MaxValue)
-                {
-                    Console.WriteLine($"[UInt32SafeConverter] 值 {longValue} 超出 uint 范围，已限制为 uint.MaxValue");
                     return uint.MaxValue;
-                }
+                return (uint)longValue;
             }
         }
         else if (reader.TokenType == JsonTokenType.String)
@@ -93,7 +78,6 @@ public class UInt32SafeConverter : System.Text.Json.Serialization.JsonConverter<
                 return (uint)longValue;
             }
         }
-        Console.WriteLine($"[UInt32SafeConverter] 无法解析的 uint 值，已重置为 0");
         return 0;
     }
 
@@ -106,11 +90,10 @@ public class UInt32SafeConverter : System.Text.Json.Serialization.JsonConverter<
 // JSON 序列化工具类
 public static class JsonHelper
 {
-    // 静态默认配置
     private static readonly JsonSerializerOptions _defaultOptions = new JsonSerializerOptions
     {
         WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // 避免中文转义（可选）
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
     static JsonHelper()
@@ -118,69 +101,119 @@ public static class JsonHelper
         _defaultOptions.Converters.Add(new UInt32SafeConverter());
     }
 
-    /// <summary>
-    /// 序列化对象为 JSON 字符串（字符串本身无 BOM, BOM 仅存在于字节流中）
-    /// </summary>
+    private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
+
     public static string Serialize<T>(T obj, JsonSerializerOptions options = null)
     {
         options ??= _defaultOptions;
         return JsonSerializer.Serialize(obj, options);
     }
 
-    /// <summary>
-    /// 反序列化 JSON 字符串为对象
-    /// </summary>
     public static T Deserialize<T>(string json, JsonSerializerOptions options = null)
     {
         if (string.IsNullOrEmpty(json))
             return default;
 
-        if (!EnsureJsonUtf8NoBom("", out string validJson, json))
-            return default;
-
-        if (validJson == null || validJson.Length == 0)
-            return default;
-
         options ??= _defaultOptions;
-        return JsonSerializer.Deserialize<T>(validJson, options);
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, options);
+        }
+        catch (JsonException ex)
+        {
+            Log.Warn($"[Json] 反序列化失败: {ex.Message}");
+            return default;
+        }
     }
 
     /// <summary>
-    /// 从【无 BOM 的 UTF-8 字节流】反序列化对象
+    /// 从文件反序列化。
+    /// 与旧实现的差异：不再为了"验证格式"额外跑一遍 JsonDocument.Parse，
+    /// 也不再对整份文本做 UTF-8/GBK 的双向往返比对（那是 O(2n) 的纯浪费）。
+    /// 失败时返回 null 并把损坏文件备份为 .bad，绝不返回"看起来正常的空对象"。
     /// </summary>
     public static T DeserializeNoBom<T>(string FileName, JsonSerializerOptions options = null)
     {
         if (string.IsNullOrEmpty(FileName))
             return default;
 
-        if (!EnsureJsonUtf8NoBom(FileName, out string validJson))
-            return default;
-
-        if (validJson == null || validJson.Length == 0)
-            return default;
-
-        options ??= _defaultOptions;
         try
         {
-            return JsonSerializer.Deserialize<T>(validJson, options);
+            if (!File.Exists(FileName))
+                return default;
+
+            string json = ReadAllTextDetect(FileName);
+            if (string.IsNullOrWhiteSpace(json))
+                return default;
+
+            options ??= _defaultOptions;
+            return JsonSerializer.Deserialize<T>(json, options);
         }
         catch (JsonException ex)
         {
-            Console.WriteLine($"[DeserializeNoBom] JSON 反序列化失败: {FileName} - {ex.Message}");
-            // 备份损坏的配置文件，避免数据丢失
-            try
-            {
-                string backupPath = FileName + ".bak";
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
-                File.Copy(FileName, backupPath);
-                Console.WriteLine($"[DeserializeNoBom] 已将损坏的配置文件备份到: {backupPath}");
-            }
-            catch (Exception backupEx)
-            {
-                Console.WriteLine($"[DeserializeNoBom] 备份失败: {backupEx.Message}");
-            }
+            Log.Warn($"[Json] {FileName} 解析失败: {ex.Message}（已备份为 .bad）");
+            TryBackup(FileName);
             return default;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[Json] {FileName} 读取失败: {ex.Message}");
+            return default;
+        }
+    }
+
+    private static void TryBackup(string path)
+    {
+        try
+        {
+            string backup = path + ".bad";
+            File.Copy(path, backup, true);
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// 原子写：先写 .tmp，再替换目标文件（.NET 会保留原文件的原子性语义），
+    /// 避免写一半崩溃导致存档损坏。
+    /// </summary>
+    public static void WriteAllTextAtomic(string path, string content)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        string dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        string tmp = path + ".tmp";
+        File.WriteAllText(tmp, content, new UTF8Encoding(false));
+
+        if (!File.Exists(path))
+        {
+            File.Move(tmp, path);
+            return;
+        }
+
+        try
+        {
+            File.Move(tmp, path, true);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            File.Copy(tmp, path, true);
+            File.Delete(tmp);
+        }
+        catch (IOException)
+        {
+            // 目标被占用（杀软/编辑器）时退化为覆盖写
+            File.Copy(tmp, path, true);
+            File.Delete(tmp);
         }
     }
 
@@ -188,162 +221,73 @@ public static class JsonHelper
     {
         try
         {
-            // 1. 确定要写入的内容
-            string contentToWrite;
             if (!string.IsNullOrEmpty(jsonContent))
             {
-                contentToWrite = jsonContent;
+                jsonData = jsonContent;
+                return true;
             }
-            else
+            if (!File.Exists(filePath))
             {
-                if (!File.Exists(filePath))
-                {
-                    Console.WriteLine($"错误: 文件 '{filePath}' 不存在, 且未提供 jsonContent.");
-                    jsonData = null;
-                    return false;
-                }
-                // 读取时尝试自动检测编码, 以防原文件编码混乱
-                contentToWrite = ReadFileWithEncodingDetection(filePath);
-            }
-
-            // 2. （可选）验证 JSON 格式
-            if (validateJson && !IsValidJson(contentToWrite))
-            {
-                Console.WriteLine("JSON 格式无效, 已中止保存.");
                 jsonData = null;
                 return false;
             }
-
-            jsonData = contentToWrite;
+            jsonData = ReadAllTextDetect(filePath);
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"EnsureJsonUtf8NoBom: {ex.Message}");
+            Log.Warn($"[Json] EnsureJsonUtf8NoBom: {filePath} {ex.Message}");
             jsonData = null;
             return false;
         }
     }
 
     /// <summary>
-    /// 尝试检测文件编码并读取内容.
+    /// 读文本并处理 BOM/GBK。旧实现用"解码后再编码比对"判断编码，
+    /// 这里改用严格 UTF-8 解码：失败即视为 GBK，单次 O(n)。
     /// </summary>
-    private static string ReadFileWithEncodingDetection(string filePath)
+    public static string ReadAllTextDetect(string filePath)
     {
         byte[] bytes = File.ReadAllBytes(filePath);
-
-        // 检查 UTF-8 BOM
         if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
         {
             return Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
         }
-        // 检查 UTF-16 LE BOM
         if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
         {
             return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
         }
-        // 检查 UTF-16 BE BOM
         if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
         {
             return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
         }
 
-        // 尝试解码为 UTF-8
-        bool isUtf8 = IsValidUtf8(bytes);
-        // 尝试解码为 GBK
-        bool isGbk = IsValidGbk(bytes);
-
-        if (isUtf8 && isGbk)
-        {
-            // 如果两种编码都能成功解码，优先选择 UTF-8（更现代、更通用）
-            return Encoding.UTF8.GetString(bytes);
-        }
-        else if (isUtf8)
-        {
-            return Encoding.UTF8.GetString(bytes);
-        }
-        else if (isGbk)
-        {
-            return Encoding.GetEncoding("GBK").GetString(bytes);
-        }
-        else
-        {
-            // 如果都失败，回退到系统默认编码，并给出警告
-            Console.WriteLine("警告：无法可靠检测编码，将使用系统默认编码。可能导致乱码。");
-            return Encoding.Default.GetString(bytes);
-        }
-    }
-
-    /// <summary>
-    /// 检查字节数组是否是有效的 UTF-8 编码。
-    /// </summary>
-    private static bool IsValidUtf8(byte[] bytes)
-    {
         try
         {
-            // 如果解码后再编码能还原原始字节，则认为是有效的
-            string s = Encoding.UTF8.GetString(bytes);
-            return Encoding.UTF8.GetBytes(s).SequenceEqual(bytes);
+            return StrictUtf8.GetString(bytes);
         }
-        catch
+        catch (DecoderFallbackException)
         {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 检查字节数组是否是有效的 GBK 编码。
-    /// </summary>
-    private static bool IsValidGbk(byte[] bytes)
-    {
-        try
-        {
-            Encoding gbk = Encoding.GetEncoding("GBK");
-            string s = gbk.GetString(bytes);
-            return gbk.GetBytes(s).SequenceEqual(bytes);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 验证 JSON 字符串格式是否有效.
-    /// </summary>
-    private static bool IsValidJson(string jsonString)
-    {
-        if (string.IsNullOrWhiteSpace(jsonString))
-        {
-            return false;
-        }
-        try
-        {
-            using (JsonDocument doc = JsonDocument.Parse(jsonString))
+            try
             {
-                return true;
+                return Encoding.GetEncoding("GBK").GetString(bytes);
             }
-        }
-        catch (JsonException)
-        {
-            return false;
+            catch
+            {
+                return Encoding.Default.GetString(bytes);
+            }
         }
     }
 
     public static string GetFilePath()
     {
-        // 获取当前执行程序集的路径
         string filePath = Assembly.GetExecutingAssembly().Location;
-        // 验证路径是否有效
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {
-            // 尝试备选方法获取路径
             filePath = Process.GetCurrentProcess().MainModule.FileName;
-
-            // 再次验证
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
-                Console.WriteLine("无法获取有效的程序集路径");
+                Log.Warn("[Json] 无法获取有效的程序集路径");
                 return null;
             }
         }

@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using KartLibrary.File;
+using KartRider.Common.Utilities;
 using Profile;
 
 namespace KartRider;
@@ -16,136 +17,182 @@ public class GameRoom
     public uint trackTemp { get; set; } = 0;
     public uint StartTicks { get; set; } = 0;
     public uint EndTicks { get; set; } = 0;
-
-    // 结算是否已经触发过（防止「AI 收尾倒计时」与「玩家冲线」两条路径重复结算）
-    public bool SettleTriggered { get; set; }
     public byte SpeedType { get; set; } = 0;
-
-    /// <summary>
-    /// 内部基础模式：3 = 竞速组队，4 = 道具组队（双人组队也归一到这两个值，
-    /// 服务端的道具、结算、分队逻辑统一按 3/4 判断）
-    /// </summary>
     public byte GameType { get; set; } = 0;
 
-    /// <summary>
-    /// 下发给客户端的真实模式号。普通房间与 GameType 相同；
-    /// 双人组队按官方抓包使用 68（客户端据此渲染多队伍房间、允许选择 1~4 队）
-    /// </summary>
-    public byte WireGameType { get; set; } = 0;
-
-    /// <summary>实际写进封包的模式字节：WireGameType 未设置时回退到 GameType</summary>
-    public byte ModeByte => WireGameType != 0 ? WireGameType : GameType;
-    public int RoomMaster { get; set; } = 0;
-    public byte[] RoomData { get; set; } = new byte[32];
-    public byte RandomTrackGameType { get; set; } = 0;
-    // 组队加速槽已改为按队伍计（见下方 TeamGauge，普通组队 1/2 两队、双人组队 1..N 队）
-    public bool Lock { get; set; } = false;
-    public bool Started { get; set; } = false;
-    public int StartedPlayerCount { get; set; } = 0; // 游戏开始时的真实玩家数（不包含AI），用于失效赛道判定
-    public string LockPwd { get; set; } = "";
-    public List<byte> CloseSlotIds { get; set; } = new List<byte>();
-    public Dictionary<int, uint> TimeData { get; set; } = new Dictionary<int, uint>();
-    public Dictionary<int, int> Ranking { get; set; } = new Dictionary<int, int>();
-    public Dictionary<string, bool> Ready { get; set; } = new Dictionary<string, bool>();
-
-    // ===================== 双人组队模式 =====================
-
-    /// <summary>是否双人组队模式（每队 N 人，多支队伍并存；内部 GameType 仍为 3/4，WireGameType 为 68）</summary>
+    /// <summary>是否双人组队（每队 N 人、多支队伍并存；内部 GameType 仍为 3/4）</summary>
     public bool DuoTeam { get; set; } = false;
 
-    /// <summary>双人组队模式下每队人数上限（默认 2）</summary>
-    public byte DuoTeamSize { get; set; } = DuoTeamMode.DefaultTeamSize;
+    /// <summary>双人组队每队人数（默认 2）</summary>
+    public byte DuoTeamSize { get; set; } = 2;
 
-    /// <summary>是否组队类模式（竞速组队 / 道具组队，含双人组队）</summary>
-    public bool IsTeamMode => GameType == 3 || GameType == 4;
+    /// <summary>房间人数上限（建房时记录，用于推导双人队伍数）</summary>
+    public int MaxPlayers { get; set; } = 8;
 
-    /// <summary>队伍数量：双人组队按「8 格 / 每队人数」向上取整（每队 2 人 → 4 队，每队 3 人 → 3 队），普通组队固定 2 支</summary>
-    public int TeamCount
+    /// <summary>双人队伍数 = 人数上限 / 2（2人1队、4人2队、6人3队、8人4队）</summary>
+    public int DuoTeamCount
     {
         get
         {
-            if (!DuoTeam)
-                return 2;
-            int size = Math.Max(1, (int)DuoTeamSize);
-            return (8 + size - 1) / size;
+            int mp = MaxPlayers > 0 ? MaxPlayers : 8;
+            // 2 人房 = 1 支 2 人队（第二人坐副位 2 号格，其余列全锁）
+            return Math.Max(1, Math.Min(4, mp / 2));
         }
     }
 
-    /// <summary>
-    /// 下发给客户端的队伍数量（建房回包第 3 字节）。
-    /// 官方双人组队抓包该字段为 04，等价于「房间里有 4 支队伍」；
-    /// 客户端用它决定换队/换色面板里生成几张队伍色卡片，
-    /// 所以这里必须发真实队伍数，否则面板只会出现红蓝两色。
-    /// 客户端换队面板是单行 4 格（GridSelector alignSize=4, maxLine=1），
-    /// 且只有 4 套队伍配色，因此最多下发 4。
-    /// </summary>
-    public byte WireTeamCount => (byte)Math.Min(TeamCount, (int)DuoTeamMode.WireTeamCount);
+    /// <summary>下发给客户端的真实模式号（双人组队为 67/68）</summary>
+    public byte WireGameType { get; set; } = 0;
 
-    /// <summary>格子所属队伍：双人组队按格子顺序两两成队（0,1=1队 2,3=2队…），普通组队 0-3=2队 4-7=1队</summary>
-    public byte TeamOfSlot(byte slotId)
-    {
-        if (!DuoTeam)
-            return (byte)(slotId < 4 ? 2 : 1);
-        return (byte)(slotId / Math.Max(1, (int)DuoTeamSize) + 1);
-    }
+    /// <summary>实际写进封包的模式字节</summary>
+    public byte ModeByte => WireGameType != 0 ? WireGameType : GameType;
 
-    /// <summary>指定队伍的起始格子号</summary>
-    public int TeamSlotStart(byte team)
-    {
-        if (!DuoTeam)
-            return team == 2 ? 0 : 4;
-        return (team - 1) * Math.Max(1, (int)DuoTeamSize);
-    }
+    public bool IsTeamMode => GameType == 3 || GameType == 4;
 
-    /// <summary>指定队伍占用的格子数量</summary>
-    public int TeamSlotCount(byte team) => DuoTeam ? Math.Max(1, (int)DuoTeamSize) : 4;
+    /// <summary>结算是否已触发（防止 AI 收尾倒计时与玩家冲线重复结算）</summary>
+    public bool SettleTriggered { get; set; }
 
-    /// <summary>队伍号是否合法</summary>
-    public bool IsValidTeam(byte team) => team >= 1 && team <= TeamCount;
-
-    /// <summary>
-    /// 下发给客户端的队伍号。客户端只有 4 套队伍配色，超过 4 支队伍时按 4 循环，
-    /// 保证每支队伍都能拿到 1..4 之间的合法值（颜色会复用，但不会出现无色队伍）。
-    /// </summary>
-    public byte WireTeam(byte team) => DuoTeam ? DuoTeamMode.ToWireTeam(team) : team;
-
-    /// <summary>指定队伍当前的人数（玩家 + AI）</summary>
-    public int GetTeamMemberCount(byte team)
-    {
-        int start = TeamSlotStart(team);
-        int end = start + TeamSlotCount(team);
-        int count = 0;
-        for (int i = start; i < end && i < 8; i++)
-        {
-            if (_slots[i] is Player || _slots[i] is Ai)
-                count++;
-        }
-        return count;
-    }
-
-    /// <summary>各队伍的组队加速槽（双人组队下每支队伍独立累计，键为队伍号）</summary>
+    /// <summary>组队加速槽（按队伍独立累计；普通组队 1/2，双人 1..4）</summary>
     public Dictionary<byte, float> TeamGauge { get; } = new Dictionary<byte, float>();
 
-    /// <summary>累加指定队伍的加速槽并返回当前值（上限 1）</summary>
     public float AddTeamGauge(byte team, float delta)
     {
         TeamGauge.TryGetValue(team, out float gauge);
         gauge += delta;
-        if (gauge > 1f)
-            gauge = 1f;
+        if (gauge > 1f) gauge = 1f;
         TeamGauge[team] = gauge;
         return gauge;
     }
 
-    /// <summary>重置指定队伍的加速槽</summary>
     public void ResetTeamGauge(byte team) => TeamGauge[team] = 0f;
 
-    // 玩家实时赛道跟踪：id -> 坐标/圈数/累计里程（道具赛位置包走TCP逐连接填充）
-    public Dictionary<int, TrackPos> Tracks { get; set; } = new Dictionary<int, TrackPos>();
+    /// <summary>队伍数量：双人按人数上限推导；普通组队固定 2 支</summary>
+    public int TeamCount => DuoTeam ? DuoTeamCount : 2;
 
-    // AI 完赛跟踪：客户端只在 GameAiReportPacket 里上报 AI 的里程，从来不发「AI 冲线」包，
-    // 所以只能由服务端根据「里程不再增长」判断 AI 是否到达终点。
-    public Dictionary<int, AiTrack> AiTracks { get; set; } = new Dictionary<int, AiTrack>();
+    /// <summary>该队主位（上排）</summary>
+    public int DuoMainSlot(byte team) => DuoTopSlots[team - 1];
+
+    /// <summary>该队副位（下排）</summary>
+    public int DuoSubSlot(byte team) => DuoBottomSlots[team - 1];
+
+    public bool IsValidTeam(byte team) => team >= 1 && team <= TeamCount;
+
+    public byte WireTeam(byte team) => DuoTeam ? DuoTeamMode.ToWireTeam(team) : team;
+
+    /// <summary>双人上排（主位）slot：1~4 队</summary>
+    public static readonly byte[] DuoTopSlots = { 0, 1, 4, 5 };
+    /// <summary>双人下排（副位）slot：1~4 队</summary>
+    public static readonly byte[] DuoBottomSlots = { 2, 3, 6, 7 };
+
+    /// <summary>槽位 → 队伍号（1~4）</summary>
+    /// <summary>槽位 → 队伍号（只在实际队伍数范围内映射）</summary>
+    public byte DuoTeamOfSlot(byte slot)
+    {
+        for (int i = 0; i < DuoTeamCount; i++)
+        {
+            if (DuoTopSlots[i] == slot || DuoBottomSlots[i] == slot) return (byte)(i + 1);
+        }
+        return 1;
+    }
+    /// <summary>建房时房主所在频道（-1=未知，按“所有频道可见”处理）。</summary>
+    public int Channel { get; set; } = -1;
+    public int RoomMaster { get; set; } = 0;
+    public byte[] RoomData { get; set; } = new byte[32];
+    public byte RandomTrackGameType { get; set; } = 0;
+    public float redGauge { get; set; } = 0;
+    public float blueGauge { get; set; } = 0;
+    public bool Lock { get; set; } = false;
+    public bool Started { get; set; } = false;
+    public int StartedPlayerCount { get; set; } = 0; // 游戏开始时的真实玩家数（不包含AI），用于失效赛道判定
+    public string LockPwd { get; set; } = "";
+    public SlotIdSet CloseSlotIds { get; set; } = new SlotIdSet();
+    public ConcurrentDictionary<int, uint> TimeData { get; set; } = new();
+    public ConcurrentDictionary<int, int> Ranking { get; set; } = new();
+    public ConcurrentDictionary<string, bool> Ready { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>开局等待期：置 true 后，客户端任意包都算“已就绪/存活”。</summary>
+    public volatile bool ReadinessCollect;
+
+    /// <summary>建房时选择的房间人数，等玩家真正进入房间后再锁格子。</summary>
+    public int PendingMaxPlayers;
+
+    /// <summary>是否已经按人数锁过格子（只做一次）。</summary>
+    public bool RoomSizeApplied;
+
+    /// <summary>本局每个玩家已获得的「天使/道具锁/闪电」数量（所有来源统一计数，上限 2）。</summary>
+    public ConcurrentDictionary<int, int> RareItems { get; } = new();
+
+    public int RareCount(int playerId)
+    {
+        return RareItems.TryGetValue(playerId, out int count) ? count : 0;
+    }
+
+    /// <summary>占用一个稀有道具名额；已满返回 false。</summary>
+    public bool TryConsumeRare(int playerId, int max = 2)
+    {
+        int updated = RareItems.AddOrUpdate(playerId, 1, (_, old) => old + 1);
+        if (updated > max)
+        {
+            RareItems[playerId] = max;
+            return false;
+        }
+        return updated <= ItemRule.RareCapPerGame;
+    }
+
+    /// <summary>开局时清空稀有道具计数。</summary>
+    public void ResetRareItems()
+    {
+        RareItems.Clear();
+    }
+
+    // 玩家实时赛道跟踪：id -> 坐标/圈数/累计里程（道具赛位置包走TCP逐连接填充）
+    public ConcurrentDictionary<int, TrackPos> Tracks { get; set; } = new();
+
+    /// <summary>房间状态互斥量：槽位增删、开局、结算等结构性变更都串行化在这个锁上。</summary>
+    public readonly object Sync = new object();
+
+    /// <summary>开局门闩：0=空闲，1=正在开局。</summary>
+    public int StartGate;
+
+    /// <summary>开局幂等门闩：每个房间每局只允许 arm 一次（多名玩家同时点开始）。</summary>
+    public int StartArmed;
+
+    private float[][] _aiSpecs = Array.Empty<float[]>();
+
+    /// <summary>开局时生成一次 AI 参数，供本局所有客户端复用。</summary>
+    public void PrepareAiSpecs()
+    {
+        int count = Math.Max(0, GetAiCount());
+        var specs = new float[count][];
+        for (int i = 0; i < count; i++)
+        {
+            float[] spec = null;
+            try
+            {
+                List<float> raw = AI.GetAISpec(RandomTrackGameType);
+                if (raw != null && raw.Count >= 6)
+                {
+                    spec = raw.ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                KartRider.Logging.Log.Warn($"[AI] 生成 AI 参数失败 room={RoomId}", ex);
+            }
+            specs[i] = spec ?? new float[6];
+        }
+        _aiSpecs = specs;
+    }
+
+    /// <summary>取第 index 个 AI 的参数（越界时返回全零，调用方不会空引用）。</summary>
+    public float[] GetAiSpec(int index)
+    {
+        float[][] specs = _aiSpecs;
+        if (specs == null || index < 0 || index >= specs.Length)
+        {
+            return new float[6];
+        }
+        return specs[index];
+    }
 
     // 起点区判定（起跑线附近小区域）。
     // 旧条件 y<200 在该赛道全程不满足（y 最小 286），导致过线检测完全失效。
@@ -304,6 +351,24 @@ public class GameRoom
     }
 
     // 统计当前房间内的玩家数量
+    /// <summary>统计某队的参赛者数量（Player 与 Ai 都算），用于组队开局校验。</summary>
+    public int GetTeamMemberCount(byte team)
+    {
+        int count = 0;
+        foreach (RoomMember member in _slots)
+        {
+            if (member is Player p && p.Team == team)
+            {
+                count++;
+            }
+            else if (member is Ai a && a.Team == team)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public int GetCount()
     {
         int count = 0;
@@ -328,7 +393,7 @@ public class GameRoom
         var keysToRemove = Ranking.Keys.Where(k => !currentPlayerIds.Contains(k)).ToList();
         foreach (var key in keysToRemove)
         {
-            Ranking.Remove(key);
+            Ranking.TryRemove(key, out _);
         }
 
         // 重整排名，使其连续 (0, 1, 2, ...)
@@ -365,6 +430,57 @@ public class GameRoom
     }
 
     // 尝试添加玩家（成功后自动检查是否需要删除房间）
+    /// <summary>双人组队入座：先补有主队员队伍的副位，再按 1~4 队顺序开主位。</summary>
+    /// <summary>当前未被占用的最小颜色（1~4），默认红优先</summary>
+    public byte DuoDefaultColor()
+    {
+        bool[] used = new bool[5];
+        foreach (RoomMember m in _slots)
+        {
+            if (m is Player p && p.Team >= 1 && p.Team <= 4) used[p.Team] = true;
+            else if (m is Ai a && a.Team >= 1 && a.Team <= 4) used[a.Team] = true;
+        }
+        for (byte c = 1; c <= 4; c++) if (!used[c]) return c;
+        return 1;
+    }
+
+    /// <summary>双人入座：按队伍位顺序，先补副位（跟随主位颜色），再开新主位（默认最小空闲颜色）。</summary>
+    public byte TryAddDuoPlayer(string nickname, int playerType, SessionGroup client)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            int main = DuoTopSlots[i], sub = DuoBottomSlots[i];
+            if (CloseSlotIds.Contains((byte)main) || CloseSlotIds.Contains((byte)sub)) continue;
+            if (_slots[main] is Player pm && _slots[sub] == null)
+                return AddDuoAt(nickname, playerType, client, (byte)sub, pm.Team);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            int main = DuoTopSlots[i];
+            if (CloseSlotIds.Contains((byte)main)) continue;
+            if (_slots[main] == null)
+                return AddDuoAt(nickname, playerType, client, (byte)main, DuoDefaultColor());
+        }
+        return 255;
+    }
+
+    private byte AddDuoAt(string nickname, int playerType, SessionGroup client, byte slot, byte team)
+    {
+        int id = Array.IndexOf(_IDs, null);
+        if (id < 0) return 255;
+        _slots[slot] = new Player
+        {
+            ID = id,
+            SlotId = slot,
+            Nickname = nickname,
+            PlayerType = playerType,
+            Team = team,
+            Session = client
+        };
+        _IDs[id] = _slots[slot];
+        return slot;
+    }
+
     public byte TryAddPlayer(string nickname, byte team, int playerType, SessionGroup client)
     {
         uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
@@ -386,39 +502,6 @@ public class GameRoom
                 }
             }
             return 255;
-        }
-        else if (DuoTeam)
-        {
-            // 双人组队：team 为 0 时按格子顺序占第一个空位（0,1 → 1 队；2,3 → 2 队…），
-            // 指定队伍则只在该队伍的格子范围内找空位，队伍号统一由格子号推导
-            int start = 0;
-            int end = 8;
-            if (IsValidTeam(team))
-            {
-                start = TeamSlotStart(team);
-                end = Math.Min(8, start + TeamSlotCount(team));
-            }
-            for (byte i = (byte)start; i < end; i++)
-            {
-                if (_slots[i] == null)
-                {
-                    int id = Array.IndexOf(_IDs, null);
-                    if (id == -1)
-                        return 255;
-                    _slots[i] = new Player
-                    {
-                        ID = id,
-                        SlotId = i,
-                        Nickname = nickname,
-                        PlayerType = playerType,
-                        Team = TeamOfSlot(i),
-                        Session = client
-                    };
-                    _IDs[id] = _slots[i];
-                    return i;
-                }
-            }
-            return 255; // 房间已满
         }
         else if (team == 2)
         {
@@ -588,34 +671,7 @@ public class GameRoom
         if (aiData == null)
             return 255;
 
-        if (DuoTeam)
-        {
-            // 双人组队：AI 与玩家同样按格子顺序分队，队伍号由格子号推导
-            int start = 0;
-            int end = 8;
-            if (IsValidTeam(team))
-            {
-                start = TeamSlotStart(team);
-                end = Math.Min(8, start + TeamSlotCount(team));
-            }
-            for (byte i = (byte)start; i < end; i++)
-            {
-                if (_slots[i] == null)
-                {
-                    int id = Array.IndexOf(_IDs, null);
-                    if (id == -1)
-                        return 255;
-                    aiData.ID = id;
-                    aiData.Team = TeamOfSlot(i);
-                    aiData.SlotId = i;
-                    _slots[i] = aiData;
-                    _IDs[id] = _slots[i];
-                    return i;
-                }
-            }
-            return 255; // 房间已满
-        }
-        else if (team == 2)
+        if (team == 2)
         {
             for (byte i = 0; i < 4; i++)
             {
@@ -733,6 +789,8 @@ public class Player : RoomMember
     public byte Team { get; set; }
     public SessionGroup Session { get; set; }
     public uint LastPacketReceived { get; set; } = 0;
+
+    /// <summary>比赛中掉线：保留槽位并显示 out，下次开局时清理。</summary>
 }
 
 // AI类
@@ -755,7 +813,8 @@ public class Close : RoomMember
 }
 
 // 玩家实时赛道跟踪数据：坐标、圈数、累计里程
-public class TrackPos{
+public class TrackPos
+{
     public float X { get; set; }          // 最近一次主向坐标 f1
     public float Y { get; set; }          // 最近一次横向坐标 f2
     public uint Ts { get; set; }          // 最近一次时间戳 ts1
@@ -768,15 +827,6 @@ public class TrackPos{
     public bool HasDir { get; set; }      // 是否已建立前进方向参考
     public float DirX { get; set; }       // 前进方向单位向量 X
     public float DirY { get; set; }       // 前进方向单位向量 Y
-}
-
-// AI 赛道跟踪：里程 / 最后一次还在前进的时刻 / 连续停住的报告数
-public class AiTrack
-{
-    public float Dist { get; set; }          // 最近一次上报的里程
-    public uint LastGrowTick { get; set; }   // 里程最后一次增长的时刻（ConvertTick）
-    public int StuckReports { get; set; }    // 连续多少份报告里程没变
-    public bool Finished { get; set; }       // 是否已判定到达终点
 }
 
 public enum SlotStatus

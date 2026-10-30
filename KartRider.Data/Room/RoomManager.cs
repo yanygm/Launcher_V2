@@ -24,26 +24,100 @@ public static class RoomManager
         return roomId;
     }
 
+    /// <summary>清理没有真人的房间（AI 不阻止清理），防止 0 人房残留在列表里。</summary>
+    public static void PurgeEmptyRooms()
+    {
+        foreach (var pair in _rooms.ToArray())
+        {
+            GameRoom room = pair.Value;
+            if (room.GetPlayerCount() == 0 && room.GetOBCount() == 0)
+            {
+                RemoveRoom(room);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 开局等待期：任意客户端包都视为“客户端已进入加载/存活”，用于替代不可靠的 UDP 同步信号。
+    /// </summary>
+    public static void MarkPlayerPacket(string nickname)
+    {
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+        if (!_playerRoomMap.TryGetValue(nickname, out int roomId))
+        {
+            return;
+        }
+        var room = GetRoom(roomId);
+        if (room == null || !room.ReadinessCollect)
+        {
+            return;
+        }
+        if (room.Ready.TryGetValue(nickname, out bool ready) && !ready)
+        {
+            room.Ready[nickname] = true;
+        }
+    }
+
     // 检查房间是否有玩家，如果没有则删除房间
     public static void RemoveRoom(GameRoom room)
     {
-        if (!(room.GetPlayerCount() > 0 || room.GetOBCount() > 0))
+        if (room == null)
         {
-            _rooms.TryRemove(room.RoomId, out _);
+            return;
         }
-        else
+        if (room.GetPlayerCount() > 0 || room.GetOBCount() > 0)
         {
+            MultyPlayer.GrSlotDataPacket(room.RoomId);
+            return;
+        }
+
+        _rooms.TryRemove(room.RoomId, out _);
+
+        // 二次确认：删除与 AddPlayer 之间存在窗口期，若期间真的有玩家进来了就把房间挂回去，
+        // 否则 _playerRoomMap 会指向一个不存在的房间（永久幽灵，无法离开/重进）。
+        if (room.GetPlayerCount() > 0 || room.GetOBCount() > 0)
+        {
+            _rooms.TryAdd(room.RoomId, room);
             MultyPlayer.GrSlotDataPacket(room.RoomId);
         }
     }
 
     // 获取指定页码的房间列表（每页10个）
     public static Dictionary<int, GameRoom> GetRoomsByPage(int pageIndex)
-    {
-        // 校验页码合法性（页码不能为负数）
-        if (pageIndex < 0)
-            throw new ArgumentException("页码索引不能小于0", nameof(pageIndex));
+        => GetRoomsByPage(pageIndex, -1, -1, out _, false);
 
+    /// <summary>
+    /// 按频道（以及可选按模式）过滤后分页。
+    /// channel &lt; 0 表示不过滤；room.Channel &lt; 0 视为“未知频道”，对所有频道可见（兼容旧房间）。
+    /// </summary>
+    public static Dictionary<int, GameRoom> GetRoomsByPage(int pageIndex, int channel, int gameType, out int totalCount, bool filterGameType)
+    {
+        if (pageIndex < 0)
+            pageIndex = 0;
+
+        IEnumerable<KeyValuePair<int, GameRoom>> query = _rooms;
+        if (channel >= 0)
+        {
+            query = query.Where(kvp => kvp.Value.Channel < 0 || kvp.Value.Channel == channel);
+        }
+        if (filterGameType && gameType >= 0)
+        {
+            query = query.Where(kvp => kvp.Value.GameType == (byte)gameType);
+        }
+
+        var list = query.OrderBy(kvp => kvp.Key).ToList();
+        totalCount = list.Count;
+        if (totalCount == 0)
+            return new Dictionary<int, GameRoom>();
+
+        return list.Skip(pageIndex * PageSize).Take(PageSize).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    }
+
+    private static Dictionary<int, GameRoom> GetRoomsByPageLegacy(int pageIndex)
+    {
         int totalCount = _rooms.Count;
         // 计算总页数（从0开始的最大页码+1）
         int totalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
@@ -63,8 +137,47 @@ public static class RoomManager
     }
 
     // 尝试向房间添加玩家
+    /// <summary>双人组队入座（含 playerRoomMap 注册）。</summary>
+    public static byte AddDuoPlayer(int roomId, string nickname, int playerType, SessionGroup client)
+    {
+        var room = GetRoom(roomId);
+        if (room == null || string.IsNullOrEmpty(nickname))
+            return 255;
+        // 可能残留上一次房间的映射（异常退出/换房），先清掉再注册
+        _playerRoomMap.TryRemove(nickname, out _);
+        if (!_playerRoomMap.TryAdd(nickname, roomId))
+        {
+            Console.WriteLine("[DuoAdd] {0} 注册房间 {1} 失败", nickname, roomId);
+            return 255;
+        }
+        if (!Profile.FileName.FileNames.ContainsKey(nickname))
+        {
+            Profile.FileName.Load(nickname);
+        }
+        byte added = room.TryAddDuoPlayer(nickname, playerType, client);
+        if (added != 255)
+        {
+            return added;
+        }
+        Console.WriteLine("[DuoAdd] {0} 入座失败（room={1}, slots full?）", nickname, roomId);
+        _playerRoomMap.TryRemove(nickname, out _);
+        return 255;
+    }
+
     public static byte AddPlayer(int roomId, string nickname, byte team, int playerType, SessionGroup client)
     {
+        // 组队房间：未指定队伍时自动平衡（红蓝人数差不超过 1）
+        if (team == 0)
+        {
+            var targetRoom = GetRoom(roomId);
+            if (targetRoom != null && (targetRoom.GameType == 3 || targetRoom.GameType == 4))
+            {
+                int t1 = targetRoom.GetPlayerCount(1);
+                int t2 = targetRoom.GetPlayerCount(2);
+                team = t2 <= t1 ? (byte)2 : (byte)1;
+            }
+        }
+
         var room = GetRoom(roomId);
 
         if (room == null || string.IsNullOrEmpty(nickname))
@@ -160,6 +273,12 @@ public static class RoomManager
             {
                 _playerRoomMap.TryRemove(nickname, out _); // 原子删除
             }
+
+            // 没有真人了就销毁房间（AI 不阻止销毁），避免 0 人房永远留在列表里
+            if (room.GetPlayerCount() == 0 && room.GetOBCount() == 0)
+            {
+                RemoveRoom(room);
+            }
         }
         return removed;
     }
@@ -196,7 +315,7 @@ public static class RoomManager
                     player.Nickname = newNickname;
                 }
             }
-            if (room.Ready.Remove(oldNickname, out bool ready))
+            if (room.Ready.TryRemove(oldNickname, out bool ready))
             {
                 room.Ready[newNickname] = ready;
             }
@@ -295,13 +414,31 @@ public static class RoomManager
         }
     }
 
+    // 双人组队换队：落到目标队的主位（上）；有人则副位（下）
+    public static bool ChangeDuoTeam(int roomId, byte slotId, byte team)
+    {
+        if (!_rooms.TryGetValue(roomId, out var room) || !room.DuoTeam)
+            return false;
+        // 换队 = 只换颜色（队伍号 1~4），格子位置不变
+        if (team < 1 || team > 4)
+        {
+            return false;
+        }
+
+        var member = TryGetSlotDetail(roomId, slotId) as RoomMember;
+        if (member == null)
+            return false;
+
+        if (member is Player p0) { p0.Team = team; return true; }
+        if (member is Ai a0) { a0.Team = team; return true; }
+        return false;
+    }
+
     // 更换指定房间中指定位置成员的队伍
     public static bool ChangeMemberTeam(int roomId, byte slotId, byte team)
     {
         if (!_rooms.TryGetValue(roomId, out var room))
             return false;
-        if (room.DuoTeam)
-            return ChangeDuoTeam(room, slotId, team);
         if (team == 2)
         {
             for (int i = 0; i < 4; i++)
@@ -369,54 +506,6 @@ public static class RoomManager
             }
         }
         return false;
-    }
-
-    // 双人组队换队：把成员移动到目标队伍的空格子上。
-    // 目标队伍已满时拒绝（保持原队伍），避免单支队伍超过「每队人数」，破坏双人分队的配对关系。
-    private static bool ChangeDuoTeam(GameRoom room, byte slotId, byte team)
-    {
-        var member = room.GetSlotMember(slotId);
-        if (member == null)
-            return false;
-
-        // 队伍号不在 1..TeamCount 范围内（客户端偶尔会发 0 或越界值）：保持原队伍。
-        // 双人组队房间的队伍号是 1..4（官方抓包中客户端会直接发 GrChangeTeamPacket = 4）
-        if (!room.IsValidTeam(team))
-            return false;
-
-        int start = room.TeamSlotStart(team);
-        int end = Math.Min(8, start + room.TeamSlotCount(team));
-
-        // 已经在本队伍范围内：只刷新队伍号
-        if (slotId >= start && slotId < end)
-        {
-            ApplyDuoPlacement(member, team, slotId);
-            return true;
-        }
-
-        for (int i = start; i < end; i++)
-        {
-            if (room._slots[i] == null)
-            {
-                if (!room.ChangeSlotId(slotId, (byte)i))
-                    return false;
-                ApplyDuoPlacement(member, team, (byte)i);
-                return true;
-            }
-        }
-
-        Console.WriteLine("[DuoTeam] 队伍 {0} 已满（{1}/{2}），拒绝换队", team, room.GetTeamMemberCount(team), room.TeamSlotCount(team));
-        return false;
-    }
-
-    // 同步成员对象上的队伍号与格子号（Player / Ai 都带 Team 字段）
-    private static void ApplyDuoPlacement(RoomMember member, byte team, byte slotId)
-    {
-        member.SlotId = slotId;
-        if (member is Player player)
-            player.Team = team;
-        else if (member is Ai ai)
-            ai.Team = team;
     }
 
     public static GameRoom GetRoom(int roomId) =>

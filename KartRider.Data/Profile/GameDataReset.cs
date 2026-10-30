@@ -40,7 +40,6 @@ namespace KartRider
                 resetConfig.Rider.SlotChanger = (ushort)short.MaxValue;
             }
             ProfileService.Save(Nickname, resetConfig);
-            SpeedPatch.SpeedPatcData();
             //GameSupport.PrLogin();
             Console.WriteLine("Login...OK");
         }

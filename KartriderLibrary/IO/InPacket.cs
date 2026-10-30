@@ -45,11 +45,20 @@ namespace KartRider.IO.Packet
 			this._index = 0;
 		}
 
+		/// <summary>
+		/// 零拷贝访问底层缓冲（只读！仅用于日志 / 哈希等不修改内容的场景），
+		/// 避免为了记录一个包而 ToArray() 复制整份数据。
+		/// </summary>
+		public byte[] GetRawBuffer()
+		{
+			return this._buffer;
+		}
+
 		private void CheckLength(int length)
 		{
 			if ((this._index + length > (int)this._buffer.Length ? true : length < 0))
 			{
-				Console.WriteLine("Not enough space");
+				throw new PacketReadException("Not enough space");
 			}
 		}
 

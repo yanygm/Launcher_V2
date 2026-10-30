@@ -1,3 +1,4 @@
+using KartRider.Logging;
 using System;
 using KartRider.IO.Packet;
 using ExcData;
@@ -122,10 +123,10 @@ namespace KartRider
             var V2Spec = new V2Specs();
             V2Spec.ExceedSpec(Nickname, Kart);
 
-            float DriftEscapeForce = FlyingPet.DriftEscapeForce + excSpecs.Tune_DriftEscapeForce + excSpecs.Plant45_DriftEscapeForce + excSpecs.KartLevel_DriftEscapeForce + SpeedPatch.DriftEscapeForce + V2Spec.V2Parts_DriftEscapeForce + V2Spec.V2Level_DriftEscapeForce;
+            float DriftEscapeForce = FlyingPet.DriftEscapeForce + excSpecs.Tune_DriftEscapeForce + excSpecs.Plant45_DriftEscapeForce + excSpecs.KartLevel_DriftEscapeForce + V2Spec.V2Parts_DriftEscapeForce + V2Spec.V2Level_DriftEscapeForce;
             float NormalBoosterTime = FlyingPet.NormalBoosterTime + excSpecs.Tune_NormalBoosterTime + excSpecs.Plant46_NormalBoosterTime + V2Spec.V2Parts_NormalBoosterTime + V2Spec.V2Level_NormalBoosterTime;
-            float TransAccelFactor = excSpecs.Tune_TransAccelFactor + excSpecs.Plant43_TransAccelFactor + excSpecs.KartLevel_TransAccelFactor + SpeedPatch.TransAccelFactor + V2Spec.V2Parts_TransAccelFactor + V2Spec.V2Level_TransAccelFactor;
-            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce + FlyingPet.ForwardAccelForce + excSpecs.Tune_ForwardAccel + excSpecs.Plant43_ForwardAccel + excSpecs.Plant46_ForwardAccel + excSpecs.KartLevel_ForwardAccel + SpeedPatch.ForwardAccelForce + V2Spec.V2Level_ForwardAccelForce;
+            float TransAccelFactor = excSpecs.Tune_TransAccelFactor + excSpecs.Plant43_TransAccelFactor + excSpecs.KartLevel_TransAccelFactor + V2Spec.V2Parts_TransAccelFactor + V2Spec.V2Level_TransAccelFactor;
+            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce + FlyingPet.ForwardAccelForce + excSpecs.Tune_ForwardAccel + excSpecs.Plant43_ForwardAccel + excSpecs.Plant46_ForwardAccel + excSpecs.KartLevel_ForwardAccel + V2Spec.V2Level_ForwardAccelForce;
             float StartForwardAccelForceItem = StartForwardAccelForce(Kart.StartForwardAccelFactorItem, ForwardAccelForce);
             float StartForwardAccelForceSpeed = StartForwardAccelForce(Kart.StartForwardAccelFactorSpeed, ForwardAccelForce);
             //------------------------------------------------------------------------KartSpac Start
@@ -142,7 +143,7 @@ namespace KartRider
             oPacket.WriteEncByte(Kart.BikeRearWheel);
             oPacket.WriteEncFloat(speedType.Mass + Kart.Mass);
             oPacket.WriteEncFloat(speedType.AirFriction + Kart.AirFriction);
-            oPacket.WriteEncFloat(speedType.DragFactor + Kart.DragFactor + FlyingPet.DragFactor + SpeedPatch.DragFactor + excSpecs.Tune_DragFactor + excSpecs.Plant43_DragFactor + excSpecs.Plant45_DragFactor + excSpecs.KartLevel_DragFactor);
+            oPacket.WriteEncFloat(speedType.DragFactor + Kart.DragFactor + FlyingPet.DragFactor + excSpecs.Tune_DragFactor + excSpecs.Plant43_DragFactor + excSpecs.Plant45_DragFactor + excSpecs.KartLevel_DragFactor);
             oPacket.WriteEncFloat(ForwardAccelForce);
             oPacket.WriteEncFloat(speedType.BackwardAccelForce + Kart.BackwardAccelForce);
             oPacket.WriteEncFloat(speedType.GripBrakeForce + Kart.GripBrakeForce + excSpecs.Plant44_GripBrake + excSpecs.Plant46_GripBrake);
@@ -169,7 +170,7 @@ namespace KartRider
             {
                 oPacket.WriteEncFloat(excSpecs.PartSpec_DriftEscapeForce + speedType.AddSpec_DriftEscapeForce + DriftEscapeForce);
             }
-            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + excSpecs.Tune_CornerDrawFactor + excSpecs.Plant44_CornerDrawFactor + excSpecs.Plant45_CornerDrawFactor + excSpecs.KartLevel_CornerDrawFactor + SpeedPatch.CornerDrawFactor + V2Spec.V2Level_CornerDrawFactor);
+            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + excSpecs.Tune_CornerDrawFactor + excSpecs.Plant44_CornerDrawFactor + excSpecs.Plant45_CornerDrawFactor + excSpecs.KartLevel_CornerDrawFactor + V2Spec.V2Level_CornerDrawFactor);
             oPacket.WriteEncFloat(Kart.DriftLeanFactor);
             oPacket.WriteEncFloat(speedType.SteerLeanFactor + Kart.SteerLeanFactor);
             if (speedType.DriftMaxGauge == GameType.S4_DriftMaxGauge || StartTimeAttack_SpeedType == 4)
@@ -178,7 +179,7 @@ namespace KartRider
             }
             else
             {
-                oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + excSpecs.Tune_DriftMaxGauge + excSpecs.Plant45_DriftMaxGauge + excSpecs.Plant46_DriftMaxGauge + SpeedPatch.DriftMaxGauge + V2Spec.V2Level_DriftMaxGauge);
+                oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + excSpecs.Tune_DriftMaxGauge + excSpecs.Plant45_DriftMaxGauge + excSpecs.Plant46_DriftMaxGauge + V2Spec.V2Level_DriftMaxGauge);
             }
             if (speedType.NormalBoosterTime == GameType.S6_BoosterTime || StartTimeAttack_SpeedType == 6)
             {
@@ -214,11 +215,11 @@ namespace KartRider
             {
                 oPacket.WriteEncFloat(excSpecs.PartSpec_TransAccelFactor + speedType.AddSpec_TransAccelFactor + TransAccelFactor);
             }
-            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
+            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeItem + excSpecs.KartLevel_StartBoosterTimeItem + excSpecs.Plant46_StartBoosterTimeItem);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed + excSpecs.Tune_StartBoosterTimeSpeed + excSpecs.Plant43_StartBoosterTimeSpeed + excSpecs.Plant46_StartBoosterTimeSpeed + excSpecs.KartLevel_StartBoosterTimeSpeed + V2Spec.V2Level_StartBoosterTimeSpeed);
-            oPacket.WriteEncFloat(StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem + SpeedPatch.StartForwardAccelForceItem + excSpecs.Plant46_StartForwardAccelItem);
-            oPacket.WriteEncFloat(StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed + SpeedPatch.StartForwardAccelForceSpeed + excSpecs.Plant43_StartForwardAccelSpeed + excSpecs.Plant46_StartForwardAccelSpeed);
+            oPacket.WriteEncFloat(StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem + excSpecs.Plant46_StartForwardAccelItem);
+            oPacket.WriteEncFloat(StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed + excSpecs.Plant43_StartForwardAccelSpeed + excSpecs.Plant46_StartForwardAccelSpeed);
             oPacket.WriteEncFloat(Kart.DriftGaguePreservePercent);
             oPacket.WriteEncByte(Kart.UseExtendedAfterBooster);
             oPacket.WriteEncFloat(Kart.BoostAccelFactorOnlyItem + excSpecs.KartLevel_BoostAccelFactorOnlyItem);
@@ -290,7 +291,7 @@ namespace KartRider
 
             int StartPosition = oPacket.Position;
 
-            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce + FlyingPet.ForwardAccelForce + SpeedPatch.ForwardAccelForce;
+            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce + FlyingPet.ForwardAccelForce;
             float StartForwardAccelForceItem = StartForwardAccelForce(Kart.StartForwardAccelFactorItem, ForwardAccelForce);
             float StartForwardAccelForceSpeed = StartForwardAccelForce(Kart.StartForwardAccelFactorSpeed, ForwardAccelForce);
             //------------------------------------------------------------------------KartSpac Start
@@ -307,7 +308,7 @@ namespace KartRider
             oPacket.WriteEncByte(Kart.BikeRearWheel);
             oPacket.WriteEncFloat(speedType.Mass + Kart.Mass);
             oPacket.WriteEncFloat(speedType.AirFriction + Kart.AirFriction);
-            oPacket.WriteEncFloat(speedType.DragFactor + Kart.DragFactor + FlyingPet.DragFactor + SpeedPatch.DragFactor);
+            oPacket.WriteEncFloat(speedType.DragFactor + Kart.DragFactor + FlyingPet.DragFactor);
             oPacket.WriteEncFloat(ForwardAccelForce);
             oPacket.WriteEncFloat(speedType.BackwardAccelForce + Kart.BackwardAccelForce);
             oPacket.WriteEncFloat(speedType.GripBrakeForce + Kart.GripBrakeForce);
@@ -319,8 +320,8 @@ namespace KartRider
             oPacket.WriteEncFloat(speedType.DriftTriggerFactor + Kart.DriftTriggerFactor);
             oPacket.WriteEncFloat(speedType.DriftTriggerTime + Kart.DriftTriggerTime);
             oPacket.WriteEncFloat(speedType.DriftSlipFactor + Kart.DriftSlipFactor);
-            oPacket.WriteEncFloat(speedType.DriftEscapeForce + Kart.DriftEscapeForce + FlyingPet.DriftEscapeForce + SpeedPatch.DriftEscapeForce + V2Spec.V2Default_DriftEscapeForce);
-            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor + SpeedPatch.CornerDrawFactor);
+            oPacket.WriteEncFloat(speedType.DriftEscapeForce + Kart.DriftEscapeForce + FlyingPet.DriftEscapeForce + V2Spec.V2Default_DriftEscapeForce);
+            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + FlyingPet.CornerDrawFactor);
             oPacket.WriteEncFloat(Kart.DriftLeanFactor);
             oPacket.WriteEncFloat(speedType.SteerLeanFactor + Kart.SteerLeanFactor);
             if (speedType.DriftMaxGauge == GameType.S4_DriftMaxGauge || StartTimeAttack_SpeedType == 4)
@@ -329,7 +330,7 @@ namespace KartRider
             }
             else
             {
-                oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + SpeedPatch.DriftMaxGauge);
+                oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge);
             }
             if (speedType.NormalBoosterTime == GameType.S6_BoosterTime || StartTimeAttack_SpeedType == 6)
             {
@@ -350,12 +351,12 @@ namespace KartRider
             }
             oPacket.WriteEncFloat(Kart.AnimalBoosterTime);
             oPacket.WriteEncFloat(Kart.SuperBoosterTime);
-            oPacket.WriteEncFloat(speedType.TransAccelFactor + Kart.TransAccelFactor + SpeedPatch.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
-            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
+            oPacket.WriteEncFloat(speedType.TransAccelFactor + Kart.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
+            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeItem);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed);
-            oPacket.WriteEncFloat(StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem + SpeedPatch.StartForwardAccelForceItem);
-            oPacket.WriteEncFloat(StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed + SpeedPatch.StartForwardAccelForceSpeed);
+            oPacket.WriteEncFloat(StartForwardAccelForceItem + FlyingPet.StartForwardAccelForceItem);
+            oPacket.WriteEncFloat(StartForwardAccelForceSpeed + FlyingPet.StartForwardAccelForceSpeed);
             oPacket.WriteEncFloat(Kart.DriftGaguePreservePercent);
             oPacket.WriteEncByte(Kart.UseExtendedAfterBooster);
             oPacket.WriteEncFloat(Kart.BoostAccelFactorOnlyItem);
@@ -424,7 +425,7 @@ namespace KartRider
 
             int StartPosition = oPacket.Position;
 
-            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce + SpeedPatch.ForwardAccelForce;
+            float ForwardAccelForce = speedType.ForwardAccelForce + Kart.ForwardAccelForce;
             float StartForwardAccelForceItem = StartForwardAccelForce(Kart.StartForwardAccelFactorItem, ForwardAccelForce);
             float StartForwardAccelForceSpeed = StartForwardAccelForce(Kart.StartForwardAccelFactorSpeed, ForwardAccelForce);
             //------------------------------------------------------------------------KartSpac Start
@@ -453,22 +454,22 @@ namespace KartRider
             oPacket.WriteEncFloat(speedType.DriftTriggerFactor + Kart.DriftTriggerFactor);
             oPacket.WriteEncFloat(speedType.DriftTriggerTime + Kart.DriftTriggerTime);
             oPacket.WriteEncFloat(speedType.DriftSlipFactor + Kart.DriftSlipFactor);
-            oPacket.WriteEncFloat(speedType.DriftEscapeForce + Kart.DriftEscapeForce + SpeedPatch.DriftEscapeForce + V2Spec.V2Default_DriftEscapeForce);
-            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor + SpeedPatch.CornerDrawFactor);
+            oPacket.WriteEncFloat(speedType.DriftEscapeForce + Kart.DriftEscapeForce + V2Spec.V2Default_DriftEscapeForce);
+            oPacket.WriteEncFloat(speedType.CornerDrawFactor + Kart.CornerDrawFactor);
             oPacket.WriteEncFloat(Kart.DriftLeanFactor);
             oPacket.WriteEncFloat(speedType.SteerLeanFactor + Kart.SteerLeanFactor);
-            oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge + SpeedPatch.DriftMaxGauge);
+            oPacket.WriteEncFloat(speedType.DriftMaxGauge + Kart.DriftMaxGauge);
             oPacket.WriteEncFloat(speedType.NormalBoosterTime + Kart.NormalBoosterTime + V2Spec.V2Default_NormalBoosterTime);
             oPacket.WriteEncFloat(Kart.ItemBoosterTime);
             oPacket.WriteEncFloat(speedType.TeamBoosterTime + Kart.TeamBoosterTime);
             oPacket.WriteEncFloat(Kart.AnimalBoosterTime);
             oPacket.WriteEncFloat(Kart.SuperBoosterTime);
-            oPacket.WriteEncFloat(speedType.TransAccelFactor + Kart.TransAccelFactor + SpeedPatch.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
-            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor + SpeedPatch.BoostAccelFactor);
+            oPacket.WriteEncFloat(speedType.TransAccelFactor + Kart.TransAccelFactor + V2Spec.V2Default_TransAccelFactor);
+            oPacket.WriteEncFloat(speedType.BoostAccelFactor + Kart.BoostAccelFactor);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeItem);
             oPacket.WriteEncFloat(Kart.StartBoosterTimeSpeed);
-            oPacket.WriteEncFloat(StartForwardAccelForceItem + SpeedPatch.StartForwardAccelForceItem);
-            oPacket.WriteEncFloat(StartForwardAccelForceSpeed + SpeedPatch.StartForwardAccelForceSpeed);
+            oPacket.WriteEncFloat(StartForwardAccelForceItem);
+            oPacket.WriteEncFloat(StartForwardAccelForceSpeed);
             oPacket.WriteEncFloat(Kart.DriftGaguePreservePercent);
             oPacket.WriteEncByte(Kart.UseExtendedAfterBooster);
             oPacket.WriteEncFloat(Kart.BoostAccelFactorOnlyItem);
@@ -551,7 +552,7 @@ namespace KartRider
                             speed = parsed.Value.speed;
                             version = parsed.Value.version;
                         }
-                        Console.WriteLine($"RoomName: {room.RoomName}, 速度类型: {StartTimeAttack_SpeedType}, 版本: {version}, 速度: {speed}");
+                        Log.Debug($"RoomName: {room.RoomName}, 速度类型: {StartTimeAttack_SpeedType}, 版本: {version}, 速度: {speed}");
                     }
                 }
             }
@@ -582,100 +583,100 @@ namespace KartRider
         {
             InPacket iPacket = new InPacket(oPacket.ToArray());
             iPacket.Position = StartPosition;
-            Console.WriteLine($"-------------------------------------------------------------");
-            Console.WriteLine($"draftMulAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"draftTick:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"driftBoostMulAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"driftBoostTick:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"chargeBoostBySpeed:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"SpeedSlotCapacity:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"ItemSlotCapacity:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"SpecialSlotCapacity:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"UseTransformBooster:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"motorcycleType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"BikeRearWheel:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"Mass:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"AirFriction:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DragFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"ForwardAccelForce:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"BackwardAccelForce:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"GripBrakeForce:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"SlipBrakeForce:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"MaxSteerAngle:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"SteerConstraint:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"FrontGripFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"RearGripFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftTriggerFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftTriggerTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftSlipFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftEscapeForce:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"CornerDrawFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftLeanFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"SteerLeanFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftMaxGauge:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"NormalBoosterTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"ItemBoosterTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"TeamBoosterTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"AnimalBoosterTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"SuperBoosterTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"TransAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"BoostAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"StartBoosterTimeItem:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"StartBoosterTimeSpeed:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"StartForwardAccelForceItem:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"StartForwardAccelForceSpeed:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"DriftGaguePreservePercent:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"UseExtendedAfterBooster:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"BoostAccelFactorOnlyItem:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"antiCollideBalance:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"dualBoosterSetAuto:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"dualBoosterTickMin:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"dualBoosterTickMax:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"dualMulAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"dualTransLowSpeed:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"PartsEngineLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"PartsWheelLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"PartsSteeringLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"PartsBoosterLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"PartsCoatingLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"PartsTailLampLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"chargeInstAccelGaugeByBoost:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargeInstAccelGaugeByGrip:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargeInstAccelGaugeByWall:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"instAccelFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"instAccelGaugeCooldownTime:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"instAccelGaugeLength:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"instAccelGaugeMinUsable:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"instAccelGaugeMinVelBound:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"instAccelGaugeMinVelLoss:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"useExtendedAfterBoosterMore:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"wallCollGaugeCooldownTime:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"wallCollGaugeMaxVelLoss:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"wallCollGaugeMinVelBound:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"wallCollGaugeMinVelLoss:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"modelMaxX:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"modelMaxY:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"defaultExceedType:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"defaultEngineType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"EngineType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"defaultHandleType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"HandleType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"defaultWheelType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"WheelType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"defaultBoosterType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"BoosterType:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"chargeInstAccelGaugeByWallAdded:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargeInstAccelGaugeByBoostAdded:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargerSystemboosterUseCount:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"chargerSystemUseTime:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargeBoostBySpeedAdded:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"driftGaugeFactor:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"chargeAntiCollideBalance:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"startItemTableId:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"startItemId:{iPacket.ReadEncodedInt()}");
-            Console.WriteLine($"Unknown1:{iPacket.ReadEncodedFloat()}");
-            Console.WriteLine($"PartsBoosterEffectLock:{iPacket.ReadEncodedByte()}");
-            Console.WriteLine($"-------------------------------------------------------------");
+            Log.Debug($"-------------------------------------------------------------");
+            Log.Debug($"draftMulAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"draftTick:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"driftBoostMulAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"driftBoostTick:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"chargeBoostBySpeed:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"SpeedSlotCapacity:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"ItemSlotCapacity:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"SpecialSlotCapacity:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"UseTransformBooster:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"motorcycleType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"BikeRearWheel:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"Mass:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"AirFriction:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DragFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"ForwardAccelForce:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"BackwardAccelForce:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"GripBrakeForce:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"SlipBrakeForce:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"MaxSteerAngle:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"SteerConstraint:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"FrontGripFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"RearGripFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftTriggerFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftTriggerTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftSlipFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftEscapeForce:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"CornerDrawFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftLeanFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"SteerLeanFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftMaxGauge:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"NormalBoosterTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"ItemBoosterTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"TeamBoosterTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"AnimalBoosterTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"SuperBoosterTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"TransAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"BoostAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"StartBoosterTimeItem:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"StartBoosterTimeSpeed:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"StartForwardAccelForceItem:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"StartForwardAccelForceSpeed:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"DriftGaguePreservePercent:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"UseExtendedAfterBooster:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"BoostAccelFactorOnlyItem:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"antiCollideBalance:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"dualBoosterSetAuto:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"dualBoosterTickMin:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"dualBoosterTickMax:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"dualMulAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"dualTransLowSpeed:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"PartsEngineLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"PartsWheelLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"PartsSteeringLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"PartsBoosterLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"PartsCoatingLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"PartsTailLampLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"chargeInstAccelGaugeByBoost:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargeInstAccelGaugeByGrip:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargeInstAccelGaugeByWall:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"instAccelFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"instAccelGaugeCooldownTime:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"instAccelGaugeLength:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"instAccelGaugeMinUsable:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"instAccelGaugeMinVelBound:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"instAccelGaugeMinVelLoss:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"useExtendedAfterBoosterMore:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"wallCollGaugeCooldownTime:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"wallCollGaugeMaxVelLoss:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"wallCollGaugeMinVelBound:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"wallCollGaugeMinVelLoss:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"modelMaxX:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"modelMaxY:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"defaultExceedType:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"defaultEngineType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"EngineType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"defaultHandleType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"HandleType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"defaultWheelType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"WheelType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"defaultBoosterType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"BoosterType:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"chargeInstAccelGaugeByWallAdded:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargeInstAccelGaugeByBoostAdded:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargerSystemboosterUseCount:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"chargerSystemUseTime:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargeBoostBySpeedAdded:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"driftGaugeFactor:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"chargeAntiCollideBalance:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"startItemTableId:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"startItemId:{iPacket.ReadEncodedInt()}");
+            Log.Debug($"Unknown1:{iPacket.ReadEncodedFloat()}");
+            Log.Debug($"PartsBoosterEffectLock:{iPacket.ReadEncodedByte()}");
+            Log.Debug($"-------------------------------------------------------------");
         }
     }
 }

@@ -4,40 +4,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using KartRider_PacketName;
 using Profile;
 
 namespace KartRider
 {
     /// <summary>
-    /// TCP服务端封装类（用于消息）
+    /// 好友/私聊/公会聊天 TCP 服务。
+    ///
+    /// 原实现的两个硬伤：
+    ///   1. 读到长度前缀却完全不用，把一次 Read 的字节当成完整包 → TCP 粘包/拆包必错；
+    ///   2. 同一 NetworkStream 上并发 BeginWrite，帧会交错。
+    /// 现在：按 4 字节长度前缀做累积重组；发送串行化（聊天流量小，同步写足够且简单）。
     /// </summary>
     public class MsgrServer
     {
-        // TCP核心通信对象
+        private const int HeaderSize = 4;
+        private const int MaxPacket = 64 * 1024;
+
         private TcpListener _tcpListener;
-        // 监听端口
         private readonly int _listenPort;
-        // 服务端名称（日志区分多实例）
         private readonly string _serverName;
-        // 线程取消标识
         private volatile bool _isRunning;
-        // 同步锁（防止重复启动/停止）
         private readonly object _lockObj = new object();
 
-        public static ConcurrentDictionary<string, ClientState> Clients = new ConcurrentDictionary<string, ClientState>();
+        public static ConcurrentDictionary<string, ClientState> Clients = new ConcurrentDictionary<string, ClientState>(StringComparer.Ordinal);
         public static ConcurrentDictionary<uint, List<string>> rooms = new ConcurrentDictionary<uint, List<string>>();
         public static uint roomID = 1;
 
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="serverName">服务端名称（日志区分）</param>
-        /// <param name="listenPort">监听端口（唯一）</param>
         public MsgrServer(string serverName, int listenPort)
         {
             _serverName = serverName;
@@ -45,97 +42,73 @@ namespace KartRider
             _isRunning = false;
         }
 
-        /// <summary>
-        /// 启动TCP服务端
-        /// </summary>
         public void Start()
         {
             lock (_lockObj)
             {
                 if (_isRunning)
                 {
-                    Console.WriteLine($"[{_serverName}] 服务端已启动，无需重复启动");
                     return;
                 }
-
                 try
                 {
-                    // 初始化TCP监听器并绑定端口
                     _tcpListener = new TcpListener(IPAddress.Any, _listenPort);
                     _tcpListener.Start();
                     _isRunning = true;
-
-                    Console.WriteLine($"[{_serverName}] 服务端启动成功，监听端口：{_listenPort}");
-                    Console.WriteLine($"[{_serverName}] 等待客户端连接...\n");
-
-                    // 开始异步接受连接
+                    Log.Info($"[{_serverName}] 已启动，监听端口 {_listenPort}");
                     BeginAcceptClient();
                 }
                 catch (SocketException ex)
                 {
-                    Console.WriteLine($"[{_serverName}] 启动失败：{ex.Message}（端口可能被占用）");
+                    Log.Error($"[{_serverName}] 启动失败（端口可能被占用）: {ex.Message}");
                     _isRunning = false;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[{_serverName}] 启动异常：{ex.Message}");
+                    Log.Error($"[{_serverName}] 启动异常", ex);
                     _isRunning = false;
                 }
             }
         }
 
-        /// <summary>
-        /// 停止TCP服务端
-        /// </summary>
         public void Stop()
         {
             lock (_lockObj)
             {
                 if (!_isRunning)
                 {
-                    Console.WriteLine($"[{_serverName}] 服务端未启动，无需停止");
                     return;
                 }
-
                 _isRunning = false;
-
                 try
                 {
-                    // 停止TCP监听器
                     _tcpListener?.Stop();
-                    Console.WriteLine($"[{_serverName}] 服务端停止成功");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[{_serverName}] 停止异常：{ex.Message}");
+                    Log.Warn($"[{_serverName}] 停止异常: {ex.Message}");
                 }
                 finally
                 {
-                    // 释放资源
                     _tcpListener = null;
                 }
+                Log.Info($"[{_serverName}] 已停止");
             }
         }
 
-        /// <summary>
-        /// 异步接受客户端连接
-        /// </summary>
         private void BeginAcceptClient()
         {
             if (!_isRunning || _tcpListener == null)
                 return;
-
             try
             {
-                // 启动异步接受连接，完成后回调EndAcceptClient
                 _tcpListener.BeginAcceptTcpClient(EndAcceptClient, null);
             }
             catch (Exception ex)
             {
-                if (_isRunning) // 仅在运行中时打印异常（停止时的异常忽略）
+                if (_isRunning)
                 {
-                    Console.WriteLine($"[{_serverName}] 接受连接异常：{ex.Message}");
-                    // 延迟重试接受连接（避免异常循环）
+                    Log.Warn($"[{_serverName}] 接受连接异常: {ex.Message}");
                     ThreadPool.QueueUserWorkItem(_ =>
                     {
                         Thread.Sleep(1000);
@@ -145,43 +118,40 @@ namespace KartRider
             }
         }
 
-        /// <summary>
-        /// 异步接受连接完成回调
-        /// </summary>
-        /// <param name="ar">异步操作结果</param>
         private void EndAcceptClient(IAsyncResult ar)
         {
             if (!_isRunning || _tcpListener == null)
                 return;
 
             TcpClient client = null;
-
             try
             {
-                // 结束异步接受连接，获取客户端
                 client = _tcpListener.EndAcceptTcpClient(ar);
-                Console.WriteLine($"[{_serverName}] 客户端连接成功：{client.Client.RemoteEndPoint}");
-
-                // 为每个客户端创建一个缓冲区并开始异步接收数据
+                try
+                {
+                    client.NoDelay = true;
+                }
+                catch
+                {
+                }
                 var clientState = new ClientState { Client = client, Buffer = new byte[4096] };
+                Log.Debug($"[{_serverName}] 客户端连接：{client.Client.RemoteEndPoint}");
                 BeginReceive(clientState);
             }
             catch (ObjectDisposedException)
             {
-                // 服务端停止时触发，忽略
             }
             catch (SocketException ex)
             {
-                Console.WriteLine($"[{_serverName}] 接受连接异常：{ex.Message}，错误码：{ex.SocketErrorCode}");
+                Log.Warn($"[{_serverName}] 接受连接异常: {ex.SocketErrorCode}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{_serverName}] 接受连接异常：{ex.Message}");
+                Log.Warn($"[{_serverName}] 接受连接异常", ex);
                 client?.Close();
             }
             finally
             {
-                // 持续接受下一个客户端连接
                 if (_isRunning)
                 {
                     BeginAcceptClient();
@@ -189,271 +159,310 @@ namespace KartRider
             }
         }
 
-        /// <summary>
-        /// 异步接收数据
-        /// </summary>
-        /// <param name="clientState">客户端状态</param>
         private void BeginReceive(ClientState clientState)
         {
             if (!_isRunning || clientState.Client == null || !clientState.Client.Connected)
                 return;
-
             try
             {
-                // 启动异步接收，完成后回调EndReceive
-                clientState.Client.GetStream().BeginRead(clientState.Buffer, 0, clientState.Buffer.Length, EndReceive, clientState);
+                NetworkStream stream = clientState.Client.GetStream();
+                stream.BeginRead(clientState.Buffer, 0, clientState.Buffer.Length, EndReceive, clientState);
             }
             catch (Exception ex)
             {
                 if (_isRunning)
                 {
-                    Console.WriteLine($"[{_serverName}] 接收数据异常：{ex.Message}");
+                    Log.Debug($"[{_serverName}] 接收异常: {ex.Message}");
                     CloseClient(clientState);
                 }
             }
         }
 
-        /// <summary>
-        /// 异步接收完成回调
-        /// </summary>
-        /// <param name="ar">异步操作结果</param>
         private void EndReceive(IAsyncResult ar)
         {
             var clientState = ar.AsyncState as ClientState;
-            if (clientState == null || !_isRunning || clientState.Client == null || !clientState.Client.Connected)
+            if (clientState == null || clientState.Client == null)
                 return;
 
-            NetworkStream stream = null;
-            int bytesRead = 0;
-
+            int bytesRead;
             try
             {
-                stream = clientState.Client.GetStream();
-                bytesRead = stream.EndRead(ar);
-
-                if (bytesRead > 0)
-                {
-                    // 处理接收到的数据
-                    byte[] receiveBuffer = new byte[bytesRead];
-                    Buffer.BlockCopy(clientState.Buffer, 0, receiveBuffer, 0, bytesRead);
-
-                    try
-                    {
-                        InPacket inPacket = new InPacket(receiveBuffer);
-                        int packetLength = inPacket.ReadInt();
-                        uint hash = inPacket.ReadUInt();
-                        var packetValue = (PacketName)hash;
-
-                        if (PacketDispatcher.Dispatch(typeof(MsgrServer), packetValue, inPacket, receiveBuffer, clientState, this))
-                            return;
-
-                        if (packetValue == PacketName.PqEnterChatServer)
-                        {
-                            uint userNO = inPacket.ReadUInt();
-                            uint type = inPacket.ReadUInt();
-                            string nickname = inPacket.ReadString();
-                            Clients.AddOrUpdate(nickname, clientState, (key, oldState) =>
-                            {
-                                if (!ReferenceEquals(oldState, clientState))
-                                {
-                                    try
-                                    {
-                                        oldState.Client?.Close();
-                                    }
-                                    catch
-                                    {
-                                    }
-                                }
-                                return clientState;
-                            });
-                        }
-                        else if (packetValue == PacketName.PqInitInviteMsgrChat)
-                        {
-                            uint accountID1 = inPacket.ReadUInt();
-                            uint accountID2 = inPacket.ReadUInt();
-                            string nickname1 = inPacket.ReadString();
-                            string nickname2 = inPacket.ReadString();
-                            uint ID = roomID++;
-                            using (OutPacket outPacket = new OutPacket("PrInitInviteMsgrChat"))
-                            {
-                                outPacket.WriteUInt(accountID1);
-                                outPacket.WriteUInt(accountID2);
-                                outPacket.WriteString(nickname1);
-                                outPacket.WriteString(nickname2);
-                                outPacket.WriteUInt(ID);
-                                outPacket.WriteInt(0);
-                                Clients.TryGetValue(nickname1, out var clientState1);
-                                if (clientState1 != null)
-                                {
-                                    BeginSend(clientState1, outPacket);
-                                }
-                                Clients.TryGetValue(nickname2, out var clientState2);
-                                if (clientState2 != null)
-                                {
-                                    BeginSend(clientState2, outPacket);
-                                }
-                                rooms.TryAdd(ID, new List<string> { nickname1, nickname2 });
-                            }
-                        }
-                        else if (packetValue == PacketName.PqMsgrChat)
-                        {
-                            uint roomID = inPacket.ReadUInt();
-                            string nickname = inPacket.ReadString();
-                            string message = inPacket.ReadString();
-                            using (OutPacket outPacket = new OutPacket("PrMsgrChat"))
-                            {
-                                outPacket.WriteUInt(roomID);
-                                outPacket.WriteUInt(ClientManager.GetUserNO(nickname));
-                                outPacket.WriteString(nickname);
-                                outPacket.WriteString(message);
-                                outPacket.WriteInt(0);
-                                foreach (var member in rooms[roomID])
-                                {
-                                    if (Clients.TryGetValue(member, out var client))
-                                    {
-                                        BeginSend(client, outPacket);
-                                    }
-                                }
-                            }
-                        }
-                        else if (packetValue == PacketName.PqLeaveMsgrChat)
-                        {
-                            uint userNO = inPacket.ReadUInt();
-                            uint roomID = inPacket.ReadUInt();
-                            string nickname = ClientManager.GetNickname(userNO);
-                            if (string.IsNullOrEmpty(nickname)) return;
-                            rooms[roomID].Remove(nickname);
-                            using (OutPacket outPacket = new OutPacket("PrLeaveMsgrChat"))
-                            {
-                                outPacket.WriteUInt(userNO);
-                                outPacket.WriteUInt(roomID);
-                                foreach (var member in rooms[roomID])
-                                {
-                                    if (Clients.TryGetValue(member, out var client))
-                                    {
-                                        BeginSend(client, outPacket);
-                                    }
-                                }
-                            }
-                        }
-                        else if (packetValue == PacketName.PqGuildChat)
-                        {
-                            string nickname = inPacket.ReadString();
-                            string message = inPacket.ReadString();
-                            using (OutPacket outPacket = new OutPacket("PrGuildChat"))
-                            {
-                                outPacket.WriteString(nickname);
-                                outPacket.WriteString(message);
-                                foreach (var client in Clients.Values)
-                                {
-                                    BeginSend(client, outPacket);
-                                }
-                            }
-                        }
-                        string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                        Console.WriteLine($"[MsgrServer][{currentTime}] " + (PacketName)hash + ": " + BitConverter.ToString(receiveBuffer).Replace("-", " "));
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}");
-                    }
-
-                    // 继续接收下一个数据包
-                    BeginReceive(clientState);
-                }
-                else
-                {
-                    // 客户端关闭连接
-                    Console.WriteLine($"[{_serverName}] 客户端断开连接：{clientState.Client.Client.RemoteEndPoint}");
-                    CloseClient(clientState);
-                }
+                bytesRead = clientState.Client.GetStream().EndRead(ar);
             }
             catch (ObjectDisposedException)
             {
-                // 服务端停止时触发，忽略
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}，错误码：{ex.SocketErrorCode}");
-                CloseClient(clientState);
+                return;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{_serverName}] 处理数据异常：{ex.Message}");
+                Log.Debug($"[{_serverName}] 读取结束异常: {ex.Message}");
                 CloseClient(clientState);
+                return;
+            }
+
+            if (bytesRead <= 0)
+            {
+                CloseClient(clientState);
+                return;
+            }
+
+            Metrics.Inc(ref Metrics.ChatPackets);
+            Metrics.Inc(ref Metrics.TcpBytesIn, bytesRead);
+
+            lock (clientState.PendingLock)
+            {
+                clientState.Pending.AddRange(new ArraySegment<byte>(clientState.Buffer, 0, bytesRead));
+            }
+
+            if (!ProcessPending(clientState))
+            {
+                CloseClient(clientState);
+                return;
+            }
+
+            if (_isRunning)
+            {
+                BeginReceive(clientState);
             }
         }
 
-        /// <summary>
-        /// 异步发送数据
-        /// </summary>
-        /// <param name="clientState">客户端状态</param>
-        /// <param name="outPacket">要发送的数据包</param>
-        private bool BeginSend(ClientState clientState, OutPacket outPacket)
+        /// <summary>按长度前缀重组并逐包分发。返回 false 表示流已不可用。</summary>
+        private bool ProcessPending(ClientState clientState)
         {
-            if (!_isRunning || clientState.Client == null || !clientState.Client.Connected)
-                return false;
+            while (true)
+            {
+                byte[] packet = null;
+                lock (clientState.PendingLock)
+                {
+                    List<byte> pending = clientState.Pending;
+                    if (pending.Count < HeaderSize)
+                    {
+                        return true;
+                    }
+                    int declared = pending[0] | (pending[1] << 8) | (pending[2] << 16) | (pending[3] << 24);
+                    if (declared <= 0 || declared > MaxPacket)
+                    {
+                        Log.Warn($"[{_serverName}] 非法包长 {declared}，断开连接");
+                        return false;
+                    }
+                    if (pending.Count < HeaderSize + declared)
+                    {
+                        return true; // 半包，继续等
+                    }
+                    packet = new byte[HeaderSize + declared];
+                    pending.CopyTo(0, packet, 0, packet.Length);
+                    pending.RemoveRange(0, packet.Length);
+                }
 
-            byte[] buffer = outPacket.ToArray();
-            int packetLength = buffer.Length;
-            byte[] lengthPrefix = BitConverter.GetBytes(packetLength);
-            byte[] sendBuffer = new byte[lengthPrefix.Length + buffer.Length];
-            Buffer.BlockCopy(lengthPrefix, 0, sendBuffer, 0, lengthPrefix.Length);
-            Buffer.BlockCopy(buffer, 0, sendBuffer, lengthPrefix.Length, buffer.Length);
-            string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            Console.WriteLine($"[MsgrServer][{currentTime}]: " + BitConverter.ToString(sendBuffer).Replace("-", " "));
-            try
-            {
-                NetworkStream stream = clientState.Client.GetStream();
-                stream.BeginWrite(sendBuffer, 0, sendBuffer.Length, EndSend, clientState);
-                return true;
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine($"发送失败（网络错误）：{ex.Message}，错误码：{ex.SocketErrorCode}");
-                CloseClient(clientState);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"发送失败：{ex.Message}");
-                CloseClient(clientState);
-                return false;
+                try
+                {
+                    HandlePacket(clientState, packet);
+                }
+                catch (Exception ex)
+                {
+                    // 单个聊天包的解析错误不应断开连接
+                    Metrics.Inc(ref Metrics.HandlerErrors);
+                    Log.Warn($"[{_serverName}] 处理聊天包异常", ex);
+                }
             }
         }
 
-        /// <summary>
-        /// 异步发送完成回调
-        /// </summary>
-        /// <param name="ar">异步操作结果</param>
-        private void EndSend(IAsyncResult ar)
+        private void HandlePacket(ClientState clientState, byte[] packet)
         {
-            var clientState = ar.AsyncState as ClientState;
-            if (clientState == null || !_isRunning || clientState.Client == null || !clientState.Client.Connected)
+            using InPacket inPacket = new InPacket(packet);
+            inPacket.ReadInt(); // 长度前缀
+            var packetValue = (PacketName)inPacket.ReadUInt();
+
+            // 聊天包前 4 字节是长度前缀，包名在偏移 8 处，必须显式传入（否则显示成 0x00000004）
+            Log.Packet("M", "chat", packet, packet.Length, (uint)packetValue);
+
+            if (PacketDispatcher.Dispatch(typeof(MsgrServer), packetValue, inPacket, packet, clientState, this))
                 return;
 
-            try
+            switch (packetValue)
             {
-                clientState.Client.GetStream().EndWrite(ar);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[{_serverName}] 发送完成异常：{ex.Message}");
-                CloseClient(clientState);
+                case PacketName.PqEnterChatServer:
+                {
+                    inPacket.ReadUInt();
+                    inPacket.ReadUInt();
+                    string nickname = inPacket.ReadString();
+                    if (string.IsNullOrEmpty(nickname))
+                    {
+                        return;
+                    }
+                    Clients.AddOrUpdate(nickname, clientState, (key, oldState) =>
+                    {
+                        if (!ReferenceEquals(oldState, clientState))
+                        {
+                            try
+                            {
+                                oldState.Client?.Close();
+                            }
+                            catch
+                            {
+                            }
+                        }
+                        return clientState;
+                    });
+                    break;
+                }
+                case PacketName.PqInitInviteMsgrChat:
+                {
+                    uint accountID1 = inPacket.ReadUInt();
+                    uint accountID2 = inPacket.ReadUInt();
+                    string nickname1 = inPacket.ReadString();
+                    string nickname2 = inPacket.ReadString();
+                    uint id = Interlocked.Increment(ref roomID);
+                    using (OutPacket outPacket = new OutPacket("PrInitInviteMsgrChat"))
+                    {
+                        outPacket.WriteUInt(accountID1);
+                        outPacket.WriteUInt(accountID2);
+                        outPacket.WriteString(nickname1);
+                        outPacket.WriteString(nickname2);
+                        outPacket.WriteUInt(id);
+                        outPacket.WriteInt(0);
+                        byte[] payload = outPacket.ToArray();
+                        if (Clients.TryGetValue(nickname1, out var c1))
+                        {
+                            Send(c1, payload);
+                        }
+                        if (Clients.TryGetValue(nickname2, out var c2))
+                        {
+                            Send(c2, payload);
+                        }
+                        rooms.TryAdd(id, new List<string> { nickname1, nickname2 });
+                    }
+                    break;
+                }
+                case PacketName.PqMsgrChat:
+                {
+                    uint id = inPacket.ReadUInt();
+                    string nickname = inPacket.ReadString();
+                    string message = inPacket.ReadString();
+                    if (!rooms.TryGetValue(id, out List<string> members))
+                    {
+                        Log.Debug($"[{_serverName}] 聊天室 {id} 不存在");
+                        return;
+                    }
+                    using (OutPacket outPacket = new OutPacket("PrMsgrChat"))
+                    {
+                        outPacket.WriteUInt(id);
+                        outPacket.WriteUInt(ClientManager.GetUserNO(nickname));
+                        outPacket.WriteString(nickname);
+                        outPacket.WriteString(message ?? "");
+                        outPacket.WriteInt(0);
+                        Broadcast(members, outPacket.ToArray());
+                    }
+                    break;
+                }
+                case PacketName.PqLeaveMsgrChat:
+                {
+                    uint userNO = inPacket.ReadUInt();
+                    uint id = inPacket.ReadUInt();
+                    string nickname = ClientManager.GetNickname(userNO);
+                    if (string.IsNullOrEmpty(nickname))
+                        return;
+                    if (!rooms.TryGetValue(id, out List<string> members))
+                        return;
+                    members.Remove(nickname);
+                    if (members.Count == 0)
+                    {
+                        rooms.TryRemove(id, out _);
+                        return;
+                    }
+                    using (OutPacket outPacket = new OutPacket("PrLeaveMsgrChat"))
+                    {
+                        outPacket.WriteUInt(userNO);
+                        outPacket.WriteUInt(id);
+                        Broadcast(members, outPacket.ToArray());
+                    }
+                    break;
+                }
+                case PacketName.PqGuildChat:
+                {
+                    string nickname = inPacket.ReadString();
+                    string message = inPacket.ReadString();
+                    using (OutPacket outPacket = new OutPacket("PrGuildChat"))
+                    {
+                        outPacket.WriteString(nickname);
+                        outPacket.WriteString(message ?? "");
+                        byte[] payload = outPacket.ToArray();
+                        foreach (var client in Clients.Values)
+                        {
+                            Send(client, payload);
+                        }
+                    }
+                    break;
+                }
+                default:
+                    Log.Debug($"[{_serverName}] 未处理的包 {packetValue}");
+                    break;
             }
         }
 
-        /// <summary>
-        /// 关闭客户端连接
-        /// </summary>
-        /// <param name="clientState">客户端状态</param>
+        private void Broadcast(List<string> members, byte[] payload)
+        {
+            foreach (string member in members.ToArray())
+            {
+                if (Clients.TryGetValue(member, out ClientState client))
+                {
+                    Send(client, payload);
+                }
+            }
+        }
+
+        /// <summary>串行写：同一连接上的帧不会交错。body 不含 4 字节长度前缀。</summary>
+        public bool Send(ClientState clientState, byte[] body)
+        {
+            if (body == null)
+            {
+                return false;
+            }
+            byte[] framed = new byte[HeaderSize + body.Length];
+            Buffer.BlockCopy(BitConverter.GetBytes(body.Length), 0, framed, 0, HeaderSize);
+            Buffer.BlockCopy(body, 0, framed, HeaderSize, body.Length);
+            return SendRaw(clientState, framed);
+        }
+
+        /// <summary>发送已经带长度前缀的完整帧。</summary>
+        private bool SendRaw(ClientState clientState, byte[] framed)
+        {
+            if (!_isRunning || clientState?.Client == null || !clientState.Client.Connected || framed == null)
+            {
+                return false;
+            }
+
+            lock (clientState.SendLock)
+            {
+                try
+                {
+                    NetworkStream stream = clientState.Client.GetStream();
+                    stream.Write(framed, 0, framed.Length);
+                    Metrics.Inc(ref Metrics.TcpBytesOut, framed.Length);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug($"[{_serverName}] 发送失败: {ex.Message}");
+                    CloseClient(clientState);
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>供 PacketDispatcher 之外的旧代码调用。</summary>
+        public bool Send(ClientState clientState, OutPacket outPacket)
+        {
+            return outPacket != null && Send(clientState, outPacket.ToArray());
+        }
+
         private void CloseClient(ClientState clientState)
         {
             try
             {
                 clientState.Client?.Close();
-                var disconnectedNicknames = Clients.Where(kv => kv.Value == clientState).Select(kv => kv.Key).ToList();
-                foreach (var nickname in disconnectedNicknames)
+                var disconnected = Clients.Where(kv => ReferenceEquals(kv.Value, clientState)).Select(kv => kv.Key).ToList();
+                foreach (string nickname in disconnected)
                 {
                     Clients.TryRemove(nickname, out _);
                     foreach (var room in rooms.Values)
@@ -464,17 +473,19 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{_serverName}] 关闭客户端异常：{ex.Message}");
+                Log.Warn($"[{_serverName}] 关闭客户端异常: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// 客户端状态类
-        /// </summary>
+        /// <summary>客户端状态（含重组缓冲与发送锁）。</summary>
         public class ClientState
         {
             public TcpClient Client { get; set; }
             public byte[] Buffer { get; set; }
+
+            internal readonly object SendLock = new object();
+            internal readonly object PendingLock = new object();
+            internal readonly List<byte> Pending = new List<byte>(4096);
         }
     }
 }

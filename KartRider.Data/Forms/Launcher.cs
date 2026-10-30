@@ -179,7 +179,12 @@ namespace KartRider
         private void button_ToggleTerminal_Click(object sender, EventArgs e)
         {
             Program.isVisible = !Program.isVisible;
-            Program.ShowWindow(Program.consoleHandle, Program.isVisible ? Program.SW_SHOW : Program.SW_HIDE);
+            // consoleHandle 在 AllocConsole 之前是 0，取不到时现取一次，避免按钮"点了没反应"
+            IntPtr handle = Program.consoleHandle != IntPtr.Zero ? Program.consoleHandle : Program.GetConsoleWindow();
+            if (handle != IntPtr.Zero)
+            {
+                Program.ShowWindow(handle, Program.isVisible ? Program.SW_SHOW : Program.SW_HIDE);
+            }
             ProfileService.SettingConfig.Console = Program.isVisible;
             ProfileService.SaveSettings();
         }

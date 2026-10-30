@@ -31,16 +31,7 @@ namespace ExcData
 
         public static List<short> GetSkills(string Nickname)
         {
-            if (!FileName.FileNames.ContainsKey(Nickname))
-            {
-                FileName.Load(Nickname);
-            }
-            var filename = FileName.FileNames[Nickname];
-            var Level12List = new List<Level12>();
-            if (File.Exists(filename.Level12Data_LoadFile))
-            {
-                Level12List = JsonHelper.DeserializeNoBom<List<Level12>>(filename.Level12Data_LoadFile) ?? new List<Level12>();
-            }
+            var Level12List = GetLevel12List(Nickname);
             List<short> skills = new List<short>();
             var config = ProfileService.GetProfileConfig(Nickname);
             if (config?.RiderItem == null)
@@ -66,6 +57,77 @@ namespace ExcData
                 return skills;
             }
             return skills;
+        }
+
+        private sealed class CachedLevel12
+        {
+            public string Path;
+            public DateTime Stamp;
+            public List<Level12> List;
+        }
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, CachedLevel12> Level12Cache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, CachedLevel12>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// 按文件时间戳缓存的 Level12 列表。
+        /// 原实现每次发道具（RandomItemSkill → GetItemSkill → GetSkills）都要读盘 + 解析 JSON，
+        /// 文件被占用/写入时解析失败会静默返回空列表，导致词条"时灵时不灵"。
+        /// </summary>
+        public static List<Level12> GetLevel12List(string Nickname)
+        {
+            if (string.IsNullOrEmpty(Nickname))
+            {
+                return new List<Level12>();
+            }
+
+            var filename = FileName.Load(Nickname);
+            string path = filename?.Level12Data_LoadFile;
+            if (string.IsNullOrEmpty(path))
+            {
+                return new List<Level12>();
+            }
+
+            DateTime stamp = DateTime.MinValue;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    stamp = File.GetLastWriteTimeUtc(path);
+                }
+            }
+            catch
+            {
+            }
+
+            if (Level12Cache.TryGetValue(Nickname, out CachedLevel12 cached)
+                && string.Equals(cached.Path, path, StringComparison.OrdinalIgnoreCase)
+                && cached.Stamp == stamp)
+            {
+                return cached.List;
+            }
+
+            List<Level12> list;
+            if (stamp == DateTime.MinValue)
+            {
+                list = new List<Level12>();
+            }
+            else
+            {
+                list = JsonHelper.DeserializeNoBom<List<Level12>>(path) ?? new List<Level12>();
+            }
+
+            Level12Cache[Nickname] = new CachedLevel12 { Path = path, Stamp = stamp, List = list };
+            return list;
+        }
+
+        /// <summary>存档被改写后调用（正常流程依赖文件时间戳自动失效，这里用于强制刷新）。</summary>
+        public static void InvalidateLevel12(string Nickname)
+        {
+            if (!string.IsNullOrEmpty(Nickname))
+            {
+                Level12Cache.TryRemove(Nickname, out _);
+            }
         }
 
         public static byte GetGrade(byte level)
@@ -108,11 +170,7 @@ namespace ExcData
             {
                 Parts12List = JsonHelper.DeserializeNoBom<List<Parts12>>(filename.Parts12Data_LoadFile) ?? new List<Parts12>();
             }
-            var Level12List = new List<Level12>();
-            if (File.Exists(filename.Level12Data_LoadFile))
-            {
-                Level12List = JsonHelper.DeserializeNoBom<List<Level12>>(filename.Level12Data_LoadFile) ?? new List<Level12>();
-            }
+            var Level12List = GetLevel12List(Nickname);
 
             if (Kart.defaultExceedType > 0)
             {
@@ -231,7 +289,10 @@ namespace ExcData
                     Kart.driftGaugeFactor = 0f;
                     Kart.chargeAntiCollideBalance = 0f;
 
-                    Kart.startItemId = SlotData.RandomItemSkill(Nickname, 2);
+                    // 词条："比赛开始时获得[加速器]，[香蕉]，[乌云]，[定时水炸弹]中的一种"。
+                    // 原实现用 RandomItemSkill(...,2) 从个人道具全表（14 种）随机，会给出词条之外的道具；
+                    // 改为从 V2StartItem.json 的候选池里等概率取一个。
+                    Kart.startItemId = V2StartItem.Pick(Nickname, v2config?.RiderItem?.Set_Kart ?? 0);
                 }
                 else if (Kart.defaultExceedType == 2)//S
                 {

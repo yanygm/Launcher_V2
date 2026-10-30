@@ -1,10 +1,10 @@
 using ExcData;
 using KartRider;
+using KartRider.Logging;
 using RiderData;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -42,12 +42,25 @@ namespace Profile
         public static string Load_Settings = Path.GetFullPath(Path.Combine(ProfileDir, @"Settings.json"));
         public static string Load_TrackRank = Path.GetFullPath(Path.Combine(appDir, @"TrackRank"));
         public static string ModelMax_LoadFile = Path.GetFullPath(Path.Combine(ProfileDir, @"ModelMax.xml"));
-        public static string SpecialKartConfig = Path.GetFullPath(Path.Combine(ProfileDir, @"SpecialKartConfig.json"));
         public static string Coupon = Path.GetFullPath(Path.Combine(ProfileDir, @"Coupon.json"));
 
-        public static Dictionary<string, fileName> FileNames = new Dictionary<string, fileName>();
+        /// <summary>
+        /// 昵称 → 路径集合。原实现是普通 Dictionary，被多个会话线程并发 Load/Remove/索引，
+        /// 会撕裂或抛 InvalidOperationException；改为并发字典后 GetOrAdd 是原子的。
+        /// </summary>
+        public static ConcurrentDictionary<string, fileName> FileNames { get; } =
+            new ConcurrentDictionary<string, fileName>(StringComparer.Ordinal);
 
-        public static void Load(string nickname)
+        public static fileName Load(string nickname)
+        {
+            if (string.IsNullOrEmpty(nickname))
+            {
+                return null;
+            }
+            return FileNames.GetOrAdd(nickname, Create);
+        }
+
+        private static fileName Create(string nickname)
         {
             var filename = new fileName();
             filename.NicknameDir = Path.GetFullPath(Path.Combine(ProfileDir, nickname));
@@ -69,12 +82,32 @@ namespace Profile
             filename.GiveGift_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"GiveGift.json"));
             filename.RewardBox_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"RewardBox.json"));
             filename.Bingo_LoadFile = Path.GetFullPath(Path.Combine(filename.NicknameDir, @"Bingo.json"));
-            FileNames.TryAdd(nickname, filename);
-            if (!Directory.Exists(filename.NicknameDir))
+
+            try
             {
-                Directory.CreateDirectory(filename.NicknameDir);
+                if (!Directory.Exists(filename.NicknameDir))
+                {
+                    Directory.CreateDirectory(filename.NicknameDir);
+                }
             }
-            ProfileService.Load(nickname);
+            catch (Exception ex)
+            {
+                Log.Warn($"[FileName] 创建目录失败 {nickname}: {ex.Message}");
+            }
+
+            return filename;
+        }
+
+        /// <summary>
+        /// 清理会话结束后不再需要的昵称缓存（避免静态字典无界增长）。
+        /// </summary>
+        public static void Forget(string nickname)
+        {
+            if (string.IsNullOrEmpty(nickname))
+            {
+                return;
+            }
+            FileNames.TryRemove(nickname, out _);
         }
     }
 }

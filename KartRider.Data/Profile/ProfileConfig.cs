@@ -11,6 +11,11 @@ namespace Profile
     public class Setting
     {
         /// <summary>
+        /// 配置结构版本。0/缺失 = 旧版配置，加载时会做一次默认值迁移并写回 2。
+        /// </summary>
+        public int SettingsVersion { get; set; } = 0;
+
+        /// <summary>
         /// 用户名
         /// </summary>
         public string Name { get; set; } = "Yany";
@@ -34,6 +39,20 @@ namespace Profile
         /// 速度类型
         /// </summary>
         public byte SpeedType { get; set; } = 7;
+
+        /// <summary>双人组队：是否允许双人组队频道（gameType 67/68）建出多队伍房间。</summary>
+        public bool DuoTeamChannel { get; set; } = true;
+
+        /// <summary>双人组队：每队人数（1~4，默认 2）。</summary>
+        public byte DuoTeamSize { get; set; } = 2;
+
+        /// <summary>控制台输出开关（默认开）。关掉后控制台不再打印日志，但窗口仍由 Console 控制。</summary>
+        public bool LogEnabled { get; set; } = true;
+
+        /// <summary>是否把日志写入 Logs\*.log 文件（默认关：只要控制台，不落盘）。</summary>
+
+        /// <summary>是否在启动时向已有 ModelMax.xml 追加新车（默认关，避免覆盖手改内容）。</summary>
+        public bool ModelMaxAutoUpdate { get; set; } = false;
 
         /// <summary>
         /// Ai速度类型
@@ -63,17 +82,39 @@ namespace Profile
 
         public string PatchUrl { get; set; } = "";
 
-        /// <summary>
-        /// 双人组队模式：是否在频道列表末尾自动追加「双人组队」频道（模式号 68）。
-        /// 关闭后只有 channel.xml 里显式配置 gameType=68 的频道才会启用双人组队。
-        /// </summary>
-        public bool DuoTeamChannel { get; set; } = true;
+        /// <summary>点击开始到发送开局包的等待（毫秒）。默认 3000，与计时赛的加载体感接近；范围 0~10000。</summary>
+        public int StartDelayMs { get; set; } = 4000;
 
-        /// <summary>
-        /// 双人组队模式：每队人数上限（1~4），默认 2。8 个格子按「每队 N 人」顺序分组，
-        /// 例如 2 人 → 4 支队伍，4 人 → 2 支队伍（即原组队模式）。
-        /// </summary>
-        public byte DuoTeamSize { get; set; } = 2;
+        /// <summary>等待全员就绪的上限（毫秒），超时未就绪的玩家按掉线剔除。默认 15000。</summary>
+        public int StartReadyTimeoutMs { get; set; } = 15000;
+
+
+        /// <summary>日志级别：Trace/Debug/Info/Warn/Error/None</summary>
+        public string LogLevel { get; set; } = "Info";
+
+        /// <summary>是否记录每个包的十六进制（默认开：控制台与 Logs\packets.log 都能看到对局包）</summary>
+        public bool PacketTrace { get; set; } = true;
+
+        /// <summary>包跟踪只输出包名包含该子串的包（空=全部，例如 "GameSlot"）</summary>
+        public string PacketTraceFilter { get; set; } = "";
+
+        /// <summary>包跟踪采样：每 N 个包输出 1 个（默认 2，兼顾可读性与开销）</summary>
+        public int PacketTraceSample { get; set; } = 2;
+
+        /// <summary>包跟踪是否同时打印到控制台（PacketTrace 打开时默认打印）</summary>
+        public bool PacketTraceConsole { get; set; } = true;
+
+        /// <summary>包跟踪是否输出 UDP 对局包（默认关：只留 TCP 的 C/S，避免刷屏）</summary>
+        public bool PacketTraceShowUdp { get; set; } = false;
+
+        /// <summary>包环形缓冲（默认开：每个包只做一次定长拷贝，可用 /packets 回看最近 30 秒）</summary>
+        public bool PacketRing { get; set; } = true;
+
+        /// <summary>本地管理接口端口（0 表示关闭）</summary>
+        public ushort AdminPort { get; set; } = 39314;
+
+        /// <summary>管理接口令牌；为空时只允许本机回环访问</summary>
+        public string AdminToken { get; set; } = "";
     }
 
     public class ProfileConfig
@@ -100,9 +141,7 @@ namespace Profile
 
     public class ServerSetting
     {
-        public byte PreventItem_Use { get; set; } = 0;
 
-        public byte SpeedPatch_Use { get; set; } = 0;
     }
 
     public class RiderData
@@ -144,6 +183,9 @@ namespace Profile
         public ushort SlotChanger { get; set; } = (ushort)short.MaxValue;
 
         public uint pmap { get; set; } = 0; //3130 //2520 //ObMaster:718 //Ob:590 //比赛账号:1798,2098
+
+        /// <summary>当前所在频道（由 PqChannelMovein 记录，-1=未知）。用于房间列表按频道隔离。</summary>
+        public int Channel { get; set; } = -1;
 
         public byte IdentificationType { get; set; } = 1;
 

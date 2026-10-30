@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -624,7 +624,7 @@ public class MyRoomData
                     oPacket.WriteUShort(item.itemId);
                     oPacket.WriteUShort(item.itemSn);
                     oPacket.WriteUShort(item.itemCount);
-                    oPacket.WriteByte((byte)((Program.PreventItem ? 1 : 0)));
+                    oPacket.WriteByte(0); // 禁止道具开关已移除，恒 0
                     oPacket.WriteByte(0);
                     oPacket.WriteTime(item.endTime);
                     oPacket.WriteByte(0);

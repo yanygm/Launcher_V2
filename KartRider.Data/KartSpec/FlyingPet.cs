@@ -1,4 +1,5 @@
-﻿using ExcData;
+using KartRider.Logging;
+using ExcData;
 using KartRider;
 using Profile;
 using RiderData;
@@ -32,7 +33,7 @@ namespace KartRider
             if (FlyingPet.flyingName.ContainsKey(FlyingPetID))
             {
                 string Name = FlyingPet.flyingName[FlyingPetID];
-                Console.WriteLine($"flying:{FlyingPetID},Name:{Name}");
+                Log.Debug($"flying:{FlyingPetID},Name:{Name}");
                 if (FlyingPet.flyingSpec.ContainsKey(Name))
                 {
                     XmlDocument Spec = FlyingPet.flyingSpec[Name];
@@ -123,17 +124,17 @@ namespace KartRider
                     }
                 }
             }
-            Console.WriteLine($"-------------------------------------------------------------");
-            Console.WriteLine($"FlyingPet DragFactor:{this.DragFactor}");
-            Console.WriteLine($"FlyingPet ForwardAccelForce:{this.ForwardAccelForce}");
-            Console.WriteLine($"FlyingPet DriftEscapeForce:{this.DriftEscapeForce}");
-            Console.WriteLine($"FlyingPet CornerDrawFactor:{this.CornerDrawFactor}");
-            Console.WriteLine($"FlyingPet NormalBoosterTime:{this.NormalBoosterTime}");
-            Console.WriteLine($"FlyingPet ItemBoosterTime:{this.ItemBoosterTime}");
-            Console.WriteLine($"FlyingPet TeamBoosterTime:{this.TeamBoosterTime}");
-            Console.WriteLine($"FlyingPet StartForwardAccelForceItem:{this.StartForwardAccelForceItem}");
-            Console.WriteLine($"FlyingPet StartForwardAccelForceSpeed:{this.StartForwardAccelForceSpeed}");
-            Console.WriteLine($"-------------------------------------------------------------");
+            Log.Debug($"-------------------------------------------------------------");
+            Log.Debug($"FlyingPet DragFactor:{this.DragFactor}");
+            Log.Debug($"FlyingPet ForwardAccelForce:{this.ForwardAccelForce}");
+            Log.Debug($"FlyingPet DriftEscapeForce:{this.DriftEscapeForce}");
+            Log.Debug($"FlyingPet CornerDrawFactor:{this.CornerDrawFactor}");
+            Log.Debug($"FlyingPet NormalBoosterTime:{this.NormalBoosterTime}");
+            Log.Debug($"FlyingPet ItemBoosterTime:{this.ItemBoosterTime}");
+            Log.Debug($"FlyingPet TeamBoosterTime:{this.TeamBoosterTime}");
+            Log.Debug($"FlyingPet StartForwardAccelForceItem:{this.StartForwardAccelForceItem}");
+            Log.Debug($"FlyingPet StartForwardAccelForceSpeed:{this.StartForwardAccelForceSpeed}");
+            Log.Debug($"-------------------------------------------------------------");
         }
     }
 }

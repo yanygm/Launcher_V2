@@ -3,6 +3,7 @@ using KartRider;
 using KartRider.Common.Network;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using KartRider_PacketName;
 using Profile;
 using RiderData;
@@ -32,12 +33,71 @@ namespace KartRider
             this.Parent = parent;
         }
 
+        /// <summary>
+        /// 昵称合法性校验：只允许普通字符，拒绝路径分隔符、通配符、控制字符与 ".."。
+        /// 改名流程会用它拼目录名并做 Directory.Move，必须先拦住穿越字符。
+        /// </summary>
+        internal static bool IsSafeNickname(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) || name.Length > 40)
+            {
+                return false;
+            }
+            foreach (char c in name)
+            {
+                if (c < 0x20 || c == '/' || c == '\\' || c == ':' || c == '*' || c == '?'
+                    || c == '"' || c == '<' || c == '>' || c == '|')
+                {
+                    return false;
+                }
+            }
+            return name != "." && name != ".." && !name.Contains("..", StringComparison.Ordinal);
+        }
+
+        /// <summary>解析后的路径必须仍在 Profile 目录之内。</summary>
+        internal static bool IsUnderProfileDir(string fullPath)
+        {
+            try
+            {
+                string root = Path.GetFullPath(FileName.ProfileDir);
+                if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                {
+                    root += Path.DirectorySeparatorChar;
+                }
+                string target = Path.GetFullPath(fullPath);
+                return target.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public override void OnDisconnect()
         {
             ClientManager.RemoveClient(this.Socket);
         }
 
+        /// <summary>昵称变化时维护 昵称→会话 索引（登录、改名都会走到这里）。</summary>
+        protected override void OnNicknameChanged(string oldNickname, string newNickname)
+        {
+            ClientManager.BindNickname(this.Parent, oldNickname, newNickname);
+        }
+
         public override void OnPacket(InPacket iPacket)
+        {
+            // 单包处理异常不再让整条连接挂掉：记录后继续处理后续包
+            try
+            {
+                OnPacketCore(iPacket);
+            }
+            catch (Exception ex)
+            {
+                KartRider.Logging.Log.Warn($"[Packet] 处理异常 {Parent?.Client?.Nickname}@{Parent?.Client?.GetRemoteAddress()}: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+
+        private void OnPacketCore(InPacket iPacket)
         {
             int ALLnum;
             lock (this.Parent.m_lock)
@@ -45,20 +105,34 @@ namespace KartRider
                 iPacket.Position = 0;
                 uint hash = iPacket.ReadUInt();
 
+                // 先记录、后分发：聊天服(MsgrServer)的包原来在 Dispatch 命中后直接 return，会被漏记。
+                // 用底层缓冲直接记录，避免每包 ToArray() 复制。
+                if (Log.IsPacketTraceEnabled || Log.IsPacketRingEnabled)
+                {
+                    Log.Packet("C", this.Parent.Client.Nickname, iPacket.GetRawBuffer(), iPacket.Length);
+                }
+
                 if (PacketDispatcher.Dispatch(typeof(MsgrServer), (PacketName)hash, iPacket, iPacket.ToArray(), this.Parent, null))
                     return;
 
-                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                Console.WriteLine($"[{currentTime}][{this.Parent.Client.Nickname}] " + (PacketName)hash + ": " + BitConverter.ToString(iPacket.ToArray()).Replace("-", " "));
-                if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCnAuthenLogin", 0))
+                // 开局等待期：任意包都算“客户端已就绪”（UDP 同步包要等进赛道才发，不可靠）
+                RoomManager.MarkPlayerPacket(this.Parent.Client.Nickname);
+                if (hash == PacketHash.PqCnAuthenLogin)
                 {
                     iPacket.ReadInt();
                     iPacket.ReadInt();
                     string dataPacket = Base64Helper.Decode(iPacket.ReadString(true));
                     DataPacket packet = JsonHelper.Deserialize<DataPacket>(dataPacket);
                     if (packet == null) return;
-                    if (string.IsNullOrEmpty(packet.Nickname) && packet.ClientVersion != ProfileService.SettingConfig.ClientVersion)
+                    // 原实现是 &&（且），空昵称只要版本匹配就会放行，随后 Length 空引用；
+                    // 这里改为 ||，任一条件不满足即拒绝。
+                    if (string.IsNullOrEmpty(packet.Nickname)
+                        || (ProfileService.SettingConfig.ClientVersion != 0
+                            && packet.ClientVersion != ProfileService.SettingConfig.ClientVersion))
+                    {
+                        Log.Warn($"[Login] 拒绝登录：昵称='{packet.Nickname}' 版本={packet.ClientVersion}");
                         return;
+                    }
                     if (ClientManager.HasClientWithNickname(packet.Nickname))
                     {
                         var existingConfig = ProfileService.GetProfileConfig(packet.Nickname);
@@ -95,10 +169,16 @@ namespace KartRider
                     ProfileService.Save(packet.Nickname, loginConfig);
                     return;
                 }
-                if (hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PcReportRaidOccur"), 0) && hash != Adler32Helper.GenerateAdler32(Encoding.ASCII.GetBytes("PqGameReportMyBadUdp"), 0))
+                if (hash != PacketHash.PcReportRaidOccur && hash != PacketHash.PqGameReportMyBadUdp)
                 {
-                    if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqAddRacingTimePacket", 0))
+                    if (hash == PacketHash.LoRqAddRacingTimePacket)
                     {
+                        if (iPacket.Length < 24)
+                        {
+                            // 短包直接忽略：原实现用 iPacket.Length - 8 定位，长度不足时索引变负并越界
+                            Log.Debug("[Race] LoRqAddRacingTimePacket 过短，忽略");
+                            return;
+                        }
                         uint Track = iPacket.ReadUInt();
                         byte SpeedType = iPacket.ReadByte();
                         byte GameType = iPacket.ReadByte();
@@ -151,11 +231,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqUploadFilePacket", 0))
+                    else if (hash == PacketHash.LoRqUploadFilePacket)
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqStartSinglePacket", 0))
+                    else if (hash == PacketHash.LoRqStartSinglePacket)
                     {
                         int TimeAttackStartTicks = iPacket.ReadInt();
                         this.Parent.TimeAttackStartTicks = TimeAttackStartTicks;
@@ -167,7 +247,7 @@ namespace KartRider
                         Console.WriteLine("PlaneCheckMax: {0}", this.Parent.SendPlaneCount);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("GameReportPacket", 0))
+                    else if (hash == PacketHash.GameReportPacket)
                     {
                         byte[] DateTime1 = iPacket.ReadBytes(18);
                         int GetItem = iPacket.ReadInt();
@@ -195,10 +275,22 @@ namespace KartRider
                         Console.WriteLine("PlaneCheck: {0}, Total: {1}, Max: {2}, Dist: {3}", PlaneCheck, this.Parent.TotalSendPlaneCount, this.Parent.SendPlaneCount, single3);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqRenameRidPacket", 0))
+                    else if (hash == PacketHash.SpRqRenameRidPacket)
                     {
                         var oldNickname = this.Parent.Client.Nickname;
                         var newNickname = iPacket.ReadString(false);
+
+                        if (!IsSafeNickname(newNickname))
+                        {
+                            // 拒绝含路径分隔符/穿越字符的昵称（原实现直接拼路径做 Directory.Move，可越出安装目录）
+                            Log.Warn($"[Rename] 非法昵称: {newNickname}");
+                            using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
+                            {
+                                outPacket.WriteInt(1);
+                                this.Parent.Client.Send(outPacket);
+                            }
+                            return;
+                        }
 
                         if (!FileName.FileNames.ContainsKey(oldNickname))
                         {
@@ -212,6 +304,16 @@ namespace KartRider
                         }
                         var filename = FileName.FileNames[oldNickname];
                         string newfile = Path.GetFullPath(Path.Combine(FileName.ProfileDir, newNickname));
+                        if (!IsUnderProfileDir(newfile))
+                        {
+                            Log.Warn($"[Rename] 目标路径越界: {newfile}");
+                            using (OutPacket outPacket = new OutPacket("SpRpRenameRidPacket"))
+                            {
+                                outPacket.WriteInt(1);
+                                this.Parent.Client.Send(outPacket);
+                            }
+                            return;
+                        }
 
                         if (Directory.Exists(filename.NicknameDir))
                         {
@@ -232,7 +334,7 @@ namespace KartRider
                                 this.Parent.Client.Nickname = newNickname;
 
                                 // 2. 更新 FileName.FileNames 的 key
-                                FileName.FileNames.Remove(oldNickname);
+                                FileName.FileNames.TryRemove(oldNickname, out _);
                                 FileName.Load(newNickname);
 
                                 // 3. 更新 ClientManager.NicknameToUserNO
@@ -267,17 +369,19 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRider", 0))
+                    else if (hash == PacketHash.PqGetRider)
                     {
                         NewRider.LoadItemData(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqGetRiderItemPacket", 0))
+                    else if (hash == PacketHash.LoRqGetRiderItemPacket)
                     {
-                        //NewRider.LoadItemData();
+                        // 只回“道具列表”（Items）。v103 回全量、v108 回部件表+PrGetRider 都会明显变慢，
+                        // 且对 V1 车膜“已装备”判定无效，已回滚。
+                                    NewRider.Items(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqSetRiderItemOnPacket", 0))
+                    else if (hash == PacketHash.LoRqSetRiderItemOnPacket)
                     {
                         var riderItemConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         riderItemConfig.RiderItem.Set_Character = iPacket.ReadUShort();
@@ -318,7 +422,23 @@ namespace KartRider
                         riderItemConfig.RiderItem.Set_KartTailLamp12 = iPacket.ReadUShort();
                         riderItemConfig.RiderItem.Set_KartBoosterEffect12 = iPacket.ReadUShort();
                         riderItemConfig.RiderItem.Set_Unknown5 = iPacket.ReadUShort();
-                        ProfileService.Save(this.Parent.Client.Nickname, riderItemConfig);
+                        // 车膜排查用：把客户端上报的装备字段直接展开（只列非零），
+                        // 免去事后对着十六进制数 45 个字段。对比“迅车膜/V1 车膜”时看这一行即可。
+                        var itemSet = riderItemConfig.RiderItem;
+                        var nonZero = new List<string>();
+                        foreach (var prop in typeof(RiderItemData).GetProperties())
+                        {
+                            if (!prop.Name.StartsWith("Set_", StringComparison.Ordinal))
+                            {
+                                continue;
+                            }
+                            long value = Convert.ToInt64(prop.GetValue(itemSet));
+                            if (value != 0)
+                            {
+                                nonZero.Add(prop.Name.Substring(4) + "=" + value);
+                            }
+                        }
+                                    ProfileService.Save(this.Parent.Client.Nickname, riderItemConfig);
                         int roomId = RoomManager.TryGetRoomId(this.Parent.Client.Nickname);
                         if (roomId != -1)
                         {
@@ -335,7 +455,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderInfo", 0))
+                    else if (hash == PacketHash.PqGetRiderInfo)
                     {
                         uint UserID = iPacket.ReadUInt();
                         iPacket.ReadInt();
@@ -365,14 +485,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUpdateRiderIntro", 0))
+                    else if (hash == PacketHash.PqUpdateRiderIntro)
                     {
                         var introConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         introConfig.Rider.RiderIntro = iPacket.ReadString(false);
                         ProfileService.Save(this.Parent.Client.Nickname, introConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUpdateRiderSchoolLevelPacket", 0))
+                    else if (hash == PacketHash.PqUpdateRiderSchoolLevelPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrUpdateRiderSchoolLevelPacket"))
                         {
@@ -382,7 +502,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSetPlaytimeEventTick", 0))
+                    else if (hash == PacketHash.PqSetPlaytimeEventTick)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSetPlaytimeEventTick"))
                         {
@@ -392,7 +512,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUpdateGameOption", 0))
+                    else if (hash == PacketHash.PqUpdateGameOption)
                     {
                         var gameOptionConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         gameOptionConfig.GameOption.Set_BGM = iPacket.ReadFloat();
@@ -447,12 +567,12 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, gameOptionConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetGameOption", 0))
+                    else if (hash == PacketHash.PqGetGameOption)
                     {
                         GameSupport.PrGetGameOption(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqVipInfo", 0))
+                    else if (hash == PacketHash.PqVipInfo)
                     {
                         using (OutPacket outPacket = new OutPacket("PrVipInfo"))
                         {
@@ -465,7 +585,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqEventRewardPacket", 0))
+                    else if (hash == PacketHash.LoRqEventRewardPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("LoRpEventRewardPacket"))
                         {
@@ -475,7 +595,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqVipGradeCheck", 0))
+                    else if (hash == PacketHash.PqVipGradeCheck)
                     {
                         using (OutPacket outPacket = new OutPacket("PrVipGradeCheck"))
                         {
@@ -487,7 +607,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLoginVipInfo", 0))
+                    else if (hash == PacketHash.PqLoginVipInfo)
                     {
                         var vipConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrLoginVipInfo"))
@@ -515,12 +635,13 @@ namespace KartRider
                         }
                         using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
                         {
-                            outPacket.WriteString("单机版完全免费, https://yanygm.github.io/Launcher_V2/");
+                            // 去掉启动横幅：客户端仍收到 PcSlaveNotice，但内容为空
+                            outPacket.WriteString("");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChReRqEnterMyRoomPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("ChRqEnterRandomMyRoomPacket", 0))
+                    else if (hash == PacketHash.ChReRqEnterMyRoomPacket || hash == PacketHash.ChRqEnterRandomMyRoomPacket)
                     {
                         var availableNicknames = ClientManager.NicknameToUserNO.Keys.Where(n => n != this.Parent.Client.Nickname).ToList();
                         if (availableNicknames.Count == 0)
@@ -534,23 +655,23 @@ namespace KartRider
                         MyRoomData.ChRpEnterMyRoomPacket(this.Parent, this.Parent.Client.Nickname, targetNickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRqEnterMyRoomPacket", 0))
+                    else if (hash == PacketHash.ChRqEnterMyRoomPacket)
                     {
                         string nickname = iPacket.ReadString(false);
                         MyRoomData.ChRpEnterMyRoomPacket(this.Parent, this.Parent.Client.Nickname, nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmFirstRequestPacket", 0))
+                    else if (hash == PacketHash.RmFirstRequestPacket)
                     {
                         MyRoomData.RmSlotDataPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRequestItemsPacket", 0))
+                    else if (hash == PacketHash.RmRequestItemsPacket)
                     {
                         MyRoomData.RmRequestItemsPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmNotiMyRoomInfoPacket", 0))
+                    else if (hash == PacketHash.RmNotiMyRoomInfoPacket)
                     {
                         var myRoomConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         myRoomConfig.MyRoom.MyRoom = iPacket.ReadShort();
@@ -568,19 +689,19 @@ namespace KartRider
                         MyRoomData.RmNotiMyRoomInfoPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRqSecedeMyRoomPacket", 0))
+                    else if (hash == PacketHash.ChRqSecedeMyRoomPacket)
                     {
                         // 마이룸 나갈 때
                         MyRoomData.ChRpSecedeMyRoomPacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRiderTalkPacket", 0))
+                    else if (hash == PacketHash.RmRiderTalkPacket)
                     {
                         string message = iPacket.ReadString(false);
                         MyRoomData.RmRiderTalkPacket(this.Parent.Client.Nickname, message);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRqMyroomCheckPassEtcPacket", 0))
+                    else if (hash == PacketHash.ChRqMyroomCheckPassEtcPacket)
                     {
                         int id = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("ChRpMyroomCheckPassEtcPacket"))
@@ -598,7 +719,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartScenario", 0))
+                    else if (hash == PacketHash.PqStartScenario)
                     {
                         var scenarioConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         scenarioConfig.Rider.ScenarioType = iPacket.ReadInt();
@@ -611,7 +732,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, scenarioConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCompleteScenarioSingle", 0))
+                    else if (hash == PacketHash.PqCompleteScenarioSingle)
                     {
                         var completeConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrCompleteScenarioSingle"))
@@ -622,7 +743,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartSpec", 0))
+                    else if (hash == PacketHash.PqKartSpec)
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
                         var Kart_id = iPacket.ReadUShort();
@@ -631,7 +752,7 @@ namespace KartRider
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChapterInfoPacket", 0))
+                    else if (hash == PacketHash.PqChapterInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrChapterInfoPacket"))
                         {
@@ -647,7 +768,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChallengerInfoPacket", 0))
+                    else if (hash == PacketHash.PqChallengerInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrChallengerInfoPacket"))
                         {
@@ -663,7 +784,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartChallenger", 0))
+                    else if (hash == PacketHash.PqStartChallenger)
                     {
                         int stage_id = iPacket.ReadInt();
                         int GameType = iPacket.ReadInt();
@@ -681,7 +802,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqchallengerKartSpec", 0))
+                    else if (hash == PacketHash.PqchallengerKartSpec)
                     {
                         var StartTimeAttack_SpeedType = iPacket.ReadByte();
                         var Kart_id = iPacket.ReadUShort();
@@ -690,7 +811,7 @@ namespace KartRider
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, 0, 0, 0, StartTimeAttack_SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCompleteChallenger", 0))
+                    else if (hash == PacketHash.PqCompleteChallenger)
                     {
                         int stage = 40;
                         byte StageType = iPacket.ReadByte();
@@ -717,12 +838,13 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExChangePacket", 0))
+                    else if (hash == PacketHash.PqExChangePacket)
                     {
-                        GameSupport.OnDisconnect(this.Parent);
+                        // 原实现直接断线且不回包；改为记录并忽略，避免玩家正常操作被踢
+                        Log.Warn($"[Exchange] PqExChangePacket 未实现，已忽略（{this.Parent.Client.Nickname}）");
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelPointClear", 0))
+                    else if (hash == PacketHash.PqKartLevelPointClear)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -745,7 +867,7 @@ namespace KartRider
                         KartExcData.AddLevelList(this.Parent.Client.Nickname, Kart, SN, 5, 35, 0, 0, 0, 0, 0);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqDisassembleXPartsItem", 0))
+                    else if (hash == PacketHash.PqDisassembleXPartsItem)
                     {
                         iPacket.ReadByte();
                         iPacket.ReadShort();
@@ -782,7 +904,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelUpProbText", 0))
+                    else if (hash == PacketHash.PqKartLevelUpProbText)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -795,7 +917,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelUp", 0))
+                    else if (hash == PacketHash.PqKartLevelUp)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -825,7 +947,7 @@ namespace KartRider
                         KartExcData.AddLevelList(this.Parent.Client.Nickname, Kart, SN, 5, 35, 0, 0, 0, 0, 0);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelPointUpdate", 0))
+                    else if (hash == PacketHash.PqKartLevelPointUpdate)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -877,7 +999,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetMaxGiftIdPacket", 0))
+                    else if (hash == PacketHash.SpRqGetMaxGiftIdPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpGetMaxGiftIdPacket"))
                         {
@@ -886,7 +1008,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartLevelSpecialSlotUpdate", 0))
+                    else if (hash == PacketHash.PqKartLevelSpecialSlotUpdate)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
@@ -935,7 +1057,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseSocketItem", 0))
+                    else if (hash == PacketHash.PqUseSocketItem)
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -957,7 +1079,7 @@ namespace KartRider
                         KartExcData.AddTuneList(this.Parent.Client.Nickname, Kart, KartSN, 0, 0, 0, -1, 0, -1, 0);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseTuneItem", 0))
+                    else if (hash == PacketHash.PqUseTuneItem)
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1032,7 +1154,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseProtectSpannerItem", 0))
+                    else if (hash == PacketHash.PqUseProtectSpannerItem)
                     {
                         short Protect = iPacket.ReadShort();
                         short v2 = iPacket.ReadShort();
@@ -1100,7 +1222,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseResetSocketItem", 0))
+                    else if (hash == PacketHash.PqUseResetSocketItem)
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1180,7 +1302,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEquipTuningExPacket", 0))
+                    else if (hash == PacketHash.PqEquipTuningExPacket)
                     {
                         short Item = iPacket.ReadShort();
                         short Item_Id = iPacket.ReadShort();
@@ -1200,11 +1322,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUnequipXPartsItem", 0))
+                    else if (hash == PacketHash.PqUnequipXPartsItem)
                     {
                         short Kart = iPacket.ReadShort();
                         short SN = iPacket.ReadShort();
                         short item = iPacket.ReadShort();
+                        Log.Info($"[Equip] PqUnequipXPartsItem kart={Kart} sn={SN} item={item}");
                         using (OutPacket outPacket = new OutPacket("PrUnequipXPartsItem"))
                         {
                             outPacket.WriteInt(0);
@@ -1216,7 +1339,7 @@ namespace KartRider
                         KartExcData.AddPartsList(this.Parent.Client.Nickname, Kart, SN, item, 0, 0, 0);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEquipXPartsItem", 0))
+                    else if (hash == PacketHash.PqEquipXPartsItem)
                     {
                         short Kart = iPacket.ReadShort();
                         short KartSN = iPacket.ReadShort();
@@ -1228,6 +1351,7 @@ namespace KartRider
                         byte Unk2 = iPacket.ReadByte();
                         short PartsValue = iPacket.ReadShort();
                         short Unk3 = iPacket.ReadShort();
+                        Log.Info($"[Equip] PqEquipXPartsItem kart={Kart} sn={KartSN} cat={Item_Cat_Id} item={Item_Id} qty={Quantity} unk1={Unk1} grade={Grade} unk2={Unk2} value={PartsValue} unk3={Unk3}");
                         using (OutPacket outPacket = new OutPacket("PrEquipXPartsItem"))
                         {
                             outPacket.WriteInt(0);
@@ -1247,7 +1371,7 @@ namespace KartRider
                         Console.WriteLine("ClientSession : Kart: {0}, KartSN: {1}, Item: {2}:{3}, Quantity: {4}, Grade: {5}, PartsValue: {6}", Kart, KartSN, Item_Cat_Id, Item_Id, Quantity, Grade, PartsValue);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetTrainingMission", 0))
+                    else if (hash == PacketHash.PqGetTrainingMission)
                     {
                         int type = iPacket.ReadInt();
                         uint track = iPacket.ReadUInt();
@@ -1266,7 +1390,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetDuelMissionBulk", 0))
+                    else if (hash == PacketHash.PqGetDuelMissionBulk)
                     {
                         List<string> MissionList = TimeAttack.GetMissionList();
                         using (OutPacket outPacket = new OutPacket("PrGetDuelMissionBulk"))
@@ -1286,7 +1410,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqAdjustDuelMissionDifficulty", 0))
+                    else if (hash == PacketHash.PqAdjustDuelMissionDifficulty)
                     {
                         Console.WriteLine("PqAdjustDuelMissionDifficulty: {0}", iPacket);
                         int type = iPacket.ReadInt();
@@ -1301,7 +1425,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlueMarble", 0))
+                    else if (hash == PacketHash.PqBlueMarble)
                     {
                         using (OutPacket outPacket = new OutPacket("PrBlueMarble"))
                         {
@@ -1310,7 +1434,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqGetTrackRankPacket", 0))
+                    else if (hash == PacketHash.LoRqGetTrackRankPacket)
                     {
                         uint track = iPacket.ReadUInt();
                         var trackConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -1321,7 +1445,7 @@ namespace KartRider
                         TrackRankData.LoRpGetTrackRankPacket(this.Parent, track, SpeedType, GameType);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteTrackUpdate", 0))
+                    else if (hash == PacketHash.PqFavoriteTrackUpdate)
                     {
                         iPacket.ReadByte();
                         int tracks = iPacket.ReadInt(); //赛道数量
@@ -1341,7 +1465,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqDecLucciPacket", 0))
+                    else if (hash == PacketHash.LoRqDecLucciPacket)
                     {
                         iPacket.ReadByte();
                         uint Lucci = iPacket.ReadUInt();
@@ -1357,7 +1481,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, lucciConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartTimeAttack", 0))
+                    else if (hash == PacketHash.PqStartTimeAttack)
                     {
                         var attackConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         var StartTimeAttack_Unk1 = iPacket.ReadInt();
@@ -1393,7 +1517,7 @@ namespace KartRider
                         StartGameData.Start_KartSpac(this.Parent, this.Parent.Client.Nickname, StartType, StartTimeAttack_StartType, StartTimeAttack_Unk1, attackConfig.Rider.Track, attackConfig.Rider.SpeedType, Kart_id, FlyingPet_id);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFinishTimeAttack", 0))
+                    else if (hash == PacketHash.PqFinishTimeAttack)
                     {
                         int type = iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -1451,7 +1575,7 @@ namespace KartRider
                         });
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRewardTimeAttack", 0))
+                    else if (hash == PacketHash.PqRewardTimeAttack)
                     {
                         byte RewardType = iPacket.ReadByte();
                         int RP = iPacket.ReadInt();
@@ -1467,7 +1591,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, rewardConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqUseItemPacket", 0))
+                    else if (hash == PacketHash.LoRqUseItemPacket)
                     {
                         short ItemType = iPacket.ReadShort();
                         short Type = iPacket.ReadShort();
@@ -1478,7 +1602,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndPacket", 0))
+                    else if (hash == PacketHash.PqQuestUX2ndPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndPacket"))
                         {
@@ -1489,7 +1613,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGameOutRunUX2ndClearPacket", 0))
+                    else if (hash == PacketHash.PqGameOutRunUX2ndClearPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGameOutRunUX2ndClearPacket"))
                         {
@@ -1498,12 +1622,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetTrainingMissionReward", 0))
+                    else if (hash == PacketHash.PqGetTrainingMissionReward)
                     {
                         Console.WriteLine("PqGetTrainingMissionReward: {0}", iPacket);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestKartInfoPacket", 0))
+                    else if (hash == PacketHash.PqRequestKartInfoPacket)
                     {
                         int count = 0;
                         using (OutPacket outPacket = new OutPacket("PrRequestKartInfoPacket"))
@@ -1527,7 +1651,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaSelectSetPacket", 0))
+                    else if (hash == PacketHash.SpRqBingoGachaSelectSetPacket)
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
                         bingo.BingoItem = iPacket.ReadByte();//选择的Bingo道具
@@ -1541,7 +1665,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaInfoPacket", 0))
+                    else if (hash == PacketHash.SpRqBingoGachaInfoPacket)
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
                         Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 请求面板 SpRqBingoGachaInfoPacket 格子={bingo.BingoNumsList.Count} 已获取={bingo.BingoNums.Count(n => n.Value == 1)} 道具={bingo.BingoItem}");
@@ -1563,7 +1687,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqBingoGachaPacket", 0))
+                    else if (hash == PacketHash.SpRqBingoGachaPacket)
                     {
                         int BingoType = iPacket.ReadInt();
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
@@ -1604,7 +1728,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLotteryMileagePrizePacket", 0))
+                    else if (hash == PacketHash.PqLotteryMileagePrizePacket)
                     {
                         var bingo = Bingo.Get(this.Parent.Client.Nickname);
                         Console.WriteLine($"[Bingo {DateTime.Now:HH:mm:ss.fff}] [{this.Parent.Client.Nickname}] 领取奖励 PqLotteryMileagePrizePacket，重置面板（原已连线={bingo.CompletedLines.Count}）");
@@ -1623,12 +1747,12 @@ namespace KartRider
                         bingo.Save();
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckMyClubStatePacket", 0))
+                    else if (hash == PacketHash.PqCheckMyClubStatePacket)
                     {
                         GameSupport.PrCheckMyClubStatePacket(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckMyLeaveDatePacket", 0))
+                    else if (hash == PacketHash.PqCheckMyLeaveDatePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckMyLeaveDatePacket"))
                         {
@@ -1637,7 +1761,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetUserWaitingJoinClubPacket", 0))
+                    else if (hash == PacketHash.PqGetUserWaitingJoinClubPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetUserWaitingJoinClubPacket"))
                         {
@@ -1651,7 +1775,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, joinClubConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckCreateClubConditionPacket", 0))
+                    else if (hash == PacketHash.PqCheckCreateClubConditionPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckCreateClubConditionPacket"))
                         {
@@ -1660,7 +1784,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCreateClubPacket", 0))
+                    else if (hash == PacketHash.PqCreateClubPacket)
                     {
                         var createClubConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         createClubConfig.Rider.ClubName = iPacket.ReadString();
@@ -1680,7 +1804,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubPacket", 0))
+                    else if (hash == PacketHash.PqInitClubPacket)
                     {
                         var clubSwitchConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrInitClubPacket"))
@@ -1697,7 +1821,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubChannelSwitch", 0))
+                    else if (hash == PacketHash.PqClubChannelSwitch)
                     {
                         using (OutPacket outPacket = new OutPacket("PrChannelSwitch"))
                         {
@@ -1709,7 +1833,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubInfoPacket", 0))
+                    else if (hash == PacketHash.PqInitClubInfoPacket)
                     {
                         var initClubConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrInitClubInfoPacket"))
@@ -1735,7 +1859,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSearchClubListPacket", 0))
+                    else if (hash == PacketHash.PqSearchClubListPacket)
                     {
                         int ClubID = iPacket.ReadInt();
                         int ClubCount = 1;
@@ -1766,7 +1890,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubListCountPacket", 0))
+                    else if (hash == PacketHash.PqGetClubListCountPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubListCountPacket"))
                         {
@@ -1775,7 +1899,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubWaitingCrewCountPacket", 0))
+                    else if (hash == PacketHash.PqGetClubWaitingCrewCountPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubWaitingCrewCountPacket"))
                         {
@@ -1784,7 +1908,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubInitFirstPacket", 0))
+                    else if (hash == PacketHash.PqClubInitFirstPacket)
                     {
                         int ClubMemberCount = 1;
                         var initFirstConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -1844,7 +1968,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubRealCrewListPacket", 0))
+                    else if (hash == PacketHash.PqGetClubRealCrewListPacket)
                     {
                         int ClubID = iPacket.ReadInt();
                         int ClubMemberCount = 1;
@@ -1885,7 +2009,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckClubDirtyTimePacket", 0))
+                    else if (hash == PacketHash.PqCheckClubDirtyTimePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckClubDirtyTimePacket"))
                         {
@@ -1897,7 +2021,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetClubRecordPacket", 0))
+                    else if (hash == PacketHash.PqGetClubRecordPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetClubRecordPacket"))
                         {
@@ -1908,12 +2032,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockWordLogPacket", 0))
+                    else if (hash == PacketHash.PqBlockWordLogPacket)
                     {
                         iPacket.ReadString();
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLeaveClubPacket", 0))
+                    else if (hash == PacketHash.PqLeaveClubPacket)
                     {
                         int ClubID = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrLeaveClubPacket"))
@@ -1924,7 +2048,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBreakUpClubPacket", 0))
+                    else if (hash == PacketHash.PqBreakUpClubPacket)
                     {
                         int ClubID = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrBreakUpClubPacket"))
@@ -1938,7 +2062,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, profileConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubAutoJoinStatePacket", 0))
+                    else if (hash == PacketHash.PqChangeClubAutoJoinStatePacket)
                     {
                         byte AutoJoin = iPacket.ReadByte();
                         using (OutPacket outPacket = new OutPacket("PrChangeClubAutoJoinStatePacket"))
@@ -1949,7 +2073,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubHousePacket", 0))
+                    else if (hash == PacketHash.PqInitClubHousePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubHousePacket"))
                         {
@@ -1968,7 +2092,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubHQPacket", 0))
+                    else if (hash == PacketHash.PqInitClubHQPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubHQPacket"))
                         {
@@ -1979,7 +2103,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitClubBankPacket", 0))
+                    else if (hash == PacketHash.PqInitClubBankPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitClubBankPacket"))
                         {
@@ -1998,7 +2122,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqClubSupportPacket", 0))
+                    else if (hash == PacketHash.PqClubSupportPacket)
                     {
                         int LUCCI = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrClubSupportPacket"))
@@ -2015,7 +2139,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitRacingCenterPacket", 0))
+                    else if (hash == PacketHash.PqInitRacingCenterPacket)
                     {
                         byte[] levels = new byte[] { 2, 3, 4, 5, 0 };
                         using (OutPacket outPacket = new OutPacket("PrInitRacingCenterPacket"))
@@ -2034,7 +2158,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqInitRiderCenterPacket", 0))
+                    else if (hash == PacketHash.PqInitRiderCenterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrInitRiderCenterPacket"))
                         {
@@ -2043,7 +2167,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubNamePacket", 0))
+                    else if (hash == PacketHash.PqChangeClubNamePacket)
                     {
                         string oldClubName = iPacket.ReadString();
                         string newClubName = iPacket.ReadString();
@@ -2058,7 +2182,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubMarkPacket", 0))
+                    else if (hash == PacketHash.PqChangeClubMarkPacket)
                     {
                         int oldClubMark = iPacket.ReadInt();
                         int newClubMark = iPacket.ReadInt();
@@ -2073,7 +2197,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqChangeClubIntroPacket", 0))
+                    else if (hash == PacketHash.PqChangeClubIntroPacket)
                     {
                         var changeIntroConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         changeIntroConfig.Rider.ClubIntro = iPacket.ReadString();
@@ -2085,7 +2209,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqLotteryPacket", 0))
+                    else if (hash == PacketHash.SpRqLotteryPacket)
                     {
                         ushort LotteryID = iPacket.ReadUShort();
                         byte Unk = iPacket.ReadByte();
@@ -2100,18 +2224,25 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEventBuyCount", 0))
+                    else if (hash == PacketHash.PqEventBuyCount)
                     {
-                        EventBuyCount.BuyCount = iPacket.ReadInt();
-                        EventBuyCount.ShopItem = new int[EventBuyCount.BuyCount];
-                        for (int i = 0; i < EventBuyCount.BuyCount; i++)
+                        int buyCount = iPacket.ReadInt();
+                        if (buyCount < 0 || buyCount > 64 || buyCount * 4 > iPacket.Available)
+                        {
+                            // 原实现直接用包内长度开数组：负数溢出、极大值直接 OOM
+                            Log.Warn($"[EventBuyCount] 非法数量 {buyCount}，已忽略");
+                            return;
+                        }
+                        EventBuyCount.BuyCount = buyCount;
+                        EventBuyCount.ShopItem = new int[buyCount];
+                        for (int i = 0; i < buyCount; i++)
                         {
                             EventBuyCount.ShopItem[i] = iPacket.ReadInt();
                         }
                         EventBuyCount.PrEventBuyCount(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderTaskContext", 0))
+                    else if (hash == PacketHash.PqGetRiderTaskContext)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderTaskContext"))
                         {
@@ -2120,7 +2251,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqVersusModeRankOnePacket", 0))
+                    else if (hash == PacketHash.PqVersusModeRankOnePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrVersusModeRankOnePacket"))
                         {
@@ -2129,22 +2260,22 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRiderSchoolDataPacket", 0))
+                    else if (hash == PacketHash.PqRiderSchoolDataPacket)
                     {
                         RiderSchool.PrRiderSchoolData(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRiderSchoolProPacket", 0))
+                    else if (hash == PacketHash.PqRiderSchoolProPacket)
                     {
                         RiderSchool.PrRiderSchoolPro(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartRiderSchool", 0))
+                    else if (hash == PacketHash.PqStartRiderSchool)
                     {
                         RiderSchool.PrStartRiderSchool(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRiderSchoolExpiredCheck", 0))
+                    else if (hash == PacketHash.PqRiderSchoolExpiredCheck)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRiderSchoolExpiredCheck"))
                         {
@@ -2153,7 +2284,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRankerInfoPacket", 0))
+                    else if (hash == PacketHash.PqRankerInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRankerInfoPacket"))
                         {
@@ -2164,7 +2295,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestExtradata", 0))
+                    else if (hash == PacketHash.PqRequestExtradata)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestExtradata"))
                         {
@@ -2173,17 +2304,17 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChRequestChStaticRequestPacket", 0))
+                    else if (hash == PacketHash.ChRequestChStaticRequestPacket)
                     {
                         GameSupport.ChRequestChStaticReplyPacket(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqDynamicCommand", 0))
+                    else if (hash == PacketHash.PqDynamicCommand)
                     {
                         GameSupport.PrDynamicCommand(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPubCommandPacket", 0))
+                    else if (hash == PacketHash.PqPubCommandPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPubCommandPacket"))
                         {
@@ -2194,7 +2325,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqWebEventCompleteCheckPacket", 0))
+                    else if (hash == PacketHash.PqWebEventCompleteCheckPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrWebEventCompleteCheckPacket"))
                         {
@@ -2202,7 +2333,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqKoinBalance", 0))
+                    else if (hash == PacketHash.SpRqKoinBalance)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpKoinBalance"))
                         {
@@ -2212,12 +2343,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteTrackMapGet", 0))
+                    else if (hash == PacketHash.PqFavoriteTrackMapGet)
                     {
                         FavoriteItem.Favorite_Track(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetFavoriteChannel", 0))
+                    else if (hash == PacketHash.PqGetFavoriteChannel)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetFavoriteChannel"))
                         {
@@ -2226,7 +2357,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartPassInitPacket", 0))
+                    else if (hash == PacketHash.PqKartPassInitPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassInitPacket"))
                         {
@@ -2237,7 +2368,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetCashInventoryPacket", 0))
+                    else if (hash == PacketHash.SpRqGetCashInventoryPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpGetCashInventoryPacket"))
                         {
@@ -2247,7 +2378,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqRemainCashPacket", 0))
+                    else if (hash == PacketHash.SpRqRemainCashPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpRemainCashPacket"))
                         {
@@ -2266,7 +2397,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqRemainTcCashPacket", 0))
+                    else if (hash == PacketHash.SpRqRemainTcCashPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpRemainTcCashPacket"))
                         {
@@ -2276,14 +2407,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopBuyItemPacket", 0) || hash == Adler32Helper.GenerateAdler32_ASCII("SpReqItemPresetShopBuyItemPacket", 0))
+                    else if (hash == PacketHash.SpReqNormalShopBuyItemPacket || hash == PacketHash.SpReqItemPresetShopBuyItemPacket)
                     {
                         uint stockId = iPacket.ReadUInt();
                         int unk = iPacket.ReadInt();
                         byte priceType = iPacket.ReadByte();//货币类型0:电池 1:金币 3:KOIN
                         Stock.ShopBuy(this.Parent, stockId, priceType);
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCurrentRid", 0))
+                    else if (hash == PacketHash.PqGetCurrentRid)
                     {
                         string UserName = iPacket.ReadString();
                         if (Directory.Exists(Path.GetFullPath(Path.Combine(FileName.ProfileDir, UserName))))
@@ -2304,13 +2435,13 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqDuplicatedItemPacket", 0))
+                    else if (hash == PacketHash.SpRqDuplicatedItemPacket)
                     {
                         string UserName = iPacket.ReadString();
                         uint stockId = iPacket.ReadUInt();
                         CouponList.DuplicatedItem(this.Parent, stockId);
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqNormalShopGiveGiftPacket", 0))
+                    else if (hash == PacketHash.SpReqNormalShopGiveGiftPacket)
                     {
                         string UserName = iPacket.ReadString();
                         uint stockId = iPacket.ReadUInt();
@@ -2321,7 +2452,7 @@ namespace KartRider
                         string Password = iPacket.ReadString();
                         CouponList.GiveGift(this.Parent, UserName, stockId, Message, Password);
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMyCouponList", 0))
+                    else if (hash == PacketHash.PqGetMyCouponList)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetMyCouponList"))
                         {
@@ -2330,7 +2461,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqDisassembleFeeInfo", 0))
+                    else if (hash == PacketHash.PqDisassembleFeeInfo)
                     {
                         using (OutPacket outPacket = new OutPacket("PrDisassembleFeeInfo"))
                         {
@@ -2339,7 +2470,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestExchangeInitPacket", 0))
+                    else if (hash == PacketHash.PqRequestExchangeInitPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestExchangeInitPacket"))
                         {
@@ -2348,7 +2479,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestPeriodExchangeInitPacket", 0))
+                    else if (hash == PacketHash.PqRequestPeriodExchangeInitPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRequestPeriodExchangeInitPacket"))
                         {
@@ -2357,39 +2488,39 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqEnterRewardBoxStage", 0))
+                    else if (hash == PacketHash.SpRqEnterRewardBoxStage)
                     {
                         CouponList.GetRewardBox(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqReceiveRewardItemPacket", 0))
+                    else if (hash == PacketHash.SpRqReceiveRewardItemPacket)
                     {
                         long RewardBoxId = iPacket.ReadLong();
                         uint stockId = iPacket.ReadUInt();
                         CouponList.ReceiveReward(this.Parent, RewardBoxId, stockId);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqExitRewardBoxStage", 0))
+                    else if (hash == PacketHash.SpRqExitRewardBoxStage)
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetGiftListIncomingPacket", 0))
+                    else if (hash == PacketHash.SpRqGetGiftListIncomingPacket)
                     {
                         CouponList.GetGiftList(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqGetGiftListReceivedPacket", 0))
+                    else if (hash == PacketHash.SpRqGetGiftListReceivedPacket)
                     {
                         CouponList.GetGiftList(this.Parent, true);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqReceiveGiftPacket", 0))
+                    else if (hash == PacketHash.SpReqReceiveGiftPacket)
                     {
                         int giftId = iPacket.ReadInt();
                         CouponList.ReceiveGift(this.Parent, giftId);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqDeleteGiftPacket", 0))
+                    else if (hash == PacketHash.SpReqDeleteGiftPacket)
                     {
                         iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -2398,13 +2529,13 @@ namespace KartRider
                         CouponList.Delete(this.Parent, giftId);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpReqDeleteReceiveLogPacket", 0))
+                    else if (hash == PacketHash.SpReqDeleteReceiveLogPacket)
                     {
                         int giftId = iPacket.ReadInt();
                         CouponList.Delete(this.Parent, giftId, true);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveRankInfo", 0))
+                    else if (hash == PacketHash.PqGetCompetitiveRankInfo)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveRankInfo"))
                         {
@@ -2413,7 +2544,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveSlotInfo", 0))
+                    else if (hash == PacketHash.PqGetCompetitiveSlotInfo)
                     {
                         var manager = new CompetitiveDataManager();
                         var competitiveData = manager.LoadAllData(this.Parent.Client.Nickname);
@@ -2438,7 +2569,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitiveCount", 0))
+                    else if (hash == PacketHash.PqGetCompetitiveCount)
                     {
                         List<string> Competitive = TimeAttack.GetCompetitive();
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitiveCount"))
@@ -2453,7 +2584,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSearchCompetitiveRankPacket", 0))
+                    else if (hash == PacketHash.PqSearchCompetitiveRankPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSearchCompetitiveRankPacket"))
                         {
@@ -2463,7 +2594,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetCompetitivePreRankPacket", 0))
+                    else if (hash == PacketHash.PqGetCompetitivePreRankPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetCompetitivePreRankPacket"))
                         {
@@ -2473,12 +2604,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRequestEmblemsPacket", 0))
+                    else if (hash == PacketHash.RmRequestEmblemsPacket)
                     {
                         Emblem.RmOwnerEmblemPacket(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RmRqUpdateMainEmblemPacket", 0))
+                    else if (hash == PacketHash.RmRqUpdateMainEmblemPacket)
                     {
                         var emblemConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         emblemConfig.Rider.Emblem1 = iPacket.ReadShort();
@@ -2492,7 +2623,7 @@ namespace KartRider
                         ProfileService.Save(this.Parent.Client.Nickname, emblemConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSyncDictionaryInfoPacket", 0))
+                    else if (hash == PacketHash.PqSyncDictionaryInfoPacket)
                     {
                         int Dictionary = iPacket.ReadInt();
                         int Count = GameSupport.Dictionary.Count;
@@ -2511,7 +2642,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetDictionaryRewardInfoPacket", 0))
+                    else if (hash == PacketHash.PqGetDictionaryRewardInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetDictionaryRewardInfoPacket"))
                         {
@@ -2521,7 +2652,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqNewCareerListPacket", 0))
+                    else if (hash == PacketHash.PqNewCareerListPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrNewCareerListPacket"))
                         {
@@ -2533,7 +2664,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoRqDeleteItemPacket", 0))
+                    else if (hash == PacketHash.LoRqDeleteItemPacket)
                     {
                         iPacket.ReadInt();
                         iPacket.ReadInt();
@@ -2556,19 +2687,19 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqQueryCoupon", 0))
+                    else if (hash == PacketHash.SpRqQueryCoupon)
                     {
                         string Coupon = iPacket.ReadString();
                         CouponList.QueryCoupon(this.Parent, Coupon);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqUseCoupon", 0))
+                    else if (hash == PacketHash.SpRqUseCoupon)
                     {
                         string Coupon = iPacket.ReadString();
                         CouponList.QueryCoupon(this.Parent, Coupon, true);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqShopCashPage", 0))
+                    else if (hash == PacketHash.PqShopCashPage)
                     {
                         using (OutPacket outPacket = new OutPacket("PrShopCashPage"))
                         {
@@ -2577,7 +2708,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqShopURLPage", 0))
+                    else if (hash == PacketHash.PqShopURLPage)
                     {
                         int URLPageType = iPacket.ReadInt();
                         using (OutPacket outPacket = new OutPacket("PrShopURLPage"))
@@ -2588,7 +2719,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBingoSync", 0))
+                    else if (hash == PacketHash.PqBingoSync)
                     {
                         using (OutPacket outPacket = new OutPacket("PrBingoSync"))
                         {
@@ -2603,7 +2734,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterKartPassPacket", 0))
+                    else if (hash == PacketHash.PqEnterKartPassPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrEnterKartPassPacket"))
                         {
@@ -2612,7 +2743,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartPassPlayTimePacket", 0))
+                    else if (hash == PacketHash.PqKartPassPlayTimePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassPlayTimePacket"))
                         {
@@ -2621,7 +2752,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartPassRewardPacket", 0))
+                    else if (hash == PacketHash.PqKartPassRewardPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrKartPassRewardPacket"))
                         {
@@ -2634,7 +2765,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterSeasonPassPacket", 0))
+                    else if (hash == PacketHash.PqEnterSeasonPassPacket)
                     {
                         byte SeasonPassType = iPacket.ReadByte();
                         using (OutPacket outPacket = new OutPacket("PrEnterSeasonPassPacket"))
@@ -2646,7 +2777,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSeasonPassRewardPacket", 0))
+                    else if (hash == PacketHash.PqSeasonPassRewardPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSeasonPassRewardPacket"))
                         {
@@ -2655,7 +2786,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqCheckPassword", 0))
+                    else if (hash == PacketHash.PqCheckPassword)
                     {
                         using (OutPacket outPacket = new OutPacket("PrCheckPassword"))
                         {
@@ -2664,7 +2795,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUnLockedItem", 0))
+                    else if (hash == PacketHash.PqUnLockedItem)
                     {
                         int useType = iPacket.ReadInt();
                         int stringType = iPacket.ReadInt();
@@ -2677,12 +2808,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteItemGet", 0)) //즐겨 찾기 목록
+                    else if (hash == PacketHash.PqFavoriteItemGet) //즐겨 찾기 목록
                     {
                         FavoriteItem.Favorite_Item(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqFavoriteItemUpdate", 0))
+                    else if (hash == PacketHash.PqFavoriteItemUpdate)
                     {
                         iPacket.ReadByte();
                         int j = iPacket.ReadInt();
@@ -2703,12 +2834,12 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLockedItemGet", 0))//아이템 보호
+                    else if (hash == PacketHash.PqLockedItemGet)//아이템 보호
                     {
                         LockedItem.LockedItemGet(this.Parent, this.Parent.Client.Nickname);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLockedItemUpdate", 0))
+                    else if (hash == PacketHash.PqLockedItemUpdate)
                     {
                         iPacket.ReadByte();
                         int j = iPacket.ReadInt();
@@ -2729,7 +2860,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSimGameSimpleInfoAndRankPacket", 0))
+                    else if (hash == PacketHash.PqSimGameSimpleInfoAndRankPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSimGameSimpleInfoAndRankPacket"))
                         {
@@ -2741,7 +2872,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSimGameEnterPacket", 0))
+                    else if (hash == PacketHash.PqSimGameEnterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSimGameEnterPacket"))
                         {
@@ -2750,7 +2881,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExchangeXPartsItem", 0))
+                    else if (hash == PacketHash.PqExchangeXPartsItem)
                     {
                         short KartType = iPacket.ReadShort();
                         iPacket.ReadShort();
@@ -2775,7 +2906,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqTimeShopPacket", 0))
+                    else if (hash == PacketHash.SpRqTimeShopPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTimeShopPacket"))
                         {
@@ -2784,7 +2915,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSecretShopEnterPacket", 0))
+                    else if (hash == PacketHash.PqSecretShopEnterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSecretShopEnterPacket"))
                         {
@@ -2793,7 +2924,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterUpgradeGearPacket", 0))
+                    else if (hash == PacketHash.PqEnterUpgradeGearPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrEnterUpgradeGearPacket"))
                         {
@@ -2802,7 +2933,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBlockCatchEnterPacket", 0))
+                    else if (hash == PacketHash.PqBlockCatchEnterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrBlockCatchEnterPacket"))
                         {
@@ -2825,7 +2956,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RqEnterFishingStagePacket", 0))
+                    else if (hash == PacketHash.RqEnterFishingStagePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("RpEnterFishingStagePacket"))
                         {
@@ -2834,7 +2965,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPcCafeShowcaseCoupon", 0))
+                    else if (hash == PacketHash.PqPcCafeShowcaseCoupon)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPcCafeShowcaseCoupon"))
                         {
@@ -2844,7 +2975,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderCareerSummary", 0))
+                    else if (hash == PacketHash.PqGetRiderCareerSummary)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderCareerSummary"))
                         {
@@ -2854,7 +2985,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("checkSecondAuthenPacket", 0))
+                    else if (hash == PacketHash.checkSecondAuthenPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("checkSecondAuthenPacket"))
                         {
@@ -2864,7 +2995,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqTestServerAddItemPacket", 0))
+                    else if (hash == PacketHash.PqTestServerAddItemPacket)
                     {
                         TestServer.Type = iPacket.ReadShort();
                         TestServer.ItemID = iPacket.ReadShort();
@@ -2872,7 +3003,7 @@ namespace KartRider
                         TestServer.TestServerAddItem(this.Parent);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerTime", 0))
+                    else if (hash == PacketHash.PqServerTime)
                     {
                         using (OutPacket outPacket = new OutPacket("PrServerTime"))
                         {
@@ -2881,7 +3012,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqLogin", 0))
+                    else if (hash == PacketHash.PqLogin)
                     {
                         GameDataReset.DataReset(this.Parent.Client.Nickname);
 
@@ -3011,7 +3142,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqSyncJackpotPointCS", 0))
+                    else if (hash == PacketHash.PqSyncJackpotPointCS)
                     {
                         using (OutPacket outPacket = new OutPacket("PrSyncJackpotPointCS"))
                         {
@@ -3020,11 +3151,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqEnterShopPacket", 0))
+                    else if (hash == PacketHash.PqEnterShopPacket)
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetlotteryMileageInfoPacket", 0))
+                    else if (hash == PacketHash.PqGetlotteryMileageInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetlotteryMileageInfoPacket"))
                         {
@@ -3033,7 +3164,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqTcCashEventUserInfoPacket", 0))
+                    else if (hash == PacketHash.PqTcCashEventUserInfoPacket)
                     {
                         uint unk1 = iPacket.ReadUInt();
                         byte unk2 = iPacket.ReadByte();
@@ -3047,11 +3178,11 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqServerSideUdpBindCheck", 0))
+                    else if (hash == PacketHash.PqServerSideUdpBindCheck)
                     {
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBoomhillExchangeInfo", 0))
+                    else if (hash == PacketHash.PqBoomhillExchangeInfo)
                     {
                         short Type = iPacket.ReadShort();
                         iPacket.ReadInt();
@@ -3065,7 +3196,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqBoomhillExchangeNeedNotice", 0))
+                    else if (hash == PacketHash.PqBoomhillExchangeNeedNotice)
                     {
                         using (OutPacket outPacket = new OutPacket("PrBoomhillExchangeNeedNotice"))
                         {
@@ -3074,7 +3205,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMixItemExchangeCount", 0))
+                    else if (hash == PacketHash.PqMixItemExchangeCount)
                     {
                         using (OutPacket outPacket = new OutPacket("PrMixItemExchangeCount"))
                         {
@@ -3083,14 +3214,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMixItem", 0))
+                    else if (hash == PacketHash.PqMixItem)
                     {
                         uint MixID = iPacket.ReadUInt();
                         int Type = iPacket.ReadInt();
                         Mix.GrtMixItem(this.Parent, MixID, Type);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("RqBoomhillExchangeKoin", 0))
+                    else if (hash == PacketHash.RqBoomhillExchangeKoin)
                     {
                         short Type = iPacket.ReadShort();
                         int Value = iPacket.ReadInt();
@@ -3106,7 +3237,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqUseInitialCardPacket", 0))
+                    else if (hash == PacketHash.SpRqUseInitialCardPacket)
                     {
                         var cardConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
                         cardConfig.Rider.Card = iPacket.ReadString();
@@ -3118,7 +3249,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12TuningLevelUp", 0))
+                    else if (hash == PacketHash.PqKart12TuningLevelUp)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3144,6 +3275,12 @@ namespace KartRider
                                 outPacket.WriteShort(kart);
                                 outPacket.WriteShort(sn);
                                 short Level = (short)((int)existingParts.Grade + 1);
+                                if (Level < 1 || Level > money.Length - 1)
+                                {
+                                    // 原实现不夹紧等级：第 5 次升级时 money[6] 直接越界踢线
+                                    Log.Warn($"[Tuning] 等级 {Level} 超出上限，拒绝升级");
+                                    return;
+                                }
                                 existingParts.Grade = Level;
                                 outPacket.WriteShort(Level);//1-1,2-3,3-6,4-10,5-15
                                 short Point = (short)((int)existingParts.SkillPoints + (int)Level);
@@ -3186,7 +3323,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12UnlockTuningSkill", 0))
+                    else if (hash == PacketHash.PqKart12UnlockTuningSkill)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3213,7 +3350,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12RestictTuningSkill", 0))
+                    else if (hash == PacketHash.PqKart12RestictTuningSkill)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3262,7 +3399,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12ChangeTuningSkill", 0))
+                    else if (hash == PacketHash.PqKart12ChangeTuningSkill)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3280,7 +3417,7 @@ namespace KartRider
                         KartExcData.AddLevel12List(this.Parent.Client.Nickname, kart, sn, -1, field, Skill, -1, -1);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12TuningPointUpdate", 0))
+                    else if (hash == PacketHash.PqKart12TuningPointUpdate)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3346,7 +3483,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelUp", 0))
+                    else if (hash == PacketHash.PqKart12PartsLevelUp)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3385,7 +3522,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKart12PartsLevelReset", 0))
+                    else if (hash == PacketHash.PqKart12PartsLevelReset)
                     {
                         short kart = iPacket.ReadShort();
                         short sn = iPacket.ReadShort();
@@ -3421,7 +3558,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqKartExceedTypeChange", 0))
+                    else if (hash == PacketHash.PqKartExceedTypeChange)
                     {
                         short kart1 = iPacket.ReadShort();
                         short sn1 = iPacket.ReadShort();
@@ -3468,7 +3605,7 @@ namespace KartRider
                         Console.WriteLine("ExceedType: " + ExceedType2);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendNRUserStatePacket", 0))
+                    else if (hash == PacketHash.PqMissionAttendNRUserStatePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendNRUserStatePacket"))
                         {
@@ -3477,7 +3614,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMissionAttendUserStatePacket", 0))
+                    else if (hash == PacketHash.PqMissionAttendUserStatePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrMissionAttendUserStatePacket"))
                         {
@@ -3486,9 +3623,14 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetlotteryMileageMultiInfoPacket", 0))
+                    else if (hash == PacketHash.PqGetlotteryMileageMultiInfoPacket)
                     {
                         int Count = iPacket.ReadInt();
+                        if (Count < 0 || Count > 64 || Count * 4 > iPacket.Available)
+                        {
+                            Log.Warn($"[Lottery] 非法数量 {Count}，已忽略");
+                            return;
+                        }
                         uint[] Data = new uint[Count];
                         for (int i = 0; i < Count; i++)
                         {
@@ -3506,7 +3648,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqReturnMissionSetPacket", 0))
+                    else if (hash == PacketHash.PqReturnMissionSetPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrReturnMissionSetPacket"))
                         {
@@ -3515,7 +3657,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPromiseEventEnterPacket", 0))
+                    else if (hash == PacketHash.PqPromiseEventEnterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPromiseEventEnterPacket"))
                         {
@@ -3524,7 +3666,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqReturnMissionRequestDataPacket", 0))
+                    else if (hash == PacketHash.PqReturnMissionRequestDataPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrReturnMissionRequestDataPacket"))
                         {
@@ -3533,7 +3675,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangEnterPacket", 0))
+                    else if (hash == PacketHash.PqHitPangPangEnterPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangEnterPacket"))
                         {
@@ -3542,7 +3684,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangInitPacket", 0))
+                    else if (hash == PacketHash.PqHitPangPangInitPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangInitPacket"))
                         {
@@ -3551,7 +3693,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqHitPangPangResultPacket", 0))
+                    else if (hash == PacketHash.PqHitPangPangResultPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrHitPangPangResultPacket"))
                         {
@@ -3560,7 +3702,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPlaytimePacket", 0))
+                    else if (hash == PacketHash.PqPlaytimePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPlaytimePacket"))
                         {
@@ -3569,7 +3711,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPersonalShopUserDataPacket", 0))
+                    else if (hash == PacketHash.PqPersonalShopUserDataPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPersonalShopUserDataPacket"))
                         {
@@ -3579,7 +3721,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqTimeShopOpenTimePacket", 0))
+                    else if (hash == PacketHash.PqTimeShopOpenTimePacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrTimeShopOpenTimePacket"))
                         {
@@ -3589,7 +3731,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetSlotDataList", 0))
+                    else if (hash == PacketHash.PqItemPresetSlotDataList)
                     {
                         var itemPresetConfig = ItemPresetsService.GetItemPresetConfig(this.Parent.Client.Nickname);
                         using (OutPacket outPacket = new OutPacket("PrItemPresetSlotDataList"))
@@ -3655,7 +3797,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetUpdateSlotData", 0))
+                    else if (hash == PacketHash.PqItemPresetUpdateSlotData)
                     {
                         using (OutPacket outPacket = new OutPacket("PrItemPresetUpdateSlotData"))
                         {
@@ -3666,7 +3808,10 @@ namespace KartRider
                         iPacket.ReadInt();
                         short id1 = iPacket.ReadShort();
                         short id2 = iPacket.ReadShort();
-                        var ItemPreset = itemPresetConfig.ItemPresets.FirstOrDefault(ItemPreset => ItemPreset.ID == id1 && ItemPreset.ID == id2);
+                        // 原实现用 (ID == id1 && ID == id2) 比较同一个属性，除非两值相等否则永远不命中，
+                        // 导致整个预设更新分支实际失效。这里优先按 id1 匹配，未命中再退回 id2。
+                        var ItemPreset = itemPresetConfig.ItemPresets.FirstOrDefault(p => p.ID == id1)
+                                         ?? itemPresetConfig.ItemPresets.FirstOrDefault(p => p.ID == id2);
                         if (ItemPreset != null)
                         {
                             ItemPreset.Badge = iPacket.ReadByte();
@@ -3715,7 +3860,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqItemPresetUseSlotData", 0))
+                    else if (hash == PacketHash.PqItemPresetUseSlotData)
                     {
                         short id = iPacket.ReadShort();
                         using (OutPacket outPacket = new OutPacket("PrItemPresetUseSlotData"))
@@ -3738,7 +3883,7 @@ namespace KartRider
                         ItemPresetsService.Save(this.Parent.Client.Nickname, usePresetConfig);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMyMsgrInfoPacket", 0))
+                    else if (hash == PacketHash.PqGetMyMsgrInfoPacket)
                     {
                         uint unk1 = iPacket.ReadUInt();
                         using (OutPacket outPacket = new OutPacket("PrGetMyMsgrInfoPacket"))
@@ -3750,10 +3895,32 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetMsgrFriendList", 0))
+                    else if (hash == PacketHash.PqWebEventCompleteCheckPacket)
+                    {
+                        using (OutPacket outPacket = new OutPacket("PrWebEventCompleteCheckPacket"))
+                        {
+                            outPacket.WriteInt(0);
+                            this.Parent.Client.Send(outPacket);
+                        }
+                        return;
+                    }
+                    else if (hash == PacketHash.PqGetMsgrFriendList)
                     {
                         uint unk1 = iPacket.ReadUInt();
                         var users = ClientManager.UserNOToNickname.Where(u => u.Value != this.Parent.Client.Nickname).ToList();
+
+                        // 3571：即使没有好友也必须回一次空列表，否则客户端会一直等
+                        if (users.Count == 0)
+                        {
+                            using (OutPacket emptyPacket = new OutPacket("PrGetMsgrFriendList"))
+                            {
+                                // 对齐官服尾部：总人数 0 + 段号 0 + 结尾 13 字节
+                                emptyPacket.WriteInt(0);
+                                emptyPacket.WriteInt(0);
+                                emptyPacket.WriteHexString("00 00 00 00 01 00 00 00 00 00 00 00 00");
+                                this.Parent.Client.Send(emptyPacket);
+                            }
+                        }
 
                         for (int start = 0; start < users.Count; start += 100)
                         {
@@ -3771,9 +3938,20 @@ namespace KartRider
 
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRepeatGetMsgrFriendList", 0))
+                    else if (hash == PacketHash.PqRepeatGetMsgrFriendList)
                     {
                         var users = ClientManager.UserNOToNickname.Where(u => u.Value != this.Parent.Client.Nickname).ToList();
+
+                        if (users.Count == 0)
+                        {
+                            using (OutPacket emptyPacket = new OutPacket("PrRepeatGetMsgrFriendList"))
+                            {
+                                GameSupport.GetMsgrFriendList(emptyPacket, 0, new List<KeyValuePair<uint, string>>());
+                                emptyPacket.WriteByte(1);
+                                emptyPacket.WriteBytes(new byte[8]);
+                                this.Parent.Client.Send(emptyPacket);
+                            }
+                        }
 
                         for (int start = 0; start < users.Count; start += 100)
                         {
@@ -3790,7 +3968,7 @@ namespace KartRider
 
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRefreshRecommendFriendList", 0))
+                    else if (hash == PacketHash.PqRefreshRecommendFriendList)
                     {
                         using (OutPacket outPacket = new OutPacket("PrRefreshRecommendFriendList"))
                         {
@@ -3799,7 +3977,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqRequestAddFriendPacket", 0))
+                    else if (hash == PacketHash.PqRequestAddFriendPacket)
                     {
                         uint UserID = iPacket.ReadUInt();
                         string UserName = ClientManager.GetNickname(UserID);
@@ -3818,7 +3996,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMsgrReceiveSendInfo", 0))
+                    else if (hash == PacketHash.PqMsgrReceiveSendInfo)
                     {
                         using (OutPacket outPacket = new OutPacket("PrMsgrReceiveSendInfo"))
                         {
@@ -3832,16 +4010,17 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionActiveMissionListPacket", 0))
+                    else if (hash == PacketHash.PqExpeditionActiveMissionListPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionActiveMissionListPacket"))
                         {
+                            // 对照官服日志：远征任务列表不是全 0，而是 3 条任务的结构
                             outPacket.WriteHexString("00 00 00 00 03 00 00 00 00 00 01 F2 B4 C8 37 47 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 F2 B4 C8 37 24 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 09 00 01 F2 B4 C8 37 1D 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 00 00 00 F2 B4 9C 27 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F2 B4 9C 27 02 B6 39 00 13 07 00 00 00 73 00 61 00 64 00 73 00 64 00 77 00 72 00 03 00 00 00 01 1E 00 F2 B4 9C 27 02 EC FC 49 7B 04 00 00 00 91 4E 77 6D 46 80 1D 52 02 00 00 00 02 0F 00 F2 B4 9C 27 02 65 1A 52 7D 05 00 00 00 89 91 84 76 05 6E CE 98 4A 55 02 00 00 00 01 14 00 03 00 00 00 00 00 00 03 00 00 00 00 07 00 00 F9 B4 18 15 00");
                             this.Parent.Client.Send(outPacket);
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionBuyMissionPacket", 0))
+                    else if (hash == PacketHash.PqExpeditionBuyMissionPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionBuyMissionPacket"))
                         {
@@ -3851,7 +4030,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqExpeditionMissionStartPacket", 0))
+                    else if (hash == PacketHash.PqExpeditionMissionStartPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrExpeditionMissionStartPacket"))
                         {
@@ -3862,7 +4041,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetRiderQuestUX2ndData", 0))
+                    else if (hash == PacketHash.PqGetRiderQuestUX2ndData)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetRiderQuestUX2ndData"))
                         {
@@ -3873,7 +4052,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqPlaytimeEventCompleteCheck", 0))
+                    else if (hash == PacketHash.PqPlaytimeEventCompleteCheck)
                     {
                         using (OutPacket outPacket = new OutPacket("PrPlaytimeEventCompleteCheck"))
                         {
@@ -3882,7 +4061,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PcGameRequestRelay", 0))
+                    else if (hash == PacketHash.PcGameRequestRelay)
                     {
                         int roomId = RoomManager.TryGetRoomId(this.Parent.Client.Nickname);
                         var room = RoomManager.GetRoom(roomId);
@@ -3901,7 +4080,7 @@ namespace KartRider
                         // }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChClientP2pAddrPacket", 0))
+                    else if (hash == PacketHash.ChClientP2pAddrPacket)
                     {
                         var ClientP2pAddr = iPacket.ReadEndPoint();
                         var p2pConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -3910,7 +4089,7 @@ namespace KartRider
                         Console.WriteLine($"[{this.Parent.Client.Nickname}] {ClientP2pAddr.Address}:{ClientP2pAddr.Port}");
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("ChClientUdpAddrPacket", 0))
+                    else if (hash == PacketHash.ChClientUdpAddrPacket)
                     {
                         var ClientUdpAddr = iPacket.ReadEndPoint();
                         var udpConfig = ProfileService.GetProfileConfig(this.Parent.Client.Nickname);
@@ -3919,7 +4098,7 @@ namespace KartRider
                         Console.WriteLine($"[{this.Parent.Client.Nickname}] {ClientUdpAddr.Address}:{ClientUdpAddr.Port}");
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqStartTrainingCenter", 0))
+                    else if (hash == PacketHash.PqStartTrainingCenter)
                     {
                         using (OutPacket outPacket = new OutPacket("PrStartTrainingCenter"))
                         {
@@ -3929,7 +4108,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqMIssionAttendGetCurUserInfoPacket", 0))
+                    else if (hash == PacketHash.PqMIssionAttendGetCurUserInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrMIssionAttendGetCurUserInfoPacket"))
                         {
@@ -3940,7 +4119,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqGetTreasureHuntMileageInfoPacket", 0))
+                    else if (hash == PacketHash.PqGetTreasureHuntMileageInfoPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrGetTreasureHuntMileageInfoPacket"))
                         {
@@ -3949,7 +4128,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("SpRqTreasureHuntPacket", 0))
+                    else if (hash == PacketHash.SpRqTreasureHuntPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("SpRpTreasureHuntPacket"))
                         {
@@ -3967,7 +4146,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqUseItemAccumCard", 0))
+                    else if (hash == PacketHash.PqUseItemAccumCard)
                     {
                         ushort itemCatId = iPacket.ReadUShort();
                         ushort itemId = iPacket.ReadUShort();
@@ -3975,7 +4154,7 @@ namespace KartRider
                         Stock.ItemAccumCard(this.Parent, itemCatId, itemId, count);
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("PqQuestUX2ndForShutDownPacket", 0))
+                    else if (hash == PacketHash.PqQuestUX2ndForShutDownPacket)
                     {
                         using (OutPacket outPacket = new OutPacket("PrQuestUX2ndForShutDownPacket"))
                         {
@@ -3984,7 +4163,7 @@ namespace KartRider
                         }
                         return;
                     }
-                    else if (hash == Adler32Helper.GenerateAdler32_ASCII("LoPingRequestPacket", 0))
+                    else if (hash == PacketHash.LoPingRequestPacket)
                     {
                         return;
                     }
