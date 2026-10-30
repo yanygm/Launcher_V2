@@ -581,25 +581,9 @@ public static class MultyPlayer
             int raw2 = iPacket.ReadInt();
             int raw3 = iPacket.ReadInt();
             byte[] RoomData = iPacket.ReadBytes(32);
+            iPacket.ReadBytes(5);
+            byte AiSwitch = iPacket.ReadByte();
             Log.Info($"[Room] create raw1={raw1} ai={AiCount} raw2={raw2} raw3={raw3} data={BitConverter.ToString(RoomData)}");
-            // 3563：RoomData 后有 29 字节固定块 + AiSwitch
-            // 3571：RoomData 后是 4 字节 + 1 字节 + AiSwitch（AI 勾选 = 06）
-            byte AiSwitch = 0;
-            if (iPacket.Available >= 30)
-            {
-                iPacket.ReadBytes(29);
-                AiSwitch = iPacket.Available > 0 ? iPacket.ReadByte() : (byte)0;
-            }
-            else if (iPacket.Available >= 6)
-            {
-                iPacket.ReadBytes(4);
-                iPacket.ReadByte();
-                AiSwitch = iPacket.ReadByte();
-            }
-            else if (iPacket.Available > 0)
-            {
-                AiSwitch = iPacket.ReadByte();
-            }
 
             if (UdpServer.GetUdp(Parent.Client.Nickname).Item2 == 0)
             {
@@ -2245,24 +2229,68 @@ public static class MultyPlayer
 
     static void AddAis(GameRoom room, int count, byte randomTrackGameType)
     {
+        if (room == null || count <= 0)
+        {
+            return;
+        }
         var selector = new DictionaryRandomSelector();
-        List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 8);
-        List<short> randomKartIds = null;
+        // 要补的 AI 数量与角色/卡丁车字典容量无关：字典可能只有 6 个角色，
+        // 而 ai=8 建房要补 7 个 AI。字典不够时必须跨轮重复抽取，
+        // 否则只会加出 min(count, 字典数) 个（表现为“AI 数量少一个”）。
+        int want = Math.Min(count, 8);
+        var charPool = aiCharacterDict.Keys.ToList();
+        if (charPool.Count == 0)
+        {
+            Log.Warn($"[Room] 无可用 AI 角色，跳过添加 {count} 个 AI");
+            return;
+        }
+        var rng = new Random();
+        List<short> randomCharIds = new List<short>(want);
+        while (randomCharIds.Count < want)
+        {
+            foreach (short id in charPool.OrderBy(_ => rng.Next()))
+            {
+                randomCharIds.Add(id);
+                if (randomCharIds.Count >= want)
+                {
+                    break;
+                }
+            }
+        }
+        List<short> kartPool;
         if (randomTrackGameType == 0)
         {
-            randomKartIds = selector.GetRandomKartIds(aiKartDict, 8, true, false);
+            kartPool = selector.GetRandomKartIds(aiKartDict, want, true, false);
         }
         else if (randomTrackGameType == 1)
         {
-            randomKartIds = selector.GetRandomKartIds(aiKartDict, 8, false, true);
+            kartPool = selector.GetRandomKartIds(aiKartDict, want, false, true);
+        }
+        else
+        {
+            kartPool = new List<short>();
+        }
+        // 可用卡丁车不足时同样跨轮重复；一辆都没有时用 0（默认车）
+        List<short> randomKartIds = new List<short>(want);
+        while (kartPool.Count > 0 && randomKartIds.Count < want)
+        {
+            foreach (short id in kartPool.OrderBy(_ => rng.Next()))
+            {
+                randomKartIds.Add(id);
+                if (randomKartIds.Count >= want)
+                {
+                    break;
+                }
+            }
         }
         int aiCount = 0;
         int redCount = room.GetTeamMemberCount(1);
         int blueCount = room.GetTeamMemberCount(2);
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < randomCharIds.Count && aiCount < count; i++)
         {
             short targetCharId = randomCharIds[i];
-            short targetKartId = randomKartIds[i];
+            // 卡丁车数量可能少于角色数量：不足时用 0（默认/随机车），不能按下标硬取
+            short targetKartId = i < randomKartIds.Count ? randomKartIds[i] : (short)0;
             if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
             {
                 short? ridIndex = selector.GetRandomRidIndex(targetChar);
@@ -2276,8 +2304,33 @@ public static class MultyPlayer
                     goggleId = selector.GetRandomAccessoryId(targetChar.Goggles);
                 }
                 // 按当前红蓝人数均衡分配（原来固定前 4 个蓝、后 4 个红，
-                // 少于 4 个 AI 时会全在蓝方）
-                byte team = blueCount <= redCount ? (byte)2 : (byte)1;
+                // 少于 4 个 AI 时会全在蓝方）。
+                // 注意：个人赛建房时房主是 AddPlayer(team:0)，不属于任何一队，
+                // GetTeamMemberCount(2) 为 0 会一直往 0-3 槽塞；该区被房主+3 个 AI 占满后
+                // TrySetAi 返回 255，结果 7 个 AI 只加了 6 个。这里以实际空槽为准。
+                int freeBlue = 0;
+                for (int s = 0; s < 4; s++)
+                {
+                    if (room._slots[s] == null)
+                    {
+                        freeBlue++;
+                    }
+                }
+                int freeRed = 0;
+                for (int s = 4; s < 8; s++)
+                {
+                    if (room._slots[s] == null)
+                    {
+                        freeRed++;
+                    }
+                }
+                if (freeBlue == 0 && freeRed == 0)
+                {
+                    break; // 房间已满
+                }
+                byte team = freeBlue == 0 ? (byte)1
+                          : freeRed == 0 ? (byte)2
+                          : (blueCount <= redCount ? (byte)2 : (byte)1);
                 if (team == 2) { blueCount++; } else { redCount++; }
                 Ai ai = new Ai
                 {
@@ -2289,7 +2342,13 @@ public static class MultyPlayer
                     Goggle = goggleId ?? 0,
                     Team = team
                 };
-                if (room.TrySetAi(ai, team) != 255)
+                byte slot = room.TrySetAi(ai, team);
+                if (slot == 255)
+                {
+                    // 均衡计算与槽位分区不一致时（房主 team=0 / 双人组队）兜底换另一队
+                    slot = room.TrySetAi(ai, team == 2 ? (byte)1 : (byte)2);
+                }
+                if (slot != 255)
                 {
                     aiCount++;
                 }
@@ -2299,6 +2358,7 @@ public static class MultyPlayer
                 }
             }
         }
+        Log.Debug($"[Room] AI 添加完成：请求 {count}，实际 {aiCount}，角色池 {charPool.Count}，车池 {kartPool.Count}");
     }
 
     static void AddAi(SessionGroup Parent, int roomId, int ID)
@@ -2307,9 +2367,15 @@ public static class MultyPlayer
         if (room == null)
         {
             Log.Info($"GetRoom Failed, roomId = {roomId}");
+            return;
         }
         var selector = new DictionaryRandomSelector();
         List<short> randomCharIds = selector.GetRandomCharacterIds(aiCharacterDict, 2);
+        if (randomCharIds.Count == 0)
+        {
+            Log.Warn("[Room] 无可用 AI 角色，跳过添加 AI");
+            return;
+        }
         List<short> randomKartIds = new List<short>();
         if (room.RandomTrackGameType == 0)
         {
@@ -2322,10 +2388,11 @@ public static class MultyPlayer
         if (room.GameType == 3 || room.GameType == 4)
         {
             var Ais = new List<Ai>();
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 2 && i < randomCharIds.Count; i++)
             {
                 short targetCharId = randomCharIds[i];
-                short targetKartId = randomKartIds[i];
+                // 卡丁车筛选后可能为空：不足时用 0，不能按下标硬取
+                short targetKartId = i < randomKartIds.Count ? randomKartIds[i] : (short)0;
                 if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
                 {
                     short? ridIndex = selector.GetRandomRidIndex(targetChar);
@@ -2348,6 +2415,12 @@ public static class MultyPlayer
                         Goggle = goggleId ?? 0
                     });
                 }
+            }
+            if (Ais.Count < 2)
+            {
+                // 角色字典不足 2 个时无法凑齐组队 AI，直接放弃，避免 Ais[1] 越界
+                Log.Warn($"[Room] AI 角色不足（{Ais.Count}/2），跳过组队 AI 添加");
+                return;
             }
             byte slot0 = room.TrySetAi(Ais[0], 2);
             byte slot1 = room.TrySetAi(Ais[1], 1);
@@ -2383,7 +2456,7 @@ public static class MultyPlayer
         else
         {
             short targetCharId = randomCharIds[0];
-            short targetKartId = randomKartIds[0];
+            short targetKartId = randomKartIds.Count > 0 ? randomKartIds[0] : (short)0;
             if (aiCharacterDict.TryGetValue(targetCharId, out var targetChar))
             {
                 short? ridIndex = selector.GetRandomRidIndex(targetChar);

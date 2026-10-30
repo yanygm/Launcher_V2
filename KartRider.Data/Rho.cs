@@ -450,7 +450,7 @@ namespace KartRider
                                 ClientItemRules.Load(packFileInfo.GetData());
                                 ClientItemRules.LogSummary();
                             }
-                            if (fullName == "item/slot/transformByKart.bml")
+                            if (fullName == "item/slot/transformByKart.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] tb = packFileInfo.GetData();
@@ -459,7 +459,7 @@ namespace KartRider
                                     ClientItemRules.ApplyTransformByKart(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/transformByKart@cn.bml")
+                            if (fullName == "item/slot/transformByKart@cn.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] td = packFileInfo.GetData();
@@ -468,7 +468,7 @@ namespace KartRider
                                     ClientItemRules.ApplyTransformByKart(XDocument.Load(ms), true);
                                 }
                             }
-                            if (fullName == "item/slot/fired2Gain.bml")
+                            if (fullName == "item/slot/fired2Gain.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] bd = packFileInfo.GetData();
@@ -477,7 +477,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFired2Gain(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/fired2Gain@cn.bml")
+                            if (fullName == "item/slot/fired2Gain@cn.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
@@ -486,7 +486,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFired2Gain(XDocument.Load(ms), true);
                                 }
                             }
-                            if (fullName == "item/slot/firing2Gain.bml")
+                            if (fullName == "item/slot/firing2Gain.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] bd = packFileInfo.GetData();
@@ -495,7 +495,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/firing2Gain@cn.bml")
+                            if (fullName == "item/slot/firing2Gain@cn.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
@@ -504,7 +504,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), true);
                                 }
                             }
-                            if (fullName == "zeta_/cn/content/itemGameRestrictionItemCount.bml")
+                            if (fullName == "zeta_/cn/content/itemGameRestrictionItemCount.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] rd = packFileInfo.GetData();
@@ -513,7 +513,7 @@ namespace KartRider
                                     ItemRule.LoadRestrictions(XDocument.Load(ms), name => ClientItemRules.ResolveName(name));
                                 }
                             }
-                            if (fullName == "item/slot/itemProb_indi@zz.bml")
+                            if (fullName == "item/slot/itemProb_indi@zz.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] probData = packFileInfo.GetData();
@@ -522,7 +522,7 @@ namespace KartRider
                                     ItemRule.ApplyFromClient(2, XDocument.Load(probStream));
                                 }
                             }
-                            if (fullName == "item/slot/itemProb_team2@cn.bml")
+                            if (fullName == "item/slot/itemProb_team2@cn.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] probData = packFileInfo.GetData();
@@ -532,7 +532,7 @@ namespace KartRider
                                 }
                             }
                             // 道具概率表改为内置规则（Room/ItemRule.cs），不再读取客户端的 itemProb BML
-                            if (fullName == $"zeta_/{regionCode}/content/basicAI.bml")
+                            if (fullName == $"zeta_/{regionCode}/content/basicAI.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();

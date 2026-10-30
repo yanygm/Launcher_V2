@@ -93,8 +93,27 @@ namespace KartRider
             }
             catch (Exception ex)
             {
-                KartRider.Logging.Log.Warn($"[Packet] 处理异常 {Parent?.Client?.Nickname}@{Parent?.Client?.GetRemoteAddress()}: {ex.GetType().Name} {ex.Message}");
+                // 异常日志必须能定位到具体包：包名（查不到用 uint 十进制）+ 长度 + 出错偏移 + 载荷前 64 字节 + 堆栈。
+                // 否则只剩 "Index was out of range"，无法判断是哪个包、哪个字段读越界。
+                int len = iPacket?.Length ?? 0;
+                KartRider.Logging.Log.Warn(
+                    $"[Packet] 处理异常 {Parent?.Client?.Nickname}@{Parent?.Client?.GetRemoteAddress()}: "
+                    + $"packet={DescribePacket(iPacket)} len={len} pos={iPacket?.Position ?? 0} "
+                    + $"data={PacketRing.GroupHex(iPacket?.GetRawBuffer(), 0, Math.Min(len, 64))} "
+                    + $"{ex.GetType().Name} {ex.Message}",
+                    ex);
             }
+        }
+
+        /// <summary>仅用于异常日志：把帧首 4 字节解析成包名，查不到枚举名时返回 uint 十进制值。</summary>
+        private static string DescribePacket(InPacket packet)
+        {
+            if (packet == null || packet.Length < 4)
+            {
+                return "?";
+            }
+            uint opcode = BitConverter.ToUInt32(packet.GetRawBuffer(), 0);
+            return Enum.GetName(typeof(PacketName), opcode) ?? opcode.ToString();
         }
 
         private void OnPacketCore(InPacket iPacket)
