@@ -541,6 +541,18 @@ namespace KartLibrary.File.Lpk
         private const uint HEAD_LENGTH_MASK = 0xFFFFFFD3u; // (uint)((sbyte)HEAD_TAG_BYTE >> 1)
 
         /// <summary>
+        /// 官方打包器的 zlib 判定阈值：压缩收益达到 10% 才写 flags=7，否则写 flags=6 直存。
+        /// 依据：抽测 1003 条官方记录，flags=7 的最小节省率 10.7%、flags=6 中位数 0%；
+        /// 用该阈值预测官方选择命中 99.1%（按后缀+大小分只有约 96%，故官方并不按后缀判定）。
+        /// </summary>
+        private const int ZLIB_MIN_SAVING_PERCENT = 10;
+
+        private static bool ZlibWorthIt(int dsize, int csize)
+        {
+            return (long)csize * 100 <= (long)dsize * (100 - ZLIB_MIN_SAVING_PERCENT);
+        }
+
+        /// <summary>
         /// 将一组文件编码为 LPK v4 分包（与 <see cref="Decode"/> 对称）。
         /// 记录表与头部按原生读取顺序分块做 ChaCha20 加密，数据区各文件按 1024 字节对齐。
         /// </summary>
@@ -701,11 +713,11 @@ namespace KartLibrary.File.Lpk
                     }
                     else
                     {
-                        // 官方打包器的策略：压缩确实变小才写 flags=7（zlib），否则写 flags=6 直接存储。
-                        // 若压缩无收益仍写 flags=7，会出现 csize > dsize，客户端按压缩路径读取时崩溃
-                        // （已实测：kart_/slrProXUN/shadow.png 4834 -> 4845）。
+                        // 官方判据：压缩收益 >= 10% 才写 flags=7，否则直存。
+                        // 这也保证了不会出现 csize > dsize 的 flags=7
+                        // （实测该情况会让客户端崩溃：kart_/slrProXUN/shadow.png 4834 -> 4845）。
                         byte[] compressed = ZlibDeflate(data);
-                        if (compressed.Length < data.Length)
+                        if (ZlibWorthIt(data.Length, compressed.Length))
                         {
                             flags = 7;
                             stored = compressed.Length <= 1024 ? PadTo64(compressed) : compressed;
