@@ -172,20 +172,13 @@ public static class ClientItemRules
             TransformMap[(kartId, from)] = new Rule { From = from, To = to, Probability = prob };
         }
 
-        // 按车重建 Convert 列表（@cn 覆盖 base 的同一 (车, 原道具)）
-        var byKart = TransformMap.GroupBy(kv => kv.Key.Kart)
-                                 .ToDictionary(g => g.Key, g => g.Select(kv => kv.Value).ToList());
-        foreach (KeyValuePair<int, List<Rule>> kv in byKart)
-        {
-            if (!Rules.TryGetValue(kv.Key, out KartRule rule))
-            {
-                rule = new KartRule();
-                Rules[kv.Key] = rule;
-            }
-            rule.Convert.Clear();
-            rule.Convert.AddRange(kv.Value);
-        }
-        return byKart.Count;
+        // 只统计涉及车辆数：**不要**再把 transformByKart 的条目写进 rule.Convert。
+        // transformByKart 是「开箱转换」表，只能由 TryGetTransform 在 type==1（吃箱子）时套用；
+        // rule.Convert 会被 GetItemSkill 无条件应用（type=1 / type=2 都会走），
+        // 一旦双写进去，「更换道具（变更卡）」也会被转成黄金盾牌，而且开箱时会被判定两次
+        // （TryConvert 25% + TryGetTransform 25% → 实际 43.75%）。
+        // 例：塞贝克 V1 / 金兔 V1 / 黄金天马流星 V1 的「获得道具箱时…获得[黄金盾牌]」。
+        return TransformMap.Select(kv => kv.Key.Kart).Distinct().Count();
     }
 
     /// <summary>

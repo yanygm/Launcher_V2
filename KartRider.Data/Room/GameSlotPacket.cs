@@ -53,19 +53,26 @@ public class SlotData
                 int rank = ItemRule.ComputeRank(room, id, playerRank, playerCount);
                 bool rareCapped = room.RareCount(id) >= ItemRule.RareCapPerGame;
                 // 统一由服务端抽签（type=2 时 skill2 是“被切换的道具”，不能直接回给客户端）
-                short skill = ItemRule.Roll(room.GameType, playerCount, rank, rareCapped);
+                short rolled = ItemRule.Roll(room.GameType, playerCount, rank, rareCapped);
+                short skill = rolled;
 
-                skill = GetItemSkill(Parent.Client.Nickname, skill);
-
-                // 词条“获得[道具]时转换为[道具]”：按 transformByKart 概率改写抽到的道具
-                int itemKart = type == 1 ? (ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem?.Set_Kart ?? 0) : 0;
-                if (itemKart != 0
-                    && ClientItemRules.TryGetTransform(itemKart, skill, out ClientItemRules.Rule transformRule, out int transformProb)
-                    && Random.Shared.Next(100) < transformProb)
+                // ① 开箱转换（transformByKart）：只认 type==1（吃箱子），并且用“抽签原值”查表。
+                //    用改写后的值查表会让“获得[加速器]时转换为[黄金加速器]”先把 booster 改掉，
+                //    表里的 booster→goldShield 就永远不触发了。
+                if (type == 1)
                 {
-                    Log.Debug($"[Transform] {Parent.Client.Nickname} 车 {itemKart}：{skill} → {transformRule.To}（{transformProb}%）");
-                    skill = transformRule.To;
+                    int itemKart = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem?.Set_Kart ?? 0;
+                    if (itemKart != 0
+                        && ClientItemRules.TryGetTransform(itemKart, rolled, out ClientItemRules.Rule transformRule, out int transformProb)
+                        && Random.Shared.Next(100) < transformProb)
+                    {
+                        Log.Debug($"[Transform] {Parent.Client.Nickname} 车 {itemKart}：{rolled} → {transformRule.To}（{transformProb}%）");
+                        skill = transformRule.To;
+                    }
                 }
+
+                // ② 词条改写（纯文本规则：获得[X]时转换为[Y] / 将[X]变更为[Y]）：开箱与使用后获得都套
+                skill = GetItemSkill(Parent.Client.Nickname, skill);
                 if (ItemRule.IsRare(skill) && !room.TryConsumeRare(id, ItemRule.AllowLimit(skill) > 0 ? ItemRule.AllowLimit(skill) : 2))
                 {
                     // 词条转换后变成稀有道具但名额已满：退回加速器
