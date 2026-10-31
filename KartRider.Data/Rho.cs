@@ -66,7 +66,7 @@ namespace KartRider
                                     }
                                 }
                             }
-                            if (IsTrackDataFile(fullName, "randomTrack@"))
+                            if (IsTrackDataFile(fullName, $"randomTrack@{regionCode}"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
@@ -76,7 +76,7 @@ namespace KartRider
                                 }
                             }
                             // 不再死写 track/ 与 zz：补丁包可能是 track_/ 或其它区服后缀，只要文件名对得上就读取
-                            if (IsTrackDataFile(fullName, "track@"))
+                            if (IsTrackDataFile(fullName, $"track@zz"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
@@ -87,7 +87,7 @@ namespace KartRider
                                     ProcessTrackList(trackDocument, fullName);
                                 }
                             }
-                            if (IsTrackDataFile(fullName, "trackLocale@"))
+                            if (IsTrackDataFile(fullName, $"trackLocale@{regionCode}"))
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
