@@ -5,6 +5,7 @@ using Profile;
 using RiderData;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Xml;
 
@@ -30,99 +31,22 @@ namespace KartRider
 
         public void FlyingPet_Spec(ushort FlyingPetID)
         {
-            if (FlyingPet.flyingName.ContainsKey(FlyingPetID))
+            if (FlyingPet.flyingName.TryGetValue(FlyingPetID, out string petName))
             {
-                string Name = FlyingPet.flyingName[FlyingPetID];
-                Log.Debug($"flying:{FlyingPetID},Name:{Name}");
-                if (FlyingPet.flyingSpec.ContainsKey(Name))
-                {
-                    XmlDocument Spec = FlyingPet.flyingSpec[Name];
-                    foreach (XmlNode petParamNode in Spec)
-                    {
-                        float value;
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["DragFactor"] != null && float.TryParse(petParamNode.Attributes["DragFactor"].Value, out value))
-                        {
-                            this.DragFactor = value;
-                        }
-                        else
-                        {
-                            this.DragFactor = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["ForwardAccelForce"] != null && float.TryParse(petParamNode.Attributes["ForwardAccelForce"].Value, out value))
-                        {
-                            this.ForwardAccelForce = value;
-                        }
-                        else
-                        {
-                            this.ForwardAccelForce = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["DriftEscapeForce"] != null && float.TryParse(petParamNode.Attributes["DriftEscapeForce"].Value, out value))
-                        {
-                            this.DriftEscapeForce = value;
-                        }
-                        else
-                        {
-                            this.DriftEscapeForce = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["CornerDrawFactor"] != null && float.TryParse(petParamNode.Attributes["CornerDrawFactor"].Value, out value))
-                        {
-                            this.CornerDrawFactor = value;
-                        }
-                        else
-                        {
-                            this.CornerDrawFactor = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["NormalBoosterTime"] != null && float.TryParse(petParamNode.Attributes["NormalBoosterTime"].Value, out value))
-                        {
-                            this.NormalBoosterTime = value;
-                        }
-                        else
-                        {
-                            this.NormalBoosterTime = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["ItemBoosterTime"] != null && float.TryParse(petParamNode.Attributes["ItemBoosterTime"].Value, out value))
-                        {
-                            this.ItemBoosterTime = value;
-                        }
-                        else
-                        {
-                            this.ItemBoosterTime = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["TeamBoosterTime"] != null && float.TryParse(petParamNode.Attributes["TeamBoosterTime"].Value, out value))
-                        {
-                            this.TeamBoosterTime = value;
-                        }
-                        else
-                        {
-                            this.TeamBoosterTime = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["StartForwardAccelItem"] != null && float.TryParse(petParamNode.Attributes["StartForwardAccelItem"].Value, out value))
-                        {
-                            this.StartForwardAccelForceItem = value;
-                        }
-                        else
-                        {
-                            this.StartForwardAccelForceItem = 0f;
-                        }
-
-                        if (petParamNode.Attributes != null && petParamNode.Attributes["StartForwardAccelSpeed"] != null && float.TryParse(petParamNode.Attributes["StartForwardAccelSpeed"].Value, out value))
-                        {
-                            this.StartForwardAccelForceSpeed = value;
-                        }
-                        else
-                        {
-                            this.StartForwardAccelForceSpeed = 0f;
-                        }
-                        break;
-                    }
-                }
+                Log.Debug($"flying:{FlyingPetID},Name:{petName}");
+                // 必须从根节点读属性：原来 foreach 遍历 XmlDocument 时第一个节点是 <?xml ...?> 声明节点，
+                // 它没有属性，于是所有数值被写成 0 后立刻 break，根节点 <PetParam> 永远读不到。
+                XmlElement petParam = FindSpecElement(petName);
+                this.DragFactor = ReadFloat(petParam, "DragFactor");
+                this.ForwardAccelForce = ReadFloat(petParam, "ForwardAccelForce");
+                this.DriftEscapeForce = ReadFloat(petParam, "DriftEscapeForce");
+                this.CornerDrawFactor = ReadFloat(petParam, "CornerDrawFactor");
+                this.NormalBoosterTime = ReadFloat(petParam, "NormalBoosterTime");
+                this.ItemBoosterTime = ReadFloat(petParam, "ItemBoosterTime");
+                this.TeamBoosterTime = ReadFloat(petParam, "TeamBoosterTime");
+                // 客户端实际写的是 StartForwardAccelItem / StartForwardAccelSpeed，旧写法一并兼容
+                this.StartForwardAccelForceItem = ReadFloat(petParam, "StartForwardAccelItem", "StartForwardAccelForceItem");
+                this.StartForwardAccelForceSpeed = ReadFloat(petParam, "StartForwardAccelSpeed", "StartForwardAccelForceSpeed");
             }
             Log.Debug($"-------------------------------------------------------------");
             Log.Debug($"FlyingPet DragFactor:{this.DragFactor}");
@@ -135,6 +59,57 @@ namespace KartRider
             Log.Debug($"FlyingPet StartForwardAccelForceItem:{this.StartForwardAccelForceItem}");
             Log.Debug($"FlyingPet StartForwardAccelForceSpeed:{this.StartForwardAccelForceSpeed}");
             Log.Debug($"-------------------------------------------------------------");
+        }
+
+        /// <summary>按飞宠名字找参数 XML 的根节点：先精确匹配，再忽略大小写 / 路径后缀匹配。</summary>
+        private static XmlElement FindSpecElement(string petName)
+        {
+            if (string.IsNullOrWhiteSpace(petName)) return null;
+            string name = petName.Trim().TrimEnd('/');
+            if (FlyingPet.flyingSpec.TryGetValue(name, out XmlDocument exact) && exact != null)
+            {
+                return exact.DocumentElement;
+            }
+            foreach (KeyValuePair<string, XmlDocument> pair in FlyingPet.flyingSpec)
+            {
+                if (pair.Value == null) continue;
+                string key = pair.Key.TrimEnd('/');
+                if (key.Equals(name, StringComparison.OrdinalIgnoreCase) ||
+                    key.EndsWith("/" + name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Value.DocumentElement;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>读取浮点属性：属性名忽略大小写、支持多个别名，数值固定按 InvariantCulture 解析。</summary>
+        private static float ReadFloat(XmlElement element, params string[] attributeNames)
+        {
+            if (element == null || attributeNames == null) return 0f;
+            foreach (string attributeName in attributeNames)
+            {
+                string text = GetAttribute(element, attributeName);
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)) return value;
+                if (float.TryParse(text, out value)) return value;
+            }
+            return 0f;
+        }
+
+        private static string GetAttribute(XmlElement element, string attributeName)
+        {
+            if (element?.Attributes == null) return string.Empty;
+            XmlAttribute attribute = element.Attributes[attributeName];
+            if (attribute != null) return attribute.Value;
+            foreach (XmlAttribute candidate in element.Attributes)
+            {
+                if (string.Equals(candidate.Name, attributeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate.Value;
+                }
+            }
+            return string.Empty;
         }
     }
 }

@@ -49,8 +49,6 @@ namespace Profile
         /// <summary>控制台输出开关（默认开）。关掉后控制台不再打印日志，但窗口仍由 Console 控制。</summary>
         public bool LogEnabled { get; set; } = true;
 
-        /// <summary>是否把日志写入 Logs\*.log 文件（默认关：只要控制台，不落盘）。</summary>
-
         /// <summary>是否在启动时向已有 ModelMax.xml 追加新车（默认关，避免覆盖手改内容）。</summary>
         public bool ModelMaxAutoUpdate { get; set; } = false;
 
@@ -87,7 +85,7 @@ namespace Profile
         public int StartReadyTimeoutMs { get; set; } = 15000;
 
         /// <summary>日志级别：Trace/Debug/Info/Warn/Error/None</summary>
-        public string LogLevel { get; set; } = "Info";
+        public string LogLevel { get; set; } = "Debug";
 
         /// <summary>是否记录每个包的十六进制（默认开：控制台与 Logs\packets.log 都能看到对局包）</summary>
         public bool PacketTrace { get; set; } = true;

@@ -81,6 +81,8 @@ namespace KartRider
             }
             else
             {
+                // 先建 Profile 数据目录并开启大小写敏感：否则昵称 abc / ABC 会共用一个目录互相覆盖
+                FileName.EnsureProfileDir();
                 ProfileService.LoadSettings();
                 ApplyLogSettings();
                 ClientItemRules.SetEnabled(!noKartRules);

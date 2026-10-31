@@ -22,6 +22,7 @@ namespace KartRider
     public static class KartRhoFile
     {
         public static string regionCode = "cn";
+
         public static LpkFolderManager Dump(string input)
         {
             try
@@ -54,8 +55,8 @@ namespace KartRider
                             if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.xml"))
                             {
                                 Log.Debug(fullName);
-                                string name = fullName.Substring(10, fullName.Length - 23);
-                                if (!(FlyingPet.flyingSpec.ContainsKey(name)))
+                                string name = GetFlyingPetSpecName(fullName, regionCode);
+                                if (!string.IsNullOrEmpty(name) && !FlyingPet.flyingSpec.ContainsKey(name))
                                 {
                                     byte[] data = packFileInfo.GetData();
                                     using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
@@ -831,6 +832,7 @@ namespace KartRider
                 return null;
             }
         }
+
         private static byte[] ReplaceBytes(byte[] data)
         {
             byte[] oldBytes = new byte[] {
@@ -888,10 +890,12 @@ namespace KartRider
             Array.Resize(ref result, resultIndex);
             return result;
         }
+
         private static string ReplacePath(string file)
         {
             return file.IndexOf(".rho") > -1 ? file.Substring(0, file.IndexOf(".rho")).Replace("_", "/") + file.Substring(file.IndexOf(".rho") + 4) : file;
         }
+
         private static bool StreamsAreEqual(Stream stream1, Stream stream2)
         {
             const int bufferSize = 4096;
@@ -920,6 +924,7 @@ namespace KartRider
                 return false;
             }
         }
+
         /// <summary>
         /// trackLocale@{regionCode}.xml：内容与 track@zz.xml 重复（这里带本地化名称与 basicAi），
         /// 统一交给 RandomTrack.AddTrack 合并，同一张地图在 TrackList 里只会保存一份。
@@ -989,10 +994,24 @@ namespace KartRider
             processVariant("track_rvs", "rvs");
             Log.Info($"[Track] {sourceName}: 共 {total} 条赛道节点，新增 {RandomTrack.TrackList.Count - before} 条，跳过 {skipped} 条，TrackList 现有 {RandomTrack.TrackList.Count} 条");
         }
+
         /// <summary>
-        /// 判断 lpk 内文件是否是赛道数据（track@xx.xml / trackLocale@xx.xml / randomTrack@xx.xml）。
-        /// 只比对文件名，允许任意前置目录与任意区服后缀（track/、track_/、补丁包里的新目录都能命中）。
+        /// 从 flyingPet/xxx/param@cn.xml 里取出飞宠参数名（取 param@xx.xml 所在目录的最后一级）。
+        /// 客户端里还有 flyingPet/xxx/xxx/param@cn.xml 这种多一层目录的写法，
+        /// 原来固定 Substring(10, len-23) 会得到 "xxx/" 这种带斜杠的 key，永远匹配不上 flyingName。
         /// </summary>
+        private static string GetFlyingPetSpecName(string fullName, string regionCode)
+        {
+            if (string.IsNullOrEmpty(fullName)) return string.Empty;
+            string normalized = fullName.Replace('\\', '/');
+            int index = normalized.LastIndexOf($"param@{regionCode}.xml", StringComparison.OrdinalIgnoreCase);
+            if (index < 0) index = normalized.LastIndexOf("param@", StringComparison.OrdinalIgnoreCase);
+            if (index < 0) return string.Empty;
+            string folder = normalized.Substring(0, index).TrimEnd('/');
+            int slash = folder.LastIndexOf('/');
+            return (slash >= 0 ? folder.Substring(slash + 1) : folder).Trim();
+        }
+
         private static bool IsTrackDataFile(string filePath, string fileNamePrefix)
         {
             if (string.IsNullOrEmpty(filePath)) return false;
@@ -1109,6 +1128,7 @@ namespace KartRider
             processVariant("track_rvs", "rvs");
             Log.Info($"[Track] {sourceName}: 共 {total} 条赛道节点，新增 {RandomTrack.TrackList.Count - before} 条，跳过 {skipped} 条，TrackList 现有 {RandomTrack.TrackList.Count} 条");
         }
+
         private static List<int> CountChildren(XElement element, int level, List<int> childCounts)
         {
             var childCount = element.Elements().Count();
