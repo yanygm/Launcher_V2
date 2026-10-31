@@ -36,12 +36,28 @@ public class PatchManager
             string PatchListUrl = fullUri.ToString();
             string TempPath = Path.Combine(gamePath, "temp");
             string PatchListPath = Path.Combine(gamePath, "NT.txf");
+            string LocalPatchListPath = Path.Combine(gamePath, "LK.txf");
 
             ServicePointManager.DefaultConnectionLimit = 100;
             Log.Info($"=== 跑跑卡丁车自动更新器 ===");
 
             if (!Directory.Exists(TempPath))
                 Directory.CreateDirectory(TempPath);
+
+            // 更新前先保留原 LK.txf 内容，更新完成后在其基础上合并，而不是直接覆盖
+            var originalPatchLines = new List<string>();
+            if (File.Exists(LocalPatchListPath))
+            {
+                var originalContent = await File.ReadAllTextAsync(LocalPatchListPath);
+                originalPatchLines = originalContent
+                    .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                    .ToList();
+                Log.Info($"已读取原 LK.txf，共 {originalPatchLines.Count} 条记录");
+            }
+            else
+            {
+                Log.Info($"本地未找到 LK.txf，将按服务器列表生成");
+            }
 
             Log.Info($"正在下载补丁列表...");
             Log.Info($"URL: {PatchListUrl}");
@@ -113,22 +129,21 @@ public class PatchManager
 
             Log.Info($"\n=== 全部更新完成 ===");
 
-            // 重命名 NT.txf 为 LK.txf
+            // NT.txf 已包含全部条目，直接以它为基准生成 LK.txf，并与原 LK.txf 对比标注变化
             try
             {
                 if (File.Exists(PatchListPath))
                 {
-                    string lkPath = Path.Combine(gamePath, "LK.txf");
-                    if (File.Exists(lkPath))
-                    {
-                        File.Delete(lkPath);
-                    }
-                    File.Move(PatchListPath, lkPath);
+                    Log.Info($"\n=== 生成补丁列表 LK.txf（与本地 LK.txf 对比）===");
+                    WritePatchList(LocalPatchListPath, originalPatchLines, items);
+
+                    File.Delete(PatchListPath);
+                    Log.Info($"补丁列表已写入: {LocalPatchListPath}");
                 }
             }
             catch (Exception ex)
             {
-                Log.Info($"重命名文件失败: {ex.Message}");
+                Log.Info($"生成补丁列表失败: {ex.Message}");
             }
         }
         catch (Exception ex)
@@ -229,6 +244,85 @@ public class PatchManager
             Log.Info($"  {item.LocalPath} 处理失败：{ex.Message}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// 在原 LK.txf 基础上，仅按 NT.txf 更新差异条目：
+    /// 1. 原 LK.txf 与 NT.txf 信息一致的条目：原样保留，不做修改；
+    /// 2. 原 LK.txf 中存在、NT.txf 中不存在的文件：原样保留，不做修改；
+    /// 3. 原 LK.txf 与 NT.txf 都有但 MD5/大小不一致的文件：用 NT.txf 的 MD5/大小替换；
+    /// 4. NT.txf 中存在、原 LK.txf 没有的文件：按原格式追加到末尾。
+    /// </summary>
+    private void WritePatchList(string lkPath, List<string> originalLines, List<PatchItem> serverItems)
+    {
+        var serverByPath = new Dictionary<string, PatchItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in serverItems)
+            serverByPath[NormalizePatchPath(item.LocalPath)] = item;
+
+        var knownPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>(originalLines.Count + serverItems.Count + 1);
+        int replacedCount = 0, addedCount = 0;
+
+        // 1~3. 以原 LK.txf 为基准逐行处理
+        foreach (var line in originalLines)
+        {
+            var parts = line.Split(':');
+            if (parts.Length < 4)
+            {
+                // 无法解析的行原样保留
+                result.Add(line);
+                continue;
+            }
+
+            var key = NormalizePatchPath(parts[1].TrimStart('\\').Replace('\\', '/'));
+            knownPaths.Add(key);
+
+            if (serverByPath.TryGetValue(key, out var server))
+            {
+                long oldSize = 0;
+                long.TryParse(parts[3].TrimEnd('l'), out oldSize);
+
+                bool sameMd5 = string.Equals(parts[2], server.ServerMd5, StringComparison.OrdinalIgnoreCase);
+                bool sameSize = server.TotalSize <= 0 || oldSize == server.TotalSize;
+
+                if (!sameMd5 || !sameSize)
+                {
+                    var oldMd5 = parts[2];
+                    parts[2] = server.ServerMd5;
+                    if (server.TotalSize > 0)
+                        parts[3] = server.TotalSize + "l";
+
+                    result.Add(string.Join(":", parts));
+                    replacedCount++;
+                    Log.Info($"  [替换MD5] {parts[1]} {oldMd5} -> {server.ServerMd5}");
+                    continue;
+                }
+            }
+
+            // 信息一致，或 NT.txf 中不存在该文件：原样保留
+            result.Add(line);
+        }
+
+        // 4. NT.txf 中存在、原 LK.txf 没有的文件，按原格式追加
+        foreach (var item in serverItems)
+        {
+            var key = NormalizePatchPath(item.LocalPath);
+            if (!knownPaths.Add(key))
+                continue;
+
+            var localPath = "\\" + item.LocalPath.Replace('/', '\\');
+            result.Add($"{item.FileName}:{localPath}:{item.ServerMd5}:{item.TotalSize}l");
+            addedCount++;
+            Log.Info($"  [新增条目] {localPath}");
+        }
+
+        File.WriteAllText(lkPath, string.Join("\r\n", result) + "\r\n", new UTF8Encoding(false));
+        Log.Info($"  LK.txf 合并完成：共 {result.Count} 条（替换MD5 {replacedCount} 条，新增 {addedCount} 条）");
+    }
+
+    private static string NormalizePatchPath(string path)
+    {
+        return path.TrimStart('\\').Replace('\\', '/').Trim().ToLowerInvariant();
     }
 
     private async Task ProcessFileAsync(PatchItem item, string update_prefix, string TempPath, string gamePath)
