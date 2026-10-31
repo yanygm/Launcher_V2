@@ -1031,7 +1031,7 @@ public static class MultyPlayer
                 BroadCast(roomId, oPacket);
             }
             room.TimeData.TryAdd(Id, Time);
-            Log.Info($"GameAiGoalinPacket, Id = {Id}, Time = {Time}");
+            Log.Debug($"GameAiGoalinPacket, Id = {Id}, Time = {Time}");
             if (room.EndTicks == 0)
             {
                 room.SnapshotMembers = DeepCopyMembers(room._IDs);
@@ -1634,7 +1634,7 @@ public static class MultyPlayer
             }
             else if (member is Ai a)
             {
-                Log.Info($"Ai ID = {a.ID}, SlotId = {a.SlotId}");
+                Log.Debug($"Ai ID = {a.ID}, SlotId = {a.SlotId}");
                 outPacket.WriteInt(7);
                 outPacket.WriteShort(a.Character);
                 outPacket.WriteShort(a.Rid);
@@ -2711,7 +2711,7 @@ public static class MultyPlayer
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
                     int playerRanking = ranking[p4.ID];
                     int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : teamPoints[playerRanking];
-                    Log.Info($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
+                    Log.Debug($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
                     outPacket.WriteInt(playerRanking);
                     if (room.GameType == 3 || room.GameType == 4)
                     {
@@ -2779,7 +2779,7 @@ public static class MultyPlayer
                     outPacket.WriteShort(a4.Kart);
                     int AiRanking = ranking[a4.ID];
                     int AiPoint = timeData[a4.ID] == uint.MaxValue ? 0 : teamPoints[AiRanking];
-                    Log.Info($"AI {a4.ID} 排名 {AiRanking} 得分 {AiPoint}");
+                    Log.Debug($"AI {a4.ID} 排名 {AiRanking} 得分 {AiPoint}");
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteShort(0);
                     if (room.GameType == 3 || room.GameType == 4)

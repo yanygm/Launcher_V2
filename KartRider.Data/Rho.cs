@@ -471,6 +471,25 @@ namespace KartRider
                                     }
                                 }
                             }
+                            if (fullName == $"zeta_/{regionCode}/engine/kart12TuningData.xml")
+                            {
+                                Log.Debug(fullName);
+                                byte[] tuneMap = packFileInfo.GetData();
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(tuneMap)))
+                                {
+                                    KartTuneTable.LoadSkillMap(XDocument.Load(ms));
+                                }
+                            }
+                            if (fullName == $"zeta_/{regionCode}/enchant/enchant.xml")
+                            {
+                                Log.Debug(fullName);
+                                byte[] tuneData = packFileInfo.GetData();
+                                using (MemoryStream ms = new MemoryStream(GameSupport.NormalizeXmlEncoding(tuneData)))
+                                {
+                                    KartTuneTable.LoadEnchant(XDocument.Load(ms));
+                                }
+                                KartTuneTable.LogSummary();
+                            }
                             if (fullName == "item/slot/transformByKart.xml")
                             {
                                 Log.Debug(fullName);

@@ -1,6 +1,7 @@
-﻿using KartRider;
+using KartRider;
 using KartRider.Common.Network;
 using KartRider.IO.Packet;
+using KartRider.Logging;
 using Profile;
 using System;
 using System.Collections.Generic;
@@ -698,8 +699,66 @@ namespace ExcData
             }
         }
 
+        /// <summary>Level12（12 代车改装）缓存：昵称 → (车 id&lt;&lt;16|SN) → 记录。写盘后失效重读。</summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<long, Level12>> Level12Cache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<long, Level12>>(StringComparer.Ordinal);
+
+        private static long Level12Key(short id, short sn) => ((long)(ushort)id << 16) | (ushort)sn;
+
+        /// <summary>改装数据变了（换技能 / 加点 / 升级），下次查询重新读盘。</summary>
+        public static void InvalidateLevel12(string Nickname)
+        {
+            if (!string.IsNullOrEmpty(Nickname))
+            {
+                Level12Cache.TryRemove(Nickname, out _);
+            }
+        }
+
+        /// <summary>查某个玩家某台车的 12 代改装数据（三槽技能 + 投入点数）。</summary>
+        public static bool TryGetLevel12(string Nickname, short id, short sn, out Level12 tune)
+        {
+            tune = null;
+            if (string.IsNullOrEmpty(Nickname))
+            {
+                return false;
+            }
+            Dictionary<long, Level12> map = Level12Cache.GetOrAdd(Nickname, LoadLevel12Map);
+            return map != null && map.TryGetValue(Level12Key(id, sn), out tune) && tune != null;
+        }
+
+        private static Dictionary<long, Level12> LoadLevel12Map(string Nickname)
+        {
+            var map = new Dictionary<long, Level12>();
+            try
+            {
+                if (!FileName.FileNames.ContainsKey(Nickname))
+                {
+                    FileName.Load(Nickname);
+                }
+                var filename = FileName.FileNames[Nickname];
+                if (!File.Exists(filename.Level12Data_LoadFile))
+                {
+                    return map;
+                }
+                var list = JsonHelper.DeserializeNoBom<List<Level12>>(filename.Level12Data_LoadFile) ?? new List<Level12>();
+                foreach (Level12 item in list)
+                {
+                    if (item != null)
+                    {
+                        map[Level12Key(item.ID, item.SN)] = item;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[Tune] 读取 Level12Data 失败: {ex.Message}");
+            }
+            return map;
+        }
+
         public static void AddLevel12List(string Nickname, short id, short sn, short level, short field, short skill, short skilllevel, short point)
         {
+            InvalidateLevel12(Nickname);
             if (!FileName.FileNames.ContainsKey(Nickname))
             {
                 FileName.Load(Nickname);

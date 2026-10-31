@@ -55,11 +55,25 @@ public class SlotData
                 // 统一由服务端抽签（type=2 时 skill2 是“被切换的道具”，不能直接回给客户端）
                 short rolled = ItemRule.Roll(room.GameType, playerCount, rank, rareCapped);
                 short skill = rolled;
+                bool tuneConverted = false;
 
-                // ① 开箱转换（transformByKart）：只认 type==1（吃箱子），并且用“抽签原值”查表。
-                //    用改写后的值查表会让“获得[加速器]时转换为[黄金加速器]”先把 booster 改掉，
-                //    表里的 booster→goldShield 就永远不触发了。
-                if (type == 1)
+                // ① 12 代车改装（kart12 tuning）的「获得即转换」：如 加速器→警灯、香蕉→水地雷。
+                //    按“刚获得的那件道具”判定，并且**排在最前面**：
+                //    改装对“所有获得途径”生效，不能等 kart 词条把源道具改掉之后再查（否则源就没了）。
+                if (type == 1 || type == 2)
+                {
+                    var rider = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
+                    Level12 tune = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
+                    if (KartTuneTable.TryRoll(tune, rolled, TuneEffectKind.Gain, out TuneEffect tuneHit))
+                    {
+                        skill = tuneHit.To;
+                        tuneConverted = true;
+                    }
+                }
+
+                // ② kart 自己的转换表（transformByKart）：只认 type==1，且用“抽签原值”查表。
+                //    改装已经命中时不再覆盖，改装（玩家的选择）优先。
+                if (type == 1 && !tuneConverted)
                 {
                     int itemKart = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem?.Set_Kart ?? 0;
                     if (itemKart != 0
@@ -71,8 +85,9 @@ public class SlotData
                     }
                 }
 
-                // ② 词条改写（纯文本规则：获得[X]时转换为[Y] / 将[X]变更为[Y]）：开箱与使用后获得都套
+                // ③ 词条改写（纯文本规则：获得[X]时转换为[Y] / 将[X]变更为[Y]）：放在最后
                 skill = GetItemSkill(Parent.Client.Nickname, skill);
+
                 if (ItemRule.IsRare(skill) && !room.TryConsumeRare(id, ItemRule.AllowLimit(skill) > 0 ? ItemRule.AllowLimit(skill) : 2))
                 {
                     // 词条转换后变成稀有道具但名额已满：退回加速器
@@ -138,6 +153,14 @@ public class SlotData
                         AddItemSkill(roomId, id, Parent, clientBonus);
                     }
 
+                    // 12 代车改装：使用 X 时获得 Y（如 用磁铁获得加速器，组 521）
+                    var riderOnUse = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
+                    Level12 tuneOnUse = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, riderOnUse?.Set_Kart ?? 0, riderOnUse?.Set_KartSN ?? 0);
+                    if (KartTuneTable.TryRoll(tuneOnUse, skill, TuneEffectKind.FiringGain, out TuneEffect onUseHit))
+                    {
+                        AddItemSkill(roomId, id, Parent, onUseHit.To);
+                    }
+
                     Log.Debug($"GameSlotPacket, Mapping. Skill = {skill}");
                 }
                 using (OutPacket oPacket = new OutPacket())
@@ -160,6 +183,14 @@ public class SlotData
                 if (handledByClient)
                 {
                     AttackedSkill(roomId, id, Parent, type, uni, clientBonus);
+                }
+
+                // 12 代车改装：被 X 击中时获得 Y（如 受飞碟攻击获盾牌，组 514）
+                var riderFired = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
+                Level12 tuneFired = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, riderFired?.Set_Kart ?? 0, riderFired?.Set_KartSN ?? 0);
+                if (KartTuneTable.TryRoll(tuneFired, skill, TuneEffectKind.FiredGain, out TuneEffect firedHit))
+                {
+                    AttackedSkill(roomId, id, Parent, type, uni, firedHit.To);
                 }
 
                 Log.Debug($"GameSlotPacket, Attacked. Skill = {skill}");
@@ -213,6 +244,25 @@ public class SlotData
         return skill;
     }
 
+    /// <summary>
+    /// 12 代车改装的「获得即转换」：对**所有获得途径**统一套一次。
+    /// （开箱/更换由主分支处理，词条奖励、被击奖励、其它改装奖励都走这里）
+    /// </summary>
+    private static short ApplyTuneGainOnAcquire(string nickname, short item, string source)
+    {
+        if (item <= 0)
+        {
+            return item;
+        }
+        var rider = ProfileService.GetProfileConfig(nickname)?.RiderItem;
+        Level12 tune = KartTuneTable.GetPlayerTune(nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
+        if (KartTuneTable.TryRoll(tune, item, TuneEffectKind.Gain, out TuneEffect hit))
+        {
+            return hit.To;
+        }
+        return item;
+    }
+
     /// <summary>每名玩家上一次的道具栏数量。</summary>
 
     /// <summary>下一次快照是我们自己追加造成的，不参与判定（防止概率道具再被当成“获得”）。</summary>
@@ -235,6 +285,9 @@ public class SlotData
 
         // 额外获得的道具已经是词条的目标，不能再被别的词条二次改写（否则会"给 A 却拿到 B"）
         skill = GetItemSkill(Parent.Client.Nickname, skill, applySkillMap: false);
+
+        // 12 代车改装：改装对「所有获得途径」生效，额外发放的道具也要走一遍「获得即转换」
+        skill = ApplyTuneGainOnAcquire(Parent.Client.Nickname, skill, "额外获得");
 
         // 稀有道具名额（天使/锁/闪电）每局合计最多 2 个
         if (ItemRule.IsRare(skill))
@@ -275,6 +328,9 @@ public class SlotData
 
         // 额外获得的道具已经是词条的目标，不能再被别的词条二次改写（否则会"给 A 却拿到 B"）
         skill = GetItemSkill(Parent.Client.Nickname, skill, applySkillMap: false);
+
+        // 12 代车改装：改装对「所有获得途径」生效，被攻击获得的道具也走一遍「获得即转换」
+        skill = ApplyTuneGainOnAcquire(Parent.Client.Nickname, skill, "被击中获得");
 
         // 稀有道具名额（天使/锁/闪电）每局合计最多 2 个
         if (ItemRule.IsRare(skill))

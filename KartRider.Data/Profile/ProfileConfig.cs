@@ -84,8 +84,8 @@ namespace Profile
         /// <summary>等待全员就绪的上限（毫秒），超时未就绪的玩家按掉线剔除。默认 15000。</summary>
         public int StartReadyTimeoutMs { get; set; } = 15000;
 
-        /// <summary>日志级别：Trace/Debug/Info/Warn/Error/None</summary>
-        public string LogLevel { get; set; } = "Debug";
+        /// <summary>日志级别：Trace/Debug/Info/Warn/Error/None（正式版默认 Info，排查时再改 Debug）</summary>
+        public string LogLevel { get; set; } = "Info";
 
         /// <summary>是否记录每个包的十六进制（默认开：控制台与 Logs\packets.log 都能看到对局包）</summary>
         public bool PacketTrace { get; set; } = true;

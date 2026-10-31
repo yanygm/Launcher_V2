@@ -293,7 +293,7 @@ namespace KartRider
                         int hash4 = iPacket.ReadInt();
                         byte[] hashArray3 = iPacket.ReadBytes(16);
                         this.Parent.TotalSendPlaneCount += PlaneCheck;
-                        Log.Info($"PlaneCheck: {PlaneCheck}, Total: {this.Parent.TotalSendPlaneCount}, Max: {this.Parent.SendPlaneCount}, Dist: {single3}");
+                        Log.Debug($"PlaneCheck: {PlaneCheck}, Total: {this.Parent.TotalSendPlaneCount}, Max: {this.Parent.SendPlaneCount}, Dist: {single3}");
                         return;
                     }
                     else if (packetName == "SpRqRenameRidPacket")
