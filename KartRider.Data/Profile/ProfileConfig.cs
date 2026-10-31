@@ -78,6 +78,8 @@ namespace Profile
 
         public string Proxy { get; set; } = "https://gh-proxy.com/";
 
+        public string PatchUrl { get; set; } = "";
+
         /// <summary>点击开始到发送开局包的等待（毫秒）。默认 3000，与计时赛的加载体感接近；范围 0~10000。</summary>
         public int StartDelayMs { get; set; } = 4000;
 

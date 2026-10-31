@@ -193,7 +193,7 @@ namespace KartRider
             Random random = new Random();
             int index = random.Next(keys.Length);
             Keys key = keys[index];
-            string updateUrl = ""; // PatchUrl 配置项已移除，客户端不再检查更新
+            string updateUrl = ProfileService.SettingConfig.PatchUrl;
             ushort ClientVersion = ProfileService.SettingConfig.ClientVersion;
             using (OutPacket outPacket = new OutPacket("PcFirstMessage"))
             {
