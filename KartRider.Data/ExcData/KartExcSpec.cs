@@ -157,15 +157,15 @@ namespace ExcData
                     excSpecs.Tune_DriftEscapeForce = Tune_DriftEscapeForce_List[3];
                 }
                 Log.Info($"-------------------------------------------------------------");
-                Log.Info($"TuneSpec DragFactor:{excSpecs.Tune_DragFactor}");
-                Log.Info($"TuneSpec ForwardAccel:{excSpecs.Tune_ForwardAccel}");
-                Log.Info($"TuneSpec CornerDrawFactor:{excSpecs.Tune_CornerDrawFactor}");
-                Log.Info($"TuneSpec TeamBoosterTime:{excSpecs.Tune_TeamBoosterTime}");
-                Log.Info($"TuneSpec NormalBoosterTime:{excSpecs.Tune_NormalBoosterTime}");
-                Log.Info($"TuneSpec StartBoosterTimeSpeed:{excSpecs.Tune_StartBoosterTimeSpeed}");
-                Log.Info($"TuneSpec TransAccelFactor:{excSpecs.Tune_TransAccelFactor}");
-                Log.Info($"TuneSpec DriftMaxGauge:{excSpecs.Tune_DriftMaxGauge}");
-                Log.Info($"TuneSpec DriftEscapeForce:{excSpecs.Tune_DriftEscapeForce}");
+                Log.Debug($"TuneSpec DragFactor:{excSpecs.Tune_DragFactor}");
+                Log.Debug($"TuneSpec ForwardAccel:{excSpecs.Tune_ForwardAccel}");
+                Log.Debug($"TuneSpec CornerDrawFactor:{excSpecs.Tune_CornerDrawFactor}");
+                Log.Debug($"TuneSpec TeamBoosterTime:{excSpecs.Tune_TeamBoosterTime}");
+                Log.Debug($"TuneSpec NormalBoosterTime:{excSpecs.Tune_NormalBoosterTime}");
+                Log.Debug($"TuneSpec StartBoosterTimeSpeed:{excSpecs.Tune_StartBoosterTimeSpeed}");
+                Log.Debug($"TuneSpec TransAccelFactor:{excSpecs.Tune_TransAccelFactor}");
+                Log.Debug($"TuneSpec DriftMaxGauge:{excSpecs.Tune_DriftMaxGauge}");
+                Log.Debug($"TuneSpec DriftEscapeForce:{excSpecs.Tune_DriftEscapeForce}");
                 Log.Info($"-------------------------------------------------------------");
             }
         }

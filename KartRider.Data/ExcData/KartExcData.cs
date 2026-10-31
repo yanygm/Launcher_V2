@@ -404,8 +404,63 @@ namespace ExcData
             }
         }
 
+        /// <summary>Tune（老 enchant / 魔方词条）缓存：昵称 → (车 id&lt;&lt;16|SN) → 记录。写盘后失效重读。</summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<long, Tune>> TuneCache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<long, Tune>>(StringComparer.Ordinal);
+
+        public static void InvalidateTune(string Nickname)
+        {
+            if (!string.IsNullOrEmpty(Nickname))
+            {
+                TuneCache.TryRemove(Nickname, out _);
+            }
+        }
+
+        /// <summary>查某个玩家某台车的改装词条（Tune1..3，值为 组×100+id）。</summary>
+        public static bool TryGetTune(string Nickname, short id, short sn, out Tune tune)
+        {
+            tune = null;
+            if (string.IsNullOrEmpty(Nickname))
+            {
+                return false;
+            }
+            Dictionary<long, Tune> map = TuneCache.GetOrAdd(Nickname, LoadTuneMap);
+            return map != null && map.TryGetValue(Level12Key(id, sn), out tune) && tune != null;
+        }
+
+        private static Dictionary<long, Tune> LoadTuneMap(string Nickname)
+        {
+            var map = new Dictionary<long, Tune>();
+            try
+            {
+                if (!FileName.FileNames.ContainsKey(Nickname))
+                {
+                    FileName.Load(Nickname);
+                }
+                var filename = FileName.FileNames[Nickname];
+                if (!File.Exists(filename.TuneData_LoadFile))
+                {
+                    return map;
+                }
+                var list = JsonHelper.DeserializeNoBom<List<Tune>>(filename.TuneData_LoadFile) ?? new List<Tune>();
+                foreach (Tune item in list)
+                {
+                    if (item != null)
+                    {
+                        map[Level12Key(item.ID, item.SN)] = item;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[Tune] 读取 TuneData 失败: {ex.Message}");
+            }
+            return map;
+        }
+
         public static void AddTuneList(string Nickname, short id, short sn, short tune1, short tune2, short tune3, short slot1, short count1, short slot2, short count2)
         {
+            InvalidateTune(Nickname);
             if (!FileName.FileNames.ContainsKey(Nickname))
             {
                 FileName.Load(Nickname);

@@ -63,10 +63,10 @@ public class SlotData
                 if (type == 1 || type == 2)
                 {
                     var rider = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
-                    Level12 tune = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
-                    if (KartTuneTable.TryRoll(tune, rolled, TuneEffectKind.Gain, out TuneEffect tuneHit))
+                    List<TuneEffect> tuneEffects = KartTuneTable.GetPlayerEffects(Parent.Client.Nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
+                    if (KartTuneTable.TryRoll(tuneEffects, rolled, TuneEffectKind.Gain, type == 1, out TuneEffect tuneHit, out short tuneTo))
                     {
-                        skill = tuneHit.To;
+                        skill = tuneTo;
                         tuneConverted = true;
                     }
                 }
@@ -155,10 +155,10 @@ public class SlotData
 
                     // 12 代车改装：使用 X 时获得 Y（如 用磁铁获得加速器，组 521）
                     var riderOnUse = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
-                    Level12 tuneOnUse = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, riderOnUse?.Set_Kart ?? 0, riderOnUse?.Set_KartSN ?? 0);
-                    if (KartTuneTable.TryRoll(tuneOnUse, skill, TuneEffectKind.FiringGain, out TuneEffect onUseHit))
+                    List<TuneEffect> tuneOnUse = KartTuneTable.GetPlayerEffects(Parent.Client.Nickname, riderOnUse?.Set_Kart ?? 0, riderOnUse?.Set_KartSN ?? 0);
+                    if (KartTuneTable.TryRoll(tuneOnUse, skill, TuneEffectKind.FiringGain, false, out TuneEffect onUseHit, out short onUseTo))
                     {
-                        AddItemSkill(roomId, id, Parent, onUseHit.To);
+                        AddItemSkill(roomId, id, Parent, onUseTo);
                     }
 
                     Log.Debug($"GameSlotPacket, Mapping. Skill = {skill}");
@@ -187,10 +187,10 @@ public class SlotData
 
                 // 12 代车改装：被 X 击中时获得 Y（如 受飞碟攻击获盾牌，组 514）
                 var riderFired = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
-                Level12 tuneFired = KartTuneTable.GetPlayerTune(Parent.Client.Nickname, riderFired?.Set_Kart ?? 0, riderFired?.Set_KartSN ?? 0);
-                if (KartTuneTable.TryRoll(tuneFired, skill, TuneEffectKind.FiredGain, out TuneEffect firedHit))
+                List<TuneEffect> tuneFired = KartTuneTable.GetPlayerEffects(Parent.Client.Nickname, riderFired?.Set_Kart ?? 0, riderFired?.Set_KartSN ?? 0);
+                if (KartTuneTable.TryRoll(tuneFired, skill, TuneEffectKind.FiredGain, false, out TuneEffect firedHit, out short firedTo))
                 {
-                    AttackedSkill(roomId, id, Parent, type, uni, firedHit.To);
+                    AttackedSkill(roomId, id, Parent, type, uni, firedTo);
                 }
 
                 Log.Debug($"GameSlotPacket, Attacked. Skill = {skill}");
@@ -255,10 +255,10 @@ public class SlotData
             return item;
         }
         var rider = ProfileService.GetProfileConfig(nickname)?.RiderItem;
-        Level12 tune = KartTuneTable.GetPlayerTune(nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
-        if (KartTuneTable.TryRoll(tune, item, TuneEffectKind.Gain, out TuneEffect hit))
+        List<TuneEffect> tuneEffects = KartTuneTable.GetPlayerEffects(nickname, rider?.Set_Kart ?? 0, rider?.Set_KartSN ?? 0);
+        if (KartTuneTable.TryRoll(tuneEffects, item, TuneEffectKind.Gain, false, out TuneEffect tuneHit, out short tuneTo))
         {
-            return hit.To;
+            return tuneTo;
         }
         return item;
     }
