@@ -20,9 +20,23 @@ public static class RoomManager
     // 创建新房间（返回房间ID）
     public static int CreateRoom()
     {
-        int roomId = Interlocked.Increment(ref _nextRoomId) - 1;
-        _rooms.TryAdd(roomId, new GameRoom(roomId));
-        return roomId;
+        // 客户端 ChJoinRoomRequestPacket 里房间号只有 1 字节（ReadByte），房号必须落在 1..255，
+        // 否则房间在列表里能看到、点进去却对应到别的房间或直接进不去。
+        // 这里在 1..255 内循环复用（旧实现是全局自增，跑一会儿就超过 255 了）。
+        for (int i = 0; i < 255; i++)
+        {
+            int raw = Interlocked.Increment(ref _nextRoomId) - 1;
+            int roomId = (raw % 255) + 1;
+            if (_rooms.TryAdd(roomId, new GameRoom(roomId)))
+            {
+                return roomId;
+            }
+        }
+
+        // 1..255 全被占用（异常情况）：退回自增，保证至少还能建房
+        int fallbackId = Interlocked.Increment(ref _nextRoomId) - 1;
+        _rooms.TryAdd(fallbackId, new GameRoom(fallbackId));
+        return fallbackId;
     }
 
     /// <summary>清理没有真人的房间（AI 不阻止清理），防止 0 人房残留在列表里。</summary>
@@ -137,6 +151,43 @@ public static class RoomManager
         return pagedItems;
     }
 
+    /// <summary>
+    /// 注册「昵称 → 房间」映射前，清掉上一次残留的房间归属。
+    ///
+    /// 残留来源：房主没走完离开流程就再次建房、客户端异常断线时槽位已找不到
+    /// （GetPlayerSlotId 返回 -1，RemovePlayer 里的映射清理被跳过）等。
+    /// 不清理的话第二次建房 TryAdd 必然失败，AddPlayer 返回 255，
+    /// 建房处理器拿不到槽位就会静默 return（客户端收不到回包 → 卡死/崩溃）。
+    /// </summary>
+    private static void DetachPreviousRoom(string nickname, int targetRoomId)
+    {
+        if (string.IsNullOrEmpty(nickname))
+            return;
+        if (!_playerRoomMap.TryRemove(nickname, out int oldRoomId))
+            return;
+        if (oldRoomId == targetRoomId)
+            return;
+
+        GameRoom oldRoom = GetRoom(oldRoomId);
+        if (oldRoom == null)
+            return;
+
+        int slotId;
+        try
+        {
+            slotId = GetPlayerSlotId(oldRoomId, nickname);
+        }
+        catch (NullReferenceException)
+        {
+            // 档案未加载完整（Rider 为空）时无法定位槽位，映射已经清掉，直接放弃
+            return;
+        }
+        if (slotId >= 0)
+        {
+            RemovePlayer(oldRoomId, (byte)slotId, nickname);
+        }
+    }
+
     // 尝试向房间添加玩家
     /// <summary>双人组队入座（含 playerRoomMap 注册）。</summary>
     public static byte AddDuoPlayer(int roomId, string nickname, int playerType, SessionGroup client)
@@ -145,7 +196,7 @@ public static class RoomManager
         if (room == null || string.IsNullOrEmpty(nickname))
             return 255;
         // 可能残留上一次房间的映射（异常退出/换房），先清掉再注册
-        _playerRoomMap.TryRemove(nickname, out _);
+        DetachPreviousRoom(nickname, roomId);
         if (!_playerRoomMap.TryAdd(nickname, roomId))
         {
             Log.Info($"[DuoAdd] {nickname} 注册房间 {roomId} 失败");
@@ -184,9 +235,17 @@ public static class RoomManager
         if (room == null || string.IsNullOrEmpty(nickname))
             return 255;
 
-        // 去重：严格区分大小写，TryAdd 原子操作
+        // 可能残留上一次房间的映射（异常退出/换房/房主没走完离开流程），先清掉再注册，
+        // 否则第二次建房时 TryAdd 必然失败 → AddPlayer 返回 255 → 客户端拿不到回包而卡死
+        DetachPreviousRoom(nickname, roomId);
+
+        // 去重：严格区分大小写，TryAdd 原子操作（并发下同一昵称只会有一个成功）
         if (!_playerRoomMap.TryAdd(nickname, roomId))
+        {
+            Log.Info($"[AddPlayer] {nickname} 注册房间 {roomId} 失败");
+            RemoveRoom(room);
             return 255;
+        }
 
         // 确保玩家配置文件已加载
         if (!Profile.FileName.FileNames.ContainsKey(nickname))

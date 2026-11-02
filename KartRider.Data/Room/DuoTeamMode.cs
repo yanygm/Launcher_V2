@@ -102,6 +102,23 @@ public static class DuoTeamMode
     public static byte NormalizeTeamSize(byte size) =>
         size >= 1 && size <= MaxTeamSize ? size : DefaultTeamSize;
 
+    /// <summary>
+    /// 是否是已知的基础模式（1 个人竞速 / 2 个人道具 / 3 组队竞速 / 4 组队道具）。
+    /// 客户端在各版本下发的模式号并不总是基础模式（双人组队频道实测 51，官方抓包 68），
+    /// 不是基础模式时不能直接拿去当 3/4 用，必须回退到频道配置。
+    /// </summary>
+    public static bool IsBaseGameType(byte gameType) => gameType >= 1 && gameType <= 4;
+
+    /// <summary>
+    /// 模式号无法识别时，按频道名/房间名判断双人组队是竞速还是道具。
+    /// 名称里带「道具」视为道具组队（基础模式 4），否则按竞速组队（基础模式 3）。
+    /// </summary>
+    public static byte GuessDuoBaseGameType(string channelName, string roomName)
+    {
+        string text = $"{channelName} {roomName}";
+        return text.Contains("道具") ? (byte)4 : (byte)3;
+    }
+
     /// <summary>房间名是否包含双人组队关键字</summary>
     public static bool IsDuoRoomName(string roomName)
     {

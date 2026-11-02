@@ -99,13 +99,6 @@ public static class MultyPlayer
         return ranks;
     }
 
-    // 参与频道隔离的模式（gameType 取自客户端 channel.xml 枚举）：
-    //   1/2/3/4 = 个人竞速/个人道具/组队竞速/组队道具（无限加速频道 9/10 请求的 gameType 同样是 1/3）
-    //   7/8     = 夺旗赛（组队/个人）
-    //   17      = 挑战赛（kAiItemTeam）
-    // 其余模式（俱乐部 13-16、星期 71 等）不做隔离，返回全局列表。
-    static readonly HashSet<int> RacingGameTypes = new HashSet<int> { 1, 2, 3, 4, 7, 8, 17 };
-
     static void Start(SessionGroup Parent, int roomId)
     {
         var room = RoomManager.GetRoom(roomId);
@@ -457,32 +450,52 @@ public static class MultyPlayer
         }
         else if (packetName == "ChGetRoomListRequestPacket")
         {
-            int page = iPacket.ReadInt();
-            // 请求体第二个字段是模式(gameType)，不是频道；频道由 PqChannelMovein 记录在玩家档案里
-            int gameType = (iPacket.Length - iPacket.Position >= 2) ? iPacket.ReadUShort() : -1;
+            byte[] rawList = iPacket.GetRawBuffer();
+            ParseRoomListRequest(rawList, out int page, out int gameType);
+            // 频道由 PqChannelMovein / PqChannelSwitch 记录在玩家档案里，仅用于日志排查
             int channel = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.Channel ?? -1;
             // 回列表前先清掉 0 人房，避免客户端看到无法进入的幽灵房
             RoomManager.PurgeEmptyRooms();
-            // v2 测试：只按频道隔离；模式过滤先关闭（避免模式字段语义不一致导致列表空白）
-            // 俱乐部道具/竞速、星期模式暂不隔离（频道语义待确认），这三个频道维持全局列表
-            bool isolate = channel >= 0 && RacingGameTypes.Contains(gameType);
-            var rooms = RoomManager.GetRoomsByPage(page, isolate ? channel : -1, gameType, out int total, false);
-            Log.Info($"[RoomList] {Parent.Client.Nickname} channel={channel} gameType={gameType} isolate={isolate} page={page} -> total={total}");
+            // 需求：所有模式/频道都显示全部房间（不做频道隔离、不做模式过滤）。
+            // 原实现 isolate = channel >= 0 && RacingGameTypes.Contains(gameType) 会把别的频道的房间滤掉，
+            // 表现为同一个房间在组队频道能看到、在别的模式/频道就看不到。
+            var rooms = RoomManager.GetRoomsByPage(page, -1, gameType, out int total, false);
+            Log.Info($"[RoomList] {Parent.Client.Nickname} req={BitConverter.ToString(rawList)} channel={channel} gameType={gameType} page={page} -> total={total}");
             using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
             {
-                Log.Info($"Room Count: {total} (channel={channel}, isolate={isolate})");
+                Log.Info($"Room Count: {total} (channel={channel}, 全局列表)");
                 oPacket.WriteInt(total); // 房间总数（本频道）
                 oPacket.WriteInt(page);
                 oPacket.WriteInt(rooms.Count); // 房间数量
                 foreach (var _room in rooms)
                 {
+                    // 逐个房间打一条日志：出现“别人看不到房间”时，能直接比对
+                    // 房间的 mode/channel 与请求方频道是否一致
+                    Log.Info($"[RoomList]  -> room={_room.Key} name={_room.Value.RoomName} mode={_room.Value.ModeByte} duo={_room.Value.DuoTeam} channel={_room.Value.Channel} players={_room.Value.GetPlayerCount()} started={_room.Value.Started}");
+                    // 列表条目的模式字段按「本次列表的上下文模式」下发。
+                    // 客户端是按频道模式渲染列表的：实测在 RotationMode 频道（gameType=71）里建的双人组队房
+                    // （mode=68），条目原样下发时会被客户端整条丢弃（服务端 total=1，客户端列表依旧空白）。
+                    // 房间的真实模式仍由 ChJoinRoomReplyPacket / GrSessionDataPacket 下发，这里只影响列表显示。
+                    byte listMode = (gameType > 0 && gameType <= 255) ? (byte)gameType : _room.Value.ModeByte;
+                    if (listMode != _room.Value.ModeByte)
+                    {
+                        Log.Warn($"[RoomList] 房间 {_room.Key} 实际模式={_room.Value.ModeByte}，列表按请求模式 {listMode} 下发（模式不一致时客户端会丢弃条目）");
+                    }
+                    // 刚建好的房间还没选图，track 是 0。真实房间一定带合法赛道 hash，
+                    // 客户端拿到 0（不存在的赛道）时很可能整条丢弃该房间条目，这里补一个可用占位图。
+                    uint listTrack = _room.Value.track;
+                    if (listTrack == 0)
+                    {
+                        listTrack = ListFallbackTrack();
+                        Log.Info($"[RoomList] 房间 {_room.Key} 尚未选图，列表赛道用占位图 {RandomTrack.GetTrackName(listTrack)} (0x{listTrack:X8})");
+                    }
                     oPacket.WriteShort((short)_room.Key);
                     // RoomName 理论上非空；但一旦为 null，WriteString 会抛异常 → 处理器中断 → 不回包 →
                     // 客户端在房间列表页无限等待（表现为卡死）。这里做一次兜底。
                     oPacket.WriteString(_room.Value.RoomName ?? string.Empty); // 房间名称
-                    oPacket.WriteUInt(_room.Value.track); // 赛道
+                    oPacket.WriteUInt(listTrack); // 赛道
                     oPacket.WriteBool(_room.Value.Lock); // 是否上锁
-                    oPacket.WriteByte(_room.Value.ModeByte); // 模式
+                    oPacket.WriteByte(listMode); // 模式（列表上下文模式）
                     oPacket.WriteByte(_room.Value.SpeedType); // 速度模式
                     oPacket.WriteBool(_room.Value.Started); // 房间状态
                     oPacket.WriteByte((byte)(8 - _room.Value.CloseSlotIds.Count)); // 房间最大人数
@@ -497,8 +510,26 @@ public static class MultyPlayer
         {
             int length = iPacket.ReadInt();
             iPacket.ReadBytes(length);
-            byte channel = (byte)(iPacket.ReadByte() - 1);
+            byte rawChannel = iPacket.ReadByte(); // 客户端下发的原始频道序号（不要减 1 存档案）
+            byte channel = (byte)(rawChannel - 1);
             var channelData = GameSupport.Channels.ContainsKey(channel) ? GameSupport.Channels[channel] : null;
+
+            // 房间列表与建房都用档案里的频道做隔离，切换频道必须同步更新档案，
+            // 否则切完之后仍然按旧频道过滤：自己建的房别人看不到、别人建的房自己也看不到。
+            // 注意存的是 rawChannel - 1：PqChannelSwitch 的值比 PqChannelMovein 的 int 大 1
+            // （实测同一次换频道：Switch=20、Movein=19），两边必须存同一个编号，否则又会对不上。
+            if (!string.IsNullOrEmpty(Parent.Client.Nickname))
+            {
+                var switchConfig = ProfileService.GetProfileConfig(Parent.Client.Nickname);
+                if (switchConfig?.Rider != null && switchConfig.Rider.Channel != channel)
+                {
+                    int oldChannel = switchConfig.Rider.Channel;
+                    switchConfig.Rider.Channel = channel;
+                    ProfileService.Save(Parent.Client.Nickname, switchConfig);
+                    Log.Info($"[ChannelSwitch] {Parent.Client.Nickname} 频道 {oldChannel} -> {channel}（{channelData?.Name ?? "未知频道"}，原始序号 {rawChannel}）");
+                }
+            }
+
             if (channelData == null) return;
             StartTimeAttack[Parent.Client.Nickname] = channelData.CreateSpeed;
             Log.Info($"Channel Switch, channel = {channelData.Name}");
@@ -618,17 +649,43 @@ public static class MultyPlayer
             Room.MaxPlayers = maxPlayers;
             byte rawGameType = GameType;
             byte playerChannel = (byte)(Room.Channel >= 0 ? Room.Channel : 255);
-            bool duoRequested = GameSupport.IsDuoTeamChannel(playerChannel)
+            var channelInfo = GameSupport.GetChannelInfo(playerChannel);
+
+            // 双人组队判定：频道配置 > 建房包模式号 > 频道名/房间名关键字。
+            // 建房包里的模式号并不总是基础模式（1~4）：双人组队频道实测下发 51，早期抓包是 68，
+            // 若直接拿去当 3/4 用，双人房会被建成"个人模式"——没有队伍位、模式号也和频道对不上，
+            // 房主进房后界面错乱（客户端崩溃），其他人房间列表里也匹配不到这个房间。
+            bool duoRequested = (channelInfo != null && channelInfo.DuoTeam)
                                 || DuoTeamMode.IsDuoGameType(rawGameType)
+                                || DuoTeamMode.IsDuoRoomName(channelInfo?.Name)
                                 || DuoTeamMode.IsDuoRoomName(RoomName);
-            GameType = DuoTeamMode.ToBaseGameType(rawGameType);
+
+            // 基础模式优先级：客户端模式号 → 频道配置（channel.xml，客户端与服务端共用）→ 双人频道按名称判断
+            byte baseGameType = DuoTeamMode.ToBaseGameType(rawGameType);
+            if (!DuoTeamMode.IsBaseGameType(baseGameType))
+            {
+                if (channelInfo != null && DuoTeamMode.IsBaseGameType(channelInfo.GameType))
+                {
+                    baseGameType = channelInfo.GameType;
+                }
+                else if (duoRequested)
+                {
+                    baseGameType = DuoTeamMode.GuessDuoBaseGameType(channelInfo?.Name, RoomName);
+                }
+            }
+            GameType = baseGameType;
             Room.GameType = GameType;
             Room.DuoTeam = duoRequested && (GameType == 3 || GameType == 4) && ProfileService.SettingConfig.DuoTeamChannel;
             Room.DuoTeamSize = Room.DuoTeam
                 ? DuoTeamMode.NormalizeTeamSize(ProfileService.SettingConfig.DuoTeamSize)
                 : (byte)2;
-            Room.WireGameType = Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : GameType;
+            // 下发给客户端的模式号：基础模式（3/4）时才按官方值换成 67/68；
+            // 客户端给的是扩展模式号（如 51）时原样回显，避免客户端收到自己不认识的模式而卡死。
+            Room.WireGameType = DuoTeamMode.IsBaseGameType(rawGameType)
+                ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
+                : rawGameType;
             Room.RoomData = RoomData;
+            Log.Info($"[Room] create gameType={rawGameType} -> base={GameType} duo={Room.DuoTeam} wire={Room.WireGameType} channel={Room.Channel}({channelInfo?.Name ?? "未知频道"} cfgGameType={channelInfo?.WireGameType.ToString() ?? "-"} cfgDuo={channelInfo?.DuoTeam.ToString() ?? "-"})");
             Log.Debug($"CreateRoom = {RoomId}");
             byte randomTrackGameType = 0;
             if (GameType == 2 || GameType == 4 || GameType == 14 || GameType == 54)
@@ -644,13 +701,15 @@ public static class MultyPlayer
                     : RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 2, 2, Parent);
                 if (slot == 255)
                 {
-                    Log.Info($"CreateRoom Failed");
+                    Log.Info($"CreateRoom Failed, 房主入座失败（room={RoomId}, nickname={Parent.Client.Nickname}）");
+                    ChCreateRoomFailReply(Parent, Room, rawGameType);
                     return;
                 }
                 Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
                 if (player == null)
                 {
                     Log.Info($"GetPlayer Failed");
+                    ChCreateRoomFailReply(Parent, Room, rawGameType);
                     return;
                 }
                 Room.RoomMaster = player.ID;
@@ -673,13 +732,15 @@ public static class MultyPlayer
                 byte slot = RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 0, 2, Parent);
                 if (slot == 255)
                 {
-                    Log.Info($"CreateRoom Failed");
+                    Log.Info($"CreateRoom Failed, 房主入座失败（room={RoomId}, nickname={Parent.Client.Nickname}）");
+                    ChCreateRoomFailReply(Parent, Room, rawGameType);
                     return;
                 }
                 Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
                 if (player == null)
                 {
                     Log.Info($"GetPlayer Failed");
+                    ChCreateRoomFailReply(Parent, Room, rawGameType);
                     return;
                 }
                 Room.RoomMaster = player.ID;
@@ -1449,6 +1510,24 @@ public static class MultyPlayer
         }
     }
 
+    /// <summary>
+    /// 建房失败必须回包。客户端发完 ChCreateRoomRequestPacket 后一直在等 ChCreateRoomReplyPacket，
+    /// 静默 return 会让客户端永远卡在"创建中"，表现就是第二次建房（房主还没从上个房间的映射里清干净）
+    /// 时游戏卡死/崩溃。同时把刚创建出来的空房间回收掉，避免残留幽灵房。
+    /// </summary>
+    static void ChCreateRoomFailReply(SessionGroup Parent, GameRoom room, byte gameType)
+    {
+        RoomManager.RemoveRoom(room);
+        using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
+        {
+            oPacket.WriteByte(0);
+            oPacket.WriteByte(0);
+            oPacket.WriteByte(0);
+            oPacket.WriteEncByte(gameType);
+            Parent.Client.Send(oPacket);
+        }
+    }
+
     public static void GrSlotDataPacket(int roomId)
     {
         var room = RoomManager.GetRoom(roomId);
@@ -1718,7 +1797,8 @@ public static class MultyPlayer
 
         // 只有 1 个参赛者（没有 AI）时不允许开局。
         // 注意：拒绝码 1 会被客户端当成“开始匹配”，所以这里用 3（需要 2 人以上）。
-        if (totalMembers < 2)
+        // 双人组队房按需求放开：单人也能直接开局，不做人数校验。
+        if (totalMembers < 2 && !room.DuoTeam)
         {
             Log.Info($"[Start] 房间 {room.RoomId} 只有 {totalMembers} 名参赛者，拒绝开局（码 3）");
             using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
@@ -1729,51 +1809,17 @@ public static class MultyPlayer
             return;
         }
 
-        // 组队赛/双人：每个非空队伍人数必须相同，且至少 2 支队伍（客户端对应弹窗：至少2队 / 两组人数相同）
-        if (room.GameType == 3 || room.GameType == 4)
+        // 普通组队赛：两队人数必须相同且非空（客户端对应弹窗：两组人数相同）。
+        // 双人组队房按需求放开：不限制队伍数量与每队人数（单人、人数不等都允许开局）。
+        if (room.DuoTeam)
         {
-            int team1, team2;
-            if (room.DuoTeam)
-            {
-                var counts = new System.Collections.Generic.List<int>();
-                for (byte t = 1; t <= 4; t++)
-                {
-                    int c = room.GetTeamMemberCount(t);
-                    if (c > 0) counts.Add(c);
-                }
-                if (counts.Count < 2)
-                {
-                    // 码 18 = 客户端“房间内至少有2个以上队伍才可开始游戏。”
-                    Log.Info($"[Start] 双人房 {room.RoomId} 不足 2 支队伍，拒绝开局（码 18）");
-                    using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
-                    {
-                        denyPacket.WriteInt(18);
-                        Parent.Client.Send(denyPacket);
-                    }
-                    return;
-                }
-                team1 = counts[0];
-                team2 = counts[0];
-                foreach (int c in counts)
-                {
-                    if (c != team1) team2 = c;
-                }
-                if (team2 != team1)
-                {
-                    Log.Info($"[Start] 双人房 {room.RoomId} 队伍人数不一致（{string.Join("/", counts)}），拒绝开局（码 4）");
-                    using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
-                    {
-                        denyPacket.WriteInt(4);
-                        Parent.Client.Send(denyPacket);
-                    }
-                    return;
-                }
-                // 人数一致，继续后续流程
-                team1 = team2 = counts[0];
-            }
-            team1 = room.GetTeamMemberCount(2);
-            team2 = room.GetTeamMemberCount(1);
-            if (!room.DuoTeam && (team1 != team2 || team1 == 0))
+            Log.Info($"[Start] 双人房 {room.RoomId} 不校验队伍数量/人数（参赛者 {totalMembers} 人），直接开局");
+        }
+        else if (room.GameType == 3 || room.GameType == 4)
+        {
+            int team1 = room.GetTeamMemberCount(2);
+            int team2 = room.GetTeamMemberCount(1);
+            if (team1 != team2 || team1 == 0)
             {
                 Log.Info($"[Start] 房间 {room.RoomId} 组队人数不匹配（{team1} vs {team2}），拒绝开局（码 4）");
                 using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
@@ -2132,14 +2178,78 @@ public static class MultyPlayer
         }
     }
 
-    // 添加指定数量的 Ai
     /// <summary>
-    /// 从建房包里读出房间人数。
+    /// 解析 ChGetRoomListRequestPacket（GetRawBuffer 带 4 字节包头，字段紧随其后）。
     ///
-    /// 结构解析结果：人数固定位于**包尾第 85 个字节**（raw.Length - 85）。
-    /// 实测 2/4/6/8 人房、个人/组队、不同房间名长度都成立（115 字节包 offset=30、113 字节包 offset=28）。
-    /// 保留旧的标记扫描作为兜底，两者都失败才回退 8。
+    /// 字段顺序在不同客户端上并不统一，「[页码 int][模式 ushort]」和「[模式 ushort][页码 int]」都存在。
+    /// 若把模式号当成页码，就会 Skip(模式号 * 10) 把整页数据跳过去 ——
+    /// 表现为房间列表永远空白、别人建的房"看不到"。这里两种解释都试，取合理的那个。
     /// </summary>
+    static void ParseRoomListRequest(byte[] raw, out int page, out int gameType)
+    {
+        page = 0;
+        gameType = -1;
+        if (raw == null || raw.Length < 6)
+        {
+            return;
+        }
+
+        int offset = 4; // 跳过包头
+        int avail = raw.Length - offset;
+        if (avail <= 0)
+        {
+            return;
+        }
+
+        if (avail >= 6)
+        {
+            int pageFirst = BitConverter.ToInt32(raw, offset);
+            int modeLast = BitConverter.ToUInt16(raw, offset + 4);
+            if (IsPlausiblePage(pageFirst) && IsPlausibleGameType(modeLast))
+            {
+                page = pageFirst;
+                gameType = modeLast;
+                return;
+            }
+
+            int modeFirst = BitConverter.ToUInt16(raw, offset);
+            int pageLast = BitConverter.ToInt32(raw, offset + 2);
+            if (IsPlausiblePage(pageLast) && IsPlausibleGameType(modeFirst))
+            {
+                page = pageLast;
+                gameType = modeFirst;
+                return;
+            }
+        }
+
+        // 兜底：按「页码 + 模式」的老结构理解
+        if (avail >= 4)
+        {
+            page = BitConverter.ToInt32(raw, offset);
+        }
+        if (avail >= 6)
+        {
+            gameType = BitConverter.ToUInt16(raw, offset + 4);
+        }
+    }
+
+    /// <summary>
+    /// 房间列表里给“还没选图”的房间用的占位赛道 hash（优先取一张真实存在的图）。
+    /// </summary>
+    static uint ListFallbackTrack()
+    {
+        foreach (var kv in RandomTrack.TrackList)
+        {
+            return kv.Key;
+        }
+        return Adler32Helper.GenerateAdler32_UNICODE(RandomTrack.GameTrack, 0);
+    }
+
+    static bool IsPlausiblePage(int page) => page >= 0 && page <= 1000;
+
+    /// <summary>合法模式号：1~99（含双人组队 67/68）；0 与超大值都视为解析错位。</summary>
+    static bool IsPlausibleGameType(int gameType) => gameType > 0 && gameType <= 99;
+
     static int ParseMaxPlayers(byte[] raw)
     {
         if (raw == null || raw.Length < 20)

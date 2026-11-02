@@ -176,6 +176,31 @@ namespace KartRider
         public static bool IsDuoTeamChannel(byte channelIndex) =>
             Channels.TryGetValue(channelIndex, out var ch) && ch.DuoTeam;
 
+        /// <summary>
+        /// 取频道配置（channel.xml）。不存在的序号返回 null。
+        ///
+        /// Channels 的键从 1 开始，而客户端各处下发的频道序号基准并不统一
+        /// （PqChannelSwitch 会先 -1，PqChannelMovein 直接存原始值），
+        /// 所以这里先按原值查，查不到再按 -1 兜底，避免频道语义整体错位导致
+        /// 双人组队频道/模式识别不出来。
+        /// </summary>
+        public static Channel GetChannelInfo(int channelIndex)
+        {
+            if (channelIndex < 0 || channelIndex > 255)
+            {
+                return null;
+            }
+            if (Channels.TryGetValue((byte)channelIndex, out var ch))
+            {
+                return ch;
+            }
+            if (channelIndex > 0 && Channels.TryGetValue((byte)(channelIndex - 1), out ch))
+            {
+                return ch;
+            }
+            return null;
+        }
+
         public static Keys[] keys = new Keys[]
         {
             new Keys { first_val = 2919676295, second_val = 263300380, key1 = "QyvKvO60jogWDupzJ7gm0kRQdooFjWRjSjlq0gu/x2k=", key2 = "GXQstj1A95XiHvjrOGuPkzdyL+7qxETl/cPlUZk2KA4=" },
@@ -282,6 +307,17 @@ namespace KartRider
 
         public static void ChRequestChStaticReplyPacket(SessionGroup Parent)
         {
+            // 一次性把频道表打出来：排查「房间列表看不到/双人组队频道是哪个」时最需要的原始信息
+            if (Channels.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var c in Channels)
+                {
+                    sb.Append($"{c.Key}:{c.Value.Name}(gameType={c.Value.WireGameType},duo={c.Value.DuoTeam}) | ");
+                }
+                Log.Info($"[Channel] 共 {Channels.Count} 个频道 -> {sb}");
+            }
+
             byte[] ChannelData = Array.Empty<byte>();
             using (OutPacket outPacket = new OutPacket("ChRequestChStaticReplyPacket"))
             {
