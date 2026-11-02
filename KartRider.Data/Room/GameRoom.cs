@@ -144,9 +144,6 @@ public class GameRoom
         RareItems.Clear();
     }
 
-    // 玩家实时赛道跟踪：id -> 坐标/圈数/累计里程（道具赛位置包走TCP逐连接填充）
-    public ConcurrentDictionary<int, TrackPos> Tracks { get; set; } = new();
-
     /// <summary>房间状态互斥量：槽位增删、开局、结算等结构性变更都串行化在这个锁上。</summary>
     public readonly object Sync = new object();
 
@@ -192,107 +189,6 @@ public class GameRoom
             return new float[6];
         }
         return specs[index];
-    }
-
-    // 起点区判定（起跑线附近小区域）。
-    // 旧条件 y<200 在该赛道全程不满足（y 最小 286），导致过线检测完全失效。
-    private static bool IsStartZone(float x, float y) =>
-        x >= 400f && x <= 520f && y >= 550f && y <= 650f;
-
-    // 更新玩家位置跟踪：累计里程、检测过线圈数
-    public void UpdateTrack(int id, float x, float y, uint ts1)
-    {
-        if (!Tracks.TryGetValue(id, out TrackPos t))
-        {
-            // 首次采样：默认在起点区（起跑线附近），圈数从 0 开始
-            Tracks[id] = new TrackPos
-            {
-                X = x,
-                Y = y,
-                Ts = ts1,
-                InStartZone = IsStartZone(x, y)
-            };
-            return;
-        }
-
-        // 起点区判定提前：起点区内（开局倒车/原地微调）不累计里程、不建立方向参考
-        bool inStart = IsStartZone(x, y);
-
-        // ts1 不连续（断线/重连/时钟域跳变）：不累计位移，防止坐标跳变污染里程；
-        // 无时间戳包(ts1==0)沿用上次时间戳，视为连续采样，避免与有时间戳包交替上报时误判断线
-        uint effTs = ts1 == 0 ? t.Ts : ts1;
-        bool gap = !t.HasPrev || effTs < t.Ts || effTs - t.Ts > 30000;
-        if (!gap)
-        {
-            float dx = x - t.X;
-            float dy = y - t.Y;
-            float dist = (float)Math.Sqrt(dx * dx + dy * dy);
-            if (dist > 0.001f) // 忽略原地不动
-            {
-                if (!t.HasDir)
-                {
-                    if (!inStart)
-                    {
-                        // 已离开起点区的首段位移：累计并建立前进方向参考，
-                        // 避免开局倒车把方向基准建反（倒车方向留在起点区内，被 inStart 拦截）
-                        t.TotalDist += dist;
-                        t.DirX = dx / dist;
-                        t.DirY = dy / dist;
-                        t.HasDir = true;
-                    }
-                }
-                else
-                {
-                    // 投影到前进方向：正向位移（proj>=0）按投影计入里程并平滑跟随赛道转向；
-                    // 反向位移（proj<0，掉头/发卡弯/倒车）不累计也不扣减，仅让方向跟随新位移。
-                    // 旧逻辑反向时保持原方向且按投影扣减，发卡弯（>90° 转向）下方向卡死、
-                    // 里程被反复扣减到 0（日志实测：真实路径 3294，旧逻辑只记 115）。
-                    float proj = dx * t.DirX + dy * t.DirY;
-                    if (proj >= 0f)
-                    {
-                        t.TotalDist += proj;
-                        // 平滑更新前进方向（当前位移与旧方向各半归一），跟随赛道转弯
-                        float mixX = t.DirX + dx / dist;
-                        float mixY = t.DirY + dy / dist;
-                        float ml = (float)Math.Sqrt(mixX * mixX + mixY * mixY);
-                        if (ml > 0.001f)
-                        {
-                            t.DirX = mixX / ml;
-                            t.DirY = mixY / ml;
-                        }
-                    }
-                    else
-                    {
-                        t.DirX = dx / dist;
-                        t.DirY = dy / dist;
-                    }
-                }
-            }
-        }
-
-        // 圈数：离开起点区后再次进入起点区 = 过线，圈数 +1
-        if (t.HasPrev && !t.InStartZone && inStart)
-        {
-            t.Lap++;
-            if (t.DistAtLap > 0)
-            {
-                float lapLen = t.TotalDist - t.DistAtLap;
-                if (lapLen > 200f) // 过滤异常短圈（误检）
-                {
-                    t.LapLength = lapLen; // 记录最近一圈长度，用于距离分档归一化
-                }
-            }
-            t.DistAtLap = t.TotalDist;
-        }
-
-        t.HasPrev = true;
-        t.InStartZone = inStart;
-        t.X = x;
-        t.Y = y;
-        if (ts1 != 0)
-        {
-            t.Ts = ts1; // 无时间戳包不覆盖，保持上次有效时间戳
-        }
     }
 
     // 结束时深拷贝快照，防止结算期间玩家断线

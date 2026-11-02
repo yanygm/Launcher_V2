@@ -329,7 +329,6 @@ public static class MultyPlayer
         room.SettleTriggered = false;
         room.TeamGauge.Clear();
         room.Ready.Clear();
-        room.Tracks.Clear(); // 新一局重置位置跟踪（坐标/圈数/里程）
         Log.Debug($"StartTicks = {room.StartTicks}");
     }
 
@@ -1123,6 +1122,7 @@ public static class MultyPlayer
             {
                 return;
             }
+
             int gaugeMembers = room.GetPlayerCount(team);
             if (gaugeMembers < 1) gaugeMembers = 1;
             float gauge = room.AddTeamGauge(team, value * 0.000125f / gaugeMembers);
@@ -1592,7 +1592,6 @@ public static class MultyPlayer
         room.Ready.Clear();
         room.TimeData.Clear();
         room.Ranking.Clear();
-        room.Tracks.Clear();
         room.redGauge = 0f;
         room.blueGauge = 0f;
         Interlocked.Exchange(ref room.StartGate, 0);
@@ -1795,10 +1794,16 @@ public static class MultyPlayer
         int playerCount = room.GetPlayerCount();
         int totalMembers = room.GetCount();
 
-        // 只有 1 个参赛者（没有 AI）时不允许开局。
+        // 组队赛（含双人组队）按需求放开：不校验参赛人数、不校验红蓝两队是否平衡，
+        // 单人或人数不一致都能直接开局。
+        bool teamMode = room.GameType == 3 || room.GameType == 4;
+        if (teamMode)
+        {
+            Log.Info($"[Start] 组队房 {room.RoomId} 不校验人数/队伍平衡（参赛者 {totalMembers} 人，红队 {room.GetTeamMemberCount(1)} / 蓝队 {room.GetTeamMemberCount(2)}），直接开局");
+        }
+        // 个人模式仍然要求至少 2 名参赛者（1 人单跑没有任何意义）。
         // 注意：拒绝码 1 会被客户端当成“开始匹配”，所以这里用 3（需要 2 人以上）。
-        // 双人组队房按需求放开：单人也能直接开局，不做人数校验。
-        if (totalMembers < 2 && !room.DuoTeam)
+        else if (totalMembers < 2)
         {
             Log.Info($"[Start] 房间 {room.RoomId} 只有 {totalMembers} 名参赛者，拒绝开局（码 3）");
             using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
@@ -1807,28 +1812,6 @@ public static class MultyPlayer
                 Parent.Client.Send(denyPacket);
             }
             return;
-        }
-
-        // 普通组队赛：两队人数必须相同且非空（客户端对应弹窗：两组人数相同）。
-        // 双人组队房按需求放开：不限制队伍数量与每队人数（单人、人数不等都允许开局）。
-        if (room.DuoTeam)
-        {
-            Log.Info($"[Start] 双人房 {room.RoomId} 不校验队伍数量/人数（参赛者 {totalMembers} 人），直接开局");
-        }
-        else if (room.GameType == 3 || room.GameType == 4)
-        {
-            int team1 = room.GetTeamMemberCount(2);
-            int team2 = room.GetTeamMemberCount(1);
-            if (team1 != team2 || team1 == 0)
-            {
-                Log.Info($"[Start] 房间 {room.RoomId} 组队人数不匹配（{team1} vs {team2}），拒绝开局（码 4）");
-                using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
-                {
-                    denyPacket.WriteInt(4);
-                    Parent.Client.Send(denyPacket);
-                }
-                return;
-            }
         }
 
         if (readyCount < playerCount || playerCount < 1)
@@ -2178,6 +2161,14 @@ public static class MultyPlayer
         }
     }
 
+    // 添加指定数量的 Ai
+    /// <summary>
+    /// 从建房包里读出房间人数。
+    ///
+    /// 结构解析结果：人数固定位于**包尾第 85 个字节**（raw.Length - 85）。
+    /// 实测 2/4/6/8 人房、个人/组队、不同房间名长度都成立（115 字节包 offset=30、113 字节包 offset=28）。
+    /// 保留旧的标记扫描作为兜底，两者都失败才回退 8。
+    /// </summary>
     /// <summary>
     /// 解析 ChGetRoomListRequestPacket（GetRawBuffer 带 4 字节包头，字段紧随其后）。
     ///

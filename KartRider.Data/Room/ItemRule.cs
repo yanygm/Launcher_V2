@@ -267,9 +267,6 @@ public static class ItemRule
     /// 计算名次（1 起）。
     ///
     /// 以客户端上报的名次为准：它包含 AI、与画面一致。
-    /// 服务端的 room.Tracks 只在"吃到道具箱"时采样位置，累计里程是稀疏跳变，
-    /// 既无法覆盖 AI，也不能真实反映名次（v15 用它排序导致"永远 1位"）。
-    /// 若将来有稳定位置流（每帧上报），可再启用按里程排序。
     /// </summary>
     public static int ComputeRank(GameRoom room, int playerId, short clientRank, int playerCount)
     {
