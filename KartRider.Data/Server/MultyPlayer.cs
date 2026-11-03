@@ -99,7 +99,7 @@ public static class MultyPlayer
         return ranks;
     }
 
-    static void Start(SessionGroup Parent, int roomId)
+    internal static void Start(SessionGroup Parent, int roomId)
     {
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
@@ -332,7 +332,7 @@ public static class MultyPlayer
         Log.Debug($"StartTicks = {room.StartTicks}");
     }
 
-    static void Set_settleTrigger(GameRoom room)
+    internal static void Set_settleTrigger(GameRoom room)
     {
         var onceTimer = new System.Timers.Timer();
         onceTimer.Interval = 10000;
@@ -386,1136 +386,12 @@ public static class MultyPlayer
         Log.Info($"EndTicks = {room.EndTicks + 6000}");
     }
 
-    public static void Clientsession(SessionGroup Parent, string packetName, InPacket iPacket)
-    {
-        if (!string.IsNullOrEmpty(Parent.Client.Nickname))
-        {
-            if (!FileName.FileNames.ContainsKey(Parent.Client.Nickname))
-            {
-                FileName.Load(Parent.Client.Nickname);
-            }
-            ProfileService.Load(Parent.Client.Nickname);
-        }
-
-        if (packetName == "GameSlotPacket")
-        {
-            SlotData.GameSlotPacket(Parent, iPacket);
-            return;
-        }
-        else if (packetName == "GameControlPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            var state = iPacket.ReadInt();
-            //start
-            if (state == 0 && room.StartTicks == 0)
-            {
-                Start(Parent, roomId);
-            }
-            //finish
-            else if (state == 2)
-            {
-                var time = iPacket.ReadUInt();
-                var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
-                if (player != null)
-                {
-                    using (OutPacket oPacket = new OutPacket("GameRaceTimePacket"))
-                    {
-                        oPacket.WriteInt(player.ID);
-                        oPacket.WriteUInt(time);
-                        BroadCast(roomId, oPacket);
-                    }
-                    room.TimeData.TryAdd(player.ID, time);
-                    Log.Info($"GameControlPacket, ID = {player.ID}, Time = {time}");
-                }
-                if (room.EndTicks == 0)
-                {
-                    room.SnapshotMembers = DeepCopyMembers(room._IDs); // 结束瞬间拍快照
-                    room.EndTicks = ConvertTick() + 10000;
-                    using (OutPacket oPacket = new OutPacket("GameControlPacket"))
-                    {
-                        oPacket.WriteInt(3);
-                        oPacket.WriteUInt(room.EndTicks);
-                        BroadCast(roomId, oPacket, Parent.Client.Nickname);
-                    }
-                    Set_settleTrigger(room);
-                }
-            }
-            return;
-        }
-        else if (packetName == "ChGetRoomListRequestPacket")
-        {
-            byte[] rawList = iPacket.GetRawBuffer();
-            ParseRoomListRequest(rawList, out int page, out int gameType);
-            // 频道由 PqChannelMovein / PqChannelSwitch 记录在玩家档案里，仅用于日志排查
-            int channel = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.Channel ?? -1;
-            // 回列表前先清掉 0 人房，避免客户端看到无法进入的幽灵房
-            RoomManager.PurgeEmptyRooms();
-            // 需求：所有模式/频道都显示全部房间（不做频道隔离、不做模式过滤）。
-            // 原实现 isolate = channel >= 0 && RacingGameTypes.Contains(gameType) 会把别的频道的房间滤掉，
-            // 表现为同一个房间在组队频道能看到、在别的模式/频道就看不到。
-            var rooms = RoomManager.GetRoomsByPage(page, -1, gameType, out int total, false);
-            Log.Info($"[RoomList] {Parent.Client.Nickname} req={BitConverter.ToString(rawList)} channel={channel} gameType={gameType} page={page} -> total={total}");
-            using (OutPacket oPacket = new OutPacket("ChGetRoomListReplyPacket"))
-            {
-                Log.Info($"Room Count: {total} (channel={channel}, 全局列表)");
-                oPacket.WriteInt(total); // 房间总数（本频道）
-                oPacket.WriteInt(page);
-                oPacket.WriteInt(rooms.Count); // 房间数量
-                foreach (var _room in rooms)
-                {
-                    // 逐个房间打一条日志：出现“别人看不到房间”时，能直接比对
-                    // 房间的 mode/channel 与请求方频道是否一致
-                    Log.Info($"[RoomList]  -> room={_room.Key} name={_room.Value.RoomName} mode={_room.Value.ModeByte} duo={_room.Value.DuoTeam} channel={_room.Value.Channel} players={_room.Value.GetPlayerCount()} started={_room.Value.Started}");
-                    // 列表条目的模式字段按「本次列表的上下文模式」下发。
-                    // 客户端是按频道模式渲染列表的：实测在 RotationMode 频道（gameType=71）里建的双人组队房
-                    // （mode=68），条目原样下发时会被客户端整条丢弃（服务端 total=1，客户端列表依旧空白）。
-                    // 房间的真实模式仍由 ChJoinRoomReplyPacket / GrSessionDataPacket 下发，这里只影响列表显示。
-                    byte listMode = (gameType > 0 && gameType <= 255) ? (byte)gameType : _room.Value.ModeByte;
-                    if (listMode != _room.Value.ModeByte)
-                    {
-                        Log.Warn($"[RoomList] 房间 {_room.Key} 实际模式={_room.Value.ModeByte}，列表按请求模式 {listMode} 下发（模式不一致时客户端会丢弃条目）");
-                    }
-                    // 刚建好的房间还没选图，track 是 0。真实房间一定带合法赛道 hash，
-                    // 客户端拿到 0（不存在的赛道）时很可能整条丢弃该房间条目，这里补一个可用占位图。
-                    uint listTrack = _room.Value.track;
-                    if (listTrack == 0)
-                    {
-                        listTrack = ListFallbackTrack();
-                        Log.Info($"[RoomList] 房间 {_room.Key} 尚未选图，列表赛道用占位图 {RandomTrack.GetTrackName(listTrack)} (0x{listTrack:X8})");
-                    }
-                    oPacket.WriteShort((short)_room.Key);
-                    // RoomName 理论上非空；但一旦为 null，WriteString 会抛异常 → 处理器中断 → 不回包 →
-                    // 客户端在房间列表页无限等待（表现为卡死）。这里做一次兜底。
-                    oPacket.WriteString(_room.Value.RoomName ?? string.Empty); // 房间名称
-                    oPacket.WriteUInt(listTrack); // 赛道
-                    oPacket.WriteBool(_room.Value.Lock); // 是否上锁
-                    oPacket.WriteByte(listMode); // 模式（列表上下文模式）
-                    oPacket.WriteByte(_room.Value.SpeedType); // 速度模式
-                    oPacket.WriteBool(_room.Value.Started); // 房间状态
-                    oPacket.WriteByte((byte)(8 - _room.Value.CloseSlotIds.Count)); // 房间最大人数
-                    oPacket.WriteByte((byte)_room.Value.GetCount()); // 房间人数
-                    oPacket.WriteHexString("00 00 00 00 00 00");
-                }
-                Parent.Client.Send(oPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqChannelSwitch")
-        {
-            int length = iPacket.ReadInt();
-            iPacket.ReadBytes(length);
-            byte rawChannel = iPacket.ReadByte(); // 客户端下发的原始频道序号（不要减 1 存档案）
-            byte channel = (byte)(rawChannel - 1);
-            var channelData = GameSupport.Channels.ContainsKey(channel) ? GameSupport.Channels[channel] : null;
-
-            // 房间列表与建房都用档案里的频道做隔离，切换频道必须同步更新档案，
-            // 否则切完之后仍然按旧频道过滤：自己建的房别人看不到、别人建的房自己也看不到。
-            // 注意存的是 rawChannel - 1：PqChannelSwitch 的值比 PqChannelMovein 的 int 大 1
-            // （实测同一次换频道：Switch=20、Movein=19），两边必须存同一个编号，否则又会对不上。
-            if (!string.IsNullOrEmpty(Parent.Client.Nickname))
-            {
-                var switchConfig = ProfileService.GetProfileConfig(Parent.Client.Nickname);
-                if (switchConfig?.Rider != null && switchConfig.Rider.Channel != channel)
-                {
-                    int oldChannel = switchConfig.Rider.Channel;
-                    switchConfig.Rider.Channel = channel;
-                    ProfileService.Save(Parent.Client.Nickname, switchConfig);
-                    Log.Info($"[ChannelSwitch] {Parent.Client.Nickname} 频道 {oldChannel} -> {channel}（{channelData?.Name ?? "未知频道"}，原始序号 {rawChannel}）");
-                }
-            }
-
-            if (channelData == null) return;
-            StartTimeAttack[Parent.Client.Nickname] = channelData.CreateSpeed;
-            Log.Info($"Channel Switch, channel = {channelData.Name}");
-
-            // 获取服务器IP地址
-            IPEndPoint serverIPEndPoint = GetServerEndPoint(Parent);
-
-            using (OutPacket oPacket = new OutPacket("PrChannelSwitch"))
-            {
-                oPacket.WriteInt(0);
-                oPacket.WriteShort(channel);
-                oPacket.WriteShort(iPacket.ReadShort());
-                oPacket.WriteEndPoint(serverIPEndPoint);
-                Parent.Client.Send(oPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqChannelMovein")
-        {
-            uint UserNO = iPacket.ReadUInt();
-            // 第二个 int 是频道号（0-based）：[hash][UserNO][channel]...
-            int channelId = (iPacket.Length - iPacket.Position >= 4) ? iPacket.ReadInt() : -1;
-
-            // 换频道 = 新连接 + 用 UserNO 重新握手。这里若查不到昵称，绝不能"静默 return"：
-            // 不回包会让客户端一直等，表现为整个游戏卡死。优先用账号级映射，
-            // 其次退回本连接已有的昵称；都拿不到才断开（让客户端显式重连，而不是空等）。
-            string nickname = ClientManager.GetNickname(UserNO);
-            if (string.IsNullOrEmpty(nickname))
-            {
-                nickname = Parent.Client.Nickname;
-            }
-            if (string.IsNullOrEmpty(nickname))
-            {
-                Metrics.Inc(ref Metrics.ProtocolErrors);
-                Log.Warn($"[ChannelMoveIn] 未知 UserNO={UserNO}（{Parent.Client.GetRemoteAddress()}），断开连接以避免客户端空等");
-                Parent.Client.Disconnect();
-                return;
-            }
-            Log.Info($"PqChannelMovein nickname = {nickname} (UserNO={UserNO})");
-            IPEndPoint clientEndPoint = Parent.Client.Socket.RemoteEndPoint as IPEndPoint;
-            if (clientEndPoint == null) return;
-            string clientId = ClientManager.GetClientId(clientEndPoint);
-            if (!string.IsNullOrEmpty(nickname))
-            {
-                if (string.IsNullOrEmpty(Parent.Client.Nickname))
-                {
-                    Parent.Client.Nickname = nickname;
-                }
-                var nicknameConfig = ProfileService.GetProfileConfig(nickname);
-                if (nicknameConfig?.Rider == null)
-                {
-                    Log.Info($"[PrChannelMoveIn] Warning: ProfileConfig or Rider is null for {nickname}");
-                    return;
-                }
-                nicknameConfig.Rider.ClientId = clientId;
-                nicknameConfig.Rider.Channel = channelId;
-                ProfileService.Save(nickname, nicknameConfig);
-                using (OutPacket oPacket = new OutPacket("PrChannelMoveIn"))
-                {
-                    oPacket.WriteByte(1);
-                    oPacket.WriteEndPoint(IPAddress.Any, ProfileService.SettingConfig.ServerPort);
-                    oPacket.WriteEndPoint(IPAddress.Any, (ushort)(ProfileService.SettingConfig.ServerPort + 1));
-                    Parent.Client.Send(oPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "ChCreateRoomRequestPacket")
-        {
-            // 房间人数不在已解析的字段里，而是紧跟在标记 BA 7C 70 之后的一个字节（2/4/6/8）
-            byte[] rawCreate = iPacket.GetRawBuffer();
-            int maxPlayers = ParseMaxPlayers(rawCreate);
-            string RoomName = iPacket.ReadString();    //room name
-            Log.Debug($"RoomName = {RoomName}, len = {RoomName.Length}");
-            string Password = iPacket.ReadString();
-            Log.Debug($"Password len = {Password.Length}");
-            byte GameType = iPacket.ReadEncodedByte(); //7c
-            int raw1 = iPacket.ReadInt();
-            var AiCount = iPacket.ReadInt();
-            int raw2 = iPacket.ReadInt();
-            int raw3 = iPacket.ReadInt();
-            byte[] RoomData = iPacket.ReadBytes(32);
-            iPacket.ReadBytes(5);
-            byte AiSwitch = iPacket.ReadByte();
-            Log.Info($"[Room] create raw1={raw1} ai={AiCount} raw2={raw2} raw3={raw3} data={BitConverter.ToString(RoomData)}");
-
-            if (UdpServer.GetUdp(Parent.Client.Nickname).Item2 == 0)
-            {
-                using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
-                {
-                    oPacket.WriteByte(0);
-                    oPacket.WriteByte(0);
-                    oPacket.WriteByte(0);
-                    oPacket.WriteEncByte(GameType);
-                    Parent.Client.Send(oPacket);
-                }
-                return;
-            }
-
-            var RoomId = RoomManager.CreateRoom();
-            var Room = RoomManager.GetRoom(RoomId);
-            Room.RoomName = RoomName;
-            if (!string.IsNullOrEmpty(Password))
-            {
-                Room.Lock = true;
-            }
-            Room.LockPwd = Password;
-            if (StartTimeAttack.ContainsKey(Parent.Client.Nickname))
-            {
-                Room.SpeedType = StartTimeAttack[Parent.Client.Nickname];
-            }
-            else
-            {
-                Room.SpeedType = 7;
-            }
-            Room.Channel = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.Channel ?? -1;
-            Room.MaxPlayers = maxPlayers;
-            byte rawGameType = GameType;
-            byte playerChannel = (byte)(Room.Channel >= 0 ? Room.Channel : 255);
-            var channelInfo = GameSupport.GetChannelInfo(playerChannel);
-
-            // 双人组队判定：频道配置 > 建房包模式号 > 频道名/房间名关键字。
-            // 建房包里的模式号并不总是基础模式（1~4）：双人组队频道实测下发 51，早期抓包是 68，
-            // 若直接拿去当 3/4 用，双人房会被建成"个人模式"——没有队伍位、模式号也和频道对不上，
-            // 房主进房后界面错乱（客户端崩溃），其他人房间列表里也匹配不到这个房间。
-            bool duoRequested = (channelInfo != null && channelInfo.DuoTeam)
-                                || DuoTeamMode.IsDuoGameType(rawGameType)
-                                || DuoTeamMode.IsDuoRoomName(channelInfo?.Name)
-                                || DuoTeamMode.IsDuoRoomName(RoomName);
-
-            // 基础模式优先级：客户端模式号 → 频道配置（channel.xml，客户端与服务端共用）→ 双人频道按名称判断
-            byte baseGameType = DuoTeamMode.ToBaseGameType(rawGameType);
-            if (!DuoTeamMode.IsBaseGameType(baseGameType))
-            {
-                if (channelInfo != null && DuoTeamMode.IsBaseGameType(channelInfo.GameType))
-                {
-                    baseGameType = channelInfo.GameType;
-                }
-                else if (duoRequested)
-                {
-                    baseGameType = DuoTeamMode.GuessDuoBaseGameType(channelInfo?.Name, RoomName);
-                }
-            }
-            GameType = baseGameType;
-            Room.GameType = GameType;
-            Room.DuoTeam = duoRequested && (GameType == 3 || GameType == 4) && ProfileService.SettingConfig.DuoTeamChannel;
-            Room.DuoTeamSize = Room.DuoTeam
-                ? DuoTeamMode.NormalizeTeamSize(ProfileService.SettingConfig.DuoTeamSize)
-                : (byte)2;
-            // 下发给客户端的模式号：基础模式（3/4）时才按官方值换成 67/68；
-            // 客户端给的是扩展模式号（如 51）时原样回显，避免客户端收到自己不认识的模式而卡死。
-            Room.WireGameType = DuoTeamMode.IsBaseGameType(rawGameType)
-                ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
-                : rawGameType;
-            Room.RoomData = RoomData;
-            Log.Info($"[Room] create gameType={rawGameType} -> base={GameType} duo={Room.DuoTeam} wire={Room.WireGameType} channel={Room.Channel}({channelInfo?.Name ?? "未知频道"} cfgGameType={channelInfo?.WireGameType.ToString() ?? "-"} cfgDuo={channelInfo?.DuoTeam.ToString() ?? "-"})");
-            Log.Debug($"CreateRoom = {RoomId}");
-            byte randomTrackGameType = 0;
-            if (GameType == 2 || GameType == 4 || GameType == 14 || GameType == 54)
-            {
-                randomTrackGameType = 1;
-            }
-            Room.RandomTrackGameType = randomTrackGameType;
-
-            if (GameType == 3 || GameType == 4)
-            {
-                byte slot = Room.DuoTeam
-                    ? RoomManager.AddDuoPlayer(RoomId, Parent.Client.Nickname, 2, Parent)
-                    : RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 2, 2, Parent);
-                if (slot == 255)
-                {
-                    Log.Info($"CreateRoom Failed, 房主入座失败（room={RoomId}, nickname={Parent.Client.Nickname}）");
-                    ChCreateRoomFailReply(Parent, Room, rawGameType);
-                    return;
-                }
-                Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
-                if (player == null)
-                {
-                    Log.Info($"GetPlayer Failed");
-                    ChCreateRoomFailReply(Parent, Room, rawGameType);
-                    return;
-                }
-                Room.RoomMaster = player.ID;
-                uint pmap = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.pmap ?? 0;
-                if (pmap == 590)
-                {
-                    Room.RoomMaster = 0;
-                }
-                using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
-                {
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte((byte)(Room.DuoTeam ? 4 : 2));
-                    oPacket.WriteEncByte(Room.ModeByte);
-                    Parent.Client.Send(oPacket);
-                }
-            }
-            else
-            {
-                byte slot = RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 0, 2, Parent);
-                if (slot == 255)
-                {
-                    Log.Info($"CreateRoom Failed, 房主入座失败（room={RoomId}, nickname={Parent.Client.Nickname}）");
-                    ChCreateRoomFailReply(Parent, Room, rawGameType);
-                    return;
-                }
-                Player player = RoomManager.GetPlayer(RoomId, Parent.Client.Nickname);
-                if (player == null)
-                {
-                    Log.Info($"GetPlayer Failed");
-                    ChCreateRoomFailReply(Parent, Room, rawGameType);
-                    return;
-                }
-                Room.RoomMaster = player.ID;
-                uint pmap = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.pmap ?? 0;
-                if (pmap == 590)
-                {
-                    Room.RoomMaster = 0;
-                }
-                using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
-                {
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteByte((byte)maxPlayers);
-                    oPacket.WriteEncByte(Room.ModeByte);
-                    Parent.Client.Send(oPacket);
-                }
-            }
-            // 建房时只记录人数：等客户端真正进入房间（GrFirstRequestPacket）后再锁，
-            // 立刻发槽位包会因为房间界面还没建好而黑屏。
-            Room.PendingMaxPlayers = maxPlayers;
-
-            if (AiCount > 0 && AiSwitch == 6)
-            {
-                // 新增 AI 数量
-                AddAis(Room, AiCount - 1, randomTrackGameType);
-            }
-            return;
-        }
-        else if (packetName == "GrFirstRequestPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            if (roomId == -1)
-            {
-                return;
-            }
-            GrSessionDataPacket(Parent, Parent.Client.Nickname);
-            //Thread.Sleep(10);
-            GrSlotDataPacket(roomId);
-
-            // 进房后按建房时选的人数锁掉多余格子（只做一次）
-            var enterRoom = RoomManager.GetRoom(roomId);
-            if (enterRoom != null && !enterRoom.RoomSizeApplied)
-            {
-                enterRoom.RoomSizeApplied = true;
-                ApplyRoomSize(enterRoom, enterRoom.PendingMaxPlayers > 0 ? enterRoom.PendingMaxPlayers : 8);
-            }
-            return;
-        }
-        else if (packetName == "GrChangeTrackPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            room.track = iPacket.ReadUInt();
-            Log.Debug($"Gr Track Changed : {RandomTrack.GetTrackName(room.track)}");
-            GrSlotDataPacket(roomId);
-            return;
-        }
-        else if (packetName == "GrRequestSetSlotStatePacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-
-            var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
-            if (player == null)
-            {
-                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
-                return;
-            }
-
-            if (!room.Started)
-            {
-                player.PlayerType = iPacket.ReadInt();
-                GrSlotStatePacket(roomId);
-                using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
-                {
-                    oPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
-                    oPacket.WriteByte(1);
-                    oPacket.WriteInt(player.ID);
-                    oPacket.WriteInt(player.PlayerType);
-                    BroadCast(roomId, oPacket);
-                }
-                GrSlotDataPacket(roomId);
-            }
-            return;
-        }
-        else if (packetName == "GrRequestClosePacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            if (roomId == -1)
-            {
-                return;
-            }
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            uint unk1 = iPacket.ReadUInt();
-            byte type = iPacket.ReadByte();
-            uint slotId1 = iPacket.ReadUInt();
-            uint unk2 = iPacket.ReadUInt();
-            uint slotId2 = iPacket.ReadUInt();
-            using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
-            {
-                oPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
-                if (room.GameType == 3 || room.GameType == 4)
-                {
-                    if (unk1 < 8 && slotId1 < 8 && unk2 < 8 && slotId2 < 8 && type == 1 && !room.CloseSlotIds.Contains((byte)slotId1) && !room.CloseSlotIds.Contains((byte)slotId2))
-                    {
-                        if (room.AddClose((byte)slotId1, (int)unk1) && room.AddClose((byte)slotId2, (int)unk2))
-                        {
-                            oPacket.WriteByte(1);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk2);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(1);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                        else
-                        {
-                            oPacket.WriteByte(0);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk2);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                    }
-                    else if (unk1 < 8 && slotId1 < 8 && unk2 < 8 && slotId2 < 8 && type == 0 && room.CloseSlotIds.Contains((byte)slotId1) && room.CloseSlotIds.Contains((byte)slotId2))
-                    {
-                        if (room.RemoveClose((byte)slotId1, (int)unk1) && room.RemoveClose((byte)slotId2, (int)unk2))
-                        {
-                            oPacket.WriteByte(1);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk2);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                        else
-                        {
-                            oPacket.WriteByte(0);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk2);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        oPacket.WriteByte(0);
-                        oPacket.WriteUInt(unk1);
-                        oPacket.WriteUInt(unk2);
-                        int closeCount = room.CloseSlotIds.Count;
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(closeCount);
-                        foreach (byte slotId in room.CloseSlotIds)
-                        {
-                            oPacket.WriteByte(slotId);
-                        }
-                    }
-                    BroadCast(roomId, oPacket);
-                }
-                else
-                {
-                    if (unk1 < 8 && slotId1 < 8 && type == 1 && !room.CloseSlotIds.Contains((byte)slotId1))
-                    {
-                        if (room.AddClose((byte)slotId1, (int)unk1))
-                        {
-                            oPacket.WriteByte(1);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk1);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(1);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                        else
-                        {
-                            oPacket.WriteByte(0);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk1);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                    }
-                    else if (unk1 < 8 && slotId1 < 8 && type == 0 && room.CloseSlotIds.Contains((byte)slotId1))
-                    {
-                        if (room.RemoveClose((byte)slotId1, (int)unk1))
-                        {
-                            oPacket.WriteByte(1);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk1);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                        else
-                        {
-                            oPacket.WriteByte(0);
-                            oPacket.WriteUInt(unk1);
-                            oPacket.WriteUInt(unk1);
-                            int closeCount = room.CloseSlotIds.Count;
-                            oPacket.WriteInt(0);
-                            oPacket.WriteInt(closeCount);
-                            foreach (byte slotId in room.CloseSlotIds)
-                            {
-                                oPacket.WriteByte(slotId);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        oPacket.WriteByte(0);
-                        oPacket.WriteUInt(unk1);
-                        oPacket.WriteUInt(unk1);
-                        int closeCount = room.CloseSlotIds.Count;
-                        oPacket.WriteInt(0);
-                        oPacket.WriteInt(closeCount);
-                        foreach (byte slotId in room.CloseSlotIds)
-                        {
-                            oPacket.WriteByte(slotId);
-                        }
-                    }
-                    BroadCast(roomId, oPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "GrRequestStartPacket")
-        {
-            GrSessionDataPacket(Parent);
-            return;
-        }
-        else if (packetName == "PcReportStateInGame")
-        {
-            return;
-        }
-        else if (packetName == "ChLeaveRoomRequestPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            int slotId = RoomManager.GetPlayerSlotId(roomId, Parent.Client.Nickname);
-            if (slotId != -1)
-            {
-                Log.Info($"Leave roomId: {roomId} slotId: {slotId}");
-                var Leave = RoomManager.RemovePlayer(roomId, (byte)slotId, Parent.Client.Nickname);
-                using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
-                {
-                    oPacket.WriteBool(Leave);
-                    Parent.Client.Send(oPacket);
-                }
-            }
-            else
-            {
-                Log.Info($"Leave Failed roomId: {roomId} slotId: {slotId}");
-                using (OutPacket oPacket = new OutPacket("ChLeaveRoomReplyPacket"))
-                {
-                    oPacket.WriteBool(false);
-                    Parent.Client.Send(oPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "GrRequestBasicAiPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            byte ID = iPacket.ReadByte();
-            if (RoomManager.TryGetIdDetail(roomId, ID) is Ai ai)
-            {
-                room.RemoveMember(ai.SlotId, "");
-                using (OutPacket oPacket = new OutPacket("GrSlotDataBasicAi"))
-                {
-                    oPacket.WriteInt(1);
-                    oPacket.WriteByte(1);
-                    oPacket.WriteInt(ID);
-                    oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 00 00 00");
-                    Position(roomId, oPacket);
-                    BroadCast(roomId, oPacket);
-                }
-            }
-            else
-            {
-                AddAi(Parent, roomId, ID);
-            }
-            using (OutPacket oPacket = new OutPacket("GrReplyBasicAiPacket"))
-            {
-                oPacket.WriteByte(1);
-                oPacket.WriteHexString("00 00 00 00");
-                BroadCast(roomId, oPacket);
-            }
-            return;
-        }
-        else if (packetName == "GameAiGoalinPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            var Id = iPacket.ReadInt();
-            var Time = iPacket.ReadUInt();
-            using (OutPacket oPacket = new OutPacket("GameRaceTimePacket"))
-            {
-                oPacket.WriteInt(Id);
-                oPacket.WriteUInt(Time);
-                BroadCast(roomId, oPacket);
-            }
-            room.TimeData.TryAdd(Id, Time);
-            Log.Debug($"GameAiGoalinPacket, Id = {Id}, Time = {Time}");
-            if (room.EndTicks == 0)
-            {
-                room.SnapshotMembers = DeepCopyMembers(room._IDs);
-                room.EndTicks = ConvertTick() + 10000;
-                using (OutPacket oPacket = new OutPacket("GameControlPacket"))
-                {
-                    oPacket.WriteInt(3);
-                    oPacket.WriteUInt(room.EndTicks);
-                    BroadCast(roomId, oPacket);
-                }
-                Set_settleTrigger(room);
-            }
-            return;
-        }
-        else if (packetName == "GameTeamBoosterRequestAddGaugePacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            var team = iPacket.ReadByte();
-            var value = iPacket.ReadFloat();
-            Log.Info($"GameTeamBoosterRequestAddGaugePacket, teams = {team}, value = {value}");
-
-            if (!room.IsValidTeam(team))
-            {
-                return;
-            }
-
-            int gaugeMembers = room.GetPlayerCount(team);
-            if (gaugeMembers < 1) gaugeMembers = 1;
-            float gauge = room.AddTeamGauge(team, value * 0.000125f / gaugeMembers);
-            using (OutPacket oPacket = new OutPacket("GameTeamBoosterSetGaugePacket"))
-            {
-                oPacket.WriteByte(team);
-                oPacket.WriteFloat(gauge);
-                BroadCast(roomId, oPacket, "", team);
-            }
-            if (gauge >= 1f) room.ResetTeamGauge(team);
-            return;
-        }
-        else if (packetName == "GrChangeTeamPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                return;
-            }
-            var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
-            if (player == null)
-            {
-                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
-                return;
-            }
-            byte team = iPacket.ReadByte();
-            bool Bool;
-            if (room.DuoTeam) Bool = RoomManager.ChangeDuoTeam(roomId, player.SlotId, team);
-            else Bool = RoomManager.ChangeMemberTeam(roomId, player.SlotId, team);
-            Log.Info($"ChangeMemberTeam, roomId = {roomId}, SlotId = {player.SlotId}, Team = {team}, {Bool}");
-            using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))
-            {
-                oPacket.WriteInt(player.ID);
-                oPacket.WriteByte(player.Team);
-                Position(roomId, oPacket);
-                Parent.Client.Send(oPacket);
-            }
-            GrSlotDataPacket(roomId);
-            return;
-        }
-        else if (packetName == "ChJoinRoomRequestPacket")
-        {
-            var roomId = iPacket.ReadByte();
-            var unk = iPacket.ReadByte();
-            var pwd = iPacket.ReadString();
-            Log.Info($"ChJoinRoomRequestPacket, roomId = {roomId}, unk = {unk}, pwd = {pwd}");
-
-            ChJoinRoomReplyPacket(Parent, roomId, pwd);
-            return;
-        }
-        else if (packetName == "GrRiderTalkPacket")
-        {
-            string value = iPacket.ReadString();
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            if (roomId == -1)
-            {
-                return;
-            }
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                Log.Info($"GetRoom Failed, roomId = {roomId}");
-                return;
-            }
-
-            var player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
-            if (player == null)
-            {
-                Log.Info($"GetPlayer Failed, roomId = {roomId}, Parent.Client.Nickname = {Parent.Client.Nickname}");
-                return;
-            }
-
-            using (OutPacket outPacket = new OutPacket("GrRiderEchoPacket"))
-            {
-                outPacket.WriteInt(player.ID);
-                outPacket.WriteString(value);
-                BroadCast(roomId, outPacket, Parent.Client.Nickname);
-            }
-
-            if (value.StartsWith("选图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("换图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("選圖", StringComparison.OrdinalIgnoreCase) || value.StartsWith("換圖", StringComparison.OrdinalIgnoreCase))
-            {
-                uint track = RandomTrack.GetHash(value);
-                if (track != 0)
-                {
-                    room.track = track;
-                    GrSlotDataPacket(roomId);
-                }
-                return;
-            }
-            else if (value.StartsWith("开始游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("開始遊戲", StringComparison.OrdinalIgnoreCase))
-            {
-                GrSessionDataPacket(Parent);
-                return;
-            }
-            else if (value.StartsWith("结束游戏", StringComparison.OrdinalIgnoreCase) || value.StartsWith("結束遊戲", StringComparison.OrdinalIgnoreCase))
-            {
-                StopGame(roomId, Parent);
-                return;
-            }
-            return;
-        }
-        else if (packetName == "PqRoomMasterChangePacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                Log.Info($"GetRoom Failed, roomId = {roomId}");
-                return;
-            }
-            if (!room.Started)
-            {
-                string Target = iPacket.ReadString();
-                var player = RoomManager.GetPlayer(roomId, Target);
-                if (player != null)
-                {
-                    room.RoomMaster = player.ID;
-                    player.PlayerType = 2;
-                    GrSlotDataPacket(roomId);
-                }
-            }
-            return;
-        }
-        else if (packetName == "PcStartMatching" || packetName == "PcCancelMatching")
-        {
-            var roomList = RoomManager._rooms.Values.Where(r => !r.Lock && !r.Started && r.GetCount() < (8 - r.CloseSlotIds.Count)).ToList();
-            if (roomList.Count > 0)
-            {
-                Random random = new Random();
-                GameRoom room = roomList[random.Next(roomList.Count)];
-                ChJoinRoomReplyPacket(Parent, room.RoomId, "");
-            }
-            else
-            {
-                using (OutPacket outPacket = new OutPacket("PcMatchingFound"))
-                {
-                    outPacket.WriteInt(0);
-                    Parent.Client.Send(outPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "ChGetCurrentCmpRequestPacket")
-        {
-            using (OutPacket outPacket = new OutPacket("ChGetCurrentCmpReplyPacket"))
-            {
-                outPacket.WriteInt(0);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqRotationModeDataPacket")
-        {
-            using (OutPacket outPacket = new OutPacket("PrRotationModeDataPacket"))
-            {
-                outPacket.WriteInt(0);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqChangeRoomInfoPacket")
-        {
-            string RoomName = iPacket.ReadString();
-            string RoomPassword = iPacket.ReadString();
-
-            int LimitTime = iPacket.ReadInt();
-            byte RKeyAllowed = iPacket.ReadByte();
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            if (roomId == -1)
-            {
-                Log.Info($"TryGetRoomId Failed, Parent.Client.Nickname = {Parent.Client.Nickname}");
-                return;
-            }
-            var room = RoomManager.GetRoom(roomId);
-            if (room == null)
-            {
-                Log.Info($"GetRoom Failed, roomId = {roomId}");
-                return;
-            }
-            room.RoomName = RoomName;
-            if (RoomPassword.Length > 0)
-            {
-                room.Lock = true;
-            }
-            else
-            {
-                room.Lock = false;
-            }
-            room.LockPwd = RoomPassword;
-
-            using (OutPacket outPacket = new OutPacket("PrChangeRoomInfoPacket"))
-            {
-                outPacket.WriteBool(true);
-                outPacket.WriteString(RoomName);
-                outPacket.WriteString(RoomPassword);
-                outPacket.WriteInt(LimitTime);
-                outPacket.WriteByte(RKeyAllowed);
-                BroadCast(roomId, outPacket);
-            }
-            return;
-        }
-        else if (packetName == "GrRequestKickPacket")
-        {
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            if (roomId == -1)
-            {
-                Log.Info($"TryGetRoomId Failed, Parent.Client.Nickname = {Parent.Client.Nickname}");
-                return;
-            }
-            int ID = iPacket.ReadInt();
-            if (RoomManager.TryGetIdDetail(roomId, ID) is Player p)
-            {
-                var player = RoomManager.RemovePlayer(roomId, p.SlotId, p.Nickname);
-                using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
-                {
-                    outPacket.WriteBool(player);
-                    p.Session.Client.Send(outPacket);
-                }
-                if (player)
-                {
-                    using (OutPacket outPacket = new OutPacket("GrKickBroadcastPacket"))
-                    {
-                        outPacket.WriteString(p.Nickname);
-                        BroadCast(roomId, outPacket);
-                    }
-                    using (OutPacket outPacket = new OutPacket("GrReplyKickPacket"))
-                    {
-                        outPacket.WriteByte(0);
-                        Parent.Client.Send(outPacket);
-                    }
-                }
-            }
-            return;
-        }
-        else if (packetName == "ChGetCurrentGpRequestPacket")
-        {
-            using (OutPacket outPacket = new OutPacket("ChGetCurrentGpReplyPacket"))
-            {
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(0);
-                outPacket.WriteByte(1);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqWhereIsRider")
-        {
-            uint UserID = iPacket.ReadUInt();
-            string nickname = ClientManager.GetNickname(UserID);
-            if (string.IsNullOrEmpty(nickname)) return;
-            int roomId = RoomManager.TryGetRoomId(nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (roomId == -1)
-            {
-                using (OutPacket outPacket = new OutPacket("PrWhereIsRider"))
-                {
-                    outPacket.WriteUInt(UserID);
-                    outPacket.WriteBytes(new byte[10]);
-                    Parent.Client.Send(outPacket);
-                }
-                return;
-            }
-            else
-            {
-                using (OutPacket outPacket = new OutPacket("PrWhereIsRider"))
-                {
-                    outPacket.WriteUInt(UserID);
-                    outPacket.WriteInt(roomId);
-                    var channel = GameSupport.Channels.FirstOrDefault(c => c.Value.GameType == room.GameType).Key;
-                    outPacket.WriteInt(channel);
-                    outPacket.WriteBool(room.Lock);
-                    outPacket.WriteByte(1);
-                    Parent.Client.Send(outPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "PqWhereAmI")
-        {
-            uint UserID = iPacket.ReadUInt();
-            int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            // 不在房间时 room 为 null：原实现直接取 room.GameType → 空引用 → 踢线
-            byte channel = 0;
-            if (room != null)
-            {
-                var matched = GameSupport.Channels.FirstOrDefault(c => c.Value.GameType == room.GameType);
-                channel = matched.Key;
-            }
-            using (OutPacket outPacket = new OutPacket("PrWhereAmI"))
-            {
-                outPacket.WriteUInt(UserID);
-                outPacket.WriteInt(roomId);
-                outPacket.WriteByte(channel);
-                outPacket.WriteInt(0);
-                outPacket.WriteInt(0);
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        else if (packetName == "PqInviteGamePacket")
-        {
-            uint UserID = iPacket.ReadUInt();
-            string nickname = ClientManager.GetNickname(UserID);
-            if (string.IsNullOrEmpty(nickname))
-            {
-                return; // 无效用户
-            }
-
-            // 被邀请者已在房间中，不接受邀请
-            int targetRoomId = RoomManager.TryGetRoomId(nickname);
-            if (targetRoomId != -1)
-            {
-                return;
-            }
-
-            var parent = ClientManager.GetParent(nickname);
-            if (parent != null)
-            {
-                using (OutPacket outPacket = new OutPacket("PrInviteGamePacket"))
-                {
-                    outPacket.WriteBytes(iPacket.ReadBytes(iPacket.Available));
-                    parent.Client.Send(outPacket);
-                }
-            }
-            return;
-        }
-        else if (packetName == "PqSendMacroChat")
-        {
-            var roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
-            var room = RoomManager.GetRoom(roomId);
-            if (roomId == -1)
-            {
-                return;
-            }
-
-            int type = iPacket.ReadInt();
-            byte id = iPacket.ReadByte();
-            Player player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
-
-            using (OutPacket outPacket = new OutPacket("PcSendMacroChat"))
-            {
-                outPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
-                outPacket.WriteInt(type);
-                outPacket.WriteByte(id);
-                if (type == 0)
-                {
-                    outPacket.WriteString(ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) ?? "");
-                    BroadCast(roomId, outPacket, Parent.Client.Nickname);
-                }
-                else
-                {
-                    outPacket.WriteString(ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) ?? "");
-                    BroadCast(roomId, outPacket, Parent.Client.Nickname, player.Team);
-                }
-                if (room.GetPlayerCount(0) == 1)
-                {
-                    if (ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "结束游戏" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "結束遊戲" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "结束游戏" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "結束遊戲")
-                    {
-                        StopGame(roomId, Parent);
-                    }
-                }
-            }
-            return;
-        }
-        else if (packetName == "ChGetCurrentMpRequestPacket")
-        {
-            using (OutPacket outPacket = new OutPacket("ChGetCurrentMpReplyPacket"))
-            {
-                outPacket.WriteHexString("83 08 00 00 83 08 00 00 08 00 00 00 04 01 00 00 C8 00 00 00 00 00 68 41 01 00 00 01 00 01");
-                Parent.Client.Send(outPacket);
-            }
-            return;
-        }
-        else
-        {
-            return;
-        }
-    }
-
     /// <summary>
     /// 建房失败必须回包。客户端发完 ChCreateRoomRequestPacket 后一直在等 ChCreateRoomReplyPacket，
     /// 静默 return 会让客户端永远卡在"创建中"，表现就是第二次建房（房主还没从上个房间的映射里清干净）
     /// 时游戏卡死/崩溃。同时把刚创建出来的空房间回收掉，避免残留幽灵房。
     /// </summary>
-    static void ChCreateRoomFailReply(SessionGroup Parent, GameRoom room, byte gameType)
+    internal static void ChCreateRoomFailReply(SessionGroup Parent, GameRoom room, byte gameType)
     {
         RoomManager.RemoveRoom(room);
         using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
@@ -1542,7 +418,7 @@ public static class MultyPlayer
         }
     }
 
-    static void StopGame(int roomId, SessionGroup Parent)
+    internal static void StopGame(int roomId, SessionGroup Parent)
     {
         var room = RoomManager.GetRoom(roomId);
         using (OutPacket outPacket = new OutPacket("PcSlaveNotice"))
@@ -1697,7 +573,7 @@ public static class MultyPlayer
                 outPacket.WriteInt(5);
                 outPacket.WriteHexString("FF 00 00 00");
 
-                outPacket.WriteByte(RiderData.RiderSchool.catLevel); //3
+                outPacket.WriteByte(pConfig.Rider.LicenseLevel); // 玩家真实驾照等级
                 if (pConfig.Rider.ClubMark_LOGO == 0)
                 {
                     outPacket.WriteString("");
@@ -1769,7 +645,7 @@ public static class MultyPlayer
         Position(roomId, outPacket);
     }
 
-    static void GrSessionDataPacket(SessionGroup Parent)
+    internal static void GrSessionDataPacket(SessionGroup Parent)
     {
         int roomId = RoomManager.TryGetRoomId(Parent.Client.Nickname);
         var room = RoomManager.GetRoom(roomId);
@@ -1778,43 +654,14 @@ public static class MultyPlayer
             return;
         }
 
-        int readyCount = 0;
-        foreach (RoomMember member in room._IDs)
-        {
-            if (member is Player player)
-            {
-                if (player.PlayerType == 3 || player.ID == room.RoomMaster)
-                {
-                    readyCount++;
-                    continue;
-                }
-            }
-        }
-
         int playerCount = room.GetPlayerCount();
         int totalMembers = room.GetCount();
 
-        // 组队赛（含双人组队）按需求放开：不校验参赛人数、不校验红蓝两队是否平衡，
-        // 单人或人数不一致都能直接开局。
-        bool teamMode = room.GameType == 3 || room.GameType == 4;
-        if (teamMode)
-        {
-            Log.Info($"[Start] 组队房 {room.RoomId} 不校验人数/队伍平衡（参赛者 {totalMembers} 人，红队 {room.GetTeamMemberCount(1)} / 蓝队 {room.GetTeamMemberCount(2)}），直接开局");
-        }
-        // 个人模式仍然要求至少 2 名参赛者（1 人单跑没有任何意义）。
-        // 注意：拒绝码 1 会被客户端当成“开始匹配”，所以这里用 3（需要 2 人以上）。
-        else if (totalMembers < 2)
-        {
-            Log.Info($"[Start] 房间 {room.RoomId} 只有 {totalMembers} 名参赛者，拒绝开局（码 3）");
-            using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
-            {
-                denyPacket.WriteInt(3);
-                Parent.Client.Send(denyPacket);
-            }
-            return;
-        }
+        // 按需求放开所有人数限制：组队/个人都不再校验参赛人数与队伍平衡，
+        // 单人（含个人竞速赛单跑）也能直接开局。
+        Log.Info($"[Start] 房间 {room.RoomId} 不校验人数（参赛者 {totalMembers} 人，红队 {room.GetTeamMemberCount(1)} / 蓝队 {room.GetTeamMemberCount(2)}，模式 {room.GameType}），直接开局");
 
-        if (readyCount < playerCount || playerCount < 1)
+        if (playerCount < 1)
         {
             using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
             {
@@ -1928,7 +775,7 @@ public static class MultyPlayer
         }
     }
 
-    static void GrSessionDataPacket(SessionGroup Parent, string Nickname)
+    internal static void GrSessionDataPacket(SessionGroup Parent, string Nickname)
     {
         using (OutPacket oPacket = new OutPacket("GrSessionDataPacket"))
         {
@@ -1956,7 +803,7 @@ public static class MultyPlayer
         outPacket.WriteBytes(new byte[7]);
     }
 
-    static void ChJoinRoomReplyPacket(SessionGroup Parent, int roomId, String pwd)
+    internal static void ChJoinRoomReplyPacket(SessionGroup Parent, int roomId, String pwd)
     {
         // 1-无法进入房间；2-房间已满；3-密码错误；4-匹配失败；5-创建新房间
         var room = RoomManager.GetRoom(roomId);
@@ -2176,7 +1023,7 @@ public static class MultyPlayer
     /// 若把模式号当成页码，就会 Skip(模式号 * 10) 把整页数据跳过去 ——
     /// 表现为房间列表永远空白、别人建的房"看不到"。这里两种解释都试，取合理的那个。
     /// </summary>
-    static void ParseRoomListRequest(byte[] raw, out int page, out int gameType)
+    internal static void ParseRoomListRequest(byte[] raw, out int page, out int gameType)
     {
         page = 0;
         gameType = -1;
@@ -2227,7 +1074,7 @@ public static class MultyPlayer
     /// <summary>
     /// 房间列表里给“还没选图”的房间用的占位赛道 hash（优先取一张真实存在的图）。
     /// </summary>
-    static uint ListFallbackTrack()
+    internal static uint ListFallbackTrack()
     {
         foreach (var kv in RandomTrack.TrackList)
         {
@@ -2241,7 +1088,7 @@ public static class MultyPlayer
     /// <summary>合法模式号：1~99（含双人组队 67/68）；0 与超大值都视为解析错位。</summary>
     static bool IsPlausibleGameType(int gameType) => gameType > 0 && gameType <= 99;
 
-    static int ParseMaxPlayers(byte[] raw)
+    internal static int ParseMaxPlayers(byte[] raw)
     {
         if (raw == null || raw.Length < 20)
         {
@@ -2289,7 +1136,7 @@ public static class MultyPlayer
     /// 个人赛锁掉超出人数的格子；组队赛每排 4 格，按每队人数逐排锁尾部的格子
     /// （客户端会按镜像关系展示，锁一侧对面同步显示）。
     /// </summary>
-    static void ApplyRoomSize(GameRoom room, int maxPlayers)
+    internal static void ApplyRoomSize(GameRoom room, int maxPlayers)
     {
         if (room == null)
         {
@@ -2328,7 +1175,7 @@ public static class MultyPlayer
         GrSlotDataPacket(room.RoomId);
     }
 
-    static void AddAis(GameRoom room, int count, byte randomTrackGameType)
+    internal static void AddAis(GameRoom room, int count, byte randomTrackGameType)
     {
         if (room == null || count <= 0)
         {
@@ -2462,7 +1309,7 @@ public static class MultyPlayer
         Log.Debug($"[Room] AI 添加完成：请求 {count}，实际 {aiCount}，角色池 {charPool.Count}，车池 {kartPool.Count}");
     }
 
-    static void AddAi(SessionGroup Parent, int roomId, int ID)
+    internal static void AddAi(SessionGroup Parent, int roomId, int ID)
     {
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
@@ -2603,7 +1450,7 @@ public static class MultyPlayer
         }
     }
 
-    static void Position(int roomId, OutPacket outPacket)
+    internal static void Position(int roomId, OutPacket outPacket)
     {
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
@@ -2632,7 +1479,7 @@ public static class MultyPlayer
         GrSlotStatePacket(roomId);
     }
 
-    static void GrSlotStatePacket(int roomId)
+    internal static void GrSlotStatePacket(int roomId)
     {
         var room = RoomManager.GetRoom(roomId);
         if (room == null)
@@ -2902,7 +1749,7 @@ public static class MultyPlayer
         }
     }
 
-    static RoomMember[] DeepCopyMembers(RoomMember[] source)
+    internal static RoomMember[] DeepCopyMembers(RoomMember[] source)
     {
         var copy = new RoomMember[source.Length];
         for (int i = 0; i < source.Length; i++)

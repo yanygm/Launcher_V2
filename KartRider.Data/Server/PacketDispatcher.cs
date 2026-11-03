@@ -3,7 +3,6 @@ using KartRider.Logging;
 using KartRider_PacketName;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 namespace KartRider
@@ -63,8 +62,12 @@ namespace KartRider
             }
         }
 
-        public static bool Dispatch(Type serverType, PacketName packetName, InPacket packet, byte[] rawData, object clientInfo, object server)
+        public static bool Dispatch(Type serverType, PacketName packetName, InPacket packet, byte[] rawData, object clientInfo, object server, bool throwOnHandlerError = false, bool builtInOnly = false)
         {
+            var handlers = GetHandlers(packetName, builtInOnly);
+            if (handlers == null)
+                return false;
+
             var context = new PacketContext
             {
                 ServerType = serverType,
@@ -74,27 +77,43 @@ namespace KartRider
                 ClientInfo = clientInfo,
                 Server = server
             };
-            return Dispatch(context);
+            return DispatchHandlers(context, handlers, throwOnHandlerError);
         }
 
-        public static bool Dispatch(PacketContext context)
+        public static bool Dispatch(PacketContext context, bool throwOnHandlerError = false, bool builtInOnly = false)
         {
-            List<IPacketHandler> handlers = null;
+            var handlers = GetHandlers(context.PacketName, builtInOnly);
+            return handlers != null && DispatchHandlers(context, handlers, throwOnHandlerError);
+        }
 
+        /// <summary>
+        /// 内置处理器与 Mod 分两阶段派发，避免 Mod 被重复调用：
+        /// 默认只取 Mod；builtInOnly=true 时只取内置处理器。
+        /// </summary>
+        private static List<IPacketHandler> GetHandlers(PacketName packetName, bool builtInOnly)
+        {
             _lock.EnterReadLock();
             try
             {
-                if (_handlerMap.TryGetValue(context.PacketName, out var list))
-                    handlers = list.ToList();
+                if (!_handlerMap.TryGetValue(packetName, out var list))
+                    return null;
+
+                var handlers = new List<IPacketHandler>(list.Count);
+                foreach (var handler in list)
+                {
+                    if ((handler is Packet.BuiltInPacketHandler) == builtInOnly)
+                        handlers.Add(handler);
+                }
+                return handlers.Count == 0 ? null : handlers;
             }
             finally
             {
                 _lock.ExitReadLock();
             }
+        }
 
-            if (handlers == null || handlers.Count == 0)
-                return false;
-
+        private static bool DispatchHandlers(PacketContext context, List<IPacketHandler> handlers, bool throwOnHandlerError)
+        {
             foreach (var handler in handlers)
             {
                 try
@@ -107,6 +126,10 @@ namespace KartRider
                 }
                 catch (Exception ex)
                 {
+                    if (throwOnHandlerError)
+                    {
+                        throw;
+                    }
                     Log.Debug($"[PacketDispatcher] Handler '{handler.Name}' 异常: {ex.Message}");
                 }
             }

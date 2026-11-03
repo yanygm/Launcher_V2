@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -397,6 +397,7 @@ namespace KartRider
             }
 
             int All_Quest = quest.Count + ids.Count;
+            Log.Info($"[Quest] 任务列表 {All_Quest} 条（QuestAutomation={quest.Count}, kartPass={ids.Count}）");
             outPacket.WriteInt(All_Quest);
             foreach (var item in quest)
             {
@@ -504,7 +505,7 @@ namespace KartRider
                 outPacket.WriteString(config.Rider.Card);
                 outPacket.WriteUInt(config.Rider.RP);
                 outPacket.WriteInt(0);
-                outPacket.WriteByte(RiderSchool.catLevel);//Licenses
+                outPacket.WriteByte(config.Rider.LicenseLevel);//Licenses（玩家真实驾照等级）
                 outPacket.WriteDateTime(DateTime.Now);
                 outPacket.WriteBytes(new byte[17]);
                 outPacket.WriteShort(config.Rider.Emblem1);

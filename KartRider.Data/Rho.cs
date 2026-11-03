@@ -1,4 +1,4 @@
-using ExcData;
+﻿using ExcData;
 using KartLibrary.File;
 using KartLibrary.File.Lpk;
 using KartRider;
@@ -262,6 +262,60 @@ namespace KartRider
                                     {
                                         RiderSchool.catLevel = validCatLevels.Max();
                                     }
+                                    // 驾照等级表：catLevel（1 起）→ 该等级的关卡数，客户端按这张表渲染关卡
+                                    var licenseTable = new SortedDictionary<byte, byte>();
+                                    foreach (var category in xdoc.Descendants("category"))
+                                    {
+                                        if (!byte.TryParse(category.Attribute("catLevel")?.Value, out byte licenseLevel) || licenseLevel == 0)
+                                        {
+                                            continue;
+                                        }
+                                        int stepCount = category.Descendants("item")
+                                            .Count(i => byte.TryParse(i.Attribute("step")?.Value, out byte stepValue) && stepValue > 0);
+                                        if (stepCount > 0)
+                                        {
+                                            licenseTable[licenseLevel] = (byte)System.Math.Min(stepCount, byte.MaxValue);
+                                        }
+                                    }
+                                    if (licenseTable.Count > 0)
+                                    {
+                                        RiderSchool.LicenseSteps.Clear();
+                                        foreach (var license in licenseTable)
+                                        {
+                                            RiderSchool.LicenseSteps[license.Key] = license.Value;
+                                        }
+                                        Log.Info($"[RiderSchool] 驾照等级表 {licenseTable.Count} 档: "
+                                            + string.Join(", ", licenseTable.Select(kv => $"{kv.Key}={kv.Value}")));
+                                    }
+                                    // PRO 特殊设定：proCategory 定义徽章编号与 3 条“达成赛道纪录”时限
+                                    var proCategory = xdoc.Descendants("proCategory").FirstOrDefault();
+                                    if (proCategory != null)
+                                    {
+                                        if (ushort.TryParse(proCategory.Attribute("emblemId")?.Value, out ushort emblemId))
+                                        {
+                                            RiderSchool.ProEmblemId = emblemId;
+                                        }
+                                        RiderSchool.ProTimeLimits.Clear();
+                                        RiderSchool.ProMissions.Clear();
+                                        foreach (var proItem in proCategory.Descendants("item"))
+                                        {
+                                            var mission = new RiderSchool.ProEmblemMission
+                                            {
+                                                Track = proItem.Attribute("track")?.Value,
+                                                TimeLimit = int.TryParse(proItem.Attribute("timeLimit")?.Value, out int limit) ? limit : 0
+                                            };
+                                            if (byte.TryParse(proItem.Attribute("gameSpeed")?.Value, out byte gameSpeed) && gameSpeed > 0)
+                                            {
+                                                mission.GameSpeed = gameSpeed;
+                                            }
+                                            RiderSchool.ProMissions.Add(mission);
+                                            if (mission.TimeLimit > 0)
+                                            {
+                                                RiderSchool.ProTimeLimits.Add(mission.TimeLimit);
+                                            }
+                                        }
+                                        Log.Info($"[RiderSchool] PRO 徽章={RiderSchool.ProEmblemId}，纪录赛道={string.Join("/", RiderSchool.ProMissions.Select(m => m.Track))}，时限={string.Join(",", RiderSchool.ProTimeLimits)}");
+                                    }
                                     // 筛选 catLevel='6' 的 category 节点
                                     var targetCategory = xdoc.Descendants("category")
                                         .FirstOrDefault(c => c.Attribute("catLevel")?.Value == RiderSchool.catLevel.ToString());
@@ -394,7 +448,7 @@ namespace KartRider
                                     }
                                 }
                             }
-                            if (fullName == $"zeta/{regionCode}/quest/QuestAutomation.xml")
+                            if (fullName == $"zeta_/{regionCode}/quest/QuestAutomation.xml" || fullName == $"zeta/{regionCode}/quest/QuestAutomation.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
@@ -405,7 +459,7 @@ namespace KartRider
                                     GameSupport.QuestParams = Quest.GetElementsByTagName("QuestItem");
                                 }
                             }
-                            if (fullName == $"zeta/{regionCode}/quest/kartPassQuestAutomation.xml")
+                            if (fullName == $"zeta_/{regionCode}/quest/kartPassQuestAutomation.xml" || fullName == $"zeta/{regionCode}/quest/kartPassQuestAutomation.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
@@ -415,7 +469,7 @@ namespace KartRider
                                     GameSupport.questInfo = doc.Descendants("kartPassQuestInfo").First();
                                 }
                             }
-                            if (fullName == $"zeta/{regionCode}/scenario/scenario.xml")
+                            if (fullName == $"zeta_/{regionCode}/scenario/scenario.xml" || fullName == $"zeta/{regionCode}/scenario/scenario.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] data = packFileInfo.GetData();
@@ -808,10 +862,13 @@ namespace KartRider
                                         // 情况2：有openPeriod属性 → 判断时间范围
                                         string openPeriod = openPeriodAttr.Value;
                                         string[] periodParts = openPeriod.Split('~');
-                                        // 解析开始时间（格式：yyyy-MM-ddTHH:mm:ss）
-                                        if (periodParts.Length != 2 || !DateTime.TryParse(periodParts[0], out DateTime startTime))
+                                        string startText = periodParts.Length > 0 ? periodParts[0] : "";
+                                        // 解析开始时间：兼容 yyyy-MM-ddTHH:mm:ss 与 yyyyMMddTHHmmss
+                                        if (!TryParseChannelPeriod(startText, out DateTime startTime))
                                         {
-                                            Log.Debug($"警告：{channelValue.Name} 的openPeriod格式错误，跳过该节点：{openPeriod}");
+                                            // 解析不了就按「已开放」处理：旧实现直接跳过，会让整档频道凭空少掉
+                                            Log.Debug($"警告：{channelValue.Name} 的openPeriod无法解析，按已开放处理：{openPeriod}");
+                                            GameSupport.Channels.TryAdd(i++, channelValue);
                                             continue;
                                         }
                                         // 当前时间 >= 开始时间 → 加入结果（*表示无结束时间）
@@ -913,6 +970,31 @@ namespace KartRider
         private static string ReplacePath(string file)
         {
             return file.IndexOf(".rho") > -1 ? file.Substring(0, file.IndexOf(".rho")).Replace("_", "/") + file.Substring(file.IndexOf(".rho") + 4) : file;
+        }
+
+        /// <summary>
+        /// 解析 channel.xml 的 openPeriod 开始时间。
+        /// 兼容 "yyyy-MM-ddTHH:mm:ss"、"yyyyMMddTHHmmss" 等写法；"*" 或空表示不限开始时间。
+        /// </summary>
+        private static bool TryParseChannelPeriod(string text, out DateTime time)
+        {
+            time = default;
+            if (string.IsNullOrWhiteSpace(text) || text.Trim() == "*")
+            {
+                time = DateTime.MinValue;
+                return true;
+            }
+            string value = text.Trim();
+            if (DateTime.TryParse(value, out time))
+            {
+                return true;
+            }
+            return DateTime.TryParseExact(
+                value,
+                new[] { "yyyyMMdd'T'HHmmss", "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ss" },
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out time);
         }
 
         private static bool StreamsAreEqual(Stream stream1, Stream stream2)

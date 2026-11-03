@@ -151,9 +151,18 @@ namespace KartLibrary.File.Lpk
             foreach (var p in _allPaths)
             {
                 var low = p.ToLowerInvariant();
-                if (low.StartsWith("zeta/kr/")) return "kr";
-                if (low.StartsWith("zeta/cn/")) return "cn";
-                if (low.StartsWith("zeta/tw/")) return "tw";
+                // LPK 里的路径有几种写法：zeta/cn/...、zeta_/cn/...、zeta_cn.rho/...
+                // 只认第一种会让非 CN 客户端一律退回默认 cn，导致 quest/channel 等数据按错区服路径匹配不到。
+                foreach (var region in new[] { "kr", "cn", "tw" })
+                {
+                    if (low.StartsWith("zeta/" + region + "/")
+                        || low.StartsWith("zeta_/" + region + "/")
+                        || low.StartsWith("zeta_" + region + ".rho")
+                        || low.StartsWith("zeta_" + region + "/"))
+                    {
+                        return region;
+                    }
+                }
             }
             return "cn";
         }

@@ -123,6 +123,8 @@ namespace KartRider
 
                     Load_Data();
 
+                    global::KartRider.Packet.BuiltInPacketRegistry.RegisterAll();
+
                     if (LanIpGetter.IsIPv6(ProfileService.SettingConfig.ServerIP))
                     {
                         // IPv6 远程服务器模式：仅启动端口转发（客户端 → IPv6 服务器）
@@ -164,6 +166,7 @@ namespace KartRider
                         ShowWindow(consoleHandle, SW_HIDE);
                         isVisible = false;
                     }
+
                     if (ProfileService.SettingConfig.EnableMod)
                     {
                         // 初始化ModManager

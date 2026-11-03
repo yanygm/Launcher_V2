@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -174,6 +174,27 @@ namespace Profile
         public uint TcCash { get; set; } = 1000000;
 
         public int Premium { get; set; } = 5; //100
+
+        /// <summary>驾照：当前等级（0 基：1=新手、2=初级、3=L3、4=L2、5=L1、6=Pro）。</summary>
+        public byte LicenseLevel { get; set; } = 0;
+
+        /// <summary>驾照：累计已通过的关卡数（0~42），升级时**不清零**，只递增。</summary>
+        public byte LicenseStep { get; set; } = 0;
+
+        /// <summary>
+        /// 车手学院：三个培训中心各自的已通过关卡数（依次为中心 1~3，每中心 4 关）。
+        /// 三大中心可以各自从第 1 小关开始，进度必须按中心分别记录。
+        /// </summary>
+        public List<byte> TrainingCenterStages { get; set; } = new List<byte> { 0, 0, 0 };
+
+        /// <summary>PRO 徽章（PRO 驾照前置任务，完成计时成绩后 PqRewardProEmblemPacket 领取）。</summary>
+        public bool ProEmblemEarned { get; set; } = false;
+
+        /// <summary>PRO 计时赛（关卡 31/33/35/37/39/41）已通过的数量 0~6，客户端 PRO 面板靠它决定能不能进。</summary>
+        public byte ProSpeedCleared { get; set; } = 0;
+
+        /// <summary>PRO 对决（关卡 32/34/36/38/40/42）已通过的数量 0~6。</summary>
+        public byte ProVersusCleared { get; set; } = 0;
 
         public byte Ranker { get; set; } = 0;
 
