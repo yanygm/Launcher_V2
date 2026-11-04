@@ -18,12 +18,12 @@ namespace RiderData
         public static List<byte> oddProStep = new List<byte>();
 
         /// <summary>
-        /// 驾照等级（0 基：0=新手、1=初级、2=L3、3=L2、4=L1、5=Pro）→ 该等级的关卡数。
+        /// 驾照等级（0 基：1=新手、2=初级、3=L3、4=L2、5=L1、6=Pro）→ 该等级的关卡数。
         /// 与“车手学院”完全独立：这里是驾照，条目部分是培训中心。
         /// </summary>
         public static readonly SortedDictionary<byte, byte> LicenseSteps = new SortedDictionary<byte, byte>
         {
-            { 0, 6 }, { 1, 6 }, { 2, 6 }, { 3, 6 }, { 4, 6 }, { 5, 12 }
+            { 0, 6 }, { 1, 6 }, { 2, 6 }, { 3, 6 }, { 4, 6 }, { 5, 6 }
         };
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace RiderData
         /// <summary>驾照等级上限（0 基）。</summary>
         public static byte LicenseMaxLevel => LicenseSteps.Keys.Max();
 
-        /// <summary>全部驾照关卡总数（各等级累计，6+6+6+6+6+12 = 42）。</summary>
+        /// <summary>全部驾照关卡总数（各等级累计，6+6+6+6+6 = 30）。</summary>
         public static byte LicenseTotalSteps => (byte)LicenseSteps.Values.Sum(v => (int)v);
 
         /// <summary>累计关卡数 → 已完成的驾照等级数（0 基，最多到上限）。</summary>
