@@ -68,8 +68,8 @@ public static class DuoTeamMode
         return (byte)(((team - 1) % WireTeamCount) + 1);
     }
 
-    /// <summary>房间名关键字（任一包含即启用双人组队）</summary>
-    private static readonly string[] RoomNameKeywords = { "双人组队", "雙人組隊", "[2人]" };
+    /// <summary>房间名关键字（任一包含即启用双人组队）。「双人模式」用于在普通组队竞速/无限竞速频道手动开双人房。</summary>
+    private static readonly string[] RoomNameKeywords = { "双人组队", "雙人組隊", "[2人]", "双人模式", "雙人模式" };
 
     /// <summary>是否为双人组队专属的 gameType（官方 68 竞速 / 67 道具，兼容早期的 5/6）</summary>
     public static bool IsDuoGameType(byte gameType) =>

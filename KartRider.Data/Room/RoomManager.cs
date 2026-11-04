@@ -206,7 +206,11 @@ public static class RoomManager
         {
             Profile.FileName.Load(nickname);
         }
-        byte added = room.TryAddDuoPlayer(nickname, playerType, client);
+        byte added;
+        lock (room.Sync)
+        {
+            added = room.TryAddDuoPlayer(nickname, playerType, client);
+        }
         if (added != 255)
         {
             return added;
@@ -479,19 +483,165 @@ public static class RoomManager
     {
         if (!_rooms.TryGetValue(roomId, out var room) || !room.DuoTeam)
             return false;
-        // 换队 = 只换颜色（队伍号 1~4），格子位置不变
-        if (team < 1 || team > 4)
+        lock (room.Sync)
         {
-            return false;
+            return ChangeDuoTeamLocked(room, slotId, team);
         }
+    }
 
-        var member = TryGetSlotDetail(roomId, slotId) as RoomMember;
+    private static bool ChangeDuoTeamLocked(GameRoom room, byte slotId, byte team)
+    {
+        if (team < 1 || team > 4)
+            return false;
+
+        var member = TryGetSlotDetail(room.RoomId, slotId) as RoomMember;
         if (member == null)
             return false;
 
-        if (member is Player p0) { p0.Team = team; return true; }
-        if (member is Ai a0) { a0.Team = team; return true; }
-        return false;
+        byte current = TeamOf(member);
+        if (current == team)
+            return true;   // 同色，视为成功
+
+        int memberId = member is Player p0 ? p0.ID : ((Ai)member).ID;
+
+        // 目标颜色已满 2 人（不含自己）→ 不生效
+        if (room.GetColorCount(team, memberId) >= 2)
+            return false;
+
+        // 2 人房 1v1：不能和对手同色，位置不动
+        if (room.DuoColumns == 1)
+        {
+            byte opponent = 0;
+            foreach (RoomMember m in room._slots)
+            {
+                if (m == null || ReferenceEquals(m, member)) continue;
+                byte t = TeamOf(m);
+                if (t >= 1 && t <= 4) { opponent = t; break; }
+            }
+            if (opponent == team)
+                return false;
+            SetTeam(member, team);
+            return true;
+        }
+
+        byte dest = 255;
+
+        int duoCols = room.DuoColumns;
+
+        // ⓪ 目标颜色已经有玩家 → 吸附过去：先同列的另一格，再同一排的其它空位
+        //    （这是"换到队友同色"时的预期行为，优先于"颜色所属列"）
+        foreach (RoomMember m in room._slots)
+        {
+            if (m == null || ReferenceEquals(m, member)) continue;
+            if (TeamOf(m) != team) continue;
+            byte col = GameRoom.DuoColOf(m.SlotId);
+            byte row = GameRoom.DuoRowOf(m.SlotId);
+            byte otherRow = (byte)(1 - row);
+
+            byte s = GameRoom.DuoSlot(col, otherRow);
+            if (s == slotId || room.DuoSlotFree(s)) dest = s;
+
+            if (dest == 255)
+            {
+                // 同列放不下 → 同一排的其它空位
+                for (byte c = 0; c < duoCols && dest == 255; c++)
+                {
+                    byte s2 = GameRoom.DuoSlot(c, otherRow);
+                    if (s2 != slotId && room.DuoSlotFree(s2)) dest = s2;
+                }
+            }
+            break;
+        }
+
+        // ① 目标颜色还没有玩家 → 用"颜色所属列"（列 = (颜色-1) % 列数）
+        //    方案 B：该列第一行被「别的颜色」占着时，**原地改色、不挪过去**，
+        //    避免不同颜色被"吸附"到同一列（4/6 人房颜色共用列时尤其明显）。
+        if (dest == 255)
+        {
+            byte colorCol = (byte)((team - 1) % duoCols);
+            byte top = GameRoom.DuoSlot(colorCol, 0);
+            if (top == slotId || room.DuoSlotFree(top))
+            {
+                dest = top;
+            }
+            else
+            {
+                // 第一行被别的颜色占了：先找「其它列的第一行空位」，都没有才原地不动
+                // （避免为了换色被塞进别人那一列的第二行）
+                for (byte c = 0; c < duoCols && dest == 255; c++)
+                {
+                    byte s2 = GameRoom.DuoSlot(c, 0);
+                    if (s2 != slotId && room.DuoSlotFree(s2)) dest = s2;
+                }
+                if (dest == 255)
+                {
+                    dest = slotId;
+                }
+            }
+        }
+
+        // ① 目标颜色已有 1 人 → 同列另一格
+        foreach (RoomMember m in room._slots)
+        {
+            if (dest != 255) break;
+            if (m == null || ReferenceEquals(m, member)) continue;
+            if (TeamOf(m) != team) continue;
+            byte col = GameRoom.DuoColOf(m.SlotId);
+            for (byte row = 0; row < 2 && dest == 255; row++)
+            {
+                byte s = GameRoom.DuoSlot(col, row);
+                if (s != slotId && room.DuoSlotFree(s)) dest = s;
+            }
+            break;
+        }
+
+        // ② 第一行空位
+        int columns = duoCols;
+        for (byte col = 0; col < columns && dest == 255; col++)
+        {
+            byte s = GameRoom.DuoSlot(col, 0);
+            if (s != slotId && room.DuoSlotFree(s)) dest = s;
+        }
+        // ③ 第二行空位
+        for (byte col = 0; col < columns && dest == 255; col++)
+        {
+            byte s = GameRoom.DuoSlot(col, 1);
+            if (s != slotId && room.DuoSlotFree(s)) dest = s;
+        }
+        // ④ 任意剩余空位（拆列）
+        foreach (byte s in GameRoom.DuoSlots)
+        {
+            if (dest != 255) break;
+            if (s != slotId && room.DuoSlotFree(s)) dest = s;
+        }
+
+        // 注意：dest == 自己原来那格时绝不能走移动分支（否则先写再置空会把玩家从房间里抹掉 → 客户端黑屏）
+        if (dest != 255 && dest != slotId)
+        {
+            room._slots[dest] = member;
+            room._slots[slotId] = null;
+            if (member is Player pm) pm.SlotId = dest;
+            else if (member is Ai am) am.SlotId = dest;
+        }
+
+        SetTeam(member, team);
+        return true;
+    }
+
+    /// <summary>取成员当前颜色（1~4，0 = 未分配）。</summary>
+
+    private static byte TeamOf(RoomMember member)
+    {
+        if (member is Player p) return p.Team;
+        if (member is Ai a) return a.Team;
+        return 0;
+    }
+
+    /// <summary>设置成员颜色（同时作为结算用的队伍号）。</summary>
+    private static void SetTeam(RoomMember member, byte team)
+    {
+        if (member is Player p) p.Team = team;
+        else if (member is Ai a) a.Team = team;
     }
 
     // 更换指定房间中指定位置成员的队伍

@@ -83,6 +83,95 @@ public class GameRoom
     /// <summary>双人下排（副位）slot：1~4 队</summary>
     public static readonly byte[] DuoBottomSlots = { 2, 3, 6, 7 };
 
+    // ===== 双人房：颜色 / 队伍 / 格子解耦后的辅助 =====
+
+    /// <summary>双人房格位顺序：前 4 个 = 第 1 行，后 4 个 = 第 2 行（列 0..3）。</summary>
+    public static readonly byte[] DuoSlots = { 0, 1, 4, 5, 2, 3, 6, 7 };
+
+    /// <summary>(列, 行) → 槽位；行 0 = 第一行，行 1 = 第二行。</summary>
+    public static byte DuoSlot(byte col, byte row) => DuoSlots[row * 4 + col];
+
+    /// <summary>槽位 → 列号（0..3）。</summary>
+    public static byte DuoColOf(byte slot) => (byte)(slot % 2 + slot / 4 * 2);
+
+    /// <summary>槽位 → 行号（0 = 第一行，1 = 第二行）。</summary>
+    public static byte DuoRowOf(byte slot) => (byte)(slot / 2 % 2);
+
+    /// <summary>双人房可用列数（= 人数上限 / 2，1~4）。</summary>
+    public int DuoColumns => Math.Max(1, Math.Min(4, DuoTeamCount));
+
+    /// <summary>该格能否坐人：未锁定且没有成员。</summary>
+    public bool DuoSlotFree(byte slot) => slot < 8 && !CloseSlotIds.Contains(slot) && _slots[slot] == null;
+
+    /// <summary>某颜色当前玩家数（可按 ID 排除自己）。</summary>
+    public int GetColorCount(byte color, int excludeId = -1)
+    {
+        int n = 0;
+        foreach (RoomMember m in _slots)
+        {
+            if (m is Player p && p.Team == color && p.ID != excludeId)
+            {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /// <summary>
+    /// 颜色所属列的第一行槽位：列 = (颜色序号 - 1) % 可用列数。
+    /// 8 人房 → 红0 / 黄1 / 绿4 / 蓝5；6 人房 → 0 / 1 / 4 / 0；4 人房 → 0 / 1 / 0 / 1。
+    /// </summary>
+    public byte DuoPreferredSlot(byte color)
+    {
+        if (color < 1) return 255;
+        int col = (color - 1) % DuoColumns;
+        return DuoSlot((byte)col, 0);
+    }
+
+    /// <summary>某列已有的颜色（0 = 该列还没有人）。</summary>
+    public byte DuoColumnColor(byte col)
+    {
+        for (byte row = 0; row < 2; row++)
+        {
+            byte s = DuoSlot(col, row);
+            if (_slots[s] is Player p && p.Team >= 1 && p.Team <= 4) return p.Team;
+            if (_slots[s] is Ai a && a.Team >= 1 && a.Team <= 4) return a.Team;
+        }
+        return 0;
+    }
+
+    /// <summary>下一个颜色：优先没用过的（红黄绿蓝），都用过则取人数最少且 &lt; 2 的；无可用返回 0。</summary>
+    public byte NextFreeColor()
+    {
+        for (byte c = 1; c <= 4; c++)
+        {
+            if (GetColorCount(c) == 0) return c;
+        }
+        byte best = 0;
+        int bestN = int.MaxValue;
+        for (byte c = 1; c <= 4; c++)
+        {
+            int n = GetColorCount(c);
+            if (n < 2 && n < bestN) { bestN = n; best = c; }
+        }
+        return best;
+    }
+
+    /// <summary>下一个颜色（排除某个颜色，供 1v1 用）。</summary>
+    public byte NextFreeColorExcept(byte except)
+    {
+        for (byte c = 1; c <= 4; c++)
+        {
+            if (c != except && GetColorCount(c) == 0) return c;
+        }
+        for (byte c = 1; c <= 4; c++)
+        {
+            if (c == except) continue;
+            if (GetColorCount(c) < 2) return c;
+        }
+        return 0;
+    }
+
     /// <summary>槽位 → 队伍号（1~4）</summary>
     /// <summary>槽位 → 队伍号（只在实际队伍数范围内映射）</summary>
     public byte DuoTeamOfSlot(byte slot)
@@ -327,38 +416,55 @@ public class GameRoom
 
     // 尝试添加玩家（成功后自动检查是否需要删除房间）
     /// <summary>双人组队入座：先补有主队员队伍的副位，再按 1~4 队顺序开主位。</summary>
-    /// <summary>当前未被占用的最小颜色（1~4），默认红优先</summary>
-    public byte DuoDefaultColor()
-    {
-        bool[] used = new bool[5];
-        foreach (RoomMember m in _slots)
-        {
-            if (m is Player p && p.Team >= 1 && p.Team <= 4) used[p.Team] = true;
-            else if (m is Ai a && a.Team >= 1 && a.Team <= 4) used[a.Team] = true;
-        }
-        for (byte c = 1; c <= 4; c++) if (!used[c]) return c;
-        return 1;
-    }
-
-    /// <summary>双人入座：按队伍位顺序，先补副位（跟随主位颜色），再开新主位（默认最小空闲颜色）。</summary>
     public byte TryAddDuoPlayer(string nickname, int playerType, SessionGroup client)
     {
-        for (int i = 0; i < 4; i++)
+        int columns = DuoColumns;
+
+        if (columns == 1)
         {
-            int main = DuoTopSlots[i], sub = DuoBottomSlots[i];
-            if (CloseSlotIds.Contains((byte)main) || CloseSlotIds.Contains((byte)sub)) continue;
-            if (_slots[main] is Player pm && _slots[sub] == null)
-                return AddDuoAt(nickname, playerType, client, (byte)sub, pm.Team);
+            if (DuoSlotFree(DuoSlot(0, 0)))
+            {
+                byte first = NextFreeColor();
+                if (first == 0) return 255;
+                return AddDuoAt(nickname, playerType, client, DuoSlot(0, 0), first);
+            }
+            if (DuoSlotFree(DuoSlot(0, 1)))
+            {
+                byte second = NextFreeColorExcept(DuoColumnColor(0));
+                if (second == 0) return 255;
+                return AddDuoAt(nickname, playerType, client, DuoSlot(0, 1), second);
+            }
+            return 255;
         }
-        for (int i = 0; i < 4; i++)
+
+        // ① 第一行 / ② 第二行
+        for (byte row = 0; row < 2; row++)
         {
-            int main = DuoTopSlots[i];
-            if (CloseSlotIds.Contains((byte)main)) continue;
-            if (_slots[main] == null)
-                return AddDuoAt(nickname, playerType, client, (byte)main, DuoDefaultColor());
+            for (byte col = 0; col < columns; col++)
+            {
+                byte slot = DuoSlot(col, row);
+                if (!DuoSlotFree(slot)) continue;
+
+                byte color = DuoColumnColor(col);
+                if (color == 0) color = NextFreeColor();
+                else if (GetColorCount(color) >= 2) continue;
+                if (color == 0) continue;
+
+                return AddDuoAt(nickname, playerType, client, slot, color);
+            }
+        }
+
+        // ③ 兜底：任意未锁定的空位（换色拆列后可能剩下）
+        foreach (byte slot in DuoSlots)
+        {
+            if (!DuoSlotFree(slot)) continue;
+            byte color = NextFreeColor();
+            if (color == 0) break;
+            return AddDuoAt(nickname, playerType, client, slot, color);
         }
         return 255;
     }
+
 
     private byte AddDuoAt(string nickname, int playerType, SessionGroup client, byte slot, byte team)
     {

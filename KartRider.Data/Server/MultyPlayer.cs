@@ -28,6 +28,16 @@ public static class MultyPlayer
     public static Dictionary<string, byte> StartTimeAttack = new Dictionary<string, byte>();
     public static int[] teamPoints = { 10, 8, 6, 5, 4, 3, 2, 1 };
 
+    /// <summary>双人组队专用名次分（第 3 名 6→7）。普通组队/个人仍用 teamPoints。</summary>
+    public static int[] duoTeamPoints = { 10, 8, 7, 5, 4, 3, 2, 1 };
+
+    /// <summary>按房间模式取名次分；名次超出表长返回 0（避免满员+AI 时越界）。</summary>
+    static int RankPoint(GameRoom room, int rank)
+    {
+        int[] table = room != null && room.DuoTeam ? duoTeamPoints : teamPoints;
+        return rank >= 0 && rank < table.Length ? table[rank] : 0;
+    }
+
     // 记录正在等待全员就绪的房间，防止同一房间重复启动检测定时器（多个玩家可能同时触发 Start）
     private static readonly ConcurrentDictionary<GameRoom, byte> _readyCheckRooms = new ConcurrentDictionary<GameRoom, byte>();
 
@@ -106,6 +116,32 @@ public static class MultyPlayer
         {
             Log.Info($"房间 {roomId} 不存在");
             return;
+        }
+
+        // 双人房：按「颜色」统计人数（颜色 = 队伍），各队人数必须一致且至少 2 队。
+        // 单人房（只有 1 名玩家）跳过校验。必须在 arm 之前判定，否则校验失败后无法重试。
+        if (room.DuoTeam)
+        {
+            int duoPlayers = room.GetPlayerCount();
+            var colorCounts = new List<int>();
+            for (byte c = 1; c <= 4; c++)
+            {
+                int n = room.GetColorCount(c);
+                if (n > 0)
+                {
+                    colorCounts.Add(n);
+                }
+            }
+            bool unbalanced = colorCounts.Count < 2 || colorCounts.Distinct().Count() > 1;
+            if (duoPlayers > 1 && unbalanced)
+            {
+                using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
+                {
+                    denyPacket.WriteInt(18);
+                    Parent.Client.Send(denyPacket);
+                }
+                return;
+            }
         }
 
         // 每个房间每局只 arm 一次：多名玩家同时点开始 / 各发一次 GameControlPacket 时，
@@ -689,6 +725,8 @@ public static class MultyPlayer
             bool ai = room.GetAiCount() > 0;
             uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai);
             room.trackTemp = track;
+            // 抽到的地图必须留痕：出问题时能一眼看出是哪张图（随机图导致闪退的排查依赖这条）
+            Log.Info($"[Start] 房间 {room.RoomId} 抽到地图：{RandomTrack.GetTrackName(track)} (0x{track:X8})，随机选项={room.track}");
 
             // AI 参数必须"每局生成一次、所有人复用"：原实现放在按玩家发送的循环里，
             // 每个客户端拿到的 AI 速度都不同，必然不同步。
@@ -1181,6 +1219,11 @@ public static class MultyPlayer
         {
             return;
         }
+        // 双人模式没有 AI
+        if (room.DuoTeam)
+        {
+            return;
+        }
         var selector = new DictionaryRandomSelector();
         // 要补的 AI 数量与角色/卡丁车字典容量无关：字典可能只有 6 个角色，
         // 而 ai=8 建房要补 7 个 AI。字典不够时必须跨轮重复抽取，
@@ -1509,17 +1552,14 @@ public static class MultyPlayer
         }
     }
 
-    /// <summary>双人胜队：总分最高；并列取第一名所在队伍</summary>
+    /// <summary>双人胜队：总分最高；并列取第一名所在队伍，再并列取队号小的。</summary>
     static byte GetDuoWinnerTeam(Dictionary<byte, int> teamScores, byte firstTeam)
     {
         if (teamScores.Count == 0) return firstTeam;
-        int best = -1;
-        byte winner = firstTeam;
-        foreach (var kv in teamScores)
-        {
-            if (kv.Value > best) { best = kv.Value; winner = kv.Key; }
-            else if (kv.Value == best && kv.Key == firstTeam) { winner = firstTeam; }
-        }
+        byte winner = teamScores.OrderByDescending(kv => kv.Value)
+                                .ThenBy(kv => kv.Key == firstTeam ? 0 : 1)
+                                .ThenBy(kv => kv.Key)
+                                .First().Key;
         return winner;
     }
 
@@ -1584,7 +1624,7 @@ public static class MultyPlayer
                 if (p3.Team >= 1 && p3.Team <= 4 && timeData[p3.ID] != uint.MaxValue)
                 {
                     teamScores.TryGetValue(p3.Team, out int sc0);
-                    teamScores[p3.Team] = sc0 + teamPoints[ranking[p3.ID]];
+                    teamScores[p3.Team] = sc0 + RankPoint(room, ranking[p3.ID]);
                 }
             }
             if (member is Ai a3)
@@ -1600,7 +1640,7 @@ public static class MultyPlayer
                 if (a3.Team >= 1 && a3.Team <= 4 && timeData[a3.ID] != uint.MaxValue)
                 {
                     teamScores.TryGetValue(a3.Team, out int sc1);
-                    teamScores[a3.Team] = sc1 + teamPoints[ranking[a3.ID]];
+                    teamScores[a3.Team] = sc1 + RankPoint(room, ranking[a3.ID]);
                 }
             }
         }
@@ -1658,7 +1698,7 @@ public static class MultyPlayer
                     outPacket.WriteByte();
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
                     int playerRanking = ranking[p4.ID];
-                    int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : teamPoints[playerRanking];
+                    int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : RankPoint(room, playerRanking);
                     Log.Debug($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
                     outPacket.WriteInt(playerRanking);
                     if (room.GameType == 3 || room.GameType == 4)
@@ -1726,7 +1766,7 @@ public static class MultyPlayer
                     // 获取 kart 属性值
                     outPacket.WriteShort(a4.Kart);
                     int AiRanking = ranking[a4.ID];
-                    int AiPoint = timeData[a4.ID] == uint.MaxValue ? 0 : teamPoints[AiRanking];
+                    int AiPoint = timeData[a4.ID] == uint.MaxValue ? 0 : RankPoint(room, AiRanking);
                     Log.Debug($"AI {a4.ID} 排名 {AiRanking} 得分 {AiPoint}");
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteShort(0);

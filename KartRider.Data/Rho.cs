@@ -52,6 +52,8 @@ namespace KartRider
                         try
                         {
                             string fullName = ReplacePath(packFileInfo.FullName);
+                            // 顺便登记地图资源（track/、track_/ 两种写法），供随机池校验
+                            RandomTrack.NoteTrackFile(packFileInfo.FullName);
                             if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.xml"))
                             {
                                 Log.Debug(fullName);
@@ -1047,7 +1049,7 @@ namespace KartRider
                     Log.Debug($"[Track] {sourceName}: 跳过赛道 id=\"{id}\"（为空或包含 _S）");
                     continue;
                 }
-                bool blocked = GetBoolAttribute(xe, "blocked");
+                bool blocked = IsTrackBlocked(xe);
                 string name = GetAttributeText(xe, "name");
                 if (!blocked && !string.IsNullOrWhiteSpace(name))
                 {
@@ -1088,7 +1090,7 @@ namespace KartRider
                     RandomTrack.AddTrack(variantId, name, RandomTrack.GetTrackGameType(refId),
                         GetBoolAttribute(xe, "basicAi"),
                         GetBoolAttribute(xe, "isOnlyItemTrack"),
-                        GetBoolAttribute(xe, "blocked"));
+                        IsTrackBlocked(xe));
                 }
             }
             processVariant("track_crz", "crz");
@@ -1163,6 +1165,24 @@ namespace KartRider
             return string.Empty;
         }
 
+        /// <summary>
+        /// 赛道是否"不进随机池"：
+        ///   blocked='true'        —— 客户端标记禁用
+        ///   isOnlyTraining='true' —— 仅练习场（例如 village_I11 城镇 自由练习场）
+        ///   choosable='false'     —— 不可选（例如 [奔跑车手] 系列）
+        /// 这些赛道仍然保留在 TrackList 里（能显示/能手动选），只是不参与随机。
+        /// </summary>
+        private static bool IsTrackBlocked(XmlElement element)
+        {
+            if (GetBoolAttribute(element, "blocked")
+                || GetBoolAttribute(element, "isOnlyTraining"))
+            {
+                return true;
+            }
+            string choosable = GetAttributeText(element, "choosable");
+            return choosable.Equals("false", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool GetBoolAttribute(XmlElement element, string attributeName)
         {
             string value = GetAttributeText(element, attributeName);
@@ -1196,7 +1216,7 @@ namespace KartRider
                 RandomTrack.AddTrack(id, GetAttributeText(xe, "name"), gameType,
                     GetBoolAttribute(xe, "basicAi"),
                     GetBoolAttribute(xe, "isOnlyItemTrack"),
-                    GetBoolAttribute(xe, "blocked"));
+                    IsTrackBlocked(xe));
                 if (!baseGameTypes.ContainsKey(id))
                 {
                     baseGameTypes.Add(id, gameType);
@@ -1222,7 +1242,7 @@ namespace KartRider
                     RandomTrack.AddTrack($"{refId}_{suffix}", GetAttributeText(xe, "name"), gameType,
                         GetBoolAttribute(xe, "basicAi"),
                         GetBoolAttribute(xe, "isOnlyItemTrack"),
-                        GetBoolAttribute(xe, "blocked"));
+                        IsTrackBlocked(xe));
                 }
             }
             processVariant("track_crz", "crz");

@@ -25,11 +25,60 @@ namespace KartRider
 
         /// <summary>客户端 trackLocale 里的 blocked：仍然保存进 TrackList，但不会进入随机池。</summary>
         public bool blocked { get; set; }
+
+        /// <summary>客户端里没有这张图的资源（track 目录 / 反向文件都没有）：不进随机池。</summary>
+        public bool missing { get; set; }
     }
 
     public class RandomTrack
     {
         public static Dictionary<uint, Track> TrackList = new Dictionary<uint, Track>();
+
+        /// <summary>客户端 LPK 里实际存在的地图目录（track/xxx、track_/xxx 两种写法都收）。</summary>
+        public static readonly HashSet<string> AvailableTrackFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>带 track_rvs.1s / track_crz.1s 的地图目录（反方向 / 疯狂变体用）。</summary>
+        public static readonly HashSet<string> RvsFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        public static readonly HashSet<string> CrzFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>遍历 LPK 文件时顺便登记地图资源（由 Rho 在 Data 加载阶段调用）。</summary>
+        public static void NoteTrackFile(string fullName)
+        {
+            if (string.IsNullOrEmpty(fullName)) return;
+            string[] parts = fullName.Replace('\\', '/').Split('/');
+            for (int i = 0; i + 1 < parts.Length; i++)
+            {
+                string seg = parts[i];
+                if (!seg.Equals("track", StringComparison.OrdinalIgnoreCase)
+                    && !seg.StartsWith("track_", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                string folder = parts[i + 1];
+                if (string.IsNullOrEmpty(folder) || !folder.Contains('_')) continue;
+                AvailableTrackFolders.Add(folder);
+                string file = parts[parts.Length - 1];
+                if (file.Equals("track_rvs.1s", StringComparison.OrdinalIgnoreCase)) RvsFolders.Add(folder);
+                else if (file.Equals("track_crz.1s", StringComparison.OrdinalIgnoreCase)) CrzFolders.Add(folder);
+                return;
+            }
+        }
+
+        /// <summary>这张图在客户端里有没有资源（含反向/疯狂变体）。</summary>
+        public static bool HasClientResources(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            if (AvailableTrackFolders.Contains(id)) return true;
+            if (id.EndsWith("_rvs", StringComparison.OrdinalIgnoreCase))
+            {
+                return RvsFolders.Contains(id.Substring(0, id.Length - 4));
+            }
+            if (id.EndsWith("_crz", StringComparison.OrdinalIgnoreCase))
+            {
+                return CrzFolders.Contains(id.Substring(0, id.Length - 4));
+            }
+            return false;
+        }
         public static XDocument randomTrack = new XDocument();
         public static Dictionary<uint, string> RandomName = new Dictionary<uint, string> { { 0, "全部随机" }, { 1, "专业竞速随机" }, { 3, "人气随机（极易）" }, { 4, "人气随机（简单）" }, { 5, "人气随机（普通）" }, { 6, "人气随机（困难）" }, { 7, "人气随机（极难）" }, { 8, "新图随机" }, { 30, "反方向随机" }, { 40, "竞速随机" } };
 
@@ -131,7 +180,17 @@ namespace KartRider
                     noGameType++;
                 }
             }
-            Log.Info($"[Track] TrackList 收尾：共 {TrackList.Count} 条，{noName} 条无名称（已用 ID 兜底），{noGameType} 条缺少 gameType");
+            int noRes = 0;
+            foreach (Track track in TrackList.Values)
+            {
+                if (track.blocked) continue;
+                if (!HasClientResources(track.ID))
+                {
+                    track.missing = true;
+                    noRes++;
+                }
+            }
+            Log.Info($"[Track] TrackList 收尾：共 {TrackList.Count} 条，{noName} 条无名称（已用 ID 兜底），{noGameType} 条缺少 gameType，{noRes} 条客户端缺资源（不进随机池）");
         }
 
         private static void ApplyGameTypeToVariants(Track track)
@@ -358,8 +417,18 @@ namespace KartRider
                             .ToList();
                     }
 
-                    // 客户端标了 blocked 的赛道不进随机池
-                    allTracks = allTracks.Where(t => !t.blocked).ToList();
+                    // 客户端标了 blocked 的赛道、以及客户端缺资源的赛道都不进随机池
+                    allTracks = allTracks.Where(t => !t.blocked && !t.missing).ToList();
+
+                    // 【调试】只随机"被排除的图"，方便逐张核对
+                    if (ProfileService.SettingConfig != null && ProfileService.SettingConfig.RandomTrackTestBlockedOnly)
+                    {
+                        allTracks = TrackList.Values
+                            .Where(t => t.blocked && !t.missing)
+                            .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                            .ToList();
+                        Log.Info($"[RandomTrack] 测试模式：随机池只取被排除的图，共 {allTracks.Count} 张");
+                    }
 
                     // 竞速房排除"仅道具"赛道（客户端 isOnlyItemTrack）
                     if (RandomTrackGameType == "speed")
@@ -407,9 +476,19 @@ namespace KartRider
 
                 var allTracks = TrackList.Values
                     .Where(t => t.gameType == "speed")
-                    .Where(t => !t.onlyItem && !t.blocked)
+                    .Where(t => !t.onlyItem && !t.blocked && !t.missing)
                     .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                     .ToList();
+
+                // 【调试】只随机"被排除的图"
+                if (ProfileService.SettingConfig != null && ProfileService.SettingConfig.RandomTrackTestBlockedOnly)
+                {
+                    allTracks = TrackList.Values
+                        .Where(t => t.blocked && !t.missing)
+                        .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                        .ToList();
+                    Log.Info($"[RandomTrack] 测试模式(竞速随机)：随机池只取被排除的图，共 {allTracks.Count} 张");
+                }
 
                 // 如果 ai 为 true，筛选出 basicAi == true 的 track
                 if (ai)
