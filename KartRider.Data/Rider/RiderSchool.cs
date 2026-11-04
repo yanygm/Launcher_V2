@@ -136,11 +136,8 @@ namespace RiderData
                 // 等级 0 基（0=新手，5=PRO）；第二字节是**全局最后通关关卡**（1..42，0=未通关）。
                 // 客户端用「关卡编号 <= 该值」判断某关已通过、用「编号 = 该值 + 1」判断可挑战，
                 // 所以这里必须下发累计关卡（升级不清零），下发档内进度会让后续关卡全部锁死。
-                // 需要现场试字段含义时可用 override.ini 的 data.level / data.step 覆盖。
-                byte sendLevel = ProtocolOverride.Get("data.level", level);
-                byte sendStep = ProtocolOverride.Get("data.step", step);
-                outPacket.WriteByte(sendLevel);
-                outPacket.WriteByte(sendStep);
+                outPacket.WriteByte(level);
+                outPacket.WriteByte(step);
                 outPacket.WriteDateTime(DateTime.Now);
                 outPacket.WriteByte(0);
                 outPacket.WriteInt(0);
