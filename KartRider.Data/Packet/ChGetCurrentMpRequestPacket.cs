@@ -34,7 +34,14 @@ namespace KartRider.Packet
         {
             using (OutPacket outPacket = new OutPacket("ChGetCurrentMpReplyPacket"))
             {
-                outPacket.WriteHexString("83 08 00 00 83 08 00 00 08 00 00 00 04 01 00 00 C8 00 00 00 00 00 68 41 01 00 00 01 00 01");
+                for (int i = 0; i < 6; i++)
+                {
+                    outPacket.WriteInt(0);
+                }
+                for (int i = 0; i < 6; i++)
+                {
+                    outPacket.WriteByte(0);
+                }
                 Parent.Client.Send(outPacket);
             }
             return true;

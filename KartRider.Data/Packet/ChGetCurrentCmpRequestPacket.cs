@@ -35,6 +35,9 @@ namespace KartRider.Packet
             using (OutPacket outPacket = new OutPacket("ChGetCurrentCmpReplyPacket"))
             {
                 outPacket.WriteInt(0);
+                outPacket.WriteInt(0);
+                outPacket.WriteInt(0);
+                outPacket.WriteByte(0);
                 Parent.Client.Send(outPacket);
             }
             return true;

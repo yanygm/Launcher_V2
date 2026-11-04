@@ -17,17 +17,20 @@ namespace KartRider.Packet
         {
             using (OutPacket outPacket = new OutPacket("PrAddTimeEventInitPacket"))
             {
-                // P5136 的固定结构（时间用当前时间，等于没有进行中的限时活动）
-                outPacket.WriteHexString("6D F8 03 00 E8 B3 18 15 EF B3 17 15");
-                outPacket.WriteInt(6);
-                outPacket.WriteHexString("2F 7D A1 8B 28 57 BF 7E 3B 6D A8 52");
+                DateTime now = DateTime.Now;
+                int dateCode = (now.Year % 100) * 10000 + now.Month * 100 + now.Day;
+
+                outPacket.WriteInt(dateCode);
+                outPacket.WriteDateTime(now);
+                outPacket.WriteDateTime(now);
+                outPacket.WriteString("累计在线活动");
                 outPacket.WriteInt(0);
                 outPacket.WriteInt(0);
-                outPacket.WriteHexString("6D F8 03 00");
+                outPacket.WriteInt(dateCode);
                 outPacket.WriteInt(0);
                 outPacket.WriteInt(0);
                 outPacket.WriteInt(0);
-                outPacket.WriteDateTime(DateTime.Now);
+                outPacket.WriteDateTime(now);
                 outPacket.WriteInt(0);
                 session.Client.Send(outPacket);
             }

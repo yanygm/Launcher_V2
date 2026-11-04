@@ -632,10 +632,7 @@ namespace RiderData
         }
 
         /// <summary>
-        /// PRO 面板（P5136 客户端实测结构，两套编码）：
-        ///   未拿到 PRO 驾照：u8 徽章、u8 计时赛关卡、u8 当前驾照等级、u8 最后通关关卡、i32×3 纪录
-        ///   已拿到 PRO 驾照：u8 1、u8 计时赛关卡、u8 6、u8 对决关卡（旧版硬编码的那一套）
-        /// 关卡来自 PRO 的成对关卡表 [31,32] [33,34] … [41,42]，未拿 PRO 时按已通关对数推进。
+        /// PRO 驾照
         /// </summary>
         public static void PrRiderSchoolPro(SessionGroup Parent)
         {
