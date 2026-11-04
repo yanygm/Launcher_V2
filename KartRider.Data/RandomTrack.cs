@@ -420,16 +420,6 @@ namespace KartRider
                     // 客户端标了 blocked 的赛道、以及客户端缺资源的赛道都不进随机池
                     allTracks = allTracks.Where(t => !t.blocked && !t.missing).ToList();
 
-                    // 【调试】只随机"被排除的图"，方便逐张核对
-                    if (ProfileService.SettingConfig != null && ProfileService.SettingConfig.RandomTrackTestBlockedOnly)
-                    {
-                        allTracks = TrackList.Values
-                            .Where(t => t.blocked && !t.missing)
-                            .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
-                            .ToList();
-                        Log.Info($"[RandomTrack] 测试模式：随机池只取被排除的图，共 {allTracks.Count} 张");
-                    }
-
                     // 竞速房排除"仅道具"赛道（客户端 isOnlyItemTrack）
                     if (RandomTrackGameType == "speed")
                     {
@@ -479,16 +469,6 @@ namespace KartRider
                     .Where(t => !t.onlyItem && !t.blocked && !t.missing)
                     .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                     .ToList();
-
-                // 【调试】只随机"被排除的图"
-                if (ProfileService.SettingConfig != null && ProfileService.SettingConfig.RandomTrackTestBlockedOnly)
-                {
-                    allTracks = TrackList.Values
-                        .Where(t => t.blocked && !t.missing)
-                        .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
-                        .ToList();
-                    Log.Info($"[RandomTrack] 测试模式(竞速随机)：随机池只取被排除的图，共 {allTracks.Count} 张");
-                }
 
                 // 如果 ai 为 true，筛选出 basicAi == true 的 track
                 if (ai)
