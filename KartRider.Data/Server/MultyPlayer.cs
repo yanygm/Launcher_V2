@@ -348,9 +348,30 @@ public static class MultyPlayer
             return;
         }
         room.StartTicks = ConvertTick() + 3000;
+        room.TimeData.Clear();
+        room.Ranking.Clear();
+        room.EndTicks = 0;
+        room.SettleTriggered = false;
+        room.TeamGauge.Clear();
+        room.Ready.Clear();
+        room.ResetModeScores();
+
+        // 挑战者模式由指定的 AI 主机模拟 AI（抓包值 = 房内最后的真人 ID）；
+        // 其余模式保持原来的 0。
+        int aiMaster = 0;
+        if (GameModes.IsChallenger(room.GameType))
+        {
+            foreach (RoomMember member in room._slots)
+            {
+                if (member is Player p && p.ID > aiMaster)
+                {
+                    aiMaster = p.ID;
+                }
+            }
+        }
         using (OutPacket oPacket = new OutPacket("GameAiMasterSlotNoticePacket"))
         {
-            oPacket.WriteInt();
+            oPacket.WriteInt(aiMaster);
             BroadCast(room.RoomId, oPacket);
         }
         using (OutPacket oPacket = new OutPacket("GameControlPacket"))
@@ -359,19 +380,117 @@ public static class MultyPlayer
             oPacket.WriteUInt(room.StartTicks);
             BroadCast(room.RoomId, oPacket);
         }
-        room.TimeData.Clear();
-        room.Ranking.Clear();
-        room.EndTicks = 0;
-        room.SettleTriggered = false;
-        room.TeamGauge.Clear();
-        room.Ready.Clear();
+
+        // 夺旗赛：抓包中服务端在开局后立即下发 0:0 初始化比分板
+        if (GameModes.IsTeamFlagMode(room.GameType))
+        {
+            BroadcastFlagScore(room);
+        }
+        ArmModeDeadline(room);
         Log.Debug($"StartTicks = {room.StartTicks}");
     }
 
-    internal static void Set_settleTrigger(GameRoom room)
+    /// <summary>夺旗赛比分广播（GameFlagSetScorePacket：红队夺旗数、蓝队夺旗数）。</summary>
+    internal static void BroadcastFlagScore(GameRoom room)
+    {
+        using (OutPacket oPacket = new OutPacket("GameFlagSetScorePacket"))
+        {
+            oPacket.WriteUInt((uint)Math.Max(0, room.RedFlagScore));
+            oPacket.WriteUInt((uint)Math.Max(0, room.BlueFlagScore));
+            BroadCast(room.RoomId, oPacket);
+        }
+    }
+
+    /// <summary>
+    /// 夺旗赛/死斗没有冲线，正赛时长由服务端计时：
+    /// 到时下发 GameControl(3)，客户端回包后走原有结算流程。
+    /// </summary>
+    internal static void ArmModeDeadline(GameRoom room)
+    {
+        int duration = GameModes.RaceDurationMs(room.GameType);
+        if (duration <= 0)
+        {
+            return;
+        }
+        if (Interlocked.CompareExchange(ref room.ModeDeadlineArmed, 1, 0) != 0)
+        {
+            return;
+        }
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(duration + 3000).ConfigureAwait(false);
+            }
+            catch
+            {
+                return;
+            }
+            EndModeRace(room, "时间到");
+        });
+    }
+
+    /// <summary>结束积分制比赛（夺旗赛打平会先进入加时）。</summary>
+    internal static void EndModeRace(GameRoom room, string reason)
+    {
+        if (room == null || RoomManager.GetRoom(room.RoomId) != room)
+        {
+            return;
+        }
+        lock (room.Sync)
+        {
+            if (!room.Started || room.SettleTriggered || room.EndTicks != 0)
+            {
+                return;
+            }
+
+            if (GameModes.IsTeamFlagMode(room.GameType) && !room.FlagOvertime
+                && room.RedFlagScore == room.BlueFlagScore)
+            {
+                // 正赛打平：GameControl state=6 触发官方的 flag_draw 流程，比分清零重新计时
+                room.FlagRegulationTotal = room.RedFlagScore + room.BlueFlagScore;
+                room.FlagOvertime = true;
+                room.RedFlagScore = 0;
+                room.BlueFlagScore = 0;
+                uint overtimeTick = ConvertTick() + 2000 + 3000;
+                using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                {
+                    oPacket.WriteInt(6);
+                    oPacket.WriteUInt(overtimeTick);
+                    BroadCast(room.RoomId, oPacket);
+                }
+                BroadcastFlagScore(room);
+                Interlocked.Exchange(ref room.ModeDeadlineArmed, 0);
+                ArmModeDeadline(room);
+                Log.Info($"[Mode] 房间 {room.RoomId} 夺旗赛正赛打平，进入加时 startTick={overtimeTick}");
+                return;
+            }
+
+            room.SnapshotMembers = DeepCopyMembers(room._IDs);
+            if (!room.FlagOvertime)
+            {
+                // 正赛直接结束时同样记下总夺旗数（加时结束时保留正赛的值）
+                room.FlagRegulationTotal = room.RedFlagScore + room.BlueFlagScore;
+            }
+            room.EndTicks = ConvertTick() + 3000;
+            using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+            {
+                oPacket.WriteInt(3);
+                oPacket.WriteUInt(room.EndTicks);
+                BroadCast(room.RoomId, oPacket);
+            }
+            Log.Info($"[Mode] 房间 {room.RoomId} {GameModes.Name(room.GameType)} 结束（{reason}）：" +
+                     $"夺旗 {room.RedFlagScore}:{room.BlueFlagScore} 死斗 {room.DeathMatchRedScore}:{room.DeathMatchBlueScore} 加时={room.FlagOvertime}");
+            // 积分制模式没有冲线时间可等，客户端收到 GameControl(3) 回报 state=2 后要立刻结算，
+            // 否则客户端已经在结算时间点把界面建好，只显示默认的 0:0。定时器仅作兜底。
+            Set_settleTrigger(room, GameModes.IsScoreMode(room.GameType) ? 4000 : 10000);
+        }
+    }
+
+    internal static void Set_settleTrigger(GameRoom room, int intervalMs = 10000)
     {
         var onceTimer = new System.Timers.Timer();
-        onceTimer.Interval = 10000;
+        onceTimer.Interval = intervalMs;
         onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(room, s, _event));
         onceTimer.AutoReset = false;
         onceTimer.Start();
@@ -379,17 +498,32 @@ public static class MultyPlayer
 
     static void settleTrigger(GameRoom room, object sender, System.Timers.ElapsedEventArgs e)
     {
+        SettleRoom(room);
+    }
+
+    /// <summary>
+    /// 结算一个房间：先发 GameNextStage + GameResult，最后才发 GameControl(state=4)。
+    /// 抓包（夺旗赛/死斗/挑战者）都是这个顺序；反过来先发 state=4 时，客户端会用默认值
+    /// 把结算阶段建好，夺旗赛的队伍比分就变成 0:0。
+    /// </summary>
+    internal static void SettleRoom(GameRoom room)
+    {
         if (room == null)
         {
             return;
         }
 
-        if (room.SettleTriggered)
+        lock (room.Sync)
         {
-            return;
+            if (room.SettleTriggered)
+            {
+                return;
+            }
+            room.SettleTriggered = true;
         }
-        room.SettleTriggered = true;
 
+        bool scoreMode = GameModes.IsScoreMode(room.GameType);
+        bool teamFlag = GameModes.IsTeamFlagMode(room.GameType);
         var menbers = room.SnapshotMembers ?? room._IDs; // 优先用结束瞬间快照
         var timeData = new Dictionary<int, uint>(room.TimeData);
         room.SnapshotMembers = null; // 用后清除
@@ -397,6 +531,19 @@ public static class MultyPlayer
         uint settleTick = room.EndTicks + 6000;
         int retryRoomId = room.RoomId;
         byte retryMode = room.ModeByte;
+
+        InitRoom(room);
+
+        if (scoreMode)
+        {
+            // 结算前再同步一次最终比分，保证客户端进结算阶段时缓存的是终局比分
+            if (teamFlag)
+            {
+                BroadcastFlagScore(room);
+            }
+            GameResultPacket(room, menbers, timeData);
+        }
+
         using (OutPacket outPacket = new OutPacket("GameControlPacket"))
         {
             outPacket.WriteInt(4);
@@ -404,9 +551,15 @@ public static class MultyPlayer
             BroadCast(retryRoomId, outPacket);
         }
 
-        InitRoom(room);
-
-        GameResultPacket(room, menbers, timeData);
+        if (!scoreMode)
+        {
+            GameResultPacket(room, menbers, timeData);
+        }
+        else if (teamFlag)
+        {
+            // 部分客户端在 state=4 之后才创建结算界面，这里补一帧终局比分
+            BroadcastFlagScore(room);
+        }
 
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p1)
@@ -506,10 +659,12 @@ public static class MultyPlayer
         room.Ranking.Clear();
         room.redGauge = 0f;
         room.blueGauge = 0f;
+        // 注意：夺旗/死斗积分必须保留到 GameResultPacket 结算之后再清理，
+        // 因此这里不调用 ResetModeScores（下一局 startTrigger 会重置）。
         Interlocked.Exchange(ref room.StartGate, 0);
     }
 
-    static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "")
+    static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "", uint? trackOverride = null)
     {
         bool ob = false;
         if (!string.IsNullOrEmpty(nickname))
@@ -528,7 +683,7 @@ public static class MultyPlayer
             return;
         }
 
-        outPacket.WriteUInt(room.track); // track name hash
+        outPacket.WriteUInt(trackOverride ?? room.track); // track name hash（开局包用实际随机到的地图）
         outPacket.WriteInt(0);
         outPacket.WriteBytes(room.RoomData); // 32
         outPacket.WriteInt(room.RoomMaster); // RoomMaster
@@ -580,7 +735,7 @@ public static class MultyPlayer
                 GameSupport.GetRider(p.Nickname, outPacket);
                 outPacket.WriteString(pConfig.Rider.Card);
                 outPacket.WriteUInt(pConfig.Rider.RP);
-                if (room.GameType == 3 || room.GameType == 4)
+                if (room.IsTeamMode || GameModes.IsChallenger(room.GameType))
                 {
                     outPacket.WriteByte(p.Team);
                 }
@@ -632,7 +787,7 @@ public static class MultyPlayer
                 outPacket.WriteShort(a.Balloon);
                 outPacket.WriteShort(a.HeadBand);
                 outPacket.WriteShort(a.Goggle);
-                if (room.GameType == 3 || room.GameType == 4)
+                if (room.IsTeamMode || GameModes.IsChallenger(room.GameType))
                 {
                     outPacket.WriteByte(a.Team);
                 }
@@ -723,7 +878,7 @@ public static class MultyPlayer
             room.ResetRareItems(); // 每局重置「天使/道具锁/闪电」计数
 
             bool ai = room.GetAiCount() > 0;
-            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai);
+            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType));
             room.trackTemp = track;
             // 抽到的地图必须留痕：出问题时能一眼看出是哪张图（随机图导致闪退的排查依赖这条）
             Log.Info($"[Start] 房间 {room.RoomId} 抽到地图：{RandomTrack.GetTrackName(track)} (0x{track:X8})，随机选项={room.track}");
@@ -770,13 +925,20 @@ public static class MultyPlayer
     static void GrCommandStartPacket(int roomId, Player p)
     {
         var room = RoomManager.GetRoom(roomId);
-        using (OutPacket oPacket = new OutPacket("GrCommandStartPacket"))
+        // 挑战者模式下发 GrCommandStartAiPacket（抓包确认），正文结构与普通开局包一致
+        string startPacketName = GameModes.UsesAiStartPacket(room.GameType)
+            ? "GrCommandStartAiPacket"
+            : "GrCommandStartPacket";
+        using (OutPacket oPacket = new OutPacket(startPacketName))
         {
             oPacket.WriteUInt((uint)PacketName.GrSessionDataPacket);
             GrSessionDataPacket(p.Nickname, oPacket);
 
             oPacket.WriteUInt((uint)PacketName.GrSlotDataPacket);
-            GrSlotDataPacket(roomId, oPacket, true, p.Nickname);
+            // 夺旗/死斗开局包里的槽位数据必须带“实际随机到的地图”，
+            // 否则客户端会按 track=0 自行随机到非本模式地图，进图即闪退。
+            bool forceTrackType = GameModes.TrackGameType(room.GameType) != null;
+            GrSlotDataPacket(roomId, oPacket, true, p.Nickname, forceTrackType ? room.trackTemp : null);
             oPacket.WriteInt();
 
             //kart data
@@ -807,6 +969,12 @@ public static class MultyPlayer
             oPacket.WriteInt();
             oPacket.WriteUInt((uint)PacketName.MissionInfo);
             oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00");
+            if (GameModes.UsesAiStartPacket(room.GameType))
+            {
+                // GrCommandStartAiPacket 在基础开局包后追加：AI 主机/保留字段 + AI 列表长度
+                oPacket.WriteInt(0);
+                oPacket.WriteInt(0);
+            }
             //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
             Log.Debug($"Track : {RandomTrack.GetTrackName(room.trackTemp)}");
             p.Session.Client.Send(oPacket);
@@ -919,12 +1087,27 @@ public static class MultyPlayer
             }
             return;
         }
-        else if (room.GameType == 3 || room.GameType == 4)
+        else if (GameModes.IsTeamGameType(room.GameType) || GameModes.IsChallenger(room.GameType))
         {
             uint pmap = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.Rider?.pmap ?? 0;
             if (pmap == 718 || (playerCount < 1 && room.RoomMaster < 8))
             {
                 room.RoomMaster = player.ID;
+            }
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                // 挑战者模式：所有人同队（蓝队 2），落 0~3 号格
+                player.Team = 2;
+                using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
+                {
+                    outPacket.WriteByte(0);
+                    outPacket.WriteByte(2);
+                    outPacket.WriteByte(2);
+                    outPacket.WriteEncByte(room.ModeByte);
+                    outPacket.WriteBytes(new byte[5]);
+                    Parent.Client.Send(outPacket);
+                }
+                return;
             }
             if (slot < 4)
             {
@@ -932,7 +1115,7 @@ public static class MultyPlayer
                 using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
                 {
                     outPacket.WriteByte(0);
-                    outPacket.WriteByte(1);
+                    outPacket.WriteByte(player.Team); // 抓包：该字节为入座队伍
                     outPacket.WriteByte(2);
                     outPacket.WriteEncByte(room.ModeByte);
                     outPacket.WriteBytes(new byte[5]);
@@ -946,7 +1129,7 @@ public static class MultyPlayer
                 using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
                 {
                     outPacket.WriteByte(0);
-                    outPacket.WriteByte(1);
+                    outPacket.WriteByte(player.Team); // 抓包：该字节为入座队伍
                     outPacket.WriteByte(2);
                     outPacket.WriteEncByte(room.ModeByte);
                     outPacket.WriteBytes(new byte[5]);
@@ -1112,8 +1295,20 @@ public static class MultyPlayer
     /// <summary>
     /// 房间列表里给“还没选图”的房间用的占位赛道 hash（优先取一张真实存在的图）。
     /// </summary>
-    internal static uint ListFallbackTrack()
+    internal static uint ListFallbackTrack(byte gameType = 0)
     {
+        // 夺旗/死斗房间的列表占位图也要用对应类型的地图，避免客户端按房间模式预览时拿到不匹配的图
+        string required = GameModes.TrackGameType(gameType);
+        if (required != null)
+        {
+            foreach (var kv in RandomTrack.TrackList)
+            {
+                if (RandomTrack.IsTrackOfGameType(kv.Key, required))
+                {
+                    return kv.Key;
+                }
+            }
+        }
         foreach (var kv in RandomTrack.TrackList)
         {
             return kv.Key;
@@ -1195,7 +1390,21 @@ public static class MultyPlayer
             return;
         }
 
-        bool teamMode = room.GameType == 3 || room.GameType == 4;
+        // 挑战者模式：4 人同队，直接锁掉右半场（4~7 号格）
+        if (GameModes.IsChallenger(room.GameType))
+        {
+            for (byte slot = GameModes.ChallengerMaxPlayers; slot < 8; slot++)
+            {
+                if (room._slots[slot] == null && room._IDs[slot] == null)
+                {
+                    room.AddClose(slot, slot);
+                }
+            }
+            GrSlotDataPacket(room.RoomId);
+            return;
+        }
+
+        bool teamMode = GameModes.IsTeamGameType(room.GameType);
         int perSide = Math.Max(1, maxPlayers / 4 + (maxPlayers % 4 == 0 ? 0 : 0));
         // 组队赛：每队人数 = maxPlayers/2（2/4/6/8 都是偶数），每排 4 格
         int columnLimit = teamMode ? Math.Max(1, maxPlayers / 2) : maxPlayers;
@@ -1376,7 +1585,7 @@ public static class MultyPlayer
         {
             randomKartIds = selector.GetRandomKartIds(aiKartDict, 2, false, true);
         }
-        if (room.GameType == 3 || room.GameType == 4)
+        if (room.IsTeamMode || GameModes.IsChallenger(room.GameType))
         {
             var Ais = new List<Ai>();
             for (int i = 0; i < 2 && i < randomCharIds.Count; i++)
@@ -1414,7 +1623,8 @@ public static class MultyPlayer
                 return;
             }
             byte slot0 = room.TrySetAi(Ais[0], 2);
-            byte slot1 = room.TrySetAi(Ais[1], 1);
+            // 挑战者模式全员蓝队（右半场已锁），AI 也只能进蓝队
+            byte slot1 = room.TrySetAi(Ais[1], GameModes.IsChallenger(room.GameType) ? (byte)2 : (byte)1);
             if (slot0 != 255 && slot1 != 255)
             {
                 var ai0 = RoomManager.TryGetSlotDetail(roomId, slot0) as Ai;
@@ -1552,7 +1762,7 @@ public static class MultyPlayer
         }
     }
 
-    /// <summary>双人胜队：总分最高；并列取第一名所在队伍，再并列取队号小的。</summary>
+    /// <summary>双人胜队：总分最高；并列取第一名所在队伍</summary>
     static byte GetDuoWinnerTeam(Dictionary<byte, int> teamScores, byte firstTeam)
     {
         if (teamScores.Count == 0) return firstTeam;
@@ -1561,6 +1771,87 @@ public static class MultyPlayer
                                 .ThenBy(kv => kv.Key)
                                 .First().Key;
         return winner;
+    }
+
+    /// <summary>夺旗赛/死斗的胜方队伍；平局返回 0。</summary>
+    internal static byte WinnerTeam(GameRoom room)
+    {
+        if (GameModes.IsTeamFlagMode(room.GameType))
+        {
+            if (room.RedFlagScore == room.BlueFlagScore) return 0;
+            return (byte)(room.RedFlagScore > room.BlueFlagScore ? 1 : 2);
+        }
+        if (room.GameType == GameModes.DeathMatchTeam)
+        {
+            if (room.DeathMatchRedScore == room.DeathMatchBlueScore) return 0;
+            return (byte)(room.DeathMatchRedScore > room.DeathMatchBlueScore ? 1 : 2);
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// 结算记录 +15 的 short：普通组队写队伍数 2，夺旗赛写正赛总夺旗数（抓包 3:1 → 4），
+    /// 死斗/挑战者/个人写 0（均与官方抓包一致）。
+    /// </summary>
+    static short ResultTeamField(GameRoom room)
+    {
+        if (GameModes.IsTeamFlagMode(room.GameType))
+        {
+            return (short)Math.Max(0, room.FlagRegulationTotal);
+        }
+        if (room.GameType == 3 || room.GameType == 4)
+        {
+            return 2;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// 积分制模式的名次：胜队优先 → 个人积分降序 → 格子顺序。
+    /// 客户端的名次/颁奖界面直接读该名次，因此必须与阵营比分一致。
+    /// </summary>
+    static Dictionary<int, int> BuildModeRanking(GameRoom room, RoomMember[] members)
+    {
+        var list = new List<(int Id, int Score, byte Team, int Slot)>();
+        foreach (RoomMember member in members)
+        {
+            if (member is Player p)
+            {
+                list.Add((p.ID, room.ModeScore(p.ID), p.Team, p.SlotId));
+            }
+            else if (member is Ai a)
+            {
+                list.Add((a.ID, room.ModeScore(a.ID), a.Team, a.SlotId));
+            }
+        }
+
+        bool teamScored = GameModes.IsTeamFlagMode(room.GameType)
+            || room.GameType == GameModes.DeathMatchTeam;
+        byte winningTeam = WinnerTeam(room);
+        list.Sort((left, right) =>
+        {
+            if (teamScored && winningTeam != 0)
+            {
+                int leftWin = left.Team == winningTeam ? 1 : 0;
+                int rightWin = right.Team == winningTeam ? 1 : 0;
+                if (leftWin != rightWin)
+                {
+                    return rightWin - leftWin;
+                }
+            }
+            if (left.Score != right.Score)
+            {
+                return right.Score - left.Score;
+            }
+            return left.Slot - right.Slot;
+        });
+
+        var ranking = new Dictionary<int, int>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            ranking[list[i].Id] = i;
+        }
+        return ranking;
     }
 
     static void GameResultPacket(GameRoom room, RoomMember[] members, Dictionary<int, uint> timeData)
@@ -1587,7 +1878,27 @@ public static class MultyPlayer
             }
         }
 
-        Dictionary<int, int> ranking = GetAllRanks(timeData);
+        bool scoreMode = GameModes.IsScoreMode(room.GameType);
+        if (scoreMode)
+        {
+            // 夺旗赛/死斗没有冲线时间：结算时间统一写正赛时长（抓包：180000 / 150000）
+            uint modeTime = (uint)Math.Max(0, GameModes.RaceDurationMs(room.GameType));
+            foreach (RoomMember member in members)
+            {
+                if (member is Player p0)
+                {
+                    timeData[p0.ID] = modeTime;
+                }
+                else if (member is Ai a0)
+                {
+                    timeData[a0.ID] = modeTime;
+                }
+            }
+        }
+
+        Dictionary<int, int> ranking = scoreMode
+            ? BuildModeRanking(room, members)
+            : GetAllRanks(timeData);
         room.Ranking.Clear();
         foreach (var pair in ranking)
         {
@@ -1673,6 +1984,16 @@ public static class MultyPlayer
         {
             winnerTeam = firstTeam;
         }
+        else if (scoreMode)
+        {
+            // 夺旗赛/死斗：胜方按阵营积分判定；平局沿用“第一名所在队”
+            byte winner = WinnerTeam(room);
+            winnerTeam = winner != 0 ? winner : firstTeam;
+        }
+        else if (GameModes.IsChallenger(room.GameType))
+        {
+            winnerTeam = firstTeam;
+        }
         else
         {
             winnerTeam = 0;
@@ -1704,17 +2025,14 @@ public static class MultyPlayer
                     outPacket.WriteByte();
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
                     int playerRanking = ranking[p4.ID];
-                    int playerPoint = timeData[p4.ID] == uint.MaxValue ? 0 : RankPoint(room, playerRanking);
+                    int playerPoint = scoreMode
+                        ? room.ModeScore(p4.ID)
+                        : timeData[p4.ID] == uint.MaxValue ? 0 : RankPoint(room, playerRanking);
                     Log.Debug($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
                     outPacket.WriteInt(playerRanking);
-                    if (room.GameType == 3 || room.GameType == 4)
-                    {
-                        outPacket.WriteShort(2); //2
-                    }
-                    else
-                    {
-                        outPacket.WriteShort(0);
-                    }
+                    // 抓包：该 short 在普通组队=2（队伍数），夺旗赛=正赛总夺旗数（3:1 → 4），
+                    // 死斗/挑战者/个人=0。写成固定 2 会让夺旗赛按普通组队结算处理。
+                    outPacket.WriteShort(ResultTeamField(room));
                     outPacket.WriteByte();
 
                     var reward = TimeReward.Reward(playerRanking);
@@ -1738,9 +2056,10 @@ public static class MultyPlayer
                     }
                     outPacket.WriteBytes(new byte[29]);
 
-                    if (room.GameType == 3 || room.GameType == 4)
+                    // 计分模式（夺旗/组队死斗）的 TP 列写个人积分；个人夺旗没有阵营，team 写 0
+                    if (room.IsTeamMode || scoreMode || GameModes.IsChallenger(room.GameType))
                     {
-                        outPacket.WriteInt(playerPoint);
+                        outPacket.WriteInt(scoreMode ? room.ModeScore(p4.ID) : playerPoint);
                         outPacket.WriteByte(p4.Team); // Team
                     }
                     else
@@ -1752,7 +2071,13 @@ public static class MultyPlayer
                     outPacket.WriteInt(1);
                     outPacket.WriteByte(0);
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Character);
-                    outPacket.WriteBytes(new byte[49]);
+                    // 抓包：+92 偏移是该玩家所在队伍的夺旗数（3:1 时红队记录=3、蓝队记录=1），
+                    // 客户端结算界面的队伍比分就读这里；整段写 0 就会显示 0:0。
+                    outPacket.WriteBytes(new byte[5]);
+                    outPacket.WriteInt(GameModes.IsTeamFlagMode(room.GameType)
+                        ? room.TeamModeScore(p4.Team)
+                        : 0);
+                    outPacket.WriteBytes(new byte[40]);
                     outPacket.WriteHexString("FF");
                     outPacket.WriteBytes(new byte[37]);
                     outPacket.WriteInt(p4Config.Rider.ClubMark_LOGO);
@@ -1776,10 +2101,10 @@ public static class MultyPlayer
                     Log.Debug($"AI {a4.ID} 排名 {AiRanking} 得分 {AiPoint}");
                     outPacket.WriteInt(AiRanking);
                     outPacket.WriteShort(0);
-                    if (room.GameType == 3 || room.GameType == 4)
+                    if (room.IsTeamMode || scoreMode || GameModes.IsChallenger(room.GameType))
                     {
                         outPacket.WriteByte(a4.Team); // Team
-                        outPacket.WriteInt(AiPoint);
+                        outPacket.WriteInt(scoreMode ? room.ModeScore(a4.ID) : AiPoint);
                     }
                     else
                     {

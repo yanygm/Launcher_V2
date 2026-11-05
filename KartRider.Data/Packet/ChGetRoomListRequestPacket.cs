@@ -68,7 +68,7 @@ namespace KartRider.Packet
                     uint listTrack = _room.Value.track;
                     if (listTrack == 0)
                     {
-                        listTrack = ListFallbackTrack();
+                        listTrack = ListFallbackTrack(_room.Value.GameType);
                         Log.Info($"[RoomList] 房间 {_room.Key} 尚未选图，列表赛道用占位图 {RandomTrack.GetTrackName(listTrack)} (0x{listTrack:X8})");
                     }
                     oPacket.WriteShort((short)_room.Key);

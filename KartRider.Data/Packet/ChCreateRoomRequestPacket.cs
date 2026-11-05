@@ -95,6 +95,9 @@ namespace KartRider.Packet
 
             // 基础模式优先级：客户端模式号 → 频道配置（channel.xml，客户端与服务端共用）→ 双人频道按名称判断
             byte baseGameType = DuoTeamMode.ToBaseGameType(rawGameType);
+            bool rawSpecialMode = GameModes.IsFlagMode(rawGameType)
+                || GameModes.IsDeathMatch(rawGameType)
+                || GameModes.IsChallenger(rawGameType);
             if (!DuoTeamMode.IsBaseGameType(baseGameType))
             {
                 if (channelInfo != null && DuoTeamMode.IsBaseGameType(channelInfo.GameType))
@@ -106,6 +109,14 @@ namespace KartRider.Packet
                     baseGameType = DuoTeamMode.GuessDuoBaseGameType(channelInfo?.Name, RoomName);
                 }
             }
+            // 夺旗/死斗/挑战者频道：建房包没有给出特殊模式号时，以频道配置为准
+            if (!rawSpecialMode && channelInfo != null
+                && (GameModes.IsFlagMode(channelInfo.GameType)
+                    || GameModes.IsDeathMatch(channelInfo.GameType)
+                    || GameModes.IsChallenger(channelInfo.GameType)))
+            {
+                baseGameType = channelInfo.GameType;
+            }
             GameType = baseGameType;
             Room.GameType = GameType;
             Room.DuoTeam = duoRequested && (GameType == 3 || GameType == 4) && ProfileService.SettingConfig.DuoTeamChannel;
@@ -114,21 +125,31 @@ namespace KartRider.Packet
                 : (byte)2;
             // 下发给客户端的模式号：基础模式（3/4）时才按官方值换成 67/68；
             // 客户端给的是扩展模式号（如 51）时原样回显，避免客户端收到自己不认识的模式而卡死。
-            Room.WireGameType = DuoTeamMode.IsBaseGameType(rawGameType)
-                ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
-                : rawGameType;
+            // 夺旗/死斗/挑战者等特殊模式始终按解析后的模式号下发。
+            Room.WireGameType = GameModes.IsFlagMode(GameType)
+                || GameModes.IsDeathMatch(GameType)
+                || GameModes.IsChallenger(GameType)
+                ? GameType
+                : (DuoTeamMode.IsBaseGameType(rawGameType)
+                    ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
+                    : rawGameType);
             Room.RoomData = RoomData;
             Log.Info($"[Room] create gameType={rawGameType} -> base={GameType} duo={Room.DuoTeam} wire={Room.WireGameType} channel={Room.Channel}({channelInfo?.Name ?? "未知频道"} cfgGameType={channelInfo?.WireGameType.ToString() ?? "-"} cfgDuo={channelInfo?.DuoTeam.ToString() ?? "-"})");
             Log.Debug($"CreateRoom = {RoomId}");
             byte randomTrackGameType = 0;
-            if (GameType == 2 || GameType == 4 || GameType == 14 || GameType == 54)
+            if (GameType == 2 || GameType == 4 || GameType == 14 || GameType == 54 || GameModes.IsItemEnabled(GameType))
             {
                 randomTrackGameType = 1;
             }
             Room.RandomTrackGameType = randomTrackGameType;
 
-            if (GameType == 3 || GameType == 4)
+            // 挑战者模式是 4 人同队（抓包：全部坐在蓝队 0~3 号格），人数上限固定 4
+            maxPlayers = GameModes.ClampMaxPlayers(GameType, maxPlayers);
+            Room.MaxPlayers = maxPlayers;
+
+            if (GameModes.IsTeamGameType(GameType) || GameModes.IsChallenger(GameType))
             {
+                // 团队模式房主默认蓝队（2）；挑战者模式同样全员蓝队
                 byte slot = Room.DuoTeam
                     ? RoomManager.AddDuoPlayer(RoomId, Parent.Client.Nickname, 2, Parent)
                     : RoomManager.AddPlayer(RoomId, Parent.Client.Nickname, 2, 2, Parent);
@@ -154,7 +175,7 @@ namespace KartRider.Packet
                 using (OutPacket oPacket = new OutPacket("ChCreateRoomReplyPacket"))
                 {
                     oPacket.WriteByte(1);
-                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(player.Team); // 抓包：该字节为房主所在队伍
                     oPacket.WriteByte((byte)(Room.DuoTeam ? 4 : 2));
                     oPacket.WriteEncByte(Room.ModeByte);
                     Parent.Client.Send(oPacket);

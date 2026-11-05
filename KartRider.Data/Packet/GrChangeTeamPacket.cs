@@ -46,7 +46,13 @@ namespace KartRider.Packet
             }
             byte team = iPacket.ReadByte();
             bool Bool;
-            if (room.DuoTeam) Bool = RoomManager.ChangeDuoTeam(roomId, player.SlotId, team);
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                // 挑战者模式全员同队（蓝队 2），不允许换边
+                player.Team = 2;
+                Bool = true;
+            }
+            else if (room.DuoTeam) Bool = RoomManager.ChangeDuoTeam(roomId, player.SlotId, team);
             else Bool = RoomManager.ChangeMemberTeam(roomId, player.SlotId, team);
             Log.Info($"ChangeMemberTeam, roomId = {roomId}, SlotId = {player.SlotId}, Team = {team}, {Bool}");
             using (OutPacket oPacket = new OutPacket("GrChangeTeamPacketReply"))

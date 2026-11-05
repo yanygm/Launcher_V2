@@ -627,6 +627,16 @@ namespace KartRider
                                     ItemRule.ApplyFromClient(4, XDocument.Load(probStream));
                                 }
                             }
+                            if (fullName == "item/slot/itemProb_flag@zz.xml")
+                            {
+                                // 夺旗赛专用道具表：客户端只支持这组道具，普通道具会导致吃道具闪退
+                                Log.Debug(fullName);
+                                byte[] probData = packFileInfo.GetData();
+                                using (MemoryStream probStream = new MemoryStream(GameSupport.NormalizeXmlEncoding(probData)))
+                                {
+                                    ItemRule.ApplyFromClient(GameModes.FlagTeam, XDocument.Load(probStream));
+                                }
+                            }
                             // 道具概率表改为内置规则（Room/ItemRule.cs），不再读取客户端的 itemProb BML
                             if (fullName == $"zeta_/{regionCode}/content/basicAI.xml")
                             {

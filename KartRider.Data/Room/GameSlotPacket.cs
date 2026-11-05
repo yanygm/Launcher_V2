@@ -91,6 +91,14 @@ public class SlotData
                     // 词条转换后变成稀有道具但名额已满：退回加速器
                     skill = ItemRule.Booster;
                 }
+
+                // 夺旗赛客户端只实现了 itemProb_flag 里的道具；车辆改装/词条可能把道具转成
+                // 香蕉、云、水炸弹等普通道具，直接下发会让客户端吃道具时闪退，这里强制改回加速器。
+                if (GameModes.IsFlagMode(room.GameType) && !ItemRule.IsFlagItem(skill))
+                {
+                    Log.Info($"[ItemRule] 夺旗赛过滤非法道具 {skill} → {ItemRule.Booster}（{Parent.Client.Nickname}）");
+                    skill = ItemRule.Booster;
+                }
                 using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                 {
                     oPacket.WriteInt(id);

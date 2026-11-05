@@ -82,6 +82,28 @@ public static class ItemRule
         [13] = new[] { 0, 30, 50, 0 },       // 定时炸弹
     };
 
+    /// <summary>夺旗赛专用道具池（客户端 item/slot/itemProb_flag@zz.xml 的默认值，文件读不到时兜底）。</summary>
+    /// <remarks>
+    /// 夺旗赛客户端只实现了这一组道具：盾牌/导弹/磁铁/加速器/大魔王/天使/5连导弹/
+    /// 幽灵/地雷/超级盾/滚动炸弹。下发普通道具池里的香蕉、云、水炸弹、飞碟等会让客户端
+    /// 在吃道具时闪退（抓包确认的崩溃点就是 GameSlotPacket 回包之后）。
+    /// 文件里只有 high/mid/low 三档，这里把 Top 档按 high 档处理。
+    /// </remarks>
+    private static Dictionary<short, int[]> FlagTable = new Dictionary<short, int[]>
+    {
+        [10] = new[] { 21, 21, 15, 9 },      // 盾牌
+        [7] = new[] { 15, 15, 25, 35 },      // 导弹
+        [5] = new[] { 7, 7, 5, 3 },          // 磁铁
+        [6] = new[] { 14, 14, 10, 6 },       // 加速器
+        [2] = new[] { 0, 0, 5, 3 },          // 大魔王
+        [11] = new[] { 7, 7, 5, 3 },         // 天使
+        [15] = new[] { 3, 3, 5, 7 },         // 5 连导弹
+        [16] = new[] { 7, 7, 5, 3 },         // 幽灵
+        [17] = new[] { 6, 6, 10, 14 },       // 地雷
+        [18] = new[] { 7, 7, 5, 3 },         // 超级盾
+        [19] = new[] { 6, 6, 10, 14 },       // 滚动炸弹
+    };
+
     // 房间人数 → 各名次档位（索引 0 = 第 1 名）
     private static readonly RankGroup[][] RankByCount =
     {
@@ -113,9 +135,12 @@ public static class ItemRule
             {
                 continue;
             }
+            int highRank = ParseWeight(el, "highrank");
             var weight = new int[4];
-            weight[0] = ParseWeight(el, "toprank");
-            weight[1] = ParseWeight(el, "highrank");
+            // 夺旗赛概率表（itemProb_flag@zz.xml）只有 high/mid/low 三档：Top 档按 high 处理，
+            // 否则总权重为 0 会被过滤掉，夺旗赛房间里就抽不到道具。
+            weight[0] = GameModes.IsFlagMode(gameType) ? highRank : ParseWeight(el, "toprank");
+            weight[1] = highRank;
             weight[2] = ParseWeight(el, "midrank");
             weight[3] = ParseWeight(el, "lowrank");
             if (weight.Sum() <= 0)
@@ -147,6 +172,12 @@ public static class ItemRule
             TeamTable = parsed;
             TeamFromClient = true;
         }
+        else if (GameModes.IsFlagMode(gameType))
+        {
+            // 夺旗赛专用表 itemProb_flag@zz.xml：只有 high/mid/low 三档，Top 档沿用 high
+            FlagTable = parsed;
+            FlagFromClient = true;
+        }
         else
         {
             PersonalTable = parsed;
@@ -158,6 +189,10 @@ public static class ItemRule
     /// <summary>概率表来源：true=客户端 BML，false=内置规则图。</summary>
     public static bool PersonalFromClient { get; private set; }
     public static bool TeamFromClient { get; private set; }
+    public static bool FlagFromClient { get; private set; }
+
+    /// <summary>该道具是否在夺旗赛客户端支持的道具列表里（防止下发非法道具导致闪退）。</summary>
+    public static bool IsFlagItem(short itemId) => FlagTable.ContainsKey(itemId);
 
     private static int ParseWeight(XElement el, string attribute)
     {
@@ -174,7 +209,15 @@ public static class ItemRule
 
     public static IReadOnlyDictionary<short, int[]> Table(byte gameType)
     {
-        return gameType == 4 ? TeamTable : PersonalTable;
+        // 夺旗赛使用客户端 itemProb_flag（只含夺旗赛客户端支持的道具，避免吃道具闪退）；
+        // 4=组队道具、58=团队死斗沿用组队道具池；其余按个人池。
+        if (GameModes.IsFlagMode(gameType))
+        {
+            return FlagTable;
+        }
+        return gameType == 4 || gameType == GameModes.DeathMatchTeam
+            ? TeamTable
+            : PersonalTable;
     }
 
     /// <summary>每局每人限量的道具（来自 itemGameRestrictionItemCount.xml 的 targetItemList）。</summary>

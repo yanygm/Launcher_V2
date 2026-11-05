@@ -50,7 +50,7 @@ namespace KartRider.Packet
             using (OutPacket oPacket = new OutPacket("GrReplyClosePacket"))
             {
                 oPacket.WriteUInt(ClientManager.GetUserNO(Parent.Client.Nickname));
-                if (room.GameType == 3 || room.GameType == 4)
+                if (room.IsTeamMode)
                 {
                     if (unk1 < 8 && slotId1 < 8 && unk2 < 8 && slotId2 < 8 && type == 1 && !room.CloseSlotIds.Contains((byte)slotId1) && !room.CloseSlotIds.Contains((byte)slotId2))
                     {

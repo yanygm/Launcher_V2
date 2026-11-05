@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using KartLibrary.File;
 using KartRider.Common.Utilities;
 using Profile;
@@ -46,7 +47,70 @@ public class GameRoom
     /// <summary>实际写进封包的模式字节</summary>
     public byte ModeByte => WireGameType != 0 ? WireGameType : GameType;
 
-    public bool IsTeamMode => GameType == 3 || GameType == 4;
+    public bool IsTeamMode => GameModes.IsTeamGameType(GameType);
+
+    /// <summary>夺旗赛红队（1）/蓝队（2）的夺旗数。</summary>
+    public int RedFlagScore { get; set; }
+    public int BlueFlagScore { get; set; }
+
+    /// <summary>夺旗赛正赛打平后进入加时（GameControl state=6，比分清零，先夺旗者胜）。</summary>
+    public bool FlagOvertime { get; set; }
+
+    /// <summary>
+    /// 正赛结束瞬间的总夺旗数（红+蓝）。官方结算记录 +15 的 short 写的就是这个值
+    /// （抓包：正赛 3:1 → 4；加时赛 → 0），加时会清零比分但该值必须保留。
+    /// </summary>
+    public int FlagRegulationTotal { get; set; }
+
+    /// <summary>夺旗赛/死斗 每个玩家的个人积分（夺旗数或击杀分）。</summary>
+    public ConcurrentDictionary<int, int> ModeScores { get; } = new();
+
+    /// <summary>死斗红队（1）/蓝队（2）的阵营积分。</summary>
+    public int DeathMatchRedScore { get; set; }
+    public int DeathMatchBlueScore { get; set; }
+
+    /// <summary>死斗比分广播序号（GameDeathMatchSetScorePacket 第一个 int）。</summary>
+    public int DeathMatchSequence { get; set; }
+
+    /// <summary>正赛计时器是否已布置（每个房间每局一次）。</summary>
+    public int ModeDeadlineArmed;
+
+    public int ModeScore(int playerId) =>
+        ModeScores.TryGetValue(playerId, out int score) ? score : 0;
+
+    /// <summary>累加玩家个人积分并返回新值。</summary>
+    public int AddModeScore(int playerId, int delta)
+    {
+        return ModeScores.AddOrUpdate(playerId, delta, (_, old) => old + delta);
+    }
+
+    /// <summary>开赛前清空夺旗/死斗积分。</summary>
+    public void ResetModeScores()
+    {
+        RedFlagScore = 0;
+        BlueFlagScore = 0;
+        FlagOvertime = false;
+        FlagRegulationTotal = 0;
+        DeathMatchRedScore = 0;
+        DeathMatchBlueScore = 0;
+        DeathMatchSequence = 0;
+        ModeScores.Clear();
+        Interlocked.Exchange(ref ModeDeadlineArmed, 0);
+    }
+
+    /// <summary>按阵营取夺旗/死斗积分。</summary>
+    public int TeamModeScore(byte team)
+    {
+        if (GameModes.IsTeamFlagMode(GameType))
+        {
+            return team == 1 ? RedFlagScore : team == 2 ? BlueFlagScore : 0;
+        }
+        if (GameType == GameModes.DeathMatchTeam)
+        {
+            return team == 1 ? DeathMatchRedScore : team == 2 ? DeathMatchBlueScore : 0;
+        }
+        return 0;
+    }
 
     /// <summary>结算是否已触发（防止 AI 收尾倒计时与玩家冲线重复结算）</summary>
     public bool SettleTriggered { get; set; }

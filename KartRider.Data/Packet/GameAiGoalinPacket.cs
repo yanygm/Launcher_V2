@@ -50,6 +50,11 @@ namespace KartRider.Packet
             Log.Debug($"GameAiGoalinPacket, Id = {Id}, Time = {Time}");
             if (room.EndTicks == 0)
             {
+                // 积分制比赛（夺旗/死斗）由服务端计时，AI 冲线只记录成绩，不结束比赛
+                if (GameModes.IsScoreMode(room.GameType))
+                {
+                    return true;
+                }
                 room.SnapshotMembers = DeepCopyMembers(room._IDs);
                 room.EndTicks = ConvertTick() + 10000;
                 using (OutPacket oPacket = new OutPacket("GameControlPacket"))

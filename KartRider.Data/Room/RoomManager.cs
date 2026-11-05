@@ -223,19 +223,23 @@ public static class RoomManager
 
     public static byte AddPlayer(int roomId, string nickname, byte team, int playerType, SessionGroup client)
     {
-        // 组队房间：未指定队伍时自动平衡（红蓝人数差不超过 1）
-        if (team == 0)
+        var room = GetRoom(roomId);
+
+        // 团队模式（含夺旗赛/死斗）与挑战者模式：未指定队伍时按模式规则分配
+        if (team == 0 && room != null)
         {
-            var targetRoom = GetRoom(roomId);
-            if (targetRoom != null && (targetRoom.GameType == 3 || targetRoom.GameType == 4))
+            if (GameModes.IsTeamGameType(room.GameType) || GameModes.IsChallenger(room.GameType))
             {
-                int t1 = targetRoom.GetPlayerCount(1);
-                int t2 = targetRoom.GetPlayerCount(2);
+                team = GameModes.DefaultTeam(room.GameType, room.GetPlayerCount(1), room.GetPlayerCount(2));
+            }
+            else if (room.GameType == 3 || room.GameType == 4)
+            {
+                // 组队房间：未指定队伍时自动平衡（红蓝人数差不超过 1）
+                int t1 = room.GetPlayerCount(1);
+                int t2 = room.GetPlayerCount(2);
                 team = t2 <= t1 ? (byte)2 : (byte)1;
             }
         }
-
-        var room = GetRoom(roomId);
 
         if (room == null || string.IsNullOrEmpty(nickname))
             return 255;

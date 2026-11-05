@@ -295,13 +295,20 @@ namespace KartRider
             return (double)lcsLength / Math.Max(m, n);
         }
 
-        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false)
+        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false, string forceGameType = null)
         {
             // 如果 TrackList 为空，直接返回默认 Track 的 hash，避免返回无效值
             if (TrackList == null || TrackList.Count == 0)
             {
                 Log.Info($"[RandomTrack] Warning: TrackList is empty, returning default track: {GameTrack}");
                 return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
+            }
+
+            // 夺旗赛(flag)/死斗(death)：必须使用客户端对应类型的地图，
+            // 否则客户端加载地图时找不到模式需要的对象会闪退。
+            if (!string.IsNullOrEmpty(forceGameType))
+            {
+                return GetModeTrack(Parent, usedTracksName, Track, forceGameType);
             }
 
             string RandomTrackGameType = "speed";
@@ -570,6 +577,59 @@ namespace KartRider
         {
             _usedTracks.Clear();
             _lastTrack.Clear();
+        }
+
+        /// <summary>该 hash 是否是客户端指定类型（flag/death）的地图。</summary>
+        public static bool IsTrackOfGameType(uint hash, string gameType)
+        {
+            if (hash == 0 || string.IsNullOrEmpty(gameType)) return false;
+            return TrackList.TryGetValue(hash, out Track track)
+                && !track.missing
+                && string.Equals(track.gameType, gameType, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 按模式限定地图类型抽图（flag/death）。
+        /// Track 是具体地图时校验类型；0/随机模式则从该类型的地图池里随机。
+        /// </summary>
+        private static uint GetModeTrack(SessionGroup Parent, string usedTracksName, uint Track, string gameType)
+        {
+            if (!_usedTracks.TryGetValue(usedTracksName, out HashSet<uint> usedTracks))
+            {
+                usedTracks = new HashSet<uint>();
+                _usedTracks[usedTracksName] = usedTracks;
+            }
+
+            if (Track != 0 && IsTrackOfGameType(Track, gameType))
+            {
+                return Track;
+            }
+            if (Track != 0 && TrackList.ContainsKey(Track))
+            {
+                Log.Warn($"[RandomTrack] 房间 {usedTracksName} 选择的地图 {Track} 不是 {gameType} 类型，改为随机 {gameType} 地图");
+            }
+
+            List<uint> pool = TrackList.Values
+                .Where(t => string.Equals(t.gameType, gameType, StringComparison.OrdinalIgnoreCase))
+                .Where(t => !t.blocked && !t.missing && !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                .Select(t => t.hash)
+                .ToList();
+            if (pool.Count == 0)
+            {
+                Log.Warn($"[RandomTrack] 客户端数据里没有 {gameType} 类型地图，回退默认地图");
+                return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
+            }
+
+            List<uint> unused = pool.Where(h => !usedTracks.Contains(h)).ToList();
+            if (unused.Count == 0)
+            {
+                usedTracks.Clear();
+                unused = pool;
+            }
+            uint selected = unused[new Random().Next(unused.Count)];
+            usedTracks.Add(selected);
+            Log.Info($"[RandomTrack] {gameType} 地图随机结果：{GetTrackName(selected)}");
+            return selected;
         }
 
         /// <summary>
