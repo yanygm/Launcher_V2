@@ -103,6 +103,12 @@ public static class ClientManager
         if (!string.IsNullOrEmpty(newNickname))
         {
             _byNickname[newNickname] = group;
+            try
+            {
+                string ip = AdminHistory.SplitIp(group.Client?.GetRemoteAddress());
+                AdminHistory.OnLogin(newNickname, ip);
+            }
+            catch { }
         }
     }
 
@@ -145,6 +151,7 @@ public static class ClientManager
 
             if (ownsNickname)
             {
+                try { AdminHistory.OnLogout(nickname); } catch { }
                 try
                 {
                     RandomTrack.ClearUsedTracks(nickname);

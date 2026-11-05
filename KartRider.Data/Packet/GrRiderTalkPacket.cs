@@ -61,6 +61,49 @@ namespace KartRider.Packet
                 BroadCast(roomId, outPacket, Parent.Client.Nickname);
             }
 
+            // 自动计分：#开始计分 [8 个名次分 + 未完成分] / #结束计分
+            if (value.StartsWith("#开始计分", StringComparison.OrdinalIgnoreCase) || value.StartsWith("#開始計分", StringComparison.OrdinalIgnoreCase)
+                || value.StartsWith("#结束计分", StringComparison.OrdinalIgnoreCase) || value.StartsWith("#結束計分", StringComparison.OrdinalIgnoreCase))
+            {
+                string body = value.Substring(1);            // 去掉 '#'
+                int sp = body.IndexOfAny(new[] { ' ', '\u3000', '\t' });
+                string command = sp >= 0 ? body.Substring(0, sp) : body;
+                string reply;
+                if (command.StartsWith("开始") || command.StartsWith("開始"))
+                {
+                    var nums = new List<int>();
+                    string rest = sp >= 0 ? body.Substring(sp + 1) : "";
+                    bool bad = false;
+                    foreach (string token in rest.Split(new[] { ' ', '\u3000', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (!int.TryParse(token, out int v) || Math.Abs(v) > 999) { bad = true; break; }
+                        nums.Add(v);
+                    }
+                    if (bad)
+                    {
+                        reply = "参数不对：最多 9 个整数（8 个名次分 + 未完成分）";
+                    }
+                    else
+                    {
+                        var result = RoomScore.TryStart(room, player, nums, out string msg);
+                        reply = msg;
+                    }
+                }
+                else
+                {
+                    RoomScore.Stop(roomId, out string msg);
+                    reply = msg;
+                }
+
+                using (var pkt = new OutPacket("GrRiderEchoPacket"))
+                {
+                    pkt.WriteInt(player.ID);
+                    pkt.WriteString(reply);
+                    BroadCast(roomId, pkt);
+                }
+                return true;
+            }
+
             if (value.StartsWith("选图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("换图", StringComparison.OrdinalIgnoreCase) || value.StartsWith("選圖", StringComparison.OrdinalIgnoreCase) || value.StartsWith("換圖", StringComparison.OrdinalIgnoreCase))
             {
                 uint track = RandomTrack.GetHash(value);

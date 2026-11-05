@@ -793,6 +793,11 @@ namespace KartRider
                                         if (stockElement == null) continue;
                                         // 没有stockId的节点跳过
                                         if (!uint.TryParse(stockElement.GetAttribute("stockId"), out uint stockId)) continue;
+                                        // 顺便记住商品名（管理后台按名字搜 stockId 用）
+                                        if (stockElement.HasAttribute("stockName"))
+                                        {
+                                            Stock.StockName[stockId] = stockElement.GetAttribute("stockName");
+                                        }
                                         // 存在salePrice时，按stockId缓存对应的价格数据
                                         if (stockElement.HasAttribute("salePrice") &&
                                             uint.TryParse(stockElement.GetAttribute("salePrice"), out uint salePrice))

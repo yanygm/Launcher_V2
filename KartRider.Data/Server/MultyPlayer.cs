@@ -1653,31 +1653,37 @@ public static class MultyPlayer
             BroadCast(room.RoomId, outPacket);
         }
 
-        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
+        byte winnerTeam;
+        if (room.GameType == 3)
         {
-            if (room.GameType == 3)
+            if (room.DuoTeam)
             {
-                if (room.DuoTeam)
-                {
-                    outPacket.WriteByte(GetDuoWinnerTeam(teamScores, firstTeam));
-                }
-                else if (redTeam == blueTeam)
-                {
-                    outPacket.WriteByte(firstTeam);
-                }
-                else
-                {
-                    outPacket.WriteByte((byte)(redTeam > blueTeam ? 1 : 2));
-                }
+                winnerTeam = GetDuoWinnerTeam(teamScores, firstTeam);
             }
-            else if (room.GameType == 4)
+            else if (redTeam == blueTeam)
             {
-                outPacket.WriteByte(firstTeam);
+                winnerTeam = firstTeam;
             }
             else
             {
-                outPacket.WriteByte(0);
+                winnerTeam = (byte)(redTeam > blueTeam ? 1 : 2);
             }
+        }
+        else if (room.GameType == 4)
+        {
+            winnerTeam = firstTeam;
+        }
+        else
+        {
+            winnerTeam = 0;
+        }
+
+        // 自动计分：把本局结果交给计分器（个人累计名次分 / 组队累计胜场）
+        RoomScore.OnRoundEnd(room, members, ranking, timeData, winnerTeam);
+
+        using (OutPacket outPacket = new OutPacket("GameResultPacket"))
+        {
+            outPacket.WriteByte(winnerTeam);
 
             outPacket.WriteInt(playerCount); // player count
             foreach (RoomMember member in members)
@@ -1787,6 +1793,7 @@ public static class MultyPlayer
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
             BroadCast(room.RoomId, outPacket);
         }
+
     }
 
     internal static RoomMember[] DeepCopyMembers(RoomMember[] source)

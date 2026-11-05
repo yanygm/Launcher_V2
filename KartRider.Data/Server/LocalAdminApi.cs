@@ -46,7 +46,7 @@ namespace KartRider
                     _listener.Start();
                     _running = true;
                     _ = AcceptLoop(token);
-                    Log.Info($"[Admin] 本地管理接口已启动: http://127.0.0.1:{port}/status");
+                    Log.Info($"[Admin] 本地管理平台:http://127.0.0.1:{port}");
                 }
                 catch (Exception ex)
                 {
@@ -108,23 +108,31 @@ namespace KartRider
                 using (NetworkStream stream = client.GetStream())
                 {
                     client.ReceiveTimeout = 5000;
-                    byte[] buffer = new byte[4096];
-                    var request = new StringBuilder();
-                    while (request.Length < 8192)
+                    byte[] buffer = new byte[8192];
+                    var raw = new MemoryStream();
+                    int headerEnd = -1;
+                    while (raw.Length < 4 * 1024 * 1024)
                     {
                         int read = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                         if (read <= 0)
                         {
-                            return;
+                            break;
                         }
-                        request.Append(Encoding.ASCII.GetString(buffer, 0, read));
-                        if (request.ToString().Contains("\r\n\r\n", StringComparison.Ordinal))
+                        raw.Write(buffer, 0, read);
+                        byte[] snapshot = raw.ToArray();
+                        headerEnd = IndexOfHeaderEnd(snapshot, snapshot.Length);
+                        if (headerEnd >= 0)
                         {
                             break;
                         }
                     }
-
-                    string head = request.ToString();
+                    if (headerEnd < 0)
+                    {
+                        await WriteAsync(stream, 400, "text/plain", "bad request").ConfigureAwait(false);
+                        return;
+                    }
+                    byte[] rawBytes = raw.ToArray();
+                    string head = Encoding.ASCII.GetString(rawBytes, 0, headerEnd);
                     string[] lines = head.Split("\r\n");
                     string[] parts = lines[0].Split(' ');
                     if (parts.Length < 2)
@@ -143,15 +151,52 @@ namespace KartRider
                         path = path.Substring(0, q);
                     }
 
-                    if (!string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase))
+                    bool isPost = string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase);
+                    bool isPageOrApi = path == "/" || path.Equals("/index.html", StringComparison.OrdinalIgnoreCase)
+                                       || path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
+                    if (!string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) && !(isPost && isPageOrApi))
                     {
-                        await WriteAsync(stream, 405, "text/plain", "only GET is allowed").ConfigureAwait(false);
+                        await WriteAsync(stream, 405, "text/plain", "only GET (and POST /api/*) is allowed").ConfigureAwait(false);
                         return;
                     }
 
                     if (!string.IsNullOrEmpty(token) && !TokenMatches(query, lines, token))
                     {
                         await WriteAsync(stream, 401, "text/plain", "unauthorized").ConfigureAwait(false);
+                        return;
+                    }
+
+                    // 网页管理后台（/ 与 /api/*）交给 AdminWeb
+                    if (isPageOrApi)
+                    {
+                        int contentLength = 0;
+                        foreach (string line in lines)
+                        {
+                            if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase)
+                                && int.TryParse(line.Substring("Content-Length:".Length).Trim(), out int parsedLength))
+                            {
+                                contentLength = parsedLength;
+                            }
+                        }
+                        int prefixLength = Math.Max(0, rawBytes.Length - headerEnd - 4);
+                        byte[] body = new byte[contentLength > prefixLength ? contentLength : prefixLength];
+                        if (prefixLength > 0)
+                        {
+                            Array.Copy(rawBytes, headerEnd + 4, body, 0, prefixLength);
+                        }
+                        int got = prefixLength;
+                        while (got < body.Length)
+                        {
+                            int read = await stream.ReadAsync(body, got, body.Length - got).ConfigureAwait(false);
+                            if (read <= 0)
+                            {
+                                break;
+                            }
+                            got += read;
+                        }
+                        string bodyText = Encoding.UTF8.GetString(body, 0, got);
+                        AdminWeb.Result result = AdminWeb.Handle(method, path, query, bodyText);
+                        await WriteAsync(stream, result.Code, result.ContentType, result.Body).ConfigureAwait(false);
                         return;
                     }
 
@@ -192,6 +237,18 @@ namespace KartRider
             {
                 Log.Debug($"[Admin] 请求处理失败: {ex.Message}");
             }
+        }
+
+        private static int IndexOfHeaderEnd(byte[] data, int length)
+        {
+            for (int i = 0; i + 3 < length; i++)
+            {
+                if (data[i] == 13 && data[i + 1] == 10 && data[i + 2] == 13 && data[i + 3] == 10)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         private static string GetQuery(string query, string key)

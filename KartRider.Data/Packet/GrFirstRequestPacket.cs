@@ -41,6 +41,9 @@ namespace KartRider.Packet
             //Thread.Sleep(10);
             GrSlotDataPacket(roomId);
 
+            // 回到房间：如果上一局有未播报的计分结果，这时才发（不在结算界面发）
+            RoomScore.OnRoomEntered(roomId, Parent.Client.Nickname);
+
             // 进房后按建房时选的人数锁掉多余格子（只做一次）
             var enterRoom = RoomManager.GetRoom(roomId);
             if (enterRoom != null && !enterRoom.RoomSizeApplied)

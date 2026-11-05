@@ -14,6 +14,9 @@ namespace KartRider
     {
         // key为stockId，value为该stock下的item列表
         public static Dictionary<uint, List<item>> StockList = new Dictionary<uint, List<item>>();
+
+        /// <summary>stockId → 商品中文名（来自 zeta_/cn/shop/data/stock.kml 的 stockName 属性）。</summary>
+        public static Dictionary<uint, string> StockName = new Dictionary<uint, string>();
         public static Dictionary<uint, price> PriceList = new Dictionary<uint, price>();
         public static Dictionary<ushort, uint> LucciList = new Dictionary<ushort, uint>
         {

@@ -90,6 +90,7 @@ public static class RoomManager
         }
 
         _rooms.TryRemove(room.RoomId, out _);
+        RoomScore.Clear(room.RoomId);   // 房间销毁：清掉自动计分状态
 
         // 二次确认：删除与 AddPlayer 之间存在窗口期，若期间真的有玩家进来了就把房间挂回去，
         // 否则 _playerRoomMap 会指向一个不存在的房间（永久幽灵，无法离开/重进）。

@@ -152,6 +152,7 @@ namespace KartRider
                     Metrics.StartSampler();
                     if (ProfileService.SettingConfig.AdminPort > 0)
                     {
+                        AdminHistory.ResetOnlineFlags();
                         LocalAdminApi.Start(ProfileService.SettingConfig.AdminPort, ProfileService.SettingConfig.AdminToken);
                     }
 

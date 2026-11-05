@@ -60,7 +60,29 @@ public static class CouponList
                 CouponList = new List<Coupon>();
             }
         }
-        Coupon value = CouponList.FirstOrDefault(x => x.CouponNO == Coupon);
+        string couponKey = (Coupon ?? string.Empty).Trim();
+        string CouponNormalize(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            var sb = new System.Text.StringBuilder(s.Length);
+            foreach (char ch in s)
+            {
+                if (char.IsLetterOrDigit(ch)) sb.Append(char.ToUpperInvariant(ch));
+            }
+            return sb.ToString();
+        }
+        string couponNorm = CouponNormalize(couponKey);
+        Coupon value = CouponList.FirstOrDefault(x =>
+            string.Equals((x.CouponNO ?? string.Empty).Trim(), couponKey, StringComparison.OrdinalIgnoreCase));
+        if (value == null && couponNorm.Length > 0)
+        {
+            value = CouponList.FirstOrDefault(x => CouponNormalize(x.CouponNO) == couponNorm);
+        }
+        Log.Debug($"[Coupon] 查询兑换码 \"{couponKey}\"（长度 {couponKey.Length}，归一化 \"{couponNorm}\"）（{(Use ? "使用" : "校验")}）：文件 {FileName.Coupon} 存在={File.Exists(FileName.Coupon)}，列表 {CouponList.Count} 条，命中={value != null}");
+        if (value == null && CouponList.Count > 0)
+        {
+            Log.Debug($"[Coupon] 文件里的兑换码：{string.Join(" | ", CouponList.Select(x => $"\"{x.CouponNO}\"(len={x.CouponNO?.Length ?? 0})"))}");
+        }
         string replyName = Use ? "SpRpUseCoupon" : "SpRpQueryCoupon";
         if (value == null)
         {

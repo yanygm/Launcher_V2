@@ -29,6 +29,9 @@ namespace KartRider.Packet
         {
             GameDataReset.DataReset(session.Client.Nickname);
 
+            // 管理后台封禁检查：命中就把 BanType 写进档案（客户端据此显示"账号封停/禁止登录"），发完登录包再断开
+            bool bannedNow = AdminWeb.ApplyBanToProfile(session.Client.Nickname, session.Client.GetRemoteAddress());
+
             bool PcMsgPassport = false;
 
             using (OutPacket outPacket = new OutPacket("PrLogin"))
@@ -146,6 +149,12 @@ namespace KartRider.Packet
                     outPacket.WriteString("meemllpigrppochjepdmgclfekpocdikifemgnkddeierhkekiefcidhrreienedmrcemjcjpqmjpkolfjfpggiqiefelqleondcpennpmpfenhpfomdpfqdpdpggdjm", true);
                     session.Client.Send(outPacket);
                 }
+            }
+            if (bannedNow)
+            {
+                Log.Debug($"[Ban] 拒绝登录并断开：{session.Client.Nickname}@{session.Client.GetRemoteAddress()}");
+                session.Client.Disconnect();
+                return true;
             }
             if (ProfileService.GetProfileConfig(session.Client.Nickname).Rider.BanType == 1)
             {
