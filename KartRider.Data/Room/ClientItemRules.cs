@@ -127,7 +127,8 @@ public static class ClientItemRules
         ["舞狮车导弹"] = 134,
         ["龙卷风"] = 135,
         ["鲨鱼导弹"] = 136,
-        ["符咒"] = 137
+        ["符咒"] = 137,
+        ["炫金导弹"] = 139
     };
 
     private static readonly Dictionary<int, KartRule> Rules = new Dictionary<int, KartRule>();
