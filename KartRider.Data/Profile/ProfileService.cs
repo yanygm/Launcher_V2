@@ -166,10 +166,18 @@ namespace Profile
                     Log.Info("[Config] 旧版配置已迁移：包输出默认开启（PacketTrace/PacketTraceConsole=true，采样 1/2）");
                     SaveSettings();
                 }
+
+                // v4：ModelMax 路径不再写进 Settings.json（改到管理后台「配置」页单独保存），
+                // 重写一次配置把旧文件里的 ModelMax_LoadFile 字段去掉。
+                if (SettingConfig.SettingsVersion < 4)
+                {
+                    SettingConfig.SettingsVersion = 4;
+                    SaveSettings();
+                }
             }
             else
             {
-                SettingConfig = new Setting { SettingsVersion = 2 };
+                SettingConfig = new Setting { SettingsVersion = 4 };
                 SaveSettings();
             }
         }

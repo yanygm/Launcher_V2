@@ -55,6 +55,13 @@ namespace KartRider
             }
         }
 
+        /// <summary>立即重新加载（后台切换 ModelMax 路径后调用），返回实际加载到的条目数。</summary>
+        public static int Reload()
+        {
+            Invalidate();
+            return GetMap().Count;
+        }
+
         public static bool TryGet(int kartId, out float modelMaxX, out float modelMaxY)
         {
             modelMaxX = 0f;

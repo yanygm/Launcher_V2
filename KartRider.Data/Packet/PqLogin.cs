@@ -29,14 +29,14 @@ namespace KartRider.Packet
         {
             GameDataReset.DataReset(session.Client.Nickname);
 
-            // 管理后台封禁检查：命中就把 BanType 写进档案（客户端据此显示"账号封停/禁止登录"），发完登录包再断开
-            bool bannedNow = AdminWeb.ApplyBanToProfile(session.Client.Nickname, session.Client.GetRemoteAddress());
+            // 管理后台封禁检查：IP 封禁只影响本次登录（解封后立即恢复），昵称封禁持久化到档案
+            ushort banType = AdminWeb.GetLoginBanType(session.Client.Nickname, session.Client.GetRemoteAddress(), out bool bannedNow);
 
             bool PcMsgPassport = false;
 
             using (OutPacket outPacket = new OutPacket("PrLogin"))
             {
-                outPacket.WriteInt(ProfileService.GetProfileConfig(session.Client.Nickname).Rider.BanType);
+                outPacket.WriteInt(banType);
                 outPacket.WriteDateTime(DateTime.Now);
                 outPacket.WriteUInt(ClientManager.GetUserNO(session.Client.Nickname));
                 outPacket.WriteString(session.Client.Nickname); // UserID

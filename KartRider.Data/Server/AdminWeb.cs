@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 using KartRider.Logging;
 using Profile;
 
@@ -27,13 +29,40 @@ namespace KartRider
         }
 
         private static readonly object BanLock = new object();
-        private static readonly string[] SaveFileWhitelist =
+
+        /// <summary>
+        /// 玩家存档清单直接跟随 fileName：反射它的公开字符串字段，取字段值中的文件名（.json/.xml）。
+        /// fileName 增删或改名存档字段后，后台列表与读写自动生效，这里不再手工维护文件清单。
+        /// </summary>
+        private static readonly FieldInfo[] SaveFileFields = typeof(fileName)
+            .GetFields(BindingFlags.Public | BindingFlags.Instance)
+            .Where(f => f.FieldType == typeof(string))
+            .ToArray();
+
+        /// <summary>枚举某个玩家的所有存档（文件名 + 完整路径），非存档路径（目录、非 json/xml）自动跳过。</summary>
+        private static IEnumerable<(string Name, string Path)> EnumerateSaveFiles(fileName files)
         {
-            "Bingo.json", "Competitive.json", "Favorite.json", "FavoriteTrack.json",
-            "ItemPresetsConfig.json", "Launcher.json", "Level12Data.json", "NewItem.json",
-            "NewKart.json", "Parts12Data.json", "PartsData.json", "PlantData.json",
-            "RewardBox.json", "TrainingMission.json", "TuneData.json", "Locked.json"
-        };
+            if (files == null) yield break;
+            foreach (FieldInfo field in SaveFileFields)
+            {
+                if (!(field.GetValue(files) is string path) || string.IsNullOrEmpty(path)) continue;
+                string ext = Path.GetExtension(path);
+                if (!string.Equals(ext, ".json", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(ext, ".xml", StringComparison.OrdinalIgnoreCase)) continue;
+                yield return (Path.GetFileName(path), path);
+            }
+        }
+
+        /// <summary>按文件名在 fileName 里找到对应路径；找不到返回 null（同时挡住路径穿越）。</summary>
+        private static string ResolveSaveFile(fileName files, string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            foreach (var (diskName, path) in EnumerateSaveFiles(files))
+            {
+                if (string.Equals(diskName, name, StringComparison.OrdinalIgnoreCase)) return path;
+            }
+            return null;
+        }
 
         private static string BanFile => Path.Combine(FileName.ProfileDir, "bans.json");
 
@@ -69,6 +98,9 @@ namespace KartRider
 
                 // 服务器配置
                 if (p == "/api/settings") return post ? SaveSettings(body) : ReadSettings();
+
+                // 车辆模型尺寸文件（ModelMax.xml，固定路径，配置页直接编辑）
+                if (p == "/api/modelmax") return post ? SaveModelMaxContent(body) : ReadModelMax();
 
                 // 赛道记录
                 if (p == "/api/trackrank") return Json(ListTrackRank());
@@ -224,20 +256,24 @@ namespace KartRider
         private static List<object> ListFiles(string nick)
         {
             var list = new List<object>();
-            string dir = PlayerDir(nick);
-            if (!Directory.Exists(dir)) return list;
-            foreach (string f in Directory.GetFiles(dir, "*.json").OrderBy(x => x))
+            fileName files = GetPlayerFiles(nick);
+            if (files == null) return list;
+            foreach (var (name, path) in EnumerateSaveFiles(files).OrderBy(x => x.Name, StringComparer.Ordinal))
             {
-                var fi = new FileInfo(f);
-                list.Add(new { name = fi.Name, size = fi.Length, modified = fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss") });
+                if (!File.Exists(path)) continue;
+                var fi = new FileInfo(path);
+                list.Add(new { name, size = fi.Length, modified = fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss") });
             }
             return list;
         }
 
         private static Result ReadFile(string nick, string name)
         {
-            if (!IsSafeFile(nick, name)) return Err(400, "文件名不合法");
-            string path = Path.Combine(PlayerDir(nick), name);
+            if (!IsSafeFile(name)) return Err(400, "文件名不合法");
+            fileName files = GetPlayerFiles(nick);
+            if (files == null) return Err(404, "玩家目录不存在");
+            string path = ResolveSaveFile(files, name);
+            if (path == null) return Err(400, "文件名不合法");
             if (!File.Exists(path)) return Err(404, "文件不存在");
             string text;
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -250,14 +286,25 @@ namespace KartRider
 
         private static Result SaveFile(string nick, string name, string content)
         {
-            if (!IsSafeFile(nick, name)) return Err(400, "文件名不合法");
+            if (!IsSafeFile(name)) return Err(400, "文件名不合法");
             if (content == null) return Err(400, "内容为空");
-            try { using var _ = JsonDocument.Parse(content); }
-            catch (Exception ex) { return Err(400, "JSON 格式错误：" + ex.Message); }
+            try
+            {
+                if (name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    XDocument.Parse(content);
+                }
+                else
+                {
+                    using var _ = JsonDocument.Parse(content);
+                }
+            }
+            catch (Exception ex) { return Err(400, "格式错误：" + ex.Message); }
 
-            string dir = PlayerDir(nick);
-            if (!Directory.Exists(dir)) return Err(404, "玩家目录不存在");
-            string path = Path.Combine(dir, name);
+            fileName files = GetPlayerFiles(nick);
+            if (files == null) return Err(404, "玩家目录不存在");
+            string path = ResolveSaveFile(files, name);
+            if (path == null) return Err(400, "文件名不合法");
 
             if (File.Exists(path))
             {
@@ -348,34 +395,56 @@ namespace KartRider
             return hit == null ? (ushort)0 : hit.banType;
         }
 
-        /// <summary>登录时调用：先查 IP 封禁，再查昵称封禁；命中就把 BanType 写进档案。</summary>
-        public static bool ApplyBanToProfile(string nick, string ip)
+        /// <summary>
+        /// 登录时计算有效封禁类型，供 PrLogin 使用。
+        ///
+        /// IP 封禁只对本次登录生效、不写档案：否则解封 IP 后档案里仍留着 BanType=5，玩家会一直登不上。
+        /// 昵称封禁属于持久封禁，照旧写入档案。
+        /// 未命中活动封禁时，顺手把旧版本残留的 BanType=5 清掉（自愈）。
+        /// </summary>
+        public static ushort GetLoginBanType(string nick, string ip, out bool banned)
         {
-            if (string.IsNullOrEmpty(nick)) return false;
+            banned = false;
+            if (string.IsNullOrEmpty(nick)) return 0;
+
             ip = AdminHistory.SplitIp(ip);
+            var cfg = ProfileService.GetProfileConfig(nick);
+
             if (AdminHistory.IsIpBanned(ip))
             {
-                try
-                {
-                    var cfg = ProfileService.GetProfileConfig(nick);
-                    if (cfg?.Rider != null) { cfg.Rider.BanType = 5; ProfileService.Save(nick, cfg); }
-                }
-                catch { }
+                banned = true;
                 Log.Debug($"[Ban] {nick}@{ip} 命中 IP 封禁");
-                return true;
+                return 5;
             }
+
             var hit = ReadBans().FirstOrDefault(b =>
                 string.Equals(b.nick, nick, StringComparison.OrdinalIgnoreCase)
                 || (b.banType == 5 && !string.IsNullOrEmpty(b.ip) && b.ip == ip));
-            if (hit == null) return false;
-            try
+            if (hit != null)
             {
-                var cfg = ProfileService.GetProfileConfig(nick);
-                if (cfg?.Rider != null && cfg.Rider.BanType != hit.banType) { cfg.Rider.BanType = hit.banType; ProfileService.Save(nick, cfg); }
+                banned = true;
+                try
+                {
+                    if (cfg?.Rider != null && cfg.Rider.BanType != hit.banType)
+                    {
+                        cfg.Rider.BanType = hit.banType;
+                        ProfileService.Save(nick, cfg);
+                    }
+                }
+                catch { }
+                Log.Debug($"[Ban] {nick}@{ip} 命中昵称封禁（type={hit.banType}）");
+                return hit.banType;
             }
-            catch { }
-            Log.Debug($"[Ban] {nick}@{ip} 命中昵称封禁（type={hit.banType}）");
-            return true;
+
+            ushort current = cfg?.Rider?.BanType ?? 0;
+            // 旧版 IP 封禁会写进档案（5）：已不在封禁表里就清掉，避免“解封后依旧无法登录”
+            if (current == 5 && cfg?.Rider != null)
+            {
+                cfg.Rider.BanType = 0;
+                try { ProfileService.Save(nick, cfg); } catch { }
+                return 0;
+            }
+            return current;
         }
 
         // ---------- 发放货币 ----------
@@ -404,8 +473,8 @@ namespace KartRider
         // ---------- 发放道具/车辆（奖励箱） ----------
         private static string RewardBoxPath(string nick)
         {
-            string dir = PlayerDir(nick);
-            return dir == null ? null : Path.Combine(dir, "RewardBox.json");
+            fileName files = GetPlayerFiles(nick);
+            return files?.RewardBox_LoadFile;
         }
 
         private static Result GrantRewardBox(string nick, string stock, string count, string type)
@@ -577,6 +646,68 @@ namespace KartRider
             catch (Exception ex) { return Err(500, ex.Message); }
         }
 
+        // ---------- ModelMax.xml（固定路径，配置页直接编辑内容）----------
+        private static Result ReadModelMax()
+        {
+            string path = FileName.ModelMax_LoadFile;
+            bool exists = File.Exists(path);
+            int count = ModelMaxTable.Count;
+            // 还没被对局触发过加载时，这里先读一次，好让页面显示真实条目数
+            if (count == 0 && exists) count = ModelMaxTable.Reload();
+
+            // 文件还没生成时给内置模板，避免编辑框是空的
+            string content = exists ? "" : ModelMax.XmlContent;
+            try
+            {
+                if (exists)
+                {
+                    using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var reader = new StreamReader(fs, Encoding.UTF8);
+                    content = reader.ReadToEnd();
+                }
+            }
+            catch (Exception ex) { return Err(500, ex.Message); }
+
+            return Json(new { path, exists, count, content });
+        }
+
+        /// <summary>
+        /// 保存 ModelMax.xml 内容：先解析 XML 确认语法正确，再原子写回并立即重载；
+        /// 校验不通过时不落盘、不影响正在运行的配置。
+        /// </summary>
+        private static Result SaveModelMaxContent(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body)) return Err(400, "内容为空");
+            try
+            {
+                XDocument.Parse(body);
+            }
+            catch (Exception ex)
+            {
+                return Err(400, "XML 格式错误：" + ex.Message);
+            }
+
+            string path = FileName.ModelMax_LoadFile;
+            try
+            {
+                string dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                if (File.Exists(path))
+                {
+                    try { File.Copy(path, path + ".bak", true); } catch { }
+                }
+                string tmp = path + ".tmp";
+                File.WriteAllText(tmp, body, new UTF8Encoding(false));
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmp, path);
+            }
+            catch (Exception ex) { return Err(500, ex.Message); }
+
+            int count = ModelMaxTable.Reload();
+            Log.Info($"[AdminWeb] 已写入 {path} 并应用（{count} 条）");
+            return Json(new { ok = true, path, count, note = "已保存并应用，立即生效" });
+        }
+
         // ---------- 赛道记录 ----------
         private static List<object> ListTrackRank()
         {
@@ -612,12 +743,21 @@ namespace KartRider
             return Path.Combine(FileName.ProfileDir, nick);
         }
 
-        private static bool IsSafeFile(string nick, string name)
+        /// <summary>
+        /// 按昵称取 fileName 路径集合；玩家目录不存在时返回 null（读文件时不为此新建目录）。
+        /// </summary>
+        private static fileName GetPlayerFiles(string nick)
         {
-            if (string.IsNullOrWhiteSpace(nick) || string.IsNullOrWhiteSpace(name)) return false;
-            if (name.IndexOfAny(new[] { '/', '\\', ':' }) >= 0) return false;
-            if (!name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return false;
-            return SaveFileWhitelist.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
+            string dir = PlayerDir(nick);
+            if (dir == null || !Directory.Exists(dir)) return null;
+            return FileName.Load(nick);
+        }
+
+        private static bool IsSafeFile(string name)
+        {
+            // 这里只做路径安全校验；文件是否属于该玩家由 ResolveSaveFile（跟随 fileName）判断
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            return name.IndexOfAny(new[] { '/', '\\', ':' }) < 0;
         }
 
         private static string GetIp(string nick)
@@ -688,7 +828,12 @@ namespace KartRider
   .list button { display:block; width:100%; text-align:left; border:none; background:transparent; padding:8px 10px; border-radius:6px; cursor:pointer; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
   .list button:hover { background:#f0f5fb; }
   .list button.sel { background:#e8f1ff; color:#2f80ed; font-weight:600; }
-  textarea { width:100%; height:420px; font-family:Consolas,monospace; font-size:12px; border:1px solid #d8dfe8; border-radius:8px; padding:10px; }
+  textarea { width:100%; height:420px; font-family:Consolas,monospace; font-size:12px; border:1px solid #d8dfe8; border-radius:8px; padding:10px; tab-size:4; }
+  /* 编辑框上方的标红层：与 textarea 同字号同内边距，文字本身透明，只画错误底色 */
+  .editor-wrap { position:relative; }
+  .editor-mark { position:absolute; inset:0; margin:0; padding:10px; border:1px solid transparent; border-radius:8px; font-family:Consolas,monospace; font-size:12px; line-height:normal; tab-size:4; white-space:pre; overflow:hidden; pointer-events:none; color:transparent; z-index:3; }
+  .editor-mark .line-err { background:rgba(235,87,87,.16); }
+  .editor-mark .char-err { background:#eb5757; color:#fff; border-radius:2px; }
   input[type=text] { padding:7px 10px; border:1px solid #d8dfe8; border-radius:6px; font-size:13px; width:100%; max-width:320px; }
   select { padding:6px 8px; border:1px solid #d8dfe8; border-radius:6px; font-size:13px; }
   .btn { border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font-size:13px; background:#2f80ed; color:#fff; }
@@ -749,7 +894,11 @@ namespace KartRider
               <span><button class="btn" onclick="saveFile()">保存</button>
                     <button class="btn gray" onclick="loadFile(curFile)">重新加载</button></span>
             </div>
-            <textarea id="editor" spellcheck="false" placeholder="（选择左侧文件后显示内容）"></textarea>
+            <div class="editor-wrap">
+              <pre class="editor-mark" id="editorMark" aria-hidden="true"></pre>
+              <textarea id="editor" spellcheck="false" wrap="off" placeholder="（选择左侧文件后显示内容）"></textarea>
+            </div>
+            <div class="muted" id="fileMsg" style="margin-top:4px;"></div>
             <div class="muted" id="saveMsg"></div>
           </div>
         </div>
@@ -872,6 +1021,20 @@ namespace KartRider
   </section>
 
   <section id="tab-settings" class="hide">
+    <div class="panel" style="margin-bottom:14px;">
+      <h3>车辆模型尺寸（ModelMax.xml）</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span class="muted" id="modelMaxHint">Profile\ModelMax.xml</span>
+        <span><button class="btn" onclick="saveModelMax()">保存并应用</button>
+              <button class="btn gray" onclick="loadModelMax()">重新加载</button></span>
+      </div>
+      <div class="editor-wrap">
+        <pre class="editor-mark" id="modelMaxMark" aria-hidden="true"></pre>
+        <textarea id="modelMaxEditor" spellcheck="false" wrap="off" style="height:320px;"></textarea>
+      </div>
+      <div class="muted" id="modelMaxFormat" style="margin-top:4px;"></div>
+      <div class="muted" id="modelMaxMsg"></div>
+    </div>
     <div class="panel">
       <h3>服务器配置（Settings.json）</h3>
       <div style="margin-bottom:8px;">
@@ -879,7 +1042,11 @@ namespace KartRider
         <button class="btn gray" onclick="loadSettings()">重新加载</button>
         <span class="muted">保存后需要重启服务端才生效</span>
       </div>
-      <textarea id="settingsEditor" spellcheck="false" style="height:480px;"></textarea>
+      <div class="editor-wrap">
+        <pre class="editor-mark" id="settingsMark" aria-hidden="true"></pre>
+        <textarea id="settingsEditor" spellcheck="false" wrap="off" style="height:480px;"></textarea>
+      </div>
+      <div class="muted" id="settingsFormat" style="margin-top:4px;"></div>
       <div class="muted" id="settingsMsg"></div>
     </div>
   </section>
@@ -912,7 +1079,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   if (b.dataset.tab === 'bans') { loadIpBans(); loadHistory(); loadNickBans(); }
   if (b.dataset.tab === 'grant') loadGrantHistory();
   if (b.dataset.tab === 'coupon') loadCoupons();
-  if (b.dataset.tab === 'settings') loadSettings();
+  if (b.dataset.tab === 'settings') { loadModelMax(); loadSettings(); }
   if (b.dataset.tab === 'rank') loadRankList();
 });
 
@@ -957,6 +1124,8 @@ async function pickPlayer(nick) {
     `<button onclick="loadFile('${f.name}')">${f.name} <span class="muted">${f.size} B · ${f.modified}</span></button>`).join('');
   document.getElementById('editor').value = '';
   document.getElementById('fileHint').textContent = '选择一个存档文件';
+  if (fileEditor) fileEditor.reset();
+  document.getElementById('saveMsg').textContent = '';
 }
 
 async function loadFile(name) {
@@ -966,18 +1135,227 @@ async function loadFile(name) {
   document.getElementById('saveMsg').textContent = '';
   const d = await jget(`/api/players/${encodeURIComponent(curNick)}/file?name=${encodeURIComponent(name)}`);
   document.getElementById('editor').value = d.content || '';
+  if (fileEditor) fileEditor.validate(name);
 }
 
 async function saveFile() {
   if (!curNick || !curFile) { alert('先选玩家和文件'); return; }
+  const el = document.getElementById('saveMsg');
+  if (fileEditor && !fileEditor.validate(curFile)) {
+    el.className = 'err'; el.textContent = '格式错误，已阻止保存（详见上方提示）';
+    return;
+  }
   const content = document.getElementById('editor').value;
   const r = await fetch(`/api/players/${encodeURIComponent(curNick)}/file?name=${encodeURIComponent(curFile)}`,
     { method:'POST', headers:{'Content-Type':'application/json'}, body: content });
   const d = await r.json();
-  const el = document.getElementById('saveMsg');
   if (d.ok) { el.className = 'ok'; el.textContent = '已保存：' + (d.note||''); }
   else { el.className = 'err'; el.textContent = '保存失败：' + (d.error||''); }
 }
+
+// ---- 编辑框格式校验（JSON / XML）----
+// 逐字符扫描而不是靠浏览器报错文案，保证行/列定位一致：
+// 出错行淡红底，出错字符红底白字，编辑框下方给出行列与原因。
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function detectFormat(name, text) {
+  const n = (name || '').toLowerCase();
+  if (n.endsWith('.xml') || n.endsWith('.config') || n.endsWith('.xaml')) return 'xml';
+  if (n.endsWith('.json')) return 'json';
+  return /^\s*</.test(text || '') ? 'xml' : 'json';
+}
+
+function posOf(text, index) {
+  const p = Math.max(0, Math.min(index, text.length));
+  const head = text.slice(0, p).split('\n');
+  return { line: head.length, column: head[head.length - 1].length + 1 };
+}
+
+function validateJson(text) {
+  let i = 0;
+  const n = text.length;
+  const fail = (msg, at) => { throw { pos: typeof at === 'number' ? at : i, msg }; };
+  const isDigit = c => c >= '0' && c <= '9';
+  const skipWs = () => {
+    while (i < n) {
+      const c = text[i];
+      if (c === ' ' || c === '\t' || c === '\r' || c === '\n') i++;
+      else break;
+    }
+  };
+  function parseString() {
+    i++;
+    while (i < n) {
+      const c = text[i];
+      if (c === '"') { i++; return; }
+      if (c === '\\') {
+        i++;
+        const e = text[i];
+        if (!e || '"\\/bfnrtu'.indexOf(e) < 0) fail('非法转义字符 \\' + (e || ''));
+        if (e === 'u') {
+          for (let k = 1; k <= 4; k++) {
+            if (!/[0-9a-fA-F]/.test(text[i + k] || '')) fail('\\u 需要 4 位十六进制数字', i + k);
+          }
+          i += 4;
+        }
+        i++;
+        continue;
+      }
+      if (c === '\n' || c === '\r') fail('字符串里不能直接换行');
+      if (c.charCodeAt(0) < 0x20) fail('字符串里包含控制字符');
+      i++;
+    }
+    fail('字符串缺少结束的引号', n);
+  }
+  function parseNumber() {
+    if (text[i] === '-') i++;
+    if (text[i] === '0') i++;
+    else if (isDigit(text[i])) { while (isDigit(text[i])) i++; }
+    else fail('数字格式不正确');
+    if (text[i] === '.') {
+      i++;
+      if (!isDigit(text[i])) fail('小数点后缺少数字');
+      while (isDigit(text[i])) i++;
+    }
+    if (text[i] === 'e' || text[i] === 'E') {
+      i++;
+      if (text[i] === '+' || text[i] === '-') i++;
+      if (!isDigit(text[i])) fail('指数部分缺少数字');
+      while (isDigit(text[i])) i++;
+    }
+  }
+  function parseValue() {
+    skipWs();
+    if (i >= n) fail('缺少值', i);
+    const c = text[i];
+    if (c === '{') return parseObject();
+    if (c === '[') return parseArray();
+    if (c === '"') return parseString();
+    if (c === '-' || isDigit(c)) return parseNumber();
+    if (text.substr(i, 4) === 'true') { i += 4; return; }
+    if (text.substr(i, 5) === 'false') { i += 5; return; }
+    if (text.substr(i, 4) === 'null') { i += 4; return; }
+    fail('无法识别的字符 ' + JSON.stringify(c));
+  }
+  function parseObject() {
+    i++;
+    skipWs();
+    if (text[i] === '}') { i++; return; }
+    while (true) {
+      skipWs();
+      if (text[i] !== '"') fail('属性名必须是双引号字符串');
+      parseString();
+      skipWs();
+      if (text[i] !== ':') fail('属性名后缺少冒号');
+      i++;
+      parseValue();
+      skipWs();
+      if (text[i] === ',') { i++; continue; }
+      if (text[i] === '}') { i++; return; }
+      fail('缺少逗号或右花括号');
+    }
+  }
+  function parseArray() {
+    i++;
+    skipWs();
+    if (text[i] === ']') { i++; return; }
+    while (true) {
+      parseValue();
+      skipWs();
+      if (text[i] === ',') { i++; continue; }
+      if (text[i] === ']') { i++; return; }
+      fail('缺少逗号或右方括号');
+    }
+  }
+  try {
+    if (text.charCodeAt(0) === 0xFEFF) i = 1;
+    parseValue();
+    skipWs();
+    if (i < n) fail('存在多余内容');
+    return { ok: true };
+  } catch (e) {
+    if (!e || typeof e.pos !== 'number') return { ok: false, line: 1, column: 1, message: 'JSON 解析失败' };
+    const at = posOf(text, e.pos);
+    return { ok: false, line: at.line, column: at.column, message: e.msg };
+  }
+}
+
+function validateXml(text) {
+  let doc;
+  try { doc = new DOMParser().parseFromString(text, 'application/xml'); }
+  catch (e) { return { ok: false, line: 1, column: 1, message: 'XML 解析失败' }; }
+  const err = doc.getElementsByTagName('parsererror')[0];
+  if (!err) return { ok: true };
+  const raw = (err.textContent || '').replace(/\s+/g, ' ').trim();
+  let line = 1, column = 1;
+  const m = /line[^\d]{0,12}(\d+)[^\d]{1,12}column[^\d]{0,12}(\d+)/i.exec(raw);
+  if (m) { line = +m[1]; column = +m[2]; }
+  const message = raw.replace(/^This page contains the following errors:?\s*/i, '').slice(0, 160) || 'XML 格式错误';
+  return { ok: false, line, column, message };
+}
+
+function renderMark(mark, text, res) {
+  const lines = text.split('\n');
+  let li = (res.line || 1) - 1;
+  if (li < 0) li = 0;
+  if (li > lines.length - 1) li = lines.length - 1;
+  const line = lines[li] || '';
+  let col = (res.column || 1) - 1;
+  if (col < 0) col = 0;
+  if (col > line.length) col = line.length;
+  const head = lines.slice(0, li).join('\n');
+  const tail = lines.slice(li + 1).join('\n');
+  mark.innerHTML =
+    (head ? escHtml(head) + '\n' : '') +
+    '<span class="line-err">' + escHtml(line.slice(0, col)) +
+    '<span class="char-err">' + (escHtml(line.charAt(col)) || ' ') + '</span>' +
+    escHtml(line.slice(col + 1)) + '</span>' +
+    (tail ? '\n' + escHtml(tail) : '');
+}
+
+function attachEditorValidator(taId, markId, msgId, nameFn) {
+  const ta = document.getElementById(taId);
+  const mark = document.getElementById(markId);
+  const msg = document.getElementById(msgId);
+  if (!ta || !mark || !msg) return null;
+  let timer = null;
+  const api = {
+    validate(name) {
+      const text = ta.value;
+      if (!text.trim()) {
+        mark.innerHTML = '';
+        msg.className = 'muted';
+        msg.textContent = '';
+        return true;
+      }
+      const kind = detectFormat(name !== undefined ? name : (nameFn ? nameFn() : ''), text);
+      const res = kind === 'xml' ? validateXml(text) : validateJson(text);
+      if (res.ok) {
+        mark.innerHTML = '';
+        msg.className = 'ok';
+        msg.textContent = (kind === 'xml' ? 'XML' : 'JSON') + ' 格式正确';
+        return true;
+      }
+      renderMark(mark, text, res);
+      // 重绘后同步滚动位置，否则长文件滚动后标红会错位
+      mark.scrollTop = ta.scrollTop;
+      mark.scrollLeft = ta.scrollLeft;
+      msg.className = 'err';
+      msg.textContent = (kind === 'xml' ? 'XML' : 'JSON') + ' 格式错误 · 第 ' + res.line + ' 行第 ' + res.column + ' 列：' + res.message;
+      return false;
+    },
+    reset() { mark.innerHTML = ''; msg.className = 'muted'; msg.textContent = ''; }
+  };
+  ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => api.validate(), 150); });
+  ta.addEventListener('scroll', () => { mark.scrollTop = ta.scrollTop; mark.scrollLeft = ta.scrollLeft; });
+  return api;
+}
+
+const fileEditor = attachEditorValidator('editor', 'editorMark', 'fileMsg', () => curFile || '');
+const settingsEditorBox = attachEditorValidator('settingsEditor', 'settingsMark', 'settingsFormat', () => 'Settings.json');
+const modelMaxBox = attachEditorValidator('modelMaxEditor', 'modelMaxMark', 'modelMaxFormat', () => 'ModelMax.xml');
 
 // ---- IP 封禁 ----
 async function loadIpBans() {
@@ -1221,18 +1599,47 @@ async function delCoupon(code) {
   loadCoupons();
 }
 
+// ---- ModelMax.xml（固定路径，配置页直接编辑）----
+async function loadModelMax() {
+  const d = await jget('/api/modelmax');
+  document.getElementById('modelMaxHint').textContent = d.path || 'Profile\ModelMax.xml';
+  document.getElementById('modelMaxEditor').value = d.content || '';
+  const el = document.getElementById('modelMaxMsg');
+  el.className = 'muted';
+  el.textContent = d.exists ? '已加载 ' + (d.count || 0) + ' 条' : '文件不存在，保存后按当前内容创建';
+  if (modelMaxBox) modelMaxBox.validate('ModelMax.xml');
+}
+
+async function saveModelMax() {
+  const el = document.getElementById('modelMaxMsg');
+  if (modelMaxBox && !modelMaxBox.validate('ModelMax.xml')) {
+    el.className = 'err'; el.textContent = '格式错误，已阻止保存（详见上方提示）';
+    return;
+  }
+  const content = document.getElementById('modelMaxEditor').value;
+  const r = await fetch('/api/modelmax', { method:'POST', headers:{'Content-Type':'application/xml'}, body: content });
+  const d = await r.json();
+  if (d.ok) { el.className = 'ok'; el.textContent = (d.note || '已应用') + ' · ' + (d.count || 0) + ' 条'; }
+  else { el.className = 'err'; el.textContent = '保存失败：' + (d.error || ''); }
+}
+
 // ---- 服务器配置 ----
 async function loadSettings() {
   const d = await jget('/api/settings');
   document.getElementById('settingsEditor').value = d.content || '';
   document.getElementById('settingsMsg').textContent = d.path || '';
+  if (settingsEditorBox) settingsEditorBox.validate('Settings.json');
 }
 
 async function saveSettings() {
+  const el = document.getElementById('settingsMsg');
+  if (settingsEditorBox && !settingsEditorBox.validate('Settings.json')) {
+    el.className='err'; el.textContent = '格式错误，已阻止保存（详见上方提示）';
+    return;
+  }
   const content = document.getElementById('settingsEditor').value;
   const r = await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: content });
   const d = await r.json();
-  const el = document.getElementById('settingsMsg');
   if (d.ok) { el.className='ok'; el.textContent = d.note || '已保存'; } else { el.className='err'; el.textContent = '保存失败：' + (d.error||''); }
 }
 

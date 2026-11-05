@@ -44,7 +44,16 @@ namespace Profile
         public static string ProfileDir = Path.GetFullPath(Path.Combine(appDir, @"Profile"));
         public static string Load_Settings = Path.GetFullPath(Path.Combine(ProfileDir, @"Settings.json"));
         public static string Load_TrackRank = Path.GetFullPath(Path.Combine(appDir, @"TrackRank"));
-        public static string ModelMax_LoadFile = Path.GetFullPath(Path.Combine(ProfileDir, @"ModelMax.xml"));
+        /// <summary>
+        /// ModelMax.xml 的固定路径：Profile\ModelMax.xml。
+        /// 不进 Settings.json、也不允许在后台改路径；管理后台「配置」页直接编辑该文件内容，
+        /// 校验通过后写回并立即生效。
+        /// </summary>
+        public static string DefaultModelMax_LoadFile = Path.GetFullPath(Path.Combine(ProfileDir, @"ModelMax.xml"));
+
+        /// <summary>ModelMax.xml 的实际路径（Program / ModelMaxTable / 后台统一读这里）。</summary>
+        public static string ModelMax_LoadFile => DefaultModelMax_LoadFile;
+
         public static string Coupon = Path.GetFullPath(Path.Combine(ProfileDir, @"Coupon.json"));
 
         /// <summary>
