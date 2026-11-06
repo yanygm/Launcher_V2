@@ -468,7 +468,8 @@ namespace KartRider
                                 using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                 {
                                     XDocument doc = XDocument.Load(stream);
-                                    GameSupport.questInfo = doc.Descendants("kartPassQuestInfo").First();
+                                    // 包内通常同时存在当前赛季与下一赛季，必须按 seasonPeriod 选出生效的那条
+                                    GameSupport.questInfo = GameSupport.SelectActiveKartPassQuestInfo(doc.Descendants("kartPassQuestInfo"));
                                 }
                             }
                             if (fullName == $"zeta_/{regionCode}/scenario/scenario.xml" || fullName == $"zeta/{regionCode}/scenario/scenario.xml")
