@@ -377,20 +377,31 @@ namespace KartRider
             List<uint> ids = new List<uint>();
             if (questInfo != null)
             {
-                string period = questInfo.Attribute("seasonPeriod").Value;
+                string period = questInfo.Attribute("seasonPeriod")?.Value;
+                string seasonId = questInfo.Attribute("seasonId")?.Value;
                 var isInTime = IsCurrentTimeInPeriod(period);
-                if (isInTime != null)
+                if (isInTime != null && !string.IsNullOrEmpty(seasonId))
                 {
-                    string seasonId = questInfo.Attribute("seasonId").Value;
+                    // setCount 才是实际存在的任务组数量，超出范围的组号拼出来的 ID 客户端并不存在
+                    int setCount = int.MaxValue;
+                    if (int.TryParse(questInfo.Attribute("setCount")?.Value, out int parsedCount) && parsedCount > 0)
+                    {
+                        setCount = parsedCount;
+                    }
+
+                    HashSet<uint> seen = new HashSet<uint>();
                     foreach (int group in isInTime)
                     {
+                        if (group > setCount) continue;
                         for (int index = 1; index <= 3; index++)
                         {
                             string groupStr = group.ToString("D2");  // 1 → 01
                             string indexStr = index.ToString("D2");  // 1 → 01
                                                                      // 拼接：14500 + 组号 + 序号
-                            uint id = uint.Parse($"1{seasonId}00{groupStr}{indexStr}");
-                            ids.Add(id);
+                            if (uint.TryParse($"1{seasonId}00{groupStr}{indexStr}", out uint id) && seen.Add(id))
+                            {
+                                ids.Add(id);
+                            }
                         }
                     }
                 }
@@ -677,6 +688,36 @@ namespace KartRider
 
             // 输出结果查看
             return tunes;
+        }
+
+        /// <summary>
+        /// 从 kartPassQuestAutomation.xml 的全部 kartPassQuestInfo 中选出当前时间生效的赛季节点。
+        /// 客户端包内通常同时带「当前赛季」和「下一赛季」两条记录，直接取第一个会拿到尚未开始的赛季，
+        /// 导致 seasonPeriod 校验失败、卡丁车通行证任务一条都不下发。都不在时间段内时回退到第一个。
+        /// </summary>
+        public static XElement SelectActiveKartPassQuestInfo(IEnumerable<XElement> infos)
+        {
+            if (infos == null) return null;
+            List<XElement> list = new List<XElement>();
+            foreach (XElement info in infos)
+            {
+                if (info != null) list.Add(info);
+            }
+            if (list.Count == 0) return null;
+
+            foreach (XElement info in list)
+            {
+                if (IsCurrentTimeInPeriod(info.Attribute("seasonPeriod")?.Value) != null)
+                {
+                    string activeSeasonId = info.Attribute("seasonId")?.Value;
+                    Log.Info($"[Quest] 卡丁车通行证生效赛季 seasonId={activeSeasonId}");
+                    return info;
+                }
+            }
+
+            string fallbackSeasonId = list[0].Attribute("seasonId")?.Value;
+            Log.Info($"[Quest] 卡丁车通行证赛季均不在时间段内，回退 seasonId={fallbackSeasonId}");
+            return list[0];
         }
 
         private static List<int> IsCurrentTimeInPeriod(string period)
