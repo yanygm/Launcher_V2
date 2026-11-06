@@ -875,6 +875,7 @@ public static class MultyPlayer
         {
             room.Started = true;
             room.StartedPlayerCount = playerCount;
+            RoomScore.OnRaceStart(room);   // 记录本局参赛者，掉线者结算时按未完成计
             room.ResetRareItems(); // 每局重置「天使/道具锁/闪电」计数
 
             bool ai = room.GetAiCount() > 0;

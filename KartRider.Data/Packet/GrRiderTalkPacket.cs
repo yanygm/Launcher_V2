@@ -62,6 +62,19 @@ namespace KartRider.Packet
             }
 
             // 自动计分：#开始计分 [8 个名次分 + 未完成分] / #结束计分
+            // #重赛：仅计分发起者，撤销最近一局
+            if (value.Trim().StartsWith("#重赛", StringComparison.OrdinalIgnoreCase) || value.Trim().StartsWith("#重賽", StringComparison.OrdinalIgnoreCase))
+            {
+                RoomScore.Replay(room, player, out string replayMsg);
+                using (var pkt = new OutPacket("GrRiderEchoPacket"))
+                {
+                    pkt.WriteInt(player.ID);
+                    pkt.WriteString(replayMsg);
+                    BroadCast(roomId, pkt);
+                }
+                return true;
+            }
+
             if (value.StartsWith("#开始计分", StringComparison.OrdinalIgnoreCase) || value.StartsWith("#開始計分", StringComparison.OrdinalIgnoreCase)
                 || value.StartsWith("#结束计分", StringComparison.OrdinalIgnoreCase) || value.StartsWith("#結束計分", StringComparison.OrdinalIgnoreCase))
             {

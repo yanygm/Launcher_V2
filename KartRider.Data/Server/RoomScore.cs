@@ -11,16 +11,22 @@ namespace KartRider
     /// 房间自动计分。
     ///
     ///   #开始计分 [数字...]   开启（已开启则忽略，必须先 #结束计分）
-    ///       0 个数字 → 用默认表：个人 {10,7,5,4,3,1,0,-1}、未完成 -5
+    ///       0 个数字 → 默认表：个人 {10,7,5,4,3,1,0,-1}、未完成 -5
     ///       1~8 个   → 前 8 名分，未完成用默认
     ///       9 个     → 8 个名次分 + 第 9 个是未完成分
     ///   #结束计分             停止并清空
+    ///   #重赛                 仅发起者可发；撤销最近一局，恢复到上一局结束时的累计并播报
     ///
-    /// 播报时机：本局所有参赛玩家都回到房间（GrFirstRequestPacket）后，再延迟 1.5 秒播报；
-    /// 若有人卡住，8 秒后强制播报一次。
+    /// 播报时机：本局所有参赛玩家回房（GrFirstRequestPacket）后 1.5 秒；
+    ///           部分回房 10 秒补播；全员不回 60 秒兜底。
     ///
-    ///   个人赛：按名次分累计（含 AI，名字 AI{格子+1}）
-    ///   组队 / 双人：累计胜场
+    /// 计分规则：
+    ///   个人：按名次分累计（含 AI，名字 AI{格子+1}）
+    ///   组队：红/蓝胜场
+    ///   双人：每队成员名次分之和
+    ///
+    /// 掉线：开局瞬间记录参赛名单，结算时名单里有人不在场/没成绩 → 按未完成分计入，
+    ///       并且分数保留在列表里（直到 #结束计分 或房间销毁）。
     /// </summary>
     public static class RoomScore
     {
@@ -36,12 +42,30 @@ namespace KartRider
             public string LastTrack = "";
             public int[] Rank = { 10, 7, 5, 4, 3, 1, 0, -1 };
             public int Dnf = -5;
+
+            /// <summary>本局参赛者：昵称 → 队伍（开局瞬间记录，用于掉线判未完成）。</summary>
+            public Dictionary<string, int> RaceParticipants = new(StringComparer.OrdinalIgnoreCase);
+            public bool RaceArmed;
+
+            /// <summary>最近一局的快照（只保留一层，供 #重赛 使用）。</summary>
+            public Snapshot LastRound;
+
             // 播报等待
             public bool Pending;
             public HashSet<string> Participants = new(StringComparer.OrdinalIgnoreCase);
             public HashSet<string> Returned = new(StringComparer.OrdinalIgnoreCase);
             public DateTime PendingSince;
             public bool PartialTimerStarted;
+        }
+
+        /// <summary>一局结束时的累计快照，用于 #重赛 回退。</summary>
+        private sealed class Snapshot
+        {
+            public int Round;
+            public Dictionary<string, int> Points;
+            public Dictionary<int, int> TeamPoints;
+            public int[] TeamWins;
+            public string LastTrack;
         }
 
         private static readonly object Gate = new();
@@ -75,7 +99,6 @@ namespace KartRider
             }
             else
             {
-                // 组队/双人走胜场，这两张表只在将来需要时用
                 rank = room.DuoTeam ? new[] { 10, 8, 7, 5, 4, 3, 2, 1 } : new[] { 10, 8, 6, 5, 4, 3, 2, 1 };
                 dnf = 0;
             }
@@ -99,7 +122,7 @@ namespace KartRider
                     Dnf = dnf
                 };
             }
-            Log.Debug($"[Score] 房间 {room.RoomId} 开始计分（发起人 {starter.Nickname}，{(individual ? "个人" : room.DuoTeam ? "双人" : "组队")}，表 {string.Join(",", rank)} / 未完成 {dnf}）");
+            Log.Debug($"[Score] 房间 {room.RoomId} 开始计分（发起人 {starter.Nickname}，{(individual ? "个人" : room.DuoTeam ? "双人" : "组队")}）");
             message = "现在开始计分";
             return StartResult.Started;
         }
@@ -119,6 +142,26 @@ namespace KartRider
             lock (Gate) { States.Remove(roomId); }
         }
 
+        /// <summary>开局瞬间记录本局参赛者（昵称 + 队伍），用于把中途掉线的人判为未完成。</summary>
+        public static void OnRaceStart(GameRoom room)
+        {
+            if (room == null) return;
+            lock (Gate)
+            {
+                if (!States.TryGetValue(room.RoomId, out State st) || st == null) return;
+                st.RaceParticipants.Clear();
+                foreach (RoomMember m in room._IDs)
+                {
+                    if (m is Player p && !string.IsNullOrEmpty(p.Nickname))
+                    {
+                        st.RaceParticipants[p.Nickname] = p.Team;
+                    }
+                }
+                st.RaceArmed = st.RaceParticipants.Count > 0;
+                st.LastRound = null;   // 新的一局开始，上一局的快照作废（只在房间等待态可重赛）
+            }
+        }
+
         /// <summary>每局结算：累加，并进入"等待全员回房"状态。</summary>
         public static void OnRoundEnd(GameRoom room, RoomMember[] members, Dictionary<int, int> ranking, Dictionary<int, uint> timeData, byte winnerTeam)
         {
@@ -126,23 +169,63 @@ namespace KartRider
             lock (Gate)
             {
                 if (!States.TryGetValue(room.RoomId, out State st) || st == null) return;
+
+                // 结算前先把"本局之前"的累计存一份快照，供 #重赛 回退
+                st.LastRound = new Snapshot
+                {
+                    Round = st.Round,
+                    Points = new Dictionary<string, int>(st.Points, StringComparer.Ordinal),
+                    TeamPoints = new Dictionary<int, int>(st.TeamPoints),
+                    TeamWins = (int[])st.TeamWins.Clone(),
+                    LastTrack = st.LastTrack
+                };
+
                 st.Round++;
                 st.LastTrack = RandomTrack.GetTrackName(room.trackTemp);
 
+                // 在场成员按 ID 建索引，便于判断参赛者是否掉线
+                var byNick = new Dictionary<string, Player>(StringComparer.OrdinalIgnoreCase);
+                foreach (RoomMember m in members)
+                {
+                    if (m is Player p && !string.IsNullOrEmpty(p.Nickname)) byNick[p.Nickname] = p;
+                }
+
                 if (st.TeamMode && st.DuoMode)
                 {
-                    // 双人房：每队成员的名次分之和，按队累计
-                    foreach (RoomMember m in members)
+                    // 双人：每队成员名次分之和；掉线者按未完成分计入其原队伍
+                    if (st.RaceArmed)
                     {
-                        int team = 0, id = -1;
-                        if (m is Player p) { team = p.Team; id = p.ID; }
-                        else if (m is Ai a) { team = a.Team; id = a.ID; }
-                        else continue;
-                        if (team < 1 || team > 4) continue;
-                        if (!timeData.TryGetValue(id, out uint tp)) continue;
-                        int pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking[id]);
-                        st.TeamPoints.TryGetValue(team, out int oldT);
-                        st.TeamPoints[team] = oldT + pts;
+                        foreach (var kv in st.RaceParticipants)
+                        {
+                            int team = kv.Value;
+                            if (team < 1 || team > 4) continue;
+                            int pts;
+                            if (byNick.TryGetValue(kv.Key, out Player mem) && timeData.TryGetValue(mem.ID, out uint tp))
+                            {
+                                pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking.TryGetValue(mem.ID, out int r) ? r : -1);
+                            }
+                            else
+                            {
+                                pts = st.Dnf;   // 掉线/离场 → 未完成
+                            }
+                            st.TeamPoints.TryGetValue(team, out int oldT);
+                            st.TeamPoints[team] = oldT + pts;
+                        }
+                    }
+                    else
+                    {
+                        foreach (RoomMember m in members)
+                        {
+                            int team = 0, id = -1;
+                            if (m is Player p) { team = p.Team; id = p.ID; }
+                            else if (m is Ai a) { team = a.Team; id = a.ID; }
+                            else continue;
+                            if (team < 1 || team > 4) continue;
+                            if (!timeData.TryGetValue(id, out uint tp)) continue;
+                            int pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking[id]);
+                            st.TeamPoints.TryGetValue(team, out int oldT);
+                            st.TeamPoints[team] = oldT + pts;
+                        }
                     }
                 }
                 else if (st.TeamMode)
@@ -151,22 +234,53 @@ namespace KartRider
                 }
                 else
                 {
-                    foreach (RoomMember m in members)
+                    if (st.RaceArmed)
                     {
-                        if (m is Player p)
+                        // 个人：开局名单里的每个人都算，掉线者按未完成分
+                        foreach (var kv in st.RaceParticipants)
                         {
-                            if (!timeData.TryGetValue(p.ID, out uint tp)) continue;
-                            int pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking[p.ID]);
-                            st.Points.TryGetValue(p.Nickname, out int oldP);
-                            st.Points[p.Nickname] = oldP + pts;
+                            int pts;
+                            if (byNick.TryGetValue(kv.Key, out Player mem) && timeData.TryGetValue(mem.ID, out uint tp))
+                            {
+                                pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking.TryGetValue(mem.ID, out int r) ? r : -1);
+                            }
+                            else
+                            {
+                                pts = st.Dnf;
+                            }
+                            st.Points.TryGetValue(kv.Key, out int oldP);
+                            st.Points[kv.Key] = oldP + pts;
                         }
-                        else if (m is Ai a)
+                        // AI 仍然按在场成员计
+                        foreach (RoomMember m in members)
                         {
+                            if (m is not Ai a) continue;
                             string name = $"AI{a.SlotId + 1}";
-                            if (!timeData.TryGetValue(a.ID, out uint ta)) continue;
-                            int pts = ta == uint.MaxValue ? st.Dnf : Score(st, ranking[a.ID]);
+                            if (!timeData.TryGetValue(a.ID, out uint tp)) continue;
+                            int pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking.TryGetValue(a.ID, out int r) ? r : -1);
                             st.Points.TryGetValue(name, out int oldA);
                             st.Points[name] = oldA + pts;
+                        }
+                    }
+                    else
+                    {
+                        foreach (RoomMember m in members)
+                        {
+                            if (m is Player p)
+                            {
+                                if (!timeData.TryGetValue(p.ID, out uint tp)) continue;
+                                int pts = tp == uint.MaxValue ? st.Dnf : Score(st, ranking[p.ID]);
+                                st.Points.TryGetValue(p.Nickname, out int oldP);
+                                st.Points[p.Nickname] = oldP + pts;
+                            }
+                            else if (m is Ai a)
+                            {
+                                string name = $"AI{a.SlotId + 1}";
+                                if (!timeData.TryGetValue(a.ID, out uint ta)) continue;
+                                int pts = ta == uint.MaxValue ? st.Dnf : Score(st, ranking[a.ID]);
+                                st.Points.TryGetValue(name, out int oldA);
+                                st.Points[name] = oldA + pts;
+                            }
                         }
                     }
                 }
@@ -183,7 +297,6 @@ namespace KartRider
                 if (!st.Pending) return;
             }
 
-            // 60 秒兜底：所有人都不回房（掉线/直接退出）时才强制播一次
             int roomId = room.RoomId;
             Task.Run(async () =>
             {
@@ -230,7 +343,6 @@ namespace KartRider
             }
             else if (startPartial)
             {
-                // 有人先回来了、但还有人没回：再等 10 秒，仍然没齐就补播一次
                 Task.Run(async () =>
                 {
                     await Task.Delay(10000).ConfigureAwait(false);
@@ -253,6 +365,69 @@ namespace KartRider
             }
             if (!fire) return;
             try { Post(roomId); } catch (Exception ex) { Log.Warn($"[Score] 房间 {roomId} 超时播报失败: {ex.Message}"); }
+        }
+
+        /// <summary>#重赛：仅发起者可用，撤销最近一局并播报恢复后的累计。</summary>
+        public static bool Replay(GameRoom room, Player asker, out string message)
+        {
+            if (room == null || asker == null) { message = "房间状态异常"; return false; }
+            State st;
+            List<string> lines = new();
+            lock (Gate)
+            {
+                if (!States.TryGetValue(room.RoomId, out st) || st == null) { message = "当前没有计分"; return false; }
+                if (!string.Equals(st.StarterNick, asker.Nickname, StringComparison.OrdinalIgnoreCase))
+                {
+                    message = "只有计分发起者可以重赛";
+                    return false;
+                }
+                if (room.Started) { message = "比赛进行中，无法重赛"; return false; }
+                if (st.LastRound == null) { message = "没有可重赛的局"; return false; }
+
+                // 恢复上一局结束时的累计
+                st.Round = st.LastRound.Round;
+                st.Points = st.LastRound.Points;
+                st.TeamPoints = st.LastRound.TeamPoints;
+                st.TeamWins = st.LastRound.TeamWins;
+                st.LastTrack = st.LastRound.LastTrack;
+                st.LastRound = null;      // 只允许撤回最近一局
+                st.Pending = false;       // 取消本局待播报
+
+                lines.Add($"（重赛）第{st.Round}局，{st.LastTrack}：");
+                if (st.TeamMode && st.DuoMode)
+                {
+                    var parts = new List<string>();
+                    int teams = Math.Max(1, Math.Min(4, room.DuoTeamCount));
+                    for (int i = 1; i <= teams; i++)
+                    {
+                        st.TeamPoints.TryGetValue(i, out int tp);
+                        parts.Add($"队{i}={tp}");
+                    }
+                    lines.Add(string.Join("，", parts));
+                }
+                else if (st.TeamMode)
+                {
+                    lines.Add($"红队={st.TeamWins[1]}，蓝队={st.TeamWins[2]}");
+                }
+                else
+                {
+                    foreach (var kv in st.Points.OrderByDescending(k => k.Value).ThenBy(k => k.Key, StringComparer.Ordinal))
+                    {
+                        lines.Add($"[{kv.Key}={kv.Value}]");
+                    }
+                }
+
+                foreach (string line in lines)
+                {
+                    using var pkt = new OutPacket("GrRiderEchoPacket");
+                    pkt.WriteInt(asker.ID);
+                    pkt.WriteString(line);
+                    MultyPlayer.BroadCast(room.RoomId, pkt);
+                }
+            }
+            Log.Debug($"[Score] 房间 {room.RoomId} 重赛：{asker.Nickname}");
+            message = "已重赛，回到上一局结束时的分数";
+            return true;
         }
 
         private static void Post(int roomId)
