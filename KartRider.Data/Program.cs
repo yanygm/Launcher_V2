@@ -252,55 +252,9 @@ namespace KartRider
         {
             try
             {
-                string localFilePath = FileName.ModelMax_LoadFile;
-
-                string directory = Path.GetDirectoryName(localFilePath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                if (!File.Exists(localFilePath))
-                {
-                    File.WriteAllText(localFilePath, ModelMax.XmlContent);
-                    Log.Info($"ModelMax.xml已创建: {localFilePath}");
-                }
-                else if (ProfileService.SettingConfig.ModelMaxAutoUpdate)
-                {
-                    XDocument localXml = XDocument.Load(localFilePath);
-                    XDocument resourceXml = XDocument.Parse(ModelMax.XmlContent);
-
-                    int addedCount = 0;
-
-                    foreach (var resourceKart in resourceXml.Root!.Elements("kart"))
-                    {
-                        string? id = resourceKart.Attribute("id")?.Value;
-                        string? name = resourceKart.Attribute("name")?.Value;
-
-                        if (id != null)
-                        {
-                            bool exists = localXml.Root!.Elements("kart")
-                                .Any(k => k.Attribute("id")?.Value == id);
-
-                            if (!exists)
-                            {
-                                localXml.Root.Add(new XElement(resourceKart));
-                                Log.Debug($"已添加 kart: {name ?? id}");
-                                addedCount++;
-                            }
-                        }
-                    }
-
-                    if (addedCount > 0)
-                    {
-                        localXml.Save(localFilePath, SaveOptions.None);
-                        Log.Info($"ModelMax.xml已更新，新增 {addedCount} 个kart");
-                    }
-                    else
-                    {
-                        Log.Debug("ModelMax.xml已是最新，无需更新");
-                    }
-                }
+                // ModelMax.xml 每次启动都按内置数据补齐：只追加程序内新增、本地缺失的条目，
+                // 本地已有的条目（含程序内已删除的）原样保留，不覆盖、不删除。
+                ModelMax.SyncLocalFile(FileName.ModelMax_LoadFile);
             }
             catch (Exception ex)
             {
