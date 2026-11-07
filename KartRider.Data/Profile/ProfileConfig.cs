@@ -49,9 +49,6 @@ namespace Profile
         /// <summary>控制台输出开关（默认开）。关掉后控制台不再打印日志，但窗口仍由 Console 控制。</summary>
         public bool LogEnabled { get; set; } = true;
 
-        /// <summary>是否在启动时向已有 ModelMax.xml 追加新车（默认关，避免覆盖手改内容）。</summary>
-        public bool ModelMaxAutoUpdate { get; set; } = false;
-
         /// <summary>
         /// Ai速度类型
         /// </summary>
