@@ -62,6 +62,34 @@ namespace KartRider.Packet
             }
 
             // 自动计分：#开始计分 [8 个名次分 + 未完成分] / #结束计分
+            // #重置计分 / #重置：仅计分发起者，清零但保持计分（可带参数换表）
+            if (value.Trim().StartsWith("#重置", StringComparison.OrdinalIgnoreCase) || value.Trim().StartsWith("#重置計分", StringComparison.OrdinalIgnoreCase))
+            {
+                string rbody = value.Trim().Substring(1);              // 去掉 '#'
+                int rsp = rbody.IndexOfAny(new[] { ' ', '\u3000', '\t' });
+                var rnums = new List<int>();
+                bool rbad = false;
+                if (rsp >= 0)
+                {
+                    foreach (string token in rbody.Substring(rsp + 1).Split(new[] { ' ', '\u3000', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (!int.TryParse(token, out int rv) || Math.Abs((long)rv) > 999) { rbad = true; break; }
+                        rnums.Add(rv);
+                    }
+                }
+                string rmsg;
+                if (rbad) rmsg = "参数不对：最多 9 个整数（8 个名次分 + 未完成分）";
+                else RoomScore.Reset(room, player, rnums, out rmsg);
+
+                using (var pkt = new OutPacket("GrRiderEchoPacket"))
+                {
+                    pkt.WriteInt(player.ID);
+                    pkt.WriteString(rmsg);
+                    BroadCast(roomId, pkt);
+                }
+                return true;
+            }
+
             // #重赛：仅计分发起者，撤销最近一局
             if (value.Trim().StartsWith("#重赛", StringComparison.OrdinalIgnoreCase) || value.Trim().StartsWith("#重賽", StringComparison.OrdinalIgnoreCase))
             {
