@@ -1,3 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
+using KartRider.Logging;
+
 namespace KartRider;
 
 /// <summary>
@@ -71,4 +81,270 @@ public static class ModelMax
     <kart id='1636' name='光明骑士 迅' modelMaxX='0.7504' modelMaxY='0.9518' />
     <kart id='1640' name='阿斯特拉：钻石 迅' modelMaxX='0.796232' modelMaxY='1.143804' />
 </ModelMax>";
+
+    private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
+
+    /// <summary>
+    /// 用内置数据把本地 ModelMax.xml 补齐（启动时调用）：
+    ///   · 只追加"程序内有、本地没有"的条目；
+    ///   · 本地已有的条目（包括程序内已经不存在的）保持原样，不改值、不删除、不重排；
+    ///   · 文本级插入，尽量保留用户手改的缩进/换行/注释。
+    /// 返回本次新增的条目数。
+    /// </summary>
+    public static int SyncLocalFile(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return 0;
+        }
+
+        string dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        List<XElement> programKarts = ProgramKarts();
+        if (!File.Exists(path))
+        {
+            File.WriteAllText(path, XmlContent, Utf8NoBom);
+            ModelMaxTable.Invalidate();
+            Log.Info($"[ModelMax] 已创建 {path}（内置 {programKarts.Count} 条）");
+            return programKarts.Count;
+        }
+
+        string raw;
+        try
+        {
+            // 兼容用户用记事本另存的 GBK/UTF-16 文件，避免中文车名被读成乱码
+            raw = JsonHelper.ReadAllTextDetect(path);
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            Log.Error($"[ModelMax] 读取 {path} 失败，跳过本次同步", ex);
+            return 0;
+        }
+
+        XDocument localXml;
+        try
+        {
+            localXml = XDocument.Parse(raw, LoadOptions.PreserveWhitespace);
+        }
+        catch (XmlException ex)
+        {
+            // 文件损坏时不覆盖用户数据，只告警（后台「配置」页可修复）
+            Log.Error($"[ModelMax] 本地文件 {path} 不是合法 XML，跳过本次同步: {ex.Message}");
+            return 0;
+        }
+
+        if (localXml.Root == null)
+        {
+            Log.Error($"[ModelMax] 本地文件 {path} 缺少根节点，跳过本次同步");
+            return 0;
+        }
+
+        var localIds = new HashSet<string>(StringComparer.Ordinal);
+        var localAllIds = new List<string>();
+        foreach (XElement kart in localXml.Root.Elements("kart"))
+        {
+            string key = NormalizeId((string)kart.Attribute("id"));
+            localIds.Add(key);
+            localAllIds.Add(key);
+        }
+
+        var programIdSet = new HashSet<string>(StringComparer.Ordinal);
+        var addedLines = new List<string>();
+        foreach (XElement kart in programKarts)
+        {
+            string key = NormalizeId((string)kart.Attribute("id"));
+            if (key.Length == 0 || !programIdSet.Add(key))
+            {
+                continue;
+            }
+            if (localIds.Contains(key))
+            {
+                continue;
+            }
+            addedLines.Add(kart.ToString(SaveOptions.DisableFormatting));
+        }
+
+        if (addedLines.Count == 0)
+        {
+            Log.Debug($"[ModelMax] 本地 {path} 已包含全部内置条目（{programKarts.Count} 条），无需更新");
+            return 0;
+        }
+
+        string newText;
+        bool textOk = TryInsertBeforeRootEnd(raw, localXml.Root, addedLines, out newText);
+        if (!textOk && TryAddToDocument(localXml, addedLines, out XDocument merged))
+        {
+            newText = merged.ToString();
+            textOk = true;
+        }
+
+        if (!textOk)
+        {
+            Log.Error($"[ModelMax] 无法在 {path} 中定位根节点结束标签，跳过本次同步");
+            return 0;
+        }
+
+        try
+        {
+            WriteAtomic(path, newText, HasUtf8Bom(path));
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[ModelMax] 写入 {path} 失败，本次新增 {addedLines.Count} 条未生效", ex);
+            return 0;
+        }
+
+        ModelMaxTable.Invalidate();
+        int localOnly = localAllIds.Distinct(StringComparer.Ordinal).Count(id => !programIdSet.Contains(id));
+        Log.Info($"[ModelMax] 本地文件已补齐 {addedLines.Count} 条内置数据：本地原有 {localAllIds.Count} 条保持不变"
+                 + $"（其中程序内已没有的 {localOnly} 条），内置共 {programKarts.Count} 条（{path}）");
+        return addedLines.Count;
+    }
+
+    private static List<XElement> ProgramKarts()
+    {
+        return XDocument.Parse(XmlContent).Root?.Elements("kart").ToList() ?? new List<XElement>();
+    }
+
+    /// <summary>id 归一化：能解析成整数的按整数比较（'01470' 与 '1470' 视为同一条），否则按去空白字符串比较。</summary>
+    private static string NormalizeId(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return string.Empty;
+        }
+        string text = id.Trim();
+        return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
+            ? "i:" + value.ToString(CultureInfo.InvariantCulture)
+            : "s:" + text;
+    }
+
+    /// <summary>
+    /// 在根节点结束标签前插入文本行，保留原文件的换行符、缩进与 BOM 之外的其它内容。
+    /// 找不到结束标签（如自闭合根节点）时返回 false。
+    /// </summary>
+    private static bool TryInsertBeforeRootEnd(string raw, XElement root, List<string> lines, out string result)
+    {
+        result = raw;
+        string closing = "</" + root.Name.LocalName + ">";
+        int index = raw.LastIndexOf(closing, StringComparison.OrdinalIgnoreCase);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        string newLine = raw.Contains("\r\n") ? "\r\n" : "\n";
+        string indent = DetectChildIndent(root);
+        int lineStart = raw.LastIndexOf('\n', index);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+
+        bool closingOnOwnLine = true;
+        for (int i = lineStart; i < index; i++)
+        {
+            if (!char.IsWhiteSpace(raw[i]))
+            {
+                closingOnOwnLine = false;
+                break;
+            }
+        }
+
+        var buffer = new StringBuilder();
+        if (closingOnOwnLine)
+        {
+            foreach (string line in lines)
+            {
+                buffer.Append(indent).Append(line).Append(newLine);
+            }
+            result = raw.Insert(lineStart, buffer.ToString());
+        }
+        else
+        {
+            foreach (string line in lines)
+            {
+                buffer.Append(newLine).Append(indent).Append(line);
+            }
+            buffer.Append(newLine);
+            result = raw.Insert(index, buffer.ToString());
+        }
+        return true;
+    }
+
+    /// <summary>取根节点下已有子元素前面的缩进，用于新条目对齐；取不到时用 4 空格。</summary>
+    private static string DetectChildIndent(XElement root)
+    {
+        foreach (XElement child in root.Elements())
+        {
+            if (child.PreviousNode is XText text)
+            {
+                string value = text.Value;
+                int nl = value.LastIndexOf('\n');
+                string prefix = nl >= 0 ? value.Substring(nl + 1) : value;
+                if (prefix.Length > 0 && prefix.Trim().Length == 0)
+                {
+                    return prefix;
+                }
+            }
+            break;
+        }
+        return "    ";
+    }
+
+    /// <summary>退路：文本插入失败时用 XDocument 合并（会重排缩进，但内容正确）。</summary>
+    private static bool TryAddToDocument(XDocument localXml, List<string> lines, out XDocument merged)
+    {
+        merged = localXml;
+        try
+        {
+            foreach (string line in lines)
+            {
+                localXml.Root.Add(XElement.Parse(line));
+            }
+            return true;
+        }
+        catch (XmlException ex)
+        {
+            Log.Error($"[ModelMax] 合并内置条目失败: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static bool HasUtf8Bom(string path)
+    {
+        try
+        {
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            int b0 = stream.ReadByte();
+            int b1 = stream.ReadByte();
+            int b2 = stream.ReadByte();
+            return b0 == 0xEF && b1 == 0xBB && b2 == 0xBF;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void WriteAtomic(string path, string text, bool withBom)
+    {
+        string temp = path + ".tmp";
+        File.WriteAllText(temp, text, withBom ? new UTF8Encoding(true) : Utf8NoBom);
+        if (File.Exists(path))
+        {
+            try
+            {
+                File.Replace(temp, path, null);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // 某些文件系统/被占用场景不支持 Replace，退回覆盖写
+            }
+        }
+        File.Copy(temp, path, true);
+        File.Delete(temp);
+    }
 }
