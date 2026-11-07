@@ -65,7 +65,7 @@ namespace KartRider.Packet
                 outPacket.WriteShort((short)premium);
                 outPacket.WriteInt(points);
                 outPacket.WriteShort((short)premium);
-                outPacket.WriteByte(1);
+                outPacket.WriteByte(0);
                 outPacket.WriteDateTime(DateTime.Now);
                 outPacket.WriteInt(0);
                 session.Client.Send(outPacket);

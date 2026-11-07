@@ -27,22 +27,27 @@ namespace KartRider
         {
             try
             {
-                // 使用 lpk-unpacker 读取游戏 Data 分包（.lpk）
-                LpkFolderManager packFolderManager = new LpkFolderManager();
-                try
+                // 与 KartRider.exe.c 的资源管理层一致：所有 .lpk 的记录表先合并成一张按路径索引的全局表，
+                // 只有真正需要解析的条目才打开分包、定位到数据区并解密（见 LpkResourceManager）。
+                var archives = new LpkResourceManager();
+                if (!archives.Open(input, out string openError))
                 {
-                    Log.Debug("开始读取游戏Data内文件(lpk)...");
-                    Log.Debug("==============================");
-                    packFolderManager.OpenDataFolder(input);
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug($"Error opening lpk data: {ex.Message}");
+                    Log.Debug($"Error opening lpk data: {openError}");
                     return null;
                 }
-                regionCode = packFolderManager.GetRegionCode();
+                Log.Debug("开始按需读取游戏Data内文件(lpk)...");
+                Log.Debug("==============================");
+                regionCode = archives.DetectRegionCode();
+
+                // 只登记名字、不解密：随机池校验要覆盖所有分包（含补丁包）里的赛道资源
+                foreach (string rawPath in archives.AllPaths)
+                    RandomTrack.NoteTrackFile(rawPath);
+
+                // 目录树里只放「可能需要解析」的条目，GetData() 才真正读盘解密
+                archives.BuildRequiredTree(regionCode);
+                Log.Debug($"[Data] 索引 {archives.ArchiveCount} 个 LPK / {archives.PathCount} 条记录，待解析 {archives.RequiredCount} 条");
                 Queue<LpkFolderInfo> packFolderInfoQueue = new Queue<LpkFolderInfo>();
-                packFolderInfoQueue.Enqueue(packFolderManager.GetRootFolder());
+                packFolderInfoQueue.Enqueue(archives.GetRootFolder());
                 while (packFolderInfoQueue.Count > 0)
                 {
                     LpkFolderInfo packFolderInfo1 = packFolderInfoQueue.Dequeue();
@@ -52,8 +57,6 @@ namespace KartRider
                         try
                         {
                             string fullName = ReplacePath(packFileInfo.FullName);
-                            // 顺便登记地图资源（track/、track_/ 两种写法），供随机池校验
-                            RandomTrack.NoteTrackFile(packFileInfo.FullName);
                             if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.xml"))
                             {
                                 Log.Debug(fullName);
@@ -556,7 +559,7 @@ namespace KartRider
                                     ClientItemRules.ApplyTransformByKart(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/transformByKart@cn.xml")
+                            if (fullName == $"item/slot/transformByKart@{regionCode}.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] td = packFileInfo.GetData();
@@ -574,7 +577,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFired2Gain(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/fired2Gain@cn.xml")
+                            if (fullName == $"item/slot/fired2Gain@{regionCode}.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
@@ -592,7 +595,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), false);
                                 }
                             }
-                            if (fullName == "item/slot/firing2Gain@cn.xml")
+                            if (fullName == $"item/slot/firing2Gain@{regionCode}.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] gd = packFileInfo.GetData();
@@ -601,7 +604,7 @@ namespace KartRider
                                     ClientItemRules.ApplyFiring2Gain(XDocument.Load(ms), true);
                                 }
                             }
-                            if (fullName == "zeta_/cn/content/itemGameRestrictionItemCount.xml")
+                            if (fullName == $"zeta_/{regionCode}/content/itemGameRestrictionItemCount.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] rd = packFileInfo.GetData();
@@ -619,7 +622,7 @@ namespace KartRider
                                     ItemRule.ApplyFromClient(2, XDocument.Load(probStream));
                                 }
                             }
-                            if (fullName == "item/slot/itemProb_team2@cn.xml")
+                            if (fullName == $"item/slot/itemProb_team2@{regionCode}.xml")
                             {
                                 Log.Debug(fullName);
                                 byte[] probData = packFileInfo.GetData();
@@ -918,7 +921,7 @@ namespace KartRider
                 }
                 // 所有 track/locale 都读完后再收尾：缺名称的用 ID 兜底，避免新增赛道被随机池静默过滤
                 RandomTrack.FinalizeTrackList();
-                return packFolderManager;
+                return archives;
             }
             catch (Exception ex)
             {
@@ -1272,6 +1275,456 @@ namespace KartRider
             childCounts.Add(childCount);
             foreach (var child in element.Elements()) CountChildren(child, level + 1, childCounts);
             return childCounts;
+        }
+
+        /// <summary>
+        /// 目录扫描深度：默认 0 = 只读取 Data 一级目录（根目录）里的 .lpk，不递归子目录。
+        /// 调大到 1、2… 才包含对应层级的子目录，可配合 ProbeLpkFolders 做「一级级测试」。
+        /// </summary>
+        public static int MaxLpkSubdirectoryLevel { get; set; } = 0;
+
+        /// <summary>
+        /// 装载时让更深子目录里的分包优先（用于自定义包覆盖官方包）；默认 false。
+        /// 只有 MaxLpkSubdirectoryLevel &gt; 0（能扫到子目录）时才有意义。
+        /// </summary>
+        public static bool PreferDeeperLpkDirectories { get; set; } = false;
+
+        /// <summary>单个 LPK 的索引层探测结果（不读取文件数据）。</summary>
+        public sealed class LpkProbeResult
+        {
+            public int Level { get; internal set; }
+            public string Subdirectory { get; internal set; } = "";
+            public string FileName { get; internal set; } = "";
+            public string FullPath { get; internal set; } = "";
+            public bool Success { get; internal set; }
+            public string DecodedAs { get; internal set; } = "";
+            public int RecordCount { get; internal set; }
+            public string Mixing { get; internal set; } = "";
+            public string Error { get; internal set; } = "";
+        }
+
+        /// <summary>
+        /// 按子目录层级分组，逐级测试每个 .lpk 的索引解码（只解记录表，不读文件数据）。
+        /// nameCandidates 可传入打包时的原文件名，用来验证「改名导致 header tag mismatch」。
+        /// </summary>
+        public static IReadOnlyList<LpkProbeResult> ProbeLpkFolders(string input, IEnumerable<string> nameCandidates = null)
+            => LpkResourceManager.Probe(input, nameCandidates);
+
+        /// <summary>从 eventMenu.xml 解析出的一条活动按钮（时限活动列表项）。</summary>
+        public sealed class TimeEventInfo
+        {
+            public int Index { get; internal set; }
+            public string ClassName { get; internal set; } = "";
+            public string LabelText { get; internal set; } = "";
+            public string BtnImg { get; internal set; } = "";
+            public string WndName { get; internal set; } = "";
+        }
+
+        /// <summary>
+        /// 排查开关：设 true 时目录树挂全部 LPK 记录（不再按 IsRequiredPath 过滤），
+        /// 用于验证「按需读取白名单漏文件」；数据仍只在 GetData() 时惰性解密。
+        /// 离线验证全量树与精简树生成的数据表完全一致，故默认保持 false。
+        /// </summary>
+        public static bool BuildFullLpkTree { get; set; } = false;
+
+        /// <summary>
+        /// 一条 LPK 记录是否属于 Dump 需要解析的内容。这里只是「候选名单」：
+        /// 名单中的条目只有在 Dump 的规则分支真正命中、调用 GetData() 时才会读盘解密。
+        /// 新增解析规则时，记得同步这里或 RequiredExactPaths。
+        /// </summary>
+        private static bool IsRequiredPath(string fullName, string regionCode, HashSet<string> exact)
+        {
+            if (string.IsNullOrEmpty(fullName)) return false;
+            if (exact.Contains(fullName)) return true;
+            if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.xml")) return true;
+            if (IsTrackDataFile(fullName, $"randomTrack@{regionCode}")
+                || IsTrackDataFile(fullName, "track@zz")
+                || IsTrackDataFile(fullName, $"trackLocale@{regionCode}")) return true;
+            return fullName.Contains("kart_")
+                && (fullName.Contains($"/param@{regionCode}.xml")
+                    || fullName.Contains($"/param@{regionCode}.kml")
+                    || fullName.Contains("/param.xml"));
+        }
+
+        /// <summary>Dump 里按全路径精确匹配的那些文件。</summary>
+        private static HashSet<string> RequiredExactPaths(string region)
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "etc_/itemTable.kml",
+                $"etc_/itemTable@{region}.xml",
+                $"etc_/emblem/emblem@{region}.xml",
+                $"etc_/riderSchool/riderSchoolLocale@{region}.xml",
+                $"zeta_/{region}/quest/QuestAutomation.xml",
+                $"zeta/{region}/quest/QuestAutomation.xml",
+                $"zeta_/{region}/quest/kartPassQuestAutomation.xml",
+                $"zeta/{region}/quest/kartPassQuestAutomation.xml",
+                $"zeta_/{region}/scenario/scenario.xml",
+                $"zeta/{region}/scenario/scenario.xml",
+                $"zeta_/{region}/shop/data/item.kml",
+                $"zeta_/{region}/engine/kart12TuningData.xml",
+                $"zeta_/{region}/enchant/enchant.xml",
+                "item/slot/transformByKart.xml",
+                $"item/slot/transformByKart@{region}.xml",
+                "item/slot/fired2Gain.xml",
+                $"item/slot/fired2Gain@{region}.xml",
+                "item/slot/firing2Gain.xml",
+                $"item/slot/firing2Gain@{region}.xml",
+                $"zeta_/{region}/content/itemGameRestrictionItemCount.xml",
+                "item/slot/itemProb_indi@zz.xml",
+                $"item/slot/itemProb_team2@{region}.xml",
+                "item/slot/itemProb_flag@zz.xml",
+                $"zeta_/{region}/content/basicAI.xml",
+                $"zeta_/{region}/content/bingoGachaSet.xml",
+                $"zeta_/{region}/content/itemDictionary.xml",
+                $"zeta_/{region}/content/timeAttack/timeAttackMission.xml",
+                $"zeta_/{region}/content/timeAttack/timeAttackCompetitive.xml",
+                $"zeta_/{region}/content/timeAttack/timeAttackCompetitiveData.xml",
+                $"zeta_/{region}/lottery/lottery.xml",
+                $"zeta_/{region}/shop/data/stock.kml",
+                $"zeta_/{region}/content/channel.xml",
+                $"zeta_/{region}/content/mix/mixTable.xml",
+            };
+        }
+
+        /// <summary>
+        /// 与 KartRider.exe.c 的 LPK 资源管理层等价的按需读取器：
+        ///   sub_1476C3430  把所有分包的记录合并成按路径查找的全局表；
+        ///   sub_1476B70D0  按名查记录；
+        ///   sub_1476E9510  CreateFileW 打开所属 .lpk → sub_1476D7410 定位到 dataBegin + (blocks &lt;&lt; 10)
+        ///                  → sub_1476D7430 限定读窗口 [start, start + csize)；
+        ///   sub_1476E97A0  sub_1476E9CF0 / sub_1476ED2B0 用 MASK 派生 32 字节 key，ChaCha20 只解前 1024 字节，
+        ///                  flags &amp; 1 时 sub_1476EEFB0 做 zlib inflate，产出明文。
+        /// LpkV4.Decode / LpkV4.Extract 就是上述密钥派生、ChaCha 与 inflate 的 C# 移植。
+        /// 这里只保存记录表，不缓存整包、不常驻文件句柄；文件数据按条目打开、解密后缓存解密结果。
+        /// </summary>
+        private sealed class LpkResourceManager : LpkFolderManager
+        {
+            private sealed class Archive
+            {
+                public string Path;
+                public LpkIndex Index;
+                public int[] Digits;
+                public byte[] Nonce;
+            }
+
+            private sealed class RecordEntry
+            {
+                public Archive Archive;
+                public LpkRecord Record;
+            }
+
+            private readonly List<Archive> _archives = new List<Archive>();
+            private readonly Dictionary<string, List<RecordEntry>> _records =
+                new Dictionary<string, List<RecordEntry>>(StringComparer.OrdinalIgnoreCase);
+            private readonly List<string> _allPaths = new List<string>();
+            private readonly Dictionary<string, byte[]> _decoded =
+                new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            private int _requiredCount;
+
+            public int ArchiveCount => _archives.Count;
+            public int PathCount => _allPaths.Count;
+            public int RequiredCount => _requiredCount;
+            public IEnumerable<string> AllPaths => _allPaths;
+
+            /// <summary>只读每个分包的头部与记录表，合并成全局路径索引；不读取任何文件数据。</summary>
+            public bool Open(string input, out string error)
+            {
+                string root;
+                string[] lpkFiles = EnumerateLpkFiles(input, out root, out error);
+                if (error != null) return false;
+                if (lpkFiles.Length == 0)
+                {
+                    error = "未找到任何 .lpk 文件";
+                    return false;
+                }
+
+                // 按文件名（大小写不敏感）顺序装载：0_*.lpk 这类自定义分包排在 DataPack* 前面，
+                // 同路径记录保留先装载的那条，自定义分包因此能覆盖官方分包。
+                // 开启 PreferDeeper 时先按子目录深度降序，组内仍按文件名排序。
+                if (PreferDeeperLpkDirectories)
+                {
+                    Array.Sort(lpkFiles, (a, b) =>
+                    {
+                        int depth = SubdirectoryLevel(root, b).CompareTo(SubdirectoryLevel(root, a));
+                        return depth != 0 ? depth : CompareByFileName(a, b);
+                    });
+                }
+                else
+                {
+                    Array.Sort(lpkFiles, CompareByFileName);
+                }
+                foreach (string lpk in lpkFiles)
+                {
+                    try
+                    {
+                        using var fs = new FileStream(lpk, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        LpkIndex index = LpkV4.Decode(fs, System.IO.Path.GetFileName(lpk));
+                        var (digits, nonce) = LpkV4.Parameters(index.Mixing);
+                        var archive = new Archive
+                        {
+                            Path = lpk,
+                            Index = index,
+                            Digits = digits,
+                            Nonce = nonce
+                        };
+                        _archives.Add(archive);
+                        foreach (LpkRecord record in index.Records)
+                        {
+                            string raw = NormalizeRecordPath(record.Path);
+                            string key = KartRhoFile.ReplacePath(raw);
+                            if (!_records.TryGetValue(key, out var entries))
+                                _records[key] = entries = new List<RecordEntry>();
+                            entries.Add(new RecordEntry { Archive = archive, Record = record });
+                            _allPaths.Add(raw);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 单个分包损坏/版本不认识时只跳过它，不能让整份 Data 加载失败
+                        Log.Debug($"[Data] 跳过无法索引的 LPK：{System.IO.Path.GetFileName(lpk)}（{ex.Message}）");
+                    }
+                }
+                if (_archives.Count == 0)
+                {
+                    error = "没有任何可用的 .lpk 分包";
+                    return false;
+                }
+                return true;
+            }
+
+            /// <summary>统一解析输入并枚举 .lpk，按 MaxLpkSubdirectoryLevel 限制子目录深度。</summary>
+            private static string[] EnumerateLpkFiles(string input, out string root, out string error)
+            {
+                error = null;
+                string[] files;
+                if (System.IO.File.Exists(input) && input.EndsWith(".lpk", StringComparison.OrdinalIgnoreCase))
+                {
+                    root = System.IO.Path.GetDirectoryName(input) ?? ".";
+                    files = new[] { input };
+                }
+                else
+                {
+                    root = System.IO.Directory.Exists(input) ? input : System.IO.Path.GetDirectoryName(input);
+                    if (string.IsNullOrEmpty(root)) root = ".";
+                    if (!System.IO.Directory.Exists(root))
+                    {
+                        error = "找不到 .lpk 文件所在目录: " + root;
+                        return Array.Empty<string>();
+                    }
+                    if (MaxLpkSubdirectoryLevel <= 0)
+                    {
+                        // 只读取 Data 一级目录：Data\Downloaded 等子目录里的分包不进索引
+                        files = System.IO.Directory.GetFiles(root, "*.lpk", SearchOption.TopDirectoryOnly);
+                    }
+                    else
+                    {
+                        files = System.IO.Directory.GetFiles(root, "*.lpk", SearchOption.AllDirectories);
+                        if (MaxLpkSubdirectoryLevel < int.MaxValue)
+                        {
+                            string baseDir = root;
+                            files = files.Where(p => SubdirectoryLevel(baseDir, p) <= MaxLpkSubdirectoryLevel).ToArray();
+                        }
+                    }
+                }
+                return files;
+            }
+
+            /// <summary>相对根目录的子目录层级：根 = 0，一级子目录 = 1，依此类推。</summary>
+            private static int SubdirectoryLevel(string root, string file)
+            {
+                string relative = System.IO.Path.GetRelativePath(root, file);
+                string directory = System.IO.Path.GetDirectoryName(relative) ?? "";
+                if (directory.Length == 0 || directory == ".") return 0;
+                return directory.Split(
+                    new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar },
+                    StringSplitOptions.RemoveEmptyEntries).Length;
+            }
+
+            /// <summary>按子目录层级分组逐级探测：只解记录表，不读取任何文件数据。</summary>
+            internal static List<LpkProbeResult> Probe(string input, IEnumerable<string> nameCandidates)
+            {
+                var results = new List<LpkProbeResult>();
+                string root;
+                string probeError;
+                string[] files = EnumerateLpkFiles(input, out root, out probeError);
+                if (probeError != null)
+                {
+                    results.Add(new LpkProbeResult { Error = probeError, FullPath = input });
+                    return results;
+                }
+                string[] candidates = (nameCandidates ?? Array.Empty<string>())
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                var ordered = files
+                    .OrderBy(p => SubdirectoryLevel(root, p))
+                    .ThenBy(p => System.IO.Path.GetDirectoryName(System.IO.Path.GetRelativePath(root, p)) ?? "",
+                        StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(p => System.IO.Path.GetFileName(p), StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                foreach (var group in ordered.GroupBy(p => new
+                {
+                    Level = SubdirectoryLevel(root, p),
+                    Dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetRelativePath(root, p)) ?? ""
+                }).OrderBy(g => g.Key.Level).ThenBy(g => g.Key.Dir, StringComparer.OrdinalIgnoreCase))
+                {
+                    var items = group.ToArray();
+                    int ok = 0;
+                    foreach (string lpk in items)
+                    {
+                        var result = new LpkProbeResult
+                        {
+                            Level = group.Key.Level,
+                            Subdirectory = group.Key.Dir,
+                            FileName = System.IO.Path.GetFileName(lpk),
+                            FullPath = lpk
+                        };
+                        var names = new List<string> { result.FileName };
+                        foreach (string candidate in candidates)
+                            if (!names.Contains(candidate, StringComparer.OrdinalIgnoreCase)) names.Add(candidate);
+                        foreach (string name in names)
+                        {
+                            try
+                            {
+                                using var fs = new FileStream(lpk, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                                LpkIndex index = LpkV4.Decode(fs, name);
+                                result.Success = true;
+                                result.DecodedAs = name;
+                                result.RecordCount = index.Records.Count;
+                                result.Mixing = index.Mixing;
+                                result.Error = "";
+                                break;
+                            }
+                            catch (Exception ex)
+                            {
+                                result.Error = ex.Message;
+                            }
+                        }
+                        if (result.Success) ok++;
+                        results.Add(result);
+                        Log.Info($"[LpkProbe]   {(result.Success ? "OK  " : "FAIL")} {result.FileName} " +
+                                 $"records={result.RecordCount} as={result.DecodedAs} {result.Error}");
+                    }
+                    Log.Info($"[LpkProbe] 层级 {group.Key.Level} [{group.Key.Dir}]：成功 {ok}/{items.Length}");
+                }
+                return results;
+            }
+
+            /// <summary>只把规则可能用到的条目挂到目录树上，DataLoader 全部是惰性解密。</summary>
+            public void BuildRequiredTree(string regionCode)
+            {
+                HashSet<string> exact = RequiredExactPaths(regionCode);
+                var keys = new List<string>();
+                foreach (string key in _records.Keys)
+                {
+                    if (KartRhoFile.BuildFullLpkTree || IsRequiredPath(key, regionCode, exact))
+                        keys.Add(key);
+                }
+                keys.Sort(StringComparer.OrdinalIgnoreCase);
+                _requiredCount = keys.Count;
+                foreach (string key in keys)
+                {
+                    string path = key;
+                    AddToTree(path, () => Read(path));
+                }
+            }
+
+            /// <summary>
+            /// sub_1476E9510 + sub_1476E97A0：按路径命中记录后打开所属 .lpk，
+            /// 定位到数据区并做密钥派生 / ChaCha 解密 / inflate，最后校验长度与 MD5。
+            /// </summary>
+            private byte[] Read(string key)
+            {
+                if (_decoded.TryGetValue(key, out byte[] cached)) return cached;
+                if (!_records.TryGetValue(key, out var entries))
+                    throw new LpkException("记录不存在: " + key);
+
+                Exception lastError = null;
+                // 先装载的分包优先；记录损坏/解密失败时，回退到其它分包里的同路径记录
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    RecordEntry entry = entries[i];
+                    try
+                    {
+                        using var fs = new FileStream(entry.Archive.Path, FileMode.Open, FileAccess.Read,
+                            FileShare.ReadWrite);
+                        byte[] data = LpkV4.Extract(fs, entry.Record, entry.Archive.Index.DataBegin,
+                            entry.Archive.Digits, entry.Archive.Nonce);
+                        _decoded[key] = data;
+                        return data;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastError = ex;
+                        Log.Debug($"[Data] {key} 在 {System.IO.Path.GetFileName(entry.Archive.Path)} 解密失败：{ex.Message}");
+                    }
+                }
+                throw new LpkException($"{key} 无法解密：{lastError?.Message}");
+            }
+
+            private void AddToTree(string key, Func<byte[]> loader)
+            {
+                string[] parts = key.Split('/');
+                LpkFolderInfo current = GetRootFolder();
+                for (int i = 0; i < parts.Length - 1; i++)
+                {
+                    if (!current.SubFolders.TryGetValue(parts[i], out var sub))
+                    {
+                        sub = new LpkFolderInfo
+                        {
+                            FolderName = parts[i],
+                            FullName = current.FullName == "" ? parts[i] : current.FullName + "/" + parts[i]
+                        };
+                        current.SubFolders[parts[i]] = sub;
+                    }
+                    current = sub;
+                }
+                string fileName = parts[parts.Length - 1];
+                if (current.Files.ContainsKey(fileName)) return;
+                current.Files[fileName] = new LpkFileInfo
+                {
+                    FileName = fileName,
+                    FullName = key,
+                    DataLoader = loader
+                };
+            }
+
+            /// <summary>依据全局索引里的记录路径推断区服代码（kr / cn / tw），默认 cn。</summary>
+            public string DetectRegionCode()
+            {
+                foreach (string path in _allPaths)
+                {
+                    string low = path.ToLowerInvariant();
+                    foreach (string region in new[] { "kr", "cn", "tw" })
+                    {
+                        if (low.StartsWith("zeta/" + region + "/")
+                            || low.StartsWith("zeta_/" + region + "/")
+                            || low.StartsWith("zeta_" + region + ".rho")
+                            || low.StartsWith("zeta_" + region + "/"))
+                        {
+                            return region;
+                        }
+                    }
+                }
+                return "cn";
+            }
+
+            private static string NormalizeRecordPath(string path)
+            {
+                if (string.IsNullOrEmpty(path)) return string.Empty;
+                return path.Replace('\\', '/').TrimStart('/');
+            }
+
+            /// <summary>按文件名排序；同名时用完整路径作次级键，保证跨子目录时顺序确定。</summary>
+            private static int CompareByFileName(string a, string b)
+            {
+                int result = string.Compare(System.IO.Path.GetFileName(a), System.IO.Path.GetFileName(b),
+                    StringComparison.OrdinalIgnoreCase);
+                return result != 0 ? result : string.CompareOrdinal(a, b);
+            }
         }
     }
 }

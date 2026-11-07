@@ -31,11 +31,20 @@ namespace KartRider.Packet
             // 以前只回 8 字节，客户端读越界 → 弹窗数据错乱/多弹一次。
             var vipConfig = ProfileService.GetProfileConfig(session.Client.Nickname);
             int premium = vipConfig?.Rider?.Premium ?? 0;
+            int points = premium switch
+            {
+                1 => 10000,
+                2 => 30000,
+                3 => 60000,
+                4 => 120000,
+                5 => 200000,
+                _ => 0,
+            };
             Log.Info($"[VIP] {session.Client.Nickname} 等级检查: {ToHex(inPacket.ToArray())} premium={premium}");
             using (OutPacket outPacket = new OutPacket("PrVipGradeCheck"))
             {
                 outPacket.WriteShort((short)premium);
-                outPacket.WriteInt(0);
+                outPacket.WriteInt(points);
                 outPacket.WriteShort((short)premium);
                 outPacket.WriteShort(0);
                 outPacket.WriteShort(0);
