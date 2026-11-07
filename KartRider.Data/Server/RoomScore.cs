@@ -55,7 +55,6 @@ namespace KartRider
             public HashSet<string> Participants = new(StringComparer.OrdinalIgnoreCase);
             public HashSet<string> Returned = new(StringComparer.OrdinalIgnoreCase);
             public DateTime PendingSince;
-            public bool PartialTimerStarted;
         }
 
         /// <summary>一局结束时的累计快照，用于 #重赛 回退。</summary>
@@ -122,7 +121,6 @@ namespace KartRider
                     Dnf = dnf
                 };
             }
-            Log.Debug($"[Score] 房间 {room.RoomId} 开始计分（发起人 {starter.Nickname}，{(individual ? "个人" : room.DuoTeam ? "双人" : "组队")}）");
             message = "现在开始计分";
             return StartResult.Started;
         }
@@ -293,7 +291,6 @@ namespace KartRider
                 }
                 st.Pending = st.Participants.Count > 0;
                 st.PendingSince = DateTime.Now;
-                st.PartialTimerStarted = false;
                 if (!st.Pending) return;
             }
 
@@ -311,25 +308,33 @@ namespace KartRider
             return rank >= 0 && rank < st.Rank.Length ? st.Rank[rank] : st.Dnf;
         }
 
-        /// <summary>玩家回到房间：全部参赛者都回来了 → 延迟 1.5 秒播报。</summary>
+        /// <summary>
+        /// 玩家回到房间：等所有"还在房间里"的参赛者都回来，再延迟 1.5 秒播报。
+        /// 已经退出/掉线的人不再等待（否则要等到 60 秒兜底，还会提前播）。
+        /// </summary>
         public static void OnRoomEntered(int roomId, string nickname)
         {
             if (string.IsNullOrEmpty(nickname)) return;
             bool fireAll = false;
-            bool startPartial = false;
             lock (Gate)
             {
                 if (!States.TryGetValue(roomId, out State st) || st == null || !st.Pending) return;
                 st.Returned.Add(nickname);
-                if (st.Participants.All(n => st.Returned.Contains(n)))
+
+                // 剔除已经不在房间里的参赛者（掉线/退房），避免永远等不到
+                var left = st.Participants
+                    .Where(n => n != null && !string.Equals(n, nickname, StringComparison.OrdinalIgnoreCase)
+                                && RoomManager.GetPlayer(roomId, n) == null)
+                    .ToList();
+                foreach (string gone in left)
+                {
+                    st.Participants.Remove(gone);
+                }
+
+                if (st.Participants.Count > 0 && st.Participants.All(n => st.Returned.Contains(n)))
                 {
                     st.Pending = false;
                     fireAll = true;
-                }
-                else if (!st.PartialTimerStarted)
-                {
-                    st.PartialTimerStarted = true;
-                    startPartial = true;
                 }
             }
 
@@ -339,14 +344,6 @@ namespace KartRider
                 {
                     await Task.Delay(1500).ConfigureAwait(false);
                     try { Post(roomId); } catch (Exception ex) { Log.Warn($"[Score] 房间 {roomId} 播报失败: {ex.Message}"); }
-                });
-            }
-            else if (startPartial)
-            {
-                Task.Run(async () =>
-                {
-                    await Task.Delay(10000).ConfigureAwait(false);
-                    ForceIfStillPending(roomId, "部分玩家未回房");
                 });
             }
         }
@@ -360,11 +357,67 @@ namespace KartRider
                 {
                     st.Pending = false;
                     fire = true;
-                    Log.Debug($"[Score] 房间 {roomId} 强制播报（{reason}，回房 {st.Returned.Count}/{st.Participants.Count}）");
                 }
             }
             if (!fire) return;
             try { Post(roomId); } catch (Exception ex) { Log.Warn($"[Score] 房间 {roomId} 超时播报失败: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// #重置计分 / #重置：把累计清零但保持计分开着，下一局从「第1局」重新开始。
+        /// 仅发起者可用；可带 1~9 个数字顺便换表（规则同 #开始计分）。
+        /// </summary>
+        public static bool Reset(GameRoom room, Player asker, IReadOnlyList<int> args, out string message)
+        {
+            if (room == null || asker == null) { message = "房间状态异常"; return false; }
+
+            int[] rank = null;
+            int dnf = 0;
+            if (args != null && args.Count > 0)
+            {
+                if (args.Count > 9) { message = "参数最多 9 个：8 个名次分 + 1 个未完成分"; return false; }
+                rank = new int[8];
+                for (int i = 0; i < 8; i++) rank[i] = i < args.Count ? args[i] : 0;
+                dnf = args.Count == 9 ? args[8] : int.MinValue;
+            }
+
+            lock (Gate)
+            {
+                if (!States.TryGetValue(room.RoomId, out State st) || st == null) { message = "当前没有计分（先 #开始计分）"; return false; }
+                if (!string.Equals(st.StarterNick, asker.Nickname, StringComparison.OrdinalIgnoreCase))
+                {
+                    message = "只有计分发起者可以重置";
+                    return false;
+                }
+                if (room.Started) { message = "比赛进行中，无法重置"; return false; }
+
+                st.Points.Clear();
+                st.TeamPoints.Clear();
+                Array.Clear(st.TeamWins, 0, st.TeamWins.Length);
+                st.Round = 0;
+                st.LastTrack = "";
+                st.LastRound = null;
+                st.Pending = false;
+                st.Returned.Clear();
+                st.Participants.Clear();
+                st.RaceParticipants.Clear();
+                st.RaceArmed = false;
+
+                if (rank != null)
+                {
+                    st.Rank = rank;
+                    if (dnf != int.MinValue) st.Dnf = dnf;
+                }
+
+                using (var pkt = new OutPacket("GrRiderEchoPacket"))
+                {
+                    pkt.WriteInt(asker.ID);
+                    pkt.WriteString("（重置）计分已清零，从第 1 局重新开始");
+                    MultyPlayer.BroadCast(room.RoomId, pkt);
+                }
+            }
+            message = "计分已重置";
+            return true;
         }
 
         /// <summary>#重赛：仅发起者可用，撤销最近一局并播报恢复后的累计。</summary>
@@ -425,7 +478,6 @@ namespace KartRider
                     MultyPlayer.BroadCast(room.RoomId, pkt);
                 }
             }
-            Log.Debug($"[Score] 房间 {room.RoomId} 重赛：{asker.Nickname}");
             message = "已重赛，回到上一局结束时的分数";
             return true;
         }
@@ -482,7 +534,6 @@ namespace KartRider
                     MultyPlayer.BroadCast(roomId, pkt);
                 }
             }
-            Log.Debug($"[Score] 房间 {roomId} 播报完成（{lines.Count} 行）");
         }
     }
 }
