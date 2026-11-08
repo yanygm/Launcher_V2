@@ -29,7 +29,7 @@ namespace KartRider.Packet
         {
             using (OutPacket outPacket = new OutPacket("PrSyncJackpotPointCS"))
             {
-                outPacket.WriteByte(0);
+                outPacket.WriteLong(0L);
                 session.Client.Send(outPacket);
             }
             return true;
