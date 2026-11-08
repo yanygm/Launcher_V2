@@ -144,6 +144,12 @@ public static class MultyPlayer
             }
         }
 
+        // 全员准备校验：没准备齐就绝不进等待流程（必须在 arm 之前判定，否则失败后无法重试）
+        if (!EnsureAllPlayersReady(room, Parent, "GameControl/Start"))
+        {
+            return;
+        }
+
         // 每个房间每局只 arm 一次：多名玩家同时点开始 / 各发一次 GameControlPacket 时，
         // 避免重复创建定时器、重复清 Ready（后者会让先到的就绪信号丢失）。
         if (Interlocked.CompareExchange(ref room.StartArmed, 1, 0) != 0)
@@ -168,10 +174,9 @@ public static class MultyPlayer
             }
         }
 
-        // 直接开局：客户端收到 GameControl 后才进入加载与 321 计时。
-        // 原先"等全员 UDP 就绪"会把 8 人房的开局时间拖到最慢玩家的加载时间（最长 30 秒）。
-        // 就绪标记仅保留作诊断，不再阻塞开局。
-        Log.Info($"[Start] 房间 {roomId} 直接开局（不等待全员就绪）");
+        // 全员「准备」已在校验里通过；这里再等各客户端"加载就绪"（ReadinessCollect），
+        // 由 Set_startTrigger 统一调度：下限 StartDelayMs + 全员就绪即走 + 上限 StartReadyTimeoutMs。
+        Log.Info($"[Start] 房间 {roomId} 全员已准备，进入开局等待（下限 {ProfileService.SettingConfig.StartDelayMs}ms）");
         Set_startTrigger(Parent, room);
     }
 
@@ -195,6 +200,87 @@ public static class MultyPlayer
             // 玩家就绪包并发更新字典导致遍历异常时，返回 false 让下一轮重试
             Log.Info($"就绪状态检查异常: {ex.Message}");
             return false;
+        }
+    }
+
+    /// <summary>房主未等全员准备就开局时回给客户端的拒绝码（沿用已有的“拒绝开始”码）。</summary>
+    private const int DenyStartNotAllReady = 18;
+
+    /// <summary>
+    /// 开局校验：房间里除房主外的真人必须都已准备（PlayerType = 3）。
+    /// 观战者（ObIDs）、AI 不参与；单人房直接放行。
+    /// 只有明确上报「未准备」(5) 的玩家才会拦截，未知状态不阻塞，避免个别客户端没上报状态时把整房卡死。
+    /// 返回 false 时已经给请求方回了拒绝包，调用方必须直接 return，不要再 arm 开局。
+    /// </summary>
+    internal static bool EnsureAllPlayersReady(GameRoom room, SessionGroup Parent, string path)
+    {
+        if (room == null)
+        {
+            return false;
+        }
+
+        string starter = Parent?.Client?.Nickname;
+        List<string> notReady = new List<string>();
+        foreach (RoomMember member in room._slots)
+        {
+            if (member is not Player p || string.IsNullOrEmpty(p.Nickname))
+            {
+                continue;
+            }
+            // 房主 / 发起开局请求的人自己不需要准备
+            if (p.ID == room.RoomMaster || p.Nickname == starter)
+            {
+                continue;
+            }
+            // 连接已断的槽位不阻塞开局（由一致性巡检/心跳负责清理，避免整房被幽灵卡死）
+            if (p.Session?.Client == null || p.Session.Client.mDisconnected != 0)
+            {
+                continue;
+            }
+            if (p.PlayerType == GameRoom.PlayerTypeNotReady)
+            {
+                notReady.Add(p.Nickname);
+            }
+        }
+
+        if (notReady.Count == 0)
+        {
+            return true;
+        }
+
+        Log.Info($"[Start] 房间 {room.RoomId} 拒绝开局（{path}）：仍有玩家未准备 {string.Join(", ", notReady)}");
+        // 先把最新准备状态同步给所有人（房主能看到谁还没准备），再回拒绝包
+        GrSlotStatePacket(room.RoomId);
+        if (Parent?.Client != null)
+        {
+            using (OutPacket deny = new OutPacket("GrReplyStartPacket"))
+            {
+                deny.WriteInt(DenyStartNotAllReady);
+                Parent.Client.Send(deny);
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 一局结束后重置准备状态：房主保持「房主」，其他真人一律回到「未准备」。
+    /// 旧实现把所有 PlayerType 都写成 2（房主），客户端会认为全员已准备，
+    /// 于是房主不等人准备就能直接再开一局。
+    /// </summary>
+    internal static void ResetReadyStates(GameRoom room)
+    {
+        if (room == null)
+        {
+            return;
+        }
+        foreach (RoomMember member in room._IDs)
+        {
+            if (member is Player p)
+            {
+                p.PlayerType = p.ID == room.RoomMaster
+                    ? GameRoom.PlayerTypeRoomMaster
+                    : GameRoom.PlayerTypeNotReady;
+            }
         }
     }
 
@@ -335,6 +421,7 @@ public static class MultyPlayer
             if (next != null)
             {
                 room.RoomMaster = next.ID;
+                next.PlayerType = GameRoom.PlayerTypeRoomMaster;
                 Log.Info($"[Start] 房主已转移给 {next.Nickname}");
             }
         }
@@ -565,13 +652,15 @@ public static class MultyPlayer
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p1)
         {
             room.RoomMaster = firstID;
-            p1.PlayerType = 2;
+            p1.PlayerType = GameRoom.PlayerTypeRoomMaster;
         }
         else if (room.GetOBCount() < 1 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p2)
         {
             room.RoomMaster = firstID;
-            p2.PlayerType = 2;
+            p2.PlayerType = GameRoom.PlayerTypeRoomMaster;
         }
+        // 房主可能刚被换人：重新刷一遍准备状态，避免"旧房主"仍显示房主、新房主仍是未准备
+        ResetReadyStates(room);
         Log.Info($"EndTicks = {room.EndTicks + 6000}");
     }
 
@@ -635,11 +724,13 @@ public static class MultyPlayer
 
     static void InitRoom(GameRoom room)
     {
+        // 一局结束后：房主保持房主，其他真人回到「未准备」（旧实现一律设成 2=房主，
+        // 客户端会显示成全员已准备，房主可以直接再开局）。
+        ResetReadyStates(room);
         foreach (RoomMember member in room._IDs)
         {
             if (member is Player p)
             {
-                p.PlayerType = 2;
                 p.LastPacketReceived = 0;
             }
         }
@@ -862,6 +953,12 @@ public static class MultyPlayer
             return;
         }
 
+        // 全员准备校验：还有队友没点准备时不允许开局（单跑/AI 不受影响）
+        if (!EnsureAllPlayersReady(room, Parent, "GrRequestStart"))
+        {
+            return;
+        }
+
         // 原子开局门闩：两人同时点开始、或客户端重发开始包时，只有第一个请求能真正开局。
         // 原实现没有这层保护，两条路径会各自 GetRandomTrack 并覆盖 room.trackTemp，
         // 导致不同客户端进不同赛道。
@@ -1053,9 +1150,11 @@ public static class MultyPlayer
         }
 
         int playerCount = room.GetPlayerCount();
+        // 进房默认「未准备」（5）：客户端会自动上报真实状态（开了自动准备会立刻发 3）。
+        // 旧实现按 2（房主）入座，客户端会当成已准备，房主不等人准备就能开局。
         byte slot = room.DuoTeam
-            ? RoomManager.AddDuoPlayer(roomId, Parent.Client.Nickname, 2, Parent)
-            : RoomManager.AddPlayer(roomId, Parent.Client.Nickname, 0, 2, Parent);
+            ? RoomManager.AddDuoPlayer(roomId, Parent.Client.Nickname, GameRoom.PlayerTypeNotReady, Parent)
+            : RoomManager.AddPlayer(roomId, Parent.Client.Nickname, 0, GameRoom.PlayerTypeNotReady, Parent);
         Player player = RoomManager.GetPlayer(roomId, Parent.Client.Nickname);
         if (slot == 255 || player == null)
         {
@@ -1076,6 +1175,10 @@ public static class MultyPlayer
             if (pmapDuo == 718 || (playerCount < 1 && room.RoomMaster < 8))
             {
                 room.RoomMaster = player.ID;
+                if (player.PlayerType != 4)
+                {
+                    player.PlayerType = GameRoom.PlayerTypeRoomMaster;
+                }
             }
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {
@@ -1094,6 +1197,10 @@ public static class MultyPlayer
             if (pmap == 718 || (playerCount < 1 && room.RoomMaster < 8))
             {
                 room.RoomMaster = player.ID;
+                if (player.PlayerType != 4)
+                {
+                    player.PlayerType = GameRoom.PlayerTypeRoomMaster;
+                }
             }
             if (GameModes.IsChallenger(room.GameType))
             {
@@ -1158,6 +1265,10 @@ public static class MultyPlayer
             if (pmap == 718 || (playerCount < 1 && room.RoomMaster < 8))
             {
                 room.RoomMaster = player.ID;
+                if (player.PlayerType != 4)
+                {
+                    player.PlayerType = GameRoom.PlayerTypeRoomMaster;
+                }
             }
             using (OutPacket outPacket = new OutPacket("ChJoinRoomReplyPacket"))
             {

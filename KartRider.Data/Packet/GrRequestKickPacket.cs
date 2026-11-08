@@ -39,26 +39,53 @@ namespace KartRider.Packet
                 return true;
             }
             int ID = iPacket.ReadInt();
-            if (RoomManager.TryGetIdDetail(roomId, ID) is Player p)
+
+            // 竞技位在 _IDs 里（0~7），观战位在 ObIDs 里（固定 8~15）：
+            // 只查 _IDs 时踢观战者会悄悄失败，被踢的人就一直残留在房间里。
+            Player p = RoomManager.TryGetIdDetail(roomId, ID) as Player;
+            var room = RoomManager.GetRoom(roomId);
+            if (p == null && room != null)
             {
-                var player = RoomManager.RemovePlayer(roomId, p.SlotId, p.Nickname);
-                using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
+                foreach (RoomMember member in room.ObIDs)
                 {
-                    outPacket.WriteBool(player);
-                    p.Session.Client.Send(outPacket);
+                    if (member is Player ob && ob.ID == ID)
+                    {
+                        p = ob;
+                        break;
+                    }
                 }
-                if (player)
+            }
+
+            if (p != null)
+            {
+                // 按昵称移除（内部自动判别竞技位/观战位），避免 slotId 过期删不到人
+                var player = RoomManager.RemovePlayerByNickname(roomId, p.Nickname);
+                try
                 {
-                    using (OutPacket outPacket = new OutPacket("GrKickBroadcastPacket"))
+                    if (p.Session?.Client != null)
                     {
-                        outPacket.WriteString(p.Nickname);
-                        BroadCast(roomId, outPacket);
+                        using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
+                        {
+                            outPacket.WriteBool(player);
+                            p.Session.Client.Send(outPacket);
+                        }
                     }
-                    using (OutPacket outPacket = new OutPacket("GrReplyKickPacket"))
-                    {
-                        outPacket.WriteByte(0);
-                        Parent.Client.Send(outPacket);
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Info($"[Kick] 通知被踢玩家 {p.Nickname} 失败：{ex.Message}");
+                }
+
+                // 无论服务端是否找到了槽位，都要给房主回包并广播，否则双方都会"卡住"
+                using (OutPacket outPacket = new OutPacket("GrKickBroadcastPacket"))
+                {
+                    outPacket.WriteString(p.Nickname);
+                    BroadCast(roomId, outPacket);
+                }
+                using (OutPacket outPacket = new OutPacket("GrReplyKickPacket"))
+                {
+                    outPacket.WriteByte(0);
+                    Parent.Client.Send(outPacket);
                 }
             }
             return true;

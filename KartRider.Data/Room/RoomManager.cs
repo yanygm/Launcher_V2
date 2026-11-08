@@ -308,32 +308,9 @@ public static class RoomManager
         if (!_rooms.TryGetValue(roomId, out var room))
             return -1;
 
-        uint pmap = Profile.ProfileService.GetProfileConfig(nickname).Rider.pmap;
-        if (pmap == 718 || pmap == 590)
-        {
-            foreach (var member in room.ObIDs)
-            {
-                // 匹配玩家类型且昵称一致
-                if (member is Player player && player.Nickname == nickname)
-                {
-                    return player.SlotId; // 返回玩家所在的格子ID
-                }
-            }
-            return -1;
-        }
-        else
-        {
-            // 2. 遍历房间所有格子，查找目标玩家
-            foreach (var member in room._slots)
-            {
-                // 匹配玩家类型且昵称一致
-                if (member is Player player && player.Nickname == nickname)
-                {
-                    return player.SlotId; // 返回玩家所在的格子ID
-                }
-            }
-            return -1;
-        }
+        // 2. 竞技位与观战位都找（不再用 pmap 分流：档案异常时 Rider 为空会直接抛异常，
+        //    改名/换身份后也会查不到人，导致离开房间失败、玩家残留在房间里）
+        return room.TryFindPlayer(nickname, out byte slotId, out _) ? slotId : -1;
     }
 
     public static int TryGetRoomId(string nickname)
@@ -359,6 +336,9 @@ public static class RoomManager
         {
             GameRoom room = pair.Value;
             if (room == null) continue;
+
+            // 竞技位 + 观战位都要扫：观战玩家只存在于 ObIDs，
+            // 只扫 _slots 会让观战者掉线后永久留在房间里（残留玩家）。
             for (byte s = 0; s < room._slots.Length; s++)
             {
                 if (room._slots[s] is Player p && ReferenceEquals(p.Session, session))
@@ -367,6 +347,44 @@ public static class RoomManager
                     removed |= RemovePlayer(room.RoomId, s, p.Nickname);
                 }
             }
+            for (byte s = 0; s < room.ObIDs.Length; s++)
+            {
+                if (room.ObIDs[s] is Player p && ReferenceEquals(p.Session, session))
+                {
+                    Log.Debug($"[Cleanup] 房间 {room.RoomId} 清理会话占用的观战位 {s}（{p.Nickname}）");
+                    removed |= RemovePlayer(room.RoomId, s, p.Nickname);
+                }
+            }
+        }
+        return removed;
+    }
+
+    /// <summary>
+    /// 按昵称把玩家从指定房间移除（竞技位/观战位自动判别）。
+    /// 找不到槽位时也清掉「昵称 → 房间」映射，避免玩家在服务端"还在房间里"而永远残留。
+    /// </summary>
+    public static bool RemovePlayerByNickname(int roomId, string nickname)
+    {
+        if (string.IsNullOrEmpty(nickname))
+            return false;
+
+        var room = GetRoom(roomId);
+        bool removed = room != null && room.RemoveMemberByNickname(nickname);
+        if (room != null)
+        {
+            room.CleanupRankings();
+        }
+
+        // 无论是否删到槽位，映射都要清掉：残留映射会让后续建房/进房全部失败，
+        // 客户端表现为"卡在房间里出不去"。只清指向本房间的映射，别误伤其它房间。
+        if (!_playerRoomMap.TryGetValue(nickname, out int mapped) || mapped == roomId)
+        {
+            _playerRoomMap.TryRemove(nickname, out _);
+        }
+
+        if (room != null && room.GetPlayerCount() == 0 && room.GetOBCount() == 0)
+        {
+            RemoveRoom(room);
         }
         return removed;
     }
@@ -393,6 +411,12 @@ public static class RoomManager
             {
                 RemoveRoom(room);
             }
+        }
+        else if (!string.IsNullOrEmpty(nickname) && !room.TryFindPlayer(nickname, out _, out _))
+        {
+            // 槽位本来就不在了（例如请求里带的 slotId 已过期）：映射是幽灵，清掉，
+            // 否则这名玩家会被服务端一直算在房间里（无法正常建房/进房）。
+            _playerRoomMap.TryRemove(nickname, out _);
         }
         return removed;
     }

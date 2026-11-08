@@ -56,43 +56,9 @@ namespace KartRider
                     GameRoom room = pair.Value;
                     if (room == null) continue;
 
-                    for (byte s = 0; s < room._slots.Length; s++)
-                    {
-                        if (room._slots[s] is not Player p) continue;
-                        if (string.IsNullOrEmpty(p.Nickname)) continue;
-
-                        string reason = null;
-                        SessionGroup session = p.Session;
-                        if (session?.Client == null)
-                        {
-                            reason = "会话为空";
-                        }
-                        else if (session.Client.mDisconnected != 0)
-                        {
-                            reason = "会话已断开";
-                        }
-                        else
-                        {
-                            SessionGroup indexed = ClientManager.GetParent(p.Nickname);
-                            if (indexed == null || !ReferenceEquals(indexed, session))
-                            {
-                                reason = "昵称索引已被新会话接管";
-                            }
-                        }
-
-                        if (reason == null) continue;
-
-                        Log.Debug($"[Sweep] 房间 {room.RoomId} 槽位 {s} 清理幽灵玩家 {p.Nickname}（{reason}）");
-                        try
-                        {
-                            RoomManager.RemovePlayer(room.RoomId, s, p.Nickname);
-                            removed++;
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warn($"[Sweep] 清理 {p.Nickname} 失败：{ex.Message}");
-                        }
-                    }
+                    // 竞技位与观战位都要巡检：观战者只在 ObIDs 里，漏掉会让观战者永久残留。
+                    removed += SweepSlots(room, room._slots, "槽位");
+                    removed += SweepSlots(room, room.ObIDs, "观战位");
 
                     // 房间没人了（且没有观战）→ 销毁
                     try
@@ -118,6 +84,52 @@ namespace KartRider
             {
                 Log.Warn($"[Sweep] 巡检异常：{ex.Message}");
             }
+        }
+
+        /// <summary>巡检一组槽位（竞技位 _slots / 观战位 ObIDs），清理会话已死的幽灵玩家。</summary>
+        private static int SweepSlots(GameRoom room, RoomMember[] slots, string tag)
+        {
+            int removed = 0;
+            for (byte s = 0; s < slots.Length; s++)
+            {
+                if (slots[s] is not Player p) continue;
+                if (string.IsNullOrEmpty(p.Nickname)) continue;
+
+                string reason = null;
+                SessionGroup session = p.Session;
+                if (session?.Client == null)
+                {
+                    reason = "会话为空";
+                }
+                else if (session.Client.mDisconnected != 0)
+                {
+                    reason = "会话已断开";
+                }
+                else
+                {
+                    SessionGroup indexed = ClientManager.GetParent(p.Nickname);
+                    if (indexed == null || !ReferenceEquals(indexed, session))
+                    {
+                        reason = "昵称索引已被新会话接管";
+                    }
+                }
+
+                if (reason == null) continue;
+
+                Log.Debug($"[Sweep] 房间 {room.RoomId} {tag} {s} 清理幽灵玩家 {p.Nickname}（{reason}）");
+                try
+                {
+                    if (RoomManager.RemovePlayerByNickname(room.RoomId, p.Nickname))
+                    {
+                        removed++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"[Sweep] 清理 {p.Nickname} 失败：{ex.Message}");
+                }
+            }
+            return removed;
         }
     }
 }

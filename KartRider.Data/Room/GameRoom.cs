@@ -641,94 +641,151 @@ public class GameRoom
         }
     }
 
+    /// <summary>槽位状态（下发给客户端的 PlayerType）：2=房主，3=已准备，4=观战，5=未准备，6=掉线未离开，7=AI。</summary>
+    public const int PlayerTypeRoomMaster = 2;
+    public const int PlayerTypeReady = 3;
+    public const int PlayerTypeNotReady = 5;
+
+    /// <summary>
+    /// 按昵称在本房间定位真人（竞技位 0~7 与观战位 0~7 都找，不依赖 pmap）。
+    ///
+    /// 旧实现按 pmap 分流查槽位：档案反序列化不完整（Rider 为空）、改名卡改名、
+    /// 换观战身份时都会查不到人 → 删除失败 → 玩家永远留在房间里（残留玩家）。
+    /// </summary>
+    public bool TryFindPlayer(string nickname, out byte slotId, out bool observer)
+    {
+        slotId = 255;
+        observer = false;
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return false;
+        }
+        for (byte i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i] is Player p && p.Nickname == nickname)
+            {
+                slotId = i;
+                return true;
+            }
+        }
+        for (byte i = 0; i < ObIDs.Length; i++)
+        {
+            if (ObIDs[i] is Player p && p.Nickname == nickname)
+            {
+                slotId = i;
+                observer = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>把 _IDs 里指向该成员的引用清空（ID 对不上时按引用再找一次，避免留下幽灵 ID）。</summary>
+    private void ClearIdReference(RoomMember member)
+    {
+        for (int i = 0; i < _IDs.Length; i++)
+        {
+            if (ReferenceEquals(_IDs[i], member))
+            {
+                _IDs[i] = null;
+                return;
+            }
+        }
+    }
+
     // 移除指定格子的成员（如果是玩家，需检查是否触发删除）
     public bool RemoveMember(byte slotId, string nickname)
     {
         if (!string.IsNullOrEmpty(nickname))
         {
-            uint pmap = ProfileService.GetProfileConfig(nickname).Rider.pmap;
-            if (pmap == 718 || pmap == 590)
+            // 优先按昵称定位真实槽位：调用方给进来的 slotId 可能已经过期（换位/换队/档案异常），
+            // 直接按 slotId 删会删不到人，玩家就残留在房间里。
+            if (TryFindPlayer(nickname, out byte foundSlot, out bool observer))
             {
-                if (ObIDs[slotId] is Player p1)
-                {
-                    if (p1.ID == RoomMaster)
-                    {
-                        // 房主离开：将房主转移给其他仍在房间的玩家（跳过离开者自身）
-                        bool transferred = false;
-                        foreach (RoomMember member in _IDs)
-                        {
-                            if (member is Player p2 && p2.ID != p1.ID)
-                            {
-                                RoomMaster = p2.ID;
-                                p2.PlayerType = 2;
-                                transferred = true;
-                                break;
-                            }
-                        }
-                        if (!transferred)
-                        {
-                            // 房间内已无其他玩家，房间随后会被删除
-                            RoomMaster = p1.ID;
-                        }
-                    }
-                    ObIDs[slotId] = null;
-                    RoomManager.RemoveRoom(this);
-                    return true;
-                }
-                return false;
+                return RemovePlayerAt(foundSlot, observer);
             }
-            else
-            {
-                RoomMember removedMember = _slots[slotId];
-                if (removedMember == null)
-                    return false; // 格子已为空
+            return false;
+        }
 
-                if (removedMember is Player player)
+        // nickname为空时处理AI移除
+        RoomMember removedMember = _slots[slotId];
+        if (removedMember == null)
+            return false;
+
+        if (removedMember is Ai ai)
+        {
+            ClearIdReference(ai);
+            _slots[slotId] = null;
+            MultyPlayer.GrSlotDataPacket(RoomId);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>按昵称移除真人（竞技位/观战位自动判别），用于离开房间、踢人、掉线清理。</summary>
+    public bool RemoveMemberByNickname(string nickname)
+    {
+        return TryFindPlayer(nickname, out byte slotId, out bool observer)
+               && RemovePlayerAt(slotId, observer);
+    }
+
+    /// <summary>删除真人占用的槽位（observer=true 时删观战位），必要时转移房主。</summary>
+    private bool RemovePlayerAt(byte slotId, bool observer)
+    {
+        RoomMember[] arr = observer ? ObIDs : _slots;
+        if (arr[slotId] is not Player player)
+        {
+            return false;
+        }
+
+        if (player.ID == RoomMaster)
+        {
+            // 房主离开：将房主转移给其他仍在房间的玩家（跳过离开者自身，
+            // 否则 _IDs 中第一个 Player 就是离开的房主自己，导致房间失去房主）
+            bool transferred = false;
+            foreach (RoomMember member in _IDs)
+            {
+                if (member is Player p && !ReferenceEquals(p, player))
                 {
-                    if (player.ID == RoomMaster)
-                    {
-                        // 房主离开：将房主转移给其他仍在房间的玩家（跳过离开者自身，
-                        // 否则 _IDs 中第一个 Player 就是离开的房主自己，导致房间失去房主）
-                        bool transferred = false;
-                        foreach (RoomMember member in _IDs)
-                        {
-                            if (member is Player p && p.ID != player.ID)
-                            {
-                                RoomMaster = p.ID;
-                                p.PlayerType = 2;
-                                transferred = true;
-                                break;
-                            }
-                        }
-                        if (!transferred)
-                        {
-                            // 房间内已无其他玩家，房间随后会被删除
-                            RoomMaster = player.ID;
-                        }
-                    }
-                    _IDs[player.ID] = null;
-                    _slots[slotId] = null;
-                    RoomManager.RemoveRoom(this);
-                    return true;
+                    RoomMaster = p.ID;
+                    p.PlayerType = PlayerTypeRoomMaster;
+                    transferred = true;
+                    break;
                 }
             }
+            if (!transferred)
+            {
+                // 只有观战者时，房主转给观战者，避免房间彻底没有房主
+                foreach (RoomMember member in ObIDs)
+                {
+                    if (member is Player p && !ReferenceEquals(p, player))
+                    {
+                        RoomMaster = p.ID;
+                        p.PlayerType = PlayerTypeRoomMaster;
+                        transferred = true;
+                        break;
+                    }
+                }
+            }
+            if (!transferred)
+            {
+                // 房间内已无其他玩家，房间随后会被删除
+                RoomMaster = player.ID;
+            }
+        }
+
+        if (observer)
+        {
+            ObIDs[slotId] = null;
         }
         else
         {
-            // nickname为空时处理AI移除
-            RoomMember removedMember = _slots[slotId];
-            if (removedMember == null)
-                return false;
-
-            if (removedMember is Ai ai)
-            {
-                _IDs[ai.ID] = null;
-                _slots[slotId] = null;
-                MultyPlayer.GrSlotDataPacket(RoomId);
-                return true;
-            }
+            ClearIdReference(player);
+            _slots[slotId] = null;
         }
-        return false;
+
+        RoomManager.RemoveRoom(this);
+        return true;
     }
 
     // 其他方法：设置AI、获取格子信息等（沿用之前的逻辑，略）
