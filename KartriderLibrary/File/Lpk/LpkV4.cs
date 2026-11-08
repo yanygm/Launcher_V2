@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -92,6 +93,7 @@ namespace KartLibrary.File.Lpk
             private const int ROUNDS = 10; // 20 轮 = 10 次双轮
             private readonly uint[] _state = new uint[16];
             private readonly uint[] _working = new uint[16];
+            private readonly byte[] _stream = new byte[64]; // 密钥流缓冲（复用：记录表解码时每 64 字节一块）
             private ulong _counter;
 
             public ChaCha20(byte[] key, ulong counter, byte[] nonce8)
@@ -108,9 +110,12 @@ namespace KartLibrary.File.Lpk
                 _state[15] = BitConverter.ToUInt32(nonce8, 4);
             }
 
+            /// <summary>重置计数器（复用同一个实例解密多个块时使用）。</summary>
+            public void SetCounter(ulong counter) => _counter = counter;
+
             public void Process(byte[] input, int inOff, int len, byte[] output, int outOff)
             {
-                byte[] ks = new byte[64];
+                byte[] ks = _stream;
                 int pos = 0;
                 while (pos < len)
                 {
@@ -167,21 +172,25 @@ namespace KartLibrary.File.Lpk
 
             private readonly Stream _stream;
             private readonly byte[] _key;
+            private readonly ChaCha20 _chacha;
+            private readonly byte[] _scratch4 = new byte[4];
             private long _rawPosition;
             private long _position;
-            private byte[] _buffer = Array.Empty<byte>();
-            private int _bufferOffset;
             private ulong _counter;
 
             private byte[] _window = Array.Empty<byte>();
             private long _windowStart;
             private int _windowLength;
+            private int _blockStart;     // 已解密块在 _window 中的起点
+            private int _blockEnd;       // 已解密块在 _window 中的终点（不含）
+            private byte[] _stringBuffer = new byte[512];
 
             public NativeReadStream(Stream stream, byte[] key, long start)
             {
                 _stream = stream;
                 _key = key;
                 _rawPosition = start;
+                _chacha = new ChaCha20(key, 0, new byte[8]);
             }
 
             public long RawPosition => _rawPosition;
@@ -191,44 +200,65 @@ namespace KartLibrary.File.Lpk
             {
                 if (!(0 < size && size <= (1 << 20)))
                     throw new LpkException("bad read size: " + size);
-                int requested = size;
                 byte[] output = new byte[size];
-                int written = 0;
-                while (size > 0)
-                {
-                    if (_bufferOffset >= _buffer.Length)
-                    {
-                        int length = ((size + 63) / 64) * 64;
-                        byte[] raw = TakeRaw(length);
-                        byte[] dec = new byte[length];
-                        new ChaCha20(_key, _counter, new byte[8]).Process(raw, 0, length, dec, 0);
-                        _buffer = dec;
-                        _bufferOffset = 0;
-                        _counter += (ulong)(length / 64);
-                        _rawPosition += length;
-                    }
-                    int take = Math.Min(size, _buffer.Length - _bufferOffset);
-                    Buffer.BlockCopy(_buffer, _bufferOffset, output, written, take);
-                    _bufferOffset += take;
-                    written += take;
-                    size -= take;
-                    // 缓冲被精确排空时计数器归零（与原生读取行为一致）
-                    if (_bufferOffset == _buffer.Length && size == 0)
-                        _counter = 0;
-                }
-                _position += requested;
+                ReadInto(output, 0, size);
                 return output;
             }
 
-            private byte[] TakeRaw(int length)
+            /// <summary>读进调用方缓冲区：热路径（记录表的各字段）不再每次分配数组。</summary>
+            public void ReadInto(byte[] dst, int offset, int size)
             {
-                if (_windowLength == 0
+                if (!(0 < size && size <= (1 << 20)))
+                    throw new LpkException("bad read size: " + size);
+                int requested = size;
+                while (size > 0)
+                {
+                    if (_blockStart >= _blockEnd)
+                        LoadBlock(size);
+                    int take = Math.Min(size, _blockEnd - _blockStart);
+                    Buffer.BlockCopy(_window, _blockStart, dst, offset, take);
+                    _blockStart += take;
+                    offset += take;
+                    size -= take;
+                }
+                _position += requested;
+                // 缓冲被精确排空时计数器归零（与原生读取行为一致）
+                if (_blockStart >= _blockEnd)
+                    _counter = 0;
+            }
+
+            /// <summary>读记录表里的 UTF-16LE 路径，复用内部缓冲。</summary>
+            public string ReadUnicodeString(int charCount)
+            {
+                if (charCount <= 0) return string.Empty;
+                int byteCount = charCount * 2;
+                if (_stringBuffer.Length < byteCount) _stringBuffer = new byte[byteCount];
+                ReadInto(_stringBuffer, 0, byteCount);
+                return Encoding.Unicode.GetString(_stringBuffer, 0, byteCount);
+            }
+
+            public uint U32()
+            {
+                ReadInto(_scratch4, 0, 4);
+                return BinaryPrimitives.ReadUInt32LittleEndian(_scratch4);
+            }
+
+            /// <summary>装载一个 ceil(size/64)*64 的加密块，并在预读窗口内原地解密（省掉一次拷贝）。</summary>
+            private void LoadBlock(int minSize)
+            {
+                int length = ((minSize + 63) / 64) * 64;
+                if (_windowLength < length
                     || _rawPosition < _windowStart
                     || _rawPosition + length > _windowStart + _windowLength)
                     FillWindow(length);
-                byte[] raw = new byte[length];
-                Buffer.BlockCopy(_window, (int)(_rawPosition - _windowStart), raw, 0, length);
-                return raw;
+
+                int offset = (int)(_rawPosition - _windowStart);
+                _chacha.SetCounter(_counter);
+                _chacha.Process(_window, offset, length, _window, offset);
+                _blockStart = offset;
+                _blockEnd = offset + length;
+                _counter += (ulong)(length / 64);
+                _rawPosition += length;
             }
 
             private void FillWindow(int minLength)
@@ -237,18 +267,12 @@ namespace KartLibrary.File.Lpk
                 if (available < minLength)
                     throw new LpkException("unexpected EOF");
                 int want = (int)Math.Min(Math.Max(minLength, WindowSize), available);
-                byte[] window = new byte[want];
+                if (_window.Length < want)
+                    _window = new byte[want];   // 窗口缓冲复用，只有需要更大窗口时才重新分配
                 _stream.Seek(_rawPosition, SeekOrigin.Begin);
-                ReadExact(_stream, window, want);
-                _window = window;
+                ReadExact(_stream, _window, want);
                 _windowStart = _rawPosition;
                 _windowLength = want;
-            }
-
-            public uint U32()
-            {
-                byte[] b = Read(4);
-                return BitConverter.ToUInt32(b, 0);
             }
         }
 
@@ -320,14 +344,13 @@ namespace KartLibrary.File.Lpk
             }
 
             var table = new NativeReadStream(stream, key, start);
-            var records = new List<LpkRecord>();
+            var records = new List<LpkRecord>((int)count);
             for (int n = 0; n < count; n++)
             {
                 uint plen = table.U32();
                 if (!(plen > 0 && plen <= 4096))
                     throw new LpkException("Invalid LPK data (plen=" + plen + ")");
-                byte[] pathBytes = table.Read((int)plen * 2);
-                string path = Encoding.Unicode.GetString(pathBytes);
+                string path = table.ReadUnicodeString((int)plen);
 
                 uint csum = table.U32();
                 uint flags = table.U32();
@@ -395,6 +418,8 @@ namespace KartLibrary.File.Lpk
         {
             if (!(record.Flags == 6 || record.Flags == 7))
                 throw new LpkException("Invalid LPK data (flags)");
+            if (record.Dsize > int.MaxValue)
+                throw new LpkException("declared size too large for " + record.Path);
 
             long start = dataBegin + (long)record.Blocks * 1024;
             if (start + record.Csize > stream.Length)
@@ -404,29 +429,27 @@ namespace KartLibrary.File.Lpk
             byte[] stored = new byte[record.Csize];
             ReadExact(stream, stored, (int)record.Csize);
 
+            // 密文只覆盖前 1024 字节：直接在读入的缓冲上原地解密，省掉一份等长的 clear 拷贝
             int length = Math.Min(1024, stored.Length);
             ulong counter = BitConverter.ToUInt64(nonce16, 0);
             byte[] nonce64 = new byte[8];
             Array.Copy(nonce16, 8, nonce64, 0, 8);
 
             byte[] key = ComputeExtractKey(record, digits);
-            byte[] clear = new byte[stored.Length];
-            var chacha = new ChaCha20(key, counter, nonce64);
-            chacha.Process(stored, 0, length, clear, 0);
-            if (length < stored.Length)
-                Array.Copy(stored, length, clear, length, stored.Length - length);
+            new ChaCha20(key, counter, nonce64).Process(stored, 0, length, stored, 0);
 
             byte[] output;
             if ((record.Flags & 1) != 0)
             {
-                output = ZlibInflate(clear, out int consumed, out bool eof);
+                // 按声明大小预分配输出缓冲后直接 inflate，省掉 MemoryStream 增长与 ToArray 二次拷贝
+                output = ZlibInflate(stored, (int)record.Dsize, out int consumed, out bool eof);
                 if (!eof)
                     throw new LpkException("incomplete zlib for " + record.Path);
-                int trailing = clear.Length - consumed;
+                int trailing = stored.Length - consumed;
                 if (trailing > 0)
                 {
-                    int used = clear.Length - trailing;
-                    if (!(clear.Length <= 1024 && ((used + 63) / 64 * 64) == clear.Length))
+                    int used = stored.Length - trailing;
+                    if (!(stored.Length <= 1024 && ((used + 63) / 64 * 64) == stored.Length))
                         throw new LpkException("unexpected zlib trailing bytes for " + record.Path);
                 }
             }
@@ -435,15 +458,22 @@ namespace KartLibrary.File.Lpk
                 int expected = (record.Dsize <= 1024)
                     ? ((int)record.Dsize + 63) / 64 * 64
                     : (int)record.Dsize;
-                if (clear.Length != expected)
+                if (stored.Length != expected)
                     throw new LpkException("unexpected uncompressed storage length for " + record.Path);
-                output = new byte[record.Dsize];
-                Array.Copy(clear, 0, output, 0, (int)record.Dsize);
+                if (stored.Length == record.Dsize)
+                {
+                    output = stored; // 存储长度与声明大小一致时直接复用缓冲，省一次全量拷贝
+                }
+                else
+                {
+                    output = new byte[record.Dsize];
+                    Array.Copy(stored, 0, output, 0, (int)record.Dsize);
+                }
             }
 
             if (output.Length != record.Dsize)
                 throw new LpkException("decoded size mismatch for " + record.Path);
-            CheckMd5(output, record.Md5);
+            CheckMd5(output, record);
             return output;
         }
 
@@ -1274,26 +1304,32 @@ namespace KartLibrary.File.Lpk
             }
         }
 
-        private static byte[] ZlibInflate(byte[] data, out int consumed, out bool eof)
+        /// <summary>
+        /// zlib 解压。按记录声明的明文大小预分配输出缓冲，直接 inflate 进最终数组
+        /// （不再经 MemoryStream 边写边扩容、最后再 ToArray 拷贝一次）；声明值异常时按需增长。
+        /// </summary>
+        private static byte[] ZlibInflate(byte[] data, int expectedSize, out int consumed, out bool eof)
         {
+            const int MaxPrealloc = 64 << 20;
+            byte[] output = new byte[Math.Min(Math.Max(expectedSize, 256), MaxPrealloc)];
+
             var codec = new ZlibCodec();
             codec.InitializeInflate();
             codec.InputBuffer = data;
             codec.NextIn = 0;
             codec.AvailableBytesIn = data.Length;
-            var ms = new MemoryStream();
-            byte[] outBuf = new byte[16384];
+            int produced = 0;
             eof = false;
             int guard = 0;
             while (true)
             {
-                codec.OutputBuffer = outBuf;
-                codec.NextOut = 0;
-                codec.AvailableBytesOut = outBuf.Length;
+                if (produced == output.Length)
+                    Array.Resize(ref output, output.Length * 2);
+                codec.OutputBuffer = output;
+                codec.NextOut = produced;
+                codec.AvailableBytesOut = output.Length - produced;
                 int rc = codec.Inflate(FlushType.None);
-                int written = outBuf.Length - codec.AvailableBytesOut;
-                if (written > 0)
-                    ms.Write(outBuf, 0, written);
+                produced = output.Length - codec.AvailableBytesOut;
                 if (rc == ZlibConstants.Z_STREAM_END) { eof = true; break; }
                 if (rc != ZlibConstants.Z_OK)
                     throw new LpkException("zlib inflate error: " + rc);
@@ -1302,23 +1338,28 @@ namespace KartLibrary.File.Lpk
                     throw new LpkException("zlib inflate loop guard");
             }
             consumed = data.Length - codec.AvailableBytesIn;
-            return ms.ToArray();
+            if (output.Length != produced)
+                Array.Resize(ref output, produced);
+            return output;
         }
 
-        private static void CheckMd5(byte[] data, string expectedHex)
+        /// <summary>校验明文 MD5：用静态 HashData + 原始摘要字节比较，比逐字节 hex 拼串快一个量级。</summary>
+        private static void CheckMd5(byte[] data, LpkRecord record)
         {
-            using var md5 = MD5.Create();
-            byte[] hash = md5.ComputeHash(data);
-            if (ToHex(hash) != expectedHex)
+            byte[] expected = record.Md5Raw;
+            if (expected != null && expected.Length == 16)
+            {
+                if (!MD5.HashData(data).AsSpan().SequenceEqual(expected))
+                    throw new LpkException("MD5 mismatch");
+                return;
+            }
+            if (!string.Equals(ToHex(MD5.HashData(data)), record.Md5, StringComparison.OrdinalIgnoreCase))
                 throw new LpkException("MD5 mismatch");
         }
 
         private static string ToHex(byte[] data)
         {
-            var sb = new StringBuilder(data.Length * 2);
-            foreach (byte b in data)
-                sb.Append(b.ToString("x2"));
-            return sb.ToString();
+            return Convert.ToHexString(data).ToLowerInvariant();
         }
 
         private static byte[] FromHex(string hex)

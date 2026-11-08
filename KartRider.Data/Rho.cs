@@ -9,11 +9,13 @@ using Profile;
 using RiderData;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -990,7 +992,21 @@ namespace KartRider
 
         private static string ReplacePath(string file)
         {
-            return file.IndexOf(".rho") > -1 ? file.Substring(0, file.IndexOf(".rho")).Replace("_", "/") + file.Substring(file.IndexOf(".rho") + 4) : file;
+            int index = file.IndexOf(".rho", StringComparison.OrdinalIgnoreCase);
+            if (index < 0) return file;
+            // 单次分配：去掉 ".rho" 的同时把 '.' 前的 '_' 还原成 '/'
+            return string.Create(file.Length - 4, (file, index), static (span, state) =>
+            {
+                string source = state.file;
+                int cut = state.index;
+                int j = 0;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    if (i == cut) { i += 3; continue; }
+                    char c = source[i];
+                    span[j++] = (i < cut && c == '_') ? '/' : c;
+                }
+            });
         }
 
         /// <summary>
@@ -1016,35 +1032,6 @@ namespace KartRider
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
                 out time);
-        }
-
-        private static bool StreamsAreEqual(Stream stream1, Stream stream2)
-        {
-            const int bufferSize = 4096;
-            byte[] buffer1 = new byte[bufferSize];
-            byte[] buffer2 = new byte[bufferSize];
-            try
-            {
-                int bytesRead1;
-                int bytesRead2;
-                do
-                {
-                    bytesRead1 = stream1.Read(buffer1, 0, bufferSize);
-                    bytesRead2 = stream2.Read(buffer2, 0, bufferSize);
-                    if (bytesRead1 != bytesRead2)
-                        return false;
-                    for (int i = 0; i < bytesRead1; i++)
-                    {
-                        if (buffer1[i] != buffer2[i])
-                            return false;
-                    }
-                } while (bytesRead1 > 0);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         /// <summary>
@@ -1137,12 +1124,14 @@ namespace KartRider
         private static bool IsTrackDataFile(string filePath, string fileNamePrefix)
         {
             if (string.IsNullOrEmpty(filePath)) return false;
-            string normalized = filePath.Replace('\\', '/');
-            int slash = normalized.LastIndexOf('/');
-            string fileName = slash >= 0 ? normalized.Substring(slash + 1) : normalized;
-            if (!fileName.StartsWith(fileNamePrefix, StringComparison.OrdinalIgnoreCase)) return false;
-            if (!fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)) return false;
-            return normalized.IndexOf("/common/", StringComparison.OrdinalIgnoreCase) >= 0;
+            // 全程用 Span 判断，不做 Replace / Substring（该函数按记录调用，可达十万次量级）
+            ReadOnlySpan<char> path = filePath.AsSpan();
+            int slash = path.LastIndexOfAny('/', '\\');
+            ReadOnlySpan<char> fileName = slash >= 0 ? path.Slice(slash + 1) : path;
+            if (!fileName.StartsWith(fileNamePrefix.AsSpan(), StringComparison.OrdinalIgnoreCase)) return false;
+            if (!fileName.EndsWith(".xml".AsSpan(), StringComparison.OrdinalIgnoreCase)) return false;
+            return path.IndexOf("/common/".AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0
+                || path.IndexOf("\\common\\".AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <summary>地图 ID 是否有效（客户端 _S 变体不进地图列表）。</summary>
@@ -1289,20 +1278,6 @@ namespace KartRider
         /// </summary>
         public static bool PreferDeeperLpkDirectories { get; set; } = false;
 
-        /// <summary>单个 LPK 的索引层探测结果（不读取文件数据）。</summary>
-        public sealed class LpkProbeResult
-        {
-            public int Level { get; internal set; }
-            public string Subdirectory { get; internal set; } = "";
-            public string FileName { get; internal set; } = "";
-            public string FullPath { get; internal set; } = "";
-            public bool Success { get; internal set; }
-            public string DecodedAs { get; internal set; } = "";
-            public int RecordCount { get; internal set; }
-            public string Mixing { get; internal set; } = "";
-            public string Error { get; internal set; } = "";
-        }
-
         /// <summary>
         /// 排查开关：设 true 时目录树挂全部 LPK 记录（不再按 IsRequiredPath 过滤），
         /// 用于验证「按需读取白名单漏文件」；数据仍只在 GetData() 时惰性解密。
@@ -1315,17 +1290,36 @@ namespace KartRider
         /// 名单中的条目只有在 Dump 的规则分支真正命中、调用 GetData() 时才会读盘解密。
         /// 新增解析规则时，记得同步这里或 RequiredExactPaths。
         /// </summary>
-        private static bool IsRequiredPath(string fullName, string regionCode, HashSet<string> exact)
+        /// <summary>区服相关的匹配串预先拼好，避免按记录（十万级）反复做字符串插值。</summary>
+        private sealed class RegionSuffixes
+        {
+            public readonly string ParamXml;
+            public readonly string ParamKml;
+            public readonly string RandomTrackXml;
+            public readonly string TrackLocaleXml;
+            public readonly string FlyingPetParamXml;
+
+            public RegionSuffixes(string region)
+            {
+                ParamXml = $"/param@{region}.xml";
+                ParamKml = $"/param@{region}.kml";
+                RandomTrackXml = $"randomTrack@{region}";
+                TrackLocaleXml = $"trackLocale@{region}";
+                FlyingPetParamXml = $"param@{region}.xml";
+            }
+        }
+
+        private static bool IsRequiredPath(string fullName, RegionSuffixes rules, HashSet<string> exact)
         {
             if (string.IsNullOrEmpty(fullName)) return false;
             if (exact.Contains(fullName)) return true;
-            if (fullName.Contains("flyingPet") && fullName.Contains($"param@{regionCode}.xml")) return true;
-            if (IsTrackDataFile(fullName, $"randomTrack@{regionCode}")
+            if (fullName.Contains("flyingPet") && fullName.Contains(rules.FlyingPetParamXml)) return true;
+            if (IsTrackDataFile(fullName, rules.RandomTrackXml)
                 || IsTrackDataFile(fullName, "track@zz")
-                || IsTrackDataFile(fullName, $"trackLocale@{regionCode}")) return true;
+                || IsTrackDataFile(fullName, rules.TrackLocaleXml)) return true;
             return fullName.Contains("kart_")
-                && (fullName.Contains($"/param@{regionCode}.xml")
-                    || fullName.Contains($"/param@{regionCode}.kml")
+                && (fullName.Contains(rules.ParamXml)
+                    || fullName.Contains(rules.ParamKml)
                     || fullName.Contains("/param.xml"));
         }
 
@@ -1401,8 +1395,9 @@ namespace KartRider
             private readonly Dictionary<string, List<RecordEntry>> _records =
                 new Dictionary<string, List<RecordEntry>>(StringComparer.OrdinalIgnoreCase);
             private readonly List<string> _allPaths = new List<string>();
-            private readonly Dictionary<string, byte[]> _decoded =
-                new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            // 并行预解密时多个线程会同时写各自的 key，用并发字典保证线程安全
+            private readonly ConcurrentDictionary<string, byte[]> _decoded =
+                new ConcurrentDictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             private int _requiredCount;
 
             public int ArchiveCount => _archives.Count;
@@ -1528,19 +1523,53 @@ namespace KartRider
             public void BuildRequiredTree(string regionCode)
             {
                 HashSet<string> exact = RequiredExactPaths(regionCode);
+                var rules = new RegionSuffixes(regionCode);
                 var keys = new List<string>();
                 foreach (string key in _records.Keys)
                 {
-                    if (KartRhoFile.BuildFullLpkTree || IsRequiredPath(key, regionCode, exact))
+                    if (KartRhoFile.BuildFullLpkTree || IsRequiredPath(key, rules, exact))
                         keys.Add(key);
                 }
                 keys.Sort(StringComparer.OrdinalIgnoreCase);
                 _requiredCount = keys.Count;
+                Prefetch(keys);
                 foreach (string key in keys)
                 {
                     string path = key;
                     AddToTree(path, () => Read(path));
                 }
+            }
+
+            /// <summary>是否并行预解密（默认开）。并行只影响“读盘 + 解密 + 解压”，XML 解析顺序不变。</summary>
+            public static bool ParallelPrefetch { get; set; } = true;
+
+            /// <summary>并行预解密线程数；0 = 按 CPU 核心数自动决定。</summary>
+            public static int PrefetchThreads { get; set; } = 0;
+
+            /// <summary>
+            /// 先把待解析记录并行读进缓存，随后 Dump 的顺序遍历就只剩 XML 解析。
+            /// 单个文件失败只记日志，顺序阶段仍会重试并给出同样的错误信息。
+            /// </summary>
+            private void Prefetch(List<string> keys)
+            {
+                if (!ParallelPrefetch || keys.Count < 8) return;
+                int threads = PrefetchThreads > 0 ? PrefetchThreads : Environment.ProcessorCount;
+                if (threads <= 1) return;
+                threads = Math.Min(threads, 8);
+
+                long started = Environment.TickCount64;
+                Parallel.For(0, keys.Count, new ParallelOptions { MaxDegreeOfParallelism = threads }, i =>
+                {
+                    try
+                    {
+                        Read(keys[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug($"[Data] 预读 {keys[i]} 失败：{ex.Message}");
+                    }
+                });
+                Log.Debug($"[Data] 并行预解密 {keys.Count} 条（{threads} 线程）耗时 {Environment.TickCount64 - started} ms");
             }
 
             /// <summary>
@@ -1603,20 +1632,28 @@ namespace KartRider
                 };
             }
 
+            // LPK 里的路径有几种写法：zeta/cn/...、zeta_/cn/...、zeta_cn.rho/...
+            // 前缀一次拼好，扫描十万级记录时不再每条 ToLowerInvariant + 12 次字符串拼接。
+            private static readonly string[] RegionNames = { "kr", "cn", "tw" };
+            private static readonly string[][] RegionPrefixes =
+            {
+                new[] { "zeta/kr/", "zeta_/kr/", "zeta_kr.rho", "zeta_kr/" },
+                new[] { "zeta/cn/", "zeta_/cn/", "zeta_cn.rho", "zeta_cn/" },
+                new[] { "zeta/tw/", "zeta_/tw/", "zeta_tw.rho", "zeta_tw/" }
+            };
+
             /// <summary>依据全局索引里的记录路径推断区服代码（kr / cn / tw），默认 cn。</summary>
             public string DetectRegionCode()
             {
                 foreach (string path in _allPaths)
                 {
-                    string low = path.ToLowerInvariant();
-                    foreach (string region in new[] { "kr", "cn", "tw" })
+                    for (int r = 0; r < RegionPrefixes.Length; r++)
                     {
-                        if (low.StartsWith("zeta/" + region + "/")
-                            || low.StartsWith("zeta_/" + region + "/")
-                            || low.StartsWith("zeta_" + region + ".rho")
-                            || low.StartsWith("zeta_" + region + "/"))
+                        string[] prefixes = RegionPrefixes[r];
+                        for (int p = 0; p < prefixes.Length; p++)
                         {
-                            return region;
+                            if (path.StartsWith(prefixes[p], StringComparison.OrdinalIgnoreCase))
+                                return RegionNames[r];
                         }
                     }
                 }

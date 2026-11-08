@@ -51,22 +51,37 @@ namespace KartRider
         public static void NoteTrackFile(string fullName)
         {
             if (string.IsNullOrEmpty(fullName)) return;
-            string[] parts = fullName.Replace('\\', '/').Split('/');
-            for (int i = 0; i + 1 < parts.Length; i++)
+            // 该函数按 LPK 记录逐条调用（十万级），用 Span 逐段扫描，避免 Replace + Split 的数组与子串分配
+            ReadOnlySpan<char> path = fullName.AsSpan();
+            int lastSep = path.LastIndexOfAny('/', '\\');
+            ReadOnlySpan<char> file = lastSep >= 0 ? path.Slice(lastSep + 1) : path;
+
+            int start = 0;
+            while (start < path.Length)
             {
-                string seg = parts[i];
-                if (!seg.Equals("track", StringComparison.OrdinalIgnoreCase)
-                    && !seg.StartsWith("track_", StringComparison.OrdinalIgnoreCase))
+                int end = start;
+                while (end < path.Length && path[end] != '/' && path[end] != '\\') end++;
+                ReadOnlySpan<char> seg = path.Slice(start, end - start);
+                if (seg.Equals("track", StringComparison.OrdinalIgnoreCase)
+                    || seg.StartsWith("track_", StringComparison.OrdinalIgnoreCase))
                 {
-                    continue;
+                    int nextStart = end + 1;
+                    int nextEnd = nextStart;
+                    while (nextEnd < path.Length && path[nextEnd] != '/' && path[nextEnd] != '\\') nextEnd++;
+                    if (nextEnd > nextStart)
+                    {
+                        ReadOnlySpan<char> folderSpan = path.Slice(nextStart, nextEnd - nextStart);
+                        if (folderSpan.IndexOf('_') >= 0)
+                        {
+                            string folder = folderSpan.ToString();
+                            AvailableTrackFolders.Add(folder);
+                            if (file.Equals("track_rvs.1s", StringComparison.OrdinalIgnoreCase)) RvsFolders.Add(folder);
+                            else if (file.Equals("track_crz.1s", StringComparison.OrdinalIgnoreCase)) CrzFolders.Add(folder);
+                            return;
+                        }
+                    }
                 }
-                string folder = parts[i + 1];
-                if (string.IsNullOrEmpty(folder) || !folder.Contains('_')) continue;
-                AvailableTrackFolders.Add(folder);
-                string file = parts[parts.Length - 1];
-                if (file.Equals("track_rvs.1s", StringComparison.OrdinalIgnoreCase)) RvsFolders.Add(folder);
-                else if (file.Equals("track_crz.1s", StringComparison.OrdinalIgnoreCase)) CrzFolders.Add(folder);
-                return;
+                start = end + 1;
             }
         }
 
