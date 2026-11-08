@@ -379,26 +379,30 @@ namespace KartRider
             {
                 string period = questInfo.Attribute("seasonPeriod")?.Value;
                 string seasonId = questInfo.Attribute("seasonId")?.Value;
-                var isInTime = IsCurrentTimeInPeriod(period);
-                if (isInTime != null && !string.IsNullOrEmpty(seasonId))
+                int? elapsedDay = GetSeasonElapsedDay(period);
+                if (elapsedDay != null && !string.IsNullOrEmpty(seasonId))
                 {
-                    // setCount 才是实际存在的任务组数量，超出范围的组号拼出来的 ID 客户端并不存在
                     int setCount = int.MaxValue;
                     if (int.TryParse(questInfo.Attribute("setCount")?.Value, out int parsedCount) && parsedCount > 0)
                     {
                         setCount = parsedCount;
                     }
 
+                    // 任务组按周刷新（不是按天）：通行证每 7 天换一批任务，每周一次性下发 7 组。
+                    // 赛季 14 天 / setCount 14 组 = 2 周 × 7 组，组号就是 QuestSet id，逐周连续递增（1~7、8~14）。
+                    // ID 拼接没有额外偏移：1{seasonId}00{组号:D2}{序号:D2}，
+                    //   seasonId=54 第 2 周 = 组 8~14 → 154000801 … 154001403。
+                    // 官方抓包里出现的 154001001…154001403 就是这批里的组 10~14（组 8、9 应在本周早些时候已完成）。
+                    int weekIndex = Math.Max(elapsedDay.Value, 0) / 7;
+                    int startSet = Math.Min(weekIndex * 7 + 1, setCount);
+                    int endSet = Math.Min(startSet + 6, setCount);
+
                     HashSet<uint> seen = new HashSet<uint>();
-                    foreach (int group in isInTime)
+                    for (int group = startSet; group <= endSet; group++)
                     {
-                        if (group > setCount) continue;
                         for (int index = 1; index <= 3; index++)
                         {
-                            string groupStr = group.ToString("D2");  // 1 → 01
-                            string indexStr = index.ToString("D2");  // 1 → 01
-                                                                     // 拼接：14500 + 组号 + 序号
-                            if (uint.TryParse($"1{seasonId}00{groupStr}{indexStr}", out uint id) && seen.Add(id))
+                            if (uint.TryParse($"1{seasonId}00{group:D2}{index:D2}", out uint id) && seen.Add(id))
                             {
                                 ids.Add(id);
                             }
@@ -707,7 +711,7 @@ namespace KartRider
 
             foreach (XElement info in list)
             {
-                if (IsCurrentTimeInPeriod(info.Attribute("seasonPeriod")?.Value) != null)
+                if (GetSeasonElapsedDay(info.Attribute("seasonPeriod")?.Value) != null)
                 {
                     string activeSeasonId = info.Attribute("seasonId")?.Value;
                     Log.Info($"[Quest] 卡丁车通行证生效赛季 seasonId={activeSeasonId}");
@@ -720,7 +724,11 @@ namespace KartRider
             return list[0];
         }
 
-        private static List<int> IsCurrentTimeInPeriod(string period)
+        /// <summary>
+        /// 返回当前时间在 seasonPeriod 内已过去的天数（赛季首日 = 0），不在时间段内返回 null。
+        /// 通行证任务按周刷新，用天数 / 7 定位当前是赛季第几周（0 起）。
+        /// </summary>
+        private static int? GetSeasonElapsedDay(string period)
         {
             try
             {
@@ -735,17 +743,7 @@ namespace KartRider
                 if (now < startTime || now > endTime)
                     return null;
 
-                int days = (now.Date - startTime.Date).Days;
-
-                // 判断属于哪一段
-                if (days < 7)
-                    return new List<int>() { 1, 2, 3, 4, 5, 6, 7 };
-                else if (days < 13)
-                    return new List<int>() { 7, 8, 9, 10, 11, 12, 13 };
-                else if (days < 19)
-                    return new List<int>() { 13, 14, 15, 16, 17, 18, 19 };
-                else
-                    return new List<int>() { 19, 20, 21 };
+                return (now.Date - startTime.Date).Days;
             }
             catch
             {
