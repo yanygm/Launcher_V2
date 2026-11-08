@@ -1304,23 +1304,6 @@ namespace KartRider
         }
 
         /// <summary>
-        /// 按子目录层级分组，逐级测试每个 .lpk 的索引解码（只解记录表，不读文件数据）。
-        /// nameCandidates 可传入打包时的原文件名，用来验证「改名导致 header tag mismatch」。
-        /// </summary>
-        public static IReadOnlyList<LpkProbeResult> ProbeLpkFolders(string input, IEnumerable<string> nameCandidates = null)
-            => LpkResourceManager.Probe(input, nameCandidates);
-
-        /// <summary>从 eventMenu.xml 解析出的一条活动按钮（时限活动列表项）。</summary>
-        public sealed class TimeEventInfo
-        {
-            public int Index { get; internal set; }
-            public string ClassName { get; internal set; } = "";
-            public string LabelText { get; internal set; } = "";
-            public string BtnImg { get; internal set; } = "";
-            public string WndName { get; internal set; } = "";
-        }
-
-        /// <summary>
         /// 排查开关：设 true 时目录树挂全部 LPK 记录（不再按 IsRequiredPath 过滤），
         /// 用于验证「按需读取白名单漏文件」；数据仍只在 GetData() 时惰性解密。
         /// 离线验证全量树与精简树生成的数据表完全一致，故默认保持 false。
@@ -1539,78 +1522,6 @@ namespace KartRider
                 return directory.Split(
                     new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar },
                     StringSplitOptions.RemoveEmptyEntries).Length;
-            }
-
-            /// <summary>按子目录层级分组逐级探测：只解记录表，不读取任何文件数据。</summary>
-            internal static List<LpkProbeResult> Probe(string input, IEnumerable<string> nameCandidates)
-            {
-                var results = new List<LpkProbeResult>();
-                string root;
-                string probeError;
-                string[] files = EnumerateLpkFiles(input, out root, out probeError);
-                if (probeError != null)
-                {
-                    results.Add(new LpkProbeResult { Error = probeError, FullPath = input });
-                    return results;
-                }
-                string[] candidates = (nameCandidates ?? Array.Empty<string>())
-                    .Where(n => !string.IsNullOrWhiteSpace(n))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                var ordered = files
-                    .OrderBy(p => SubdirectoryLevel(root, p))
-                    .ThenBy(p => System.IO.Path.GetDirectoryName(System.IO.Path.GetRelativePath(root, p)) ?? "",
-                        StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(p => System.IO.Path.GetFileName(p), StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                foreach (var group in ordered.GroupBy(p => new
-                {
-                    Level = SubdirectoryLevel(root, p),
-                    Dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetRelativePath(root, p)) ?? ""
-                }).OrderBy(g => g.Key.Level).ThenBy(g => g.Key.Dir, StringComparer.OrdinalIgnoreCase))
-                {
-                    var items = group.ToArray();
-                    int ok = 0;
-                    foreach (string lpk in items)
-                    {
-                        var result = new LpkProbeResult
-                        {
-                            Level = group.Key.Level,
-                            Subdirectory = group.Key.Dir,
-                            FileName = System.IO.Path.GetFileName(lpk),
-                            FullPath = lpk
-                        };
-                        var names = new List<string> { result.FileName };
-                        foreach (string candidate in candidates)
-                            if (!names.Contains(candidate, StringComparer.OrdinalIgnoreCase)) names.Add(candidate);
-                        foreach (string name in names)
-                        {
-                            try
-                            {
-                                using var fs = new FileStream(lpk, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                LpkIndex index = LpkV4.Decode(fs, name);
-                                result.Success = true;
-                                result.DecodedAs = name;
-                                result.RecordCount = index.Records.Count;
-                                result.Mixing = index.Mixing;
-                                result.Error = "";
-                                break;
-                            }
-                            catch (Exception ex)
-                            {
-                                result.Error = ex.Message;
-                            }
-                        }
-                        if (result.Success) ok++;
-                        results.Add(result);
-                        Log.Info($"[LpkProbe]   {(result.Success ? "OK  " : "FAIL")} {result.FileName} " +
-                                 $"records={result.RecordCount} as={result.DecodedAs} {result.Error}");
-                    }
-                    Log.Info($"[LpkProbe] 层级 {group.Key.Level} [{group.Key.Dir}]：成功 {ok}/{items.Length}");
-                }
-                return results;
             }
 
             /// <summary>只把规则可能用到的条目挂到目录树上，DataLoader 全部是惰性解密。</summary>
