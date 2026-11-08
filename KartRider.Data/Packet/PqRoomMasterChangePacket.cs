@@ -46,11 +46,8 @@ namespace KartRider.Packet
                 if (player != null)
                 {
                     room.RoomMaster = player.ID;
-                    // 新老房主的状态一起刷：旧房主回到「未准备」，否则房间里会出现两个"房主"，
-                    // 客户端也会误以为大家都准备好了
-                    ResetReadyStates(room);
+                    player.PlayerType = 2;
                     GrSlotDataPacket(roomId);
-                    GrSlotStatePacket(roomId);
                 }
             }
             return true;

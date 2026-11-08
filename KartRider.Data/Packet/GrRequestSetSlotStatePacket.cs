@@ -49,6 +49,8 @@ namespace KartRider.Packet
             if (!room.Started)
             {
                 player.PlayerType = iPacket.ReadInt();
+                // 准备状态是"未全部准备就能开局"排查的第一现场：把客户端上报值直接留痕
+                Log.Info($"[Slot] {Parent.Client.Nickname} 槽位状态上报 state={player.PlayerType}（房间 {roomId}）");
                 GrSlotStatePacket(roomId);
                 using (OutPacket oPacket = new OutPacket("GrReplySetSlotStatePacket"))
                 {
