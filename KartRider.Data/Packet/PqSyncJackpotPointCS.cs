@@ -29,6 +29,8 @@ namespace KartRider.Packet
         {
             using (OutPacket outPacket = new OutPacket("PrSyncJackpotPointCS"))
             {
+                // 客户端按 int64 读取 jackpot point（包对象 +24 处 8 字节），
+                // 少写字节会让客户端越界读到垃圾值，活动页数值乱码。
                 outPacket.WriteLong(0L);
                 session.Client.Send(outPacket);
             }

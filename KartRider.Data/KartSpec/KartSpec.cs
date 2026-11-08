@@ -115,8 +115,8 @@ namespace KartRider
             new("BoostAccelFactor", 0M, 1.5M, 1M, val => BoostAccelFactor = (float)val),
             new("StartBoosterTimeItem", 0M, 1000M, 1M, val => StartBoosterTimeItem = (float)val),
             new("StartBoosterTimeSpeed", 0M, 1000M, 1M, val => StartBoosterTimeSpeed = (float)val),
-            new("StartForwardAccelFactorItem", 0M, 0M, 1M, val => StartForwardAccelFactorItem = (float)val),
-            new("StartForwardAccelFactorSpeed", 0M, 0M, 1M, val => StartForwardAccelFactorSpeed = (float)val),
+            new("StartForwardAccelFactorItem", 0M, 1M, 1M, val => StartForwardAccelFactorItem = (float)val),
+            new("StartForwardAccelFactorSpeed", 0M, 1M, 1M, val => StartForwardAccelFactorSpeed = (float)val),
             new("DriftGaguePreservePercent", 0M, 0M, 1M, val => DriftGaguePreservePercent = (float)val),
             new("UseExtendedAfterBooster", 0M, 0M, 1M, val => UseExtendedAfterBooster = (byte)val),
             new("BoostAccelFactorOnlyItem", 0M, 1.5M, 1M, val => BoostAccelFactorOnlyItem = (float)val),
@@ -204,6 +204,19 @@ namespace KartRider
                 // 都按 kartId 从 ModelMax.xml 解析一次模型尺寸。
                 // 这样同一辆车在任何路径下都得到同一个值，不会出现"有的车有 modelMax、有的车是 0"。
                 ApplyModelDimensions(KartID);
+
+                // TransAccelFactor 在 param 沒寫時預設 1.5，有變形加速器的話，機車預設 1.75、車子預設 1.8。
+                if (this.TransAccelFactor == 1.5f && this.UseTransformBooster == 1)
+                {
+                    if (this.motorcycleType == 1)
+                    {
+                        this.TransAccelFactor = 1.75f;
+                    }
+                    else
+                    {
+                        this.TransAccelFactor = 1.8f;
+                    }
+                }
             }
         }
 

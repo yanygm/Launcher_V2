@@ -26,8 +26,8 @@ namespace KartRider
         public float NormalBoosterTime { get; set; } = 0f;
         public float ItemBoosterTime { get; set; } = 0f;
         public float TeamBoosterTime { get; set; } = 0f;
-        public float StartForwardAccelForceItem { get; set; } = 0f;
-        public float StartForwardAccelForceSpeed { get; set; } = 0f;
+        public float StartForwardAccelItem { get; set; } = 0f;
+        public float StartForwardAccelSpeed { get; set; } = 0f;
 
         public void FlyingPet_Spec(ushort FlyingPetID)
         {
@@ -44,9 +44,8 @@ namespace KartRider
                 this.NormalBoosterTime = ReadFloat(petParam, "NormalBoosterTime");
                 this.ItemBoosterTime = ReadFloat(petParam, "ItemBoosterTime");
                 this.TeamBoosterTime = ReadFloat(petParam, "TeamBoosterTime");
-                // 客户端实际写的是 StartForwardAccelItem / StartForwardAccelSpeed，旧写法一并兼容
-                this.StartForwardAccelForceItem = ReadFloat(petParam, "StartForwardAccelItem", "StartForwardAccelForceItem");
-                this.StartForwardAccelForceSpeed = ReadFloat(petParam, "StartForwardAccelSpeed", "StartForwardAccelForceSpeed");
+                this.StartForwardAccelItem = ReadFloat(petParam, "StartForwardAccelItem");
+                this.StartForwardAccelSpeed = ReadFloat(petParam, "StartForwardAccelSpeed");
             }
             Log.Debug($"-------------------------------------------------------------");
             Log.Debug($"FlyingPet DragFactor:{this.DragFactor}");
@@ -56,8 +55,8 @@ namespace KartRider
             Log.Debug($"FlyingPet NormalBoosterTime:{this.NormalBoosterTime}");
             Log.Debug($"FlyingPet ItemBoosterTime:{this.ItemBoosterTime}");
             Log.Debug($"FlyingPet TeamBoosterTime:{this.TeamBoosterTime}");
-            Log.Debug($"FlyingPet StartForwardAccelForceItem:{this.StartForwardAccelForceItem}");
-            Log.Debug($"FlyingPet StartForwardAccelForceSpeed:{this.StartForwardAccelForceSpeed}");
+            Log.Debug($"FlyingPet StartForwardAccelItem:{this.StartForwardAccelItem}");
+            Log.Debug($"FlyingPet StartForwardAccelSpeed:{this.StartForwardAccelSpeed}");
             Log.Debug($"-------------------------------------------------------------");
         }
 
