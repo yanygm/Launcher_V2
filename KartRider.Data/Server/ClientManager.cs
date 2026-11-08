@@ -117,78 +117,134 @@ public static class ClientManager
         try
         {
             if (clientSocket == null)
+            {
                 return;
+            }
 
-            IPEndPoint clientEndPoint;
+            SessionGroup client = null;
+            string clientId = null;
+
             try
             {
-                clientEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
-            }
-            catch
-            {
-                return;
-            }
-            if (clientEndPoint == null) return;
-
-            string clientId = GetClientId(clientEndPoint);
-
-            if (!_clientSessions.TryRemove(clientId, out var client) || client == null)
-                return;
-
-            string nickname = client.Client?.Nickname;
-
-            // 换频道/断线重连时，客户端会先建新连接并完成登录，旧连接随后才关闭。
-            // 此时索引里可能已经指向"新会话"，旧会话绝不能把它删掉——否则新会话的
-            // GetParent(nickname) 会变成 null，后续房间/好友请求全部静默丢弃（表现为卡死）。
-            bool ownsNickname = false;
-            if (!string.IsNullOrEmpty(nickname)
-                && _byNickname.TryGetValue(nickname, out SessionGroup current)
-                && ReferenceEquals(current, client))
-            {
-                _byNickname.TryRemove(nickname, out _);
-                ownsNickname = true;
-            }
-
-            if (ownsNickname)
-            {
-                try { AdminHistory.OnLogout(nickname); } catch { }
-                try
+                IPEndPoint clientEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
+                if (clientEndPoint != null)
                 {
-                    RandomTrack.ClearUsedTracks(nickname);
-                    int roomId = RoomManager.TryGetRoomId(nickname);
-                    int slotId = RoomManager.GetPlayerSlotId(roomId, nickname);
-                    if (slotId != -1)
+                    clientId = GetClientId(clientEndPoint);
+                    _clientSessions.TryRemove(clientId, out client);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[ClientManager] 取客户端端点失败：{ex.Message}（将按 socket 查找会话）");
+            }
+
+            // 端点取不到 / 键对不上时，按 socket 引用再兜一次（否则会话会永久残留）
+            if (client == null)
+            {
+                foreach (var pair in _clientSessions.ToArray())
+                {
+                    if (pair.Value?.Client?.Socket != null && ReferenceEquals(pair.Value.Client.Socket, clientSocket))
                     {
-                        // 掉线一律立即移出槽位（不再保留 out 槽位）：
-                        // 服务端自定义的 out 状态（6）客户端不认，保留只会占位且显示异常。
-                        // 最后一个人退出时同样走这里，空房会被 RemoveRoom 销毁。
-                        RoomManager.RemovePlayer(roomId, (byte)slotId, nickname);
+                        client = pair.Value;
+                        clientId = pair.Key;
+                        _clientSessions.TryRemove(pair.Key, out _);
+                        break;
                     }
-                    MyRoomData.TryLeaveMyRoom(nickname);
                 }
-                catch (Exception ex)
+                if (client == null)
                 {
-                    Log.Warn($"[ClientManager] 清理玩家 {nickname} 的房间数据异常：{ex.Message}");
+                    // 正常情况：Disconnect() 会先走 OnDisconnect（清理一次），再触发 OnDisconnected（第二次进来找不到），
+                    // 属于预期内的重复调用，用 Debug，避免刷 Warn。
+                    Log.Debug($"[ClientManager] socket 对应会话已清理过（clientId={clientId ?? "?"}）");
+                    return;
                 }
-                finally
-                {
-                    // 无论房间清理结果如何，都要清理该玩家残留的 UDP / 缓存引用
-                    UdpServer.RemoveClient(nickname);
-                    Bingo.Unload(nickname);
-                    CleanupSessionCaches(nickname);
-                }
-            }
-            else if (!string.IsNullOrEmpty(nickname))
-            {
-                Log.Info($"[ClientManager] {nickname} 已由新会话接管，跳过旧会话 {clientId} 的清理");
             }
 
-            Log.Info($"客户端 {clientId} 已断开，当前在线数：{_clientSessions.Count}");
+            RemoveSessionCore(client, clientId ?? "?", "socket 断开");
         }
         catch (Exception ex)
         {
             Log.Warn($"[ClientManager] 移除客户端异常：{ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 按会话对象清理（心跳/巡检兜底用，幂等）：会话可能已经被移出 _clientSessions，
+    /// 但它的房间槽位、昵称索引可能还残留，这里统一收拾。
+    /// </summary>
+    public static void RemoveClientBySession(SessionGroup client, string reason)
+    {
+        if (client == null) return;
+        string clientId = "?";
+        try
+        {
+            IPEndPoint ep = client.Client?.Socket?.RemoteEndPoint as IPEndPoint;
+            if (ep != null) clientId = GetClientId(ep);
+        }
+        catch { }
+        foreach (var pair in _clientSessions.ToArray())
+        {
+            if (ReferenceEquals(pair.Value, client))
+            {
+                clientId = pair.Key;
+                _clientSessions.TryRemove(pair.Key, out _);
+                break;
+            }
+        }
+        RemoveSessionCore(client, clientId, reason);
+    }
+
+    /// <summary>会话清理核心：昵称索引、房间槽位（按 Session 引用匹配）、UDP/缓存。</summary>
+    private static void RemoveSessionCore(SessionGroup client, string clientId, string reason)
+    {
+        string nickname = client.Client?.Nickname;
+
+        bool ownsNickname = false;
+        if (!string.IsNullOrEmpty(nickname)
+            && _byNickname.TryGetValue(nickname, out SessionGroup current)
+            && ReferenceEquals(current, client))
+        {
+            _byNickname.TryRemove(nickname, out _);
+            ownsNickname = true;
+        }
+
+        // 房间槽位：按 Session 引用匹配，**不再依赖"昵称索引是否指向我"**
+        bool removedSlot = false;
+        try
+        {
+            removedSlot = RoomManager.RemovePlayerBySession(client);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[ClientManager] 清理 {nickname} 房间槽位异常：{ex.Message}");
+        }
+
+        if (ownsNickname)
+        {
+            try { AdminHistory.OnLogout(nickname); } catch { }
+            try { MyRoomData.TryLeaveMyRoom(nickname); } catch { }
+            try
+            {
+                RandomTrack.ClearUsedTracks(nickname);
+                UdpServer.RemoveClient(nickname);
+                Bingo.Unload(nickname);
+                CleanupSessionCaches(nickname);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[ClientManager] 清理玩家 {nickname} 缓存异常：{ex.Message}");
+            }
+        }
+        else if (!string.IsNullOrEmpty(nickname) && !removedSlot)
+        {
+            Log.Debug($"[ClientManager] {nickname} 已由新会话接管，跳过旧会话 {clientId} 的缓存清理");
+        }
+
+        if (!string.IsNullOrEmpty(reason) && !string.Equals(reason, "socket 断开", StringComparison.Ordinal))
+        {
+            Log.Debug($"[ClientManager] {clientId} 断开原因：{reason}");
+        }
+        Log.Info($"客户端 {clientId} 已断开，当前在线数：{_clientSessions.Count}");
     }
 
     /// <summary>
@@ -285,6 +341,32 @@ public static class ClientManager
         catch
         {
             return false;
+        }
+    }
+
+    /// <summary>判断旧会话是否"真的在线"（半开连接不算）：TCP 或 UDP 90 秒内有活动即认为在线。</summary>
+    public static bool IsSessionLikelyAlive(SessionGroup group)
+    {
+        if (group?.Client == null) return false;
+        if (group.Client.mDisconnected != 0) return false;
+        long now = Environment.TickCount64;
+        long tcpIdle = now - group.Client.LastReceiveTime;
+        if (tcpIdle < 90000) return true;
+        if (!string.IsNullOrEmpty(group.Client.Nickname))
+        {
+            long udpIdle = UdpServer.GetUdpIdle(group.Client.Nickname, now);
+            if (udpIdle < 90000) return true;
+        }
+        return false;
+    }
+
+    /// <summary>登录冲突被拒绝时，把昵称索引恢复给旧会话（避免旧会话"活着但查不到"）。</summary>
+    public static void RestoreNicknameIndex(string nickname, SessionGroup oldGroup, SessionGroup currentGroup)
+    {
+        if (string.IsNullOrEmpty(nickname) || oldGroup?.Client == null) return;
+        if (_byNickname.TryGetValue(nickname, out SessionGroup g) && ReferenceEquals(g, currentGroup))
+        {
+            _byNickname[nickname] = oldGroup;
         }
     }
 

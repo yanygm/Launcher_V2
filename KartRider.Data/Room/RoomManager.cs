@@ -167,7 +167,18 @@ public static class RoomManager
         if (!_playerRoomMap.TryRemove(nickname, out int oldRoomId))
             return;
         if (oldRoomId == targetRoomId)
+        {
+            // 同一房间重复入座：必须先清掉残留的同名旧槽，否则会变成两个同名 Player
+            int sameSlot;
+            try { sameSlot = GetPlayerSlotId(oldRoomId, nickname); }
+            catch (NullReferenceException) { return; }
+            if (sameSlot >= 0)
+            {
+                Log.Debug($"[AddPlayer] {nickname} 同房间重复入座，先清理旧槽位 {sameSlot}");
+                RemovePlayer(oldRoomId, (byte)sameSlot, nickname);
+            }
             return;
+        }
 
         GameRoom oldRoom = GetRoom(oldRoomId);
         if (oldRoom == null)
@@ -251,9 +262,19 @@ public static class RoomManager
         // 去重：严格区分大小写，TryAdd 原子操作（并发下同一昵称只会有一个成功）
         if (!_playerRoomMap.TryAdd(nickname, roomId))
         {
-            Log.Info($"[AddPlayer] {nickname} 注册房间 {roomId} 失败");
-            RemoveRoom(room);
-            return 255;
+            // 先清一次残留同名槽位再重试；仍失败才放弃（绝不拆整个房间）
+            int dupSlot = GetPlayerSlotId(roomId, nickname);
+            if (dupSlot >= 0)
+            {
+                Log.Debug($"[AddPlayer] {nickname} 房间 {roomId} 内已有同名槽位 {dupSlot}，先清理");
+                RemovePlayer(roomId, (byte)dupSlot, nickname);
+                _playerRoomMap.TryRemove(nickname, out _);
+            }
+            if (!_playerRoomMap.TryAdd(nickname, roomId))
+            {
+                Log.Debug($"[AddPlayer] {nickname} 注册房间 {roomId} 失败（其它房间残留映射）");
+                return 255;
+            }
         }
 
         // 确保玩家配置文件已加载
@@ -326,6 +347,30 @@ public static class RoomManager
     }
 
     // 从房间移除成员（如果是玩家且移除后无玩家，则删除房间）
+    /// <summary>
+    /// 按会话引用清理房间槽位（不依赖昵称索引）：把该会话占用的所有槽位全部移除。
+    /// 返回是否清理到了至少一个槽位。
+    /// </summary>
+    public static bool RemovePlayerBySession(SessionGroup session)
+    {
+        if (session == null) return false;
+        bool removed = false;
+        foreach (var pair in _rooms.ToArray())
+        {
+            GameRoom room = pair.Value;
+            if (room == null) continue;
+            for (byte s = 0; s < room._slots.Length; s++)
+            {
+                if (room._slots[s] is Player p && ReferenceEquals(p.Session, session))
+                {
+                    Log.Debug($"[Cleanup] 房间 {room.RoomId} 清理会话占用的槽位 {s}（{p.Nickname}）");
+                    removed |= RemovePlayer(room.RoomId, s, p.Nickname);
+                }
+            }
+        }
+        return removed;
+    }
+
     public static bool RemovePlayer(int roomId, byte slotId, string nickname)
     {
         var room = GetRoom(roomId);
@@ -470,16 +515,22 @@ public static class RoomManager
         }
         else
         {
-            // 2. 遍历房间的8个格子，查找昵称匹配的玩家
+            // 2. 遍历房间的8个格子，查找昵称匹配的玩家。
+            //    如果出现两个同名（历史幽灵），优先返回"会话仍然存活"的那个，
+            //    避免指令落到死对象上导致玩家卡死。
+            Player firstMatch = null;
             foreach (var member in room._slots)
             {
-                // 严格匹配昵称（含大小写）
-                if (member is Player player && player.Nickname == nickname)
-                {
-                    return player;
-                }
+                if (member is not Player player || player.Nickname != nickname) continue;
+
+                SessionGroup indexed = ClientManager.GetParent(nickname);
+                bool alive = player.Session?.Client != null
+                             && player.Session.Client.mDisconnected == 0
+                             && ReferenceEquals(indexed, player.Session);
+                if (alive) return player;
+                firstMatch ??= player;
             }
-            return null;
+            return firstMatch;
         }
     }
 

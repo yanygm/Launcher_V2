@@ -112,9 +112,11 @@ namespace KartRider
                         continue;
                     }
                     Session session = group.Client;
-                    // 已在断开流程中的会话跳过
+                    // 已标记断开、但还留在会话表里的，说明清理没走完（僵尸会话）——兜底再清一次
                     if (session.mDisconnected != 0)
                     {
+                        try { ClientManager.RemoveClientBySession(group, "心跳兜底清理僵尸会话"); }
+                        catch (Exception ex) { Log.Warn($"[Heartbeat] 清理僵尸会话失败：{ex.Message}"); }
                         continue;
                     }
 

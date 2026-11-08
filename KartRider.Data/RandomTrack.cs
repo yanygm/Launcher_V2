@@ -28,6 +28,12 @@ namespace KartRider
 
         /// <summary>客户端里没有这张图的资源（track 目录 / 反向文件都没有）：不进随机池。</summary>
         public bool missing { get; set; }
+
+        /// <summary>
+        /// 客户端 trackLocale 里没有本地化名称、只能拿 ID 兜底的赛道。
+        /// 这类图大概率客户端资源不完整（实测 transFormer_I01 会让 5 个客户端同时崩溃），不进随机池。
+        /// </summary>
+        public bool nameFallback { get; set; }
     }
 
     public class RandomTrack
@@ -173,6 +179,7 @@ namespace KartRider
                 if (string.IsNullOrWhiteSpace(track.Name))
                 {
                     track.Name = track.ID ?? string.Empty;
+                    track.nameFallback = true;   // 没有本地化名字：不进随机池
                     noName++;
                 }
                 if (string.IsNullOrWhiteSpace(track.gameType))
@@ -190,7 +197,7 @@ namespace KartRider
                     noRes++;
                 }
             }
-            Log.Info($"[Track] TrackList 收尾：共 {TrackList.Count} 条，{noName} 条无名称（已用 ID 兜底），{noGameType} 条缺少 gameType，{noRes} 条客户端缺资源（不进随机池）");
+            Log.Info($"[Track] TrackList 收尾：共 {TrackList.Count} 条，{noName} 条无名称（已用 ID 兜底，不进随机池），{noGameType} 条缺少 gameType，{noRes} 条客户端缺资源（不进随机池）");
         }
 
         private static void ApplyGameTypeToVariants(Track track)
@@ -425,7 +432,7 @@ namespace KartRider
                     }
 
                     // 客户端标了 blocked 的赛道、以及客户端缺资源的赛道都不进随机池
-                    allTracks = allTracks.Where(t => !t.blocked && !t.missing).ToList();
+                    allTracks = allTracks.Where(t => !t.blocked && !t.missing && !t.nameFallback).ToList();
 
                     // 竞速房排除"仅道具"赛道（客户端 isOnlyItemTrack）
                     if (RandomTrackGameType == "speed")
@@ -473,7 +480,7 @@ namespace KartRider
 
                 var allTracks = TrackList.Values
                     .Where(t => t.gameType == "speed")
-                    .Where(t => !t.onlyItem && !t.blocked && !t.missing)
+                    .Where(t => !t.onlyItem && !t.blocked && !t.missing && !t.nameFallback)
                     .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                     .ToList();
 
@@ -611,7 +618,7 @@ namespace KartRider
 
             List<uint> pool = TrackList.Values
                 .Where(t => string.Equals(t.gameType, gameType, StringComparison.OrdinalIgnoreCase))
-                .Where(t => !t.blocked && !t.missing && !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                .Where(t => !t.blocked && !t.missing && !t.nameFallback && !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
                 .Select(t => t.hash)
                 .ToList();
             if (pool.Count == 0)

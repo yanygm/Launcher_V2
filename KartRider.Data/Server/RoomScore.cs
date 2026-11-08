@@ -297,8 +297,8 @@ namespace KartRider
             int roomId = room.RoomId;
             Task.Run(async () =>
             {
-                await Task.Delay(60000).ConfigureAwait(false);
-                ForceIfStillPending(roomId, "60 秒内无人回房");
+                await Task.Delay(35000).ConfigureAwait(false);
+                ForceIfStillPending(roomId, "35 秒兜底");
             });
         }
 
@@ -321,16 +321,8 @@ namespace KartRider
                 if (!States.TryGetValue(roomId, out State st) || st == null || !st.Pending) return;
                 st.Returned.Add(nickname);
 
-                // 剔除已经不在房间里的参赛者（掉线/退房），避免永远等不到
-                var left = st.Participants
-                    .Where(n => n != null && !string.Equals(n, nickname, StringComparison.OrdinalIgnoreCase)
-                                && RoomManager.GetPlayer(roomId, n) == null)
-                    .ToList();
-                foreach (string gone in left)
-                {
-                    st.Participants.Remove(gone);
-                }
-
+                // 不再做"按房间成员剔除"：幽灵槽位会让剔除失效（GetPlayer 仍能返回死对象）。
+                // 掉线者靠 35 秒兜底播报，其余人回齐则照常 1.5 秒播。
                 if (st.Participants.Count > 0 && st.Participants.All(n => st.Returned.Contains(n)))
                 {
                     st.Pending = false;

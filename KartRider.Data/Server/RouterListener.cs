@@ -72,6 +72,8 @@ namespace KartRider
 
             // 启动心跳/掉线检测监控，及时清理假死连接（幽灵玩家）
             HeartbeatMonitor.Start();
+            // 房间一致性巡检：兜底清理残留槽位与空房
+            RoomConsistencyWatcher.Start();
         }
 
         /// <summary>
@@ -94,6 +96,7 @@ namespace KartRider
 
             // 停止心跳/掉线检测监控
             HeartbeatMonitor.Stop();
+            RoomConsistencyWatcher.Stop();
 
             Log.Info("[RouterListener] 所有服务已停止");
         }

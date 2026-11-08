@@ -41,13 +41,31 @@ namespace KartRider.Packet
                 Log.Warn($"[Login] 拒绝登录：昵称='{packet.Nickname}' 版本={packet.ClientVersion}");
                 return true;
             }
+            SessionGroup dupOldGroup = null;
             if (ClientManager.HasClientWithNickname(packet.Nickname))
             {
-                var existingConfig = ProfileService.GetProfileConfig(packet.Nickname);
-                if (existingConfig.Rider.BanType == 0)
+                dupOldGroup = ClientManager.GetParent(packet.Nickname);
+                if (ClientManager.IsSessionLikelyAlive(dupOldGroup))
                 {
-                    existingConfig.Rider.BanType = 1;
-                    ProfileService.Save(packet.Nickname, existingConfig);
+                    // 旧会话确实在线：保留「此ID已登录」提示（写档案，由 PqLogin 下发）
+                    var existingConfig = ProfileService.GetProfileConfig(packet.Nickname);
+                    if (existingConfig.Rider.BanType == 0)
+                    {
+                        existingConfig.Rider.BanType = 1;
+                        ProfileService.Save(packet.Nickname, existingConfig);
+                    }
+                    Log.Debug($"[Login] {packet.Nickname} 已在线，拒绝重复登录");
+                }
+                else
+                {
+                    // 旧会话是假死（半开/掉线）：先踢掉并清理，再放行新登录
+                    Log.Debug($"[Login] {packet.Nickname} 旧会话已失效，清理后放行新登录");
+                    try { dupOldGroup?.Client?.Disconnect(); } catch { }
+                    if (dupOldGroup != null)
+                    {
+                        try { ClientManager.RemoveClientBySession(dupOldGroup, "登录冲突：旧会话已失效"); } catch { }
+                    }
+                    dupOldGroup = null;
                 }
             }
             using (OutPacket outPacket = new OutPacket("PrCnAuthenLogin"))
@@ -62,6 +80,12 @@ namespace KartRider.Packet
             if (clientEndPoint == null) return true;
             string clientId = ClientManager.GetClientId(clientEndPoint);
             session.Client.Nickname = packet.Nickname;
+            if (dupOldGroup != null)
+            {
+                // 新会话马上会被断开（客户端收到"此ID已登录"后退出），
+                // 这里必须把索引还给旧会话，否则旧会话会"活着但服务端查不到" → 卡死
+                ClientManager.RestoreNicknameIndex(packet.Nickname, dupOldGroup, session);
+            }
             EnsureProfileLoaded(packet.Nickname);
             Bingo.LoadProgress(packet.Nickname);
             uint UserNO = ClientManager.GetUserNO(packet.Nickname);
