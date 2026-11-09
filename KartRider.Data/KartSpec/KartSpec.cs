@@ -557,7 +557,7 @@ namespace KartRider
         /// <summary>
         /// 道具賽起步加速力
         /// </summary>
-        public float StartForwardAccelFactorItem { get; set; } = 0f;
+        public float StartForwardAccelFactorItem { get; set; } = 1f;
 
         /// <summary>
         /// 競速賽起步加速力
