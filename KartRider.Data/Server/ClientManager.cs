@@ -1,5 +1,6 @@
 using ExcData;
 using KartRider.Common.Network;
+using KartRider.IO.Packet;
 using KartRider.Logging;
 using Profile;
 using RiderData;
@@ -234,6 +235,8 @@ public static class ClientManager
             {
                 Log.Warn($"[ClientManager] 清理玩家 {nickname} 缓存异常：{ex.Message}");
             }
+            // 好友下线推送（有 3 秒防抖，切频道不会误报）
+            try { NotifyFriendLoginout(nickname, false); } catch { }
         }
         else if (!string.IsNullOrEmpty(nickname) && !removedSlot)
         {
@@ -263,6 +266,142 @@ public static class ClientManager
         }
         FileName.Forget(nickname);
         ProfileService.Forget(nickname);
+    }
+
+    // 下线通知的防抖序号：客户端切频道会先断 TCP 再重连，
+    // 如果断线就立刻广播"下线"，好友列表会看到频繁的下线/上线闪烁。
+    private static readonly ConcurrentDictionary<string, int> _friendOfflineSeq = new(StringComparer.Ordinal);
+
+    // 每个客户端"列表里已经有的 userNO"。客户端收到主动推送是**追加**语义
+    // （实测：推 3 次就出现 3 个同名好友，只有客户端自己请求列表时才会整体重建），
+    // 所以服务端绝不能反复推完整列表，只补对方还没有的那一条。
+    private static readonly ConcurrentDictionary<string, HashSet<uint>> _friendKnown = new(StringComparer.Ordinal);
+
+    internal static void MarkFriendListDelivered(string nickname, IEnumerable<uint> userNOs)
+    {
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+        HashSet<uint> set = _friendKnown.GetOrAdd(nickname, _ => new HashSet<uint>());
+        lock (set)
+        {
+            set.Clear();
+            if (userNOs != null)
+            {
+                foreach (uint u in userNOs)
+                {
+                    set.Add(u);
+                }
+            }
+        }
+    }
+
+    private static bool IsFriendKnown(string nickname, uint userNO)
+    {
+        if (!_friendKnown.TryGetValue(nickname, out HashSet<uint> set))
+        {
+            return false;
+        }
+        lock (set)
+        {
+            return set.Contains(userNO);
+        }
+    }
+
+    private static void MarkFriendKnown(string nickname, uint userNO)
+    {
+        HashSet<uint> set = _friendKnown.GetOrAdd(nickname, _ => new HashSet<uint>());
+        lock (set)
+        {
+            set.Add(userNO);
+        }
+    }
+
+    /// <summary>
+    /// 好友上下线推送（官服 PrNotifyFriendLoginoutPacket，0xA1430B3C）。
+    /// 包体 7 字节：[uint32 userNO][uint16 在线状态][uint8 在线状态]。
+    ///
+    /// 上线：对方列表里没有这个人 → 只推一条的列表（push 是追加语义，推整表会重复）；
+    ///       已经有 → 只发 7 字节状态通知。
+    /// 下线：只发状态通知，不推列表。延迟 3 秒防抖，避免切频道闪烁。
+    /// </summary>
+    public static void NotifyFriendLoginout(string nickname, bool online)
+    {
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+        string nick = nickname;
+        if (online)
+        {
+            _friendOfflineSeq.AddOrUpdate(nick, 0, (k, v) => v + 1);
+            BroadcastFriendState(nick, 1);
+            return;
+        }
+
+        int seq = _friendOfflineSeq.AddOrUpdate(nick, 1, (k, v) => v + 1);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(3000).ConfigureAwait(false);
+            }
+            catch
+            {
+                return;
+            }
+            // 3 秒内又上线/又被踢过，序号会变，直接放弃这次下线通知
+            if (!_friendOfflineSeq.TryGetValue(nick, out int cur) || cur != seq)
+            {
+                return;
+            }
+            _friendOfflineSeq.TryRemove(nick, out _);
+            if (GetParent(nick) != null)
+            {
+                return; // 已经重新登录（换频道），不发下线
+            }
+            BroadcastFriendState(nick, 0);
+        });
+    }
+
+    private static void BroadcastFriendState(string nickname, ushort state)
+    {
+        uint userNO = GetUserNO(nickname);
+        if (userNO == 0)
+        {
+            return;
+        }
+        foreach (SessionGroup group in new List<SessionGroup>(GetClients()))
+        {
+            string other = group?.Client?.Nickname;
+            if (string.IsNullOrEmpty(other) || string.Equals(other, nickname, StringComparison.Ordinal))
+            {
+                continue;
+            }
+            try
+            {
+                if (state == 1 && !IsFriendKnown(other, userNO))
+                {
+                    // 新好友：只推这一条（追加语义，推整表会导致名单重复）
+                    GameSupport.SendMsgrFriendListOf(group, repeat: true,
+                        new List<KeyValuePair<uint, string>> { new KeyValuePair<uint, string>(userNO, nickname) });
+                    MarkFriendKnown(other, userNO);
+                    continue;
+                }
+                using (OutPacket outPacket = new OutPacket("PrNotifyFriendLoginoutPacket"))
+                {
+                    outPacket.WriteUInt(userNO);
+                    outPacket.WriteUShort(state);
+                    outPacket.WriteByte((byte)state);
+                    group.Client.Send(outPacket);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"[Friend] 上下线通知发送失败 {other}: {ex.Message}");
+            }
+        }
     }
 
     public static List<string> GetOnlinePlayers()

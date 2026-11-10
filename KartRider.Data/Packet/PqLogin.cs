@@ -162,6 +162,8 @@ namespace KartRider.Packet
                 banConfig.Rider.BanType = 0;
                 ProfileService.Save(session.Client.Nickname, banConfig);
             }
+            // 好友上线推送（官服 PrNotifyFriendLoginoutPacket）
+            try { ClientManager.NotifyFriendLoginout(session.Client.Nickname, true); } catch { }
             return true;
         }
     }

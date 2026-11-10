@@ -100,34 +100,6 @@ public static class RoomManager
         if (room.Heartbeat.TryGetValue(nickname, out int hb))
         {
             room.Heartbeat[nickname] = hb + 1;
-            Log.Debug($"[Start] 房间 {roomId} {nickname} UDP心跳 +1 → {hb + 1}");
-        }
-    }
-
-    /// <summary>
-    /// 开局等待期：客户端上报状态（PcReportStateInGame）。注意：实测它在开赛约 40 秒后才作为
-    /// 与 <see cref="MarkPlayerPacket"/> 不同，这里只认这个明确的加载完成信号，
-    /// 用于和官方服务器保持一致的倒计时起点（官方是加载完成之后才下发 GameControlPacket(state=1)）。
-    /// </summary>
-    public static void MarkPlayerLoaded(string nickname)
-    {
-        if (string.IsNullOrEmpty(nickname))
-        {
-            return;
-        }
-        if (!_playerRoomMap.TryGetValue(nickname, out int roomId))
-        {
-            return;
-        }
-        var room = GetRoom(roomId);
-        if (room == null || !room.ReadinessCollect)
-        {
-            return;
-        }
-        if (room.Loaded.TryGetValue(nickname, out bool loaded) && !loaded)
-        {
-            room.Loaded[nickname] = true;
-            Log.Info($"[Start] 房间 {roomId} 玩家 {nickname} 回报状态（PcReportStateInGame，仅记录不参与判定）");
         }
     }
 
@@ -450,9 +422,34 @@ public static class RoomManager
         if (room == null)
             return false;
 
+        // 移除前先抓住成员对象：移除后就取不到 ID 了，而掉线通知要带 playerId
+        Player leavingPlayer = null;
+        try
+        {
+            leavingPlayer = room.GetSlotMember(slotId) as Player;
+        }
+        catch
+        {
+        }
+
         bool removed = room.RemoveMember(slotId, nickname);
         if (removed)
         {
+            // 对局中掉线：官方抓包实测会在约 6.6 秒后下发 GameUserLeaveNoticePacket
+            // （12 字节：[包ID][playerId][0]），客户端据此弹出"XXX 掉线了"。
+            // 只有对局进行中才发（StartTicks 在 ResetForNextGame 里归零）。
+            if (room.StartTicks != 0 && leavingPlayer != null && room.GetPlayerCount() > 0)
+            {
+                try
+                {
+                    MultyPlayer.GameUserLeaveNoticePacket(room, leavingPlayer.ID);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"[Leave] 房间 {roomId} 掉线通知发送失败：{ex.Message}");
+                }
+            }
+
             // 清理并重整排名
             room.CleanupRankings();
 

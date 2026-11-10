@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -595,6 +595,87 @@ namespace KartRider
                 outPacket.WriteByte(5);//Level
                 outPacket.WriteEndPoint(server.Address, (ushort)(ProfileService.SettingConfig.ServerPort + 2));
                 Parent.Client.Send(outPacket);
+            }
+        }
+
+        /// <summary>
+        /// 向指定会话下发完整好友列表。
+        /// repeat=false → PrGetMsgrFriendList（应答客户端的分页请求，尾部长 4 字节段号）
+        /// repeat=true  → PrRepeatGetMsgrFriendList（服务端主动刷新，客户端整体替换列表）
+        /// 官服实测：每隔 300 秒主动推一次 repeat 全量列表，所以主动刷新必须用 repeat 版，
+        /// 用 Get 版客户端会当成"追加一段"，列表会出现重复条目。
+        /// </summary>
+        public static void SendMsgrFriendList(SessionGroup session, bool repeat = false)
+        {
+            if (session?.Client == null)
+            {
+                return;
+            }
+            string packetName = repeat ? "PrRepeatGetMsgrFriendList" : "PrGetMsgrFriendList";
+            string self = session.Client.Nickname;
+            var users = ClientManager.UserNOToNickname.Where(u => u.Value != self).ToList();
+
+            // 尾部：Get 版多一个 int32 段号；Repeat 版没有
+            void WriteTail(OutPacket p)
+            {
+                if (!repeat)
+                {
+                    p.WriteInt(0);
+                }
+                p.WriteByte(1);
+                p.WriteBytes(new byte[8]);
+            }
+
+            // 3571：即使没有好友也必须回一次空列表，否则客户端会一直等
+            if (users.Count == 0)
+            {
+                using (OutPacket emptyPacket = new OutPacket(packetName))
+                {
+                    emptyPacket.WriteInt(0);
+                    emptyPacket.WriteInt(0);
+                    emptyPacket.WriteHexString("00 00 00 00 01 00 00 00 00 00 00 00 00");
+                    session.Client.Send(emptyPacket);
+                }
+                return;
+            }
+
+            for (int start = 0; start < users.Count; start += 100)
+            {
+                int take = Math.Min(100, users.Count - start);
+                var segment = users.Skip(start).Take(take).ToList();
+                using (OutPacket outPacket = new OutPacket(packetName))
+                {
+                    GetMsgrFriendList(outPacket, users.Count, segment);
+                    WriteTail(outPacket);
+                    session.Client.Send(outPacket);
+                }
+            }
+            // 记下这个客户端现在名单里有哪些人（用于判断"新好友要不要单独补推"）
+            ClientManager.MarkFriendListDelivered(self, users.Select(u => u.Key));
+        }
+
+        /// <summary>
+        /// 只下发指定的若干好友（用于给老客户端补一个新上线的好友）。
+        /// 客户端对主动推送是追加语义，所以这里只放"对方还没有的那一条"，
+        /// 绝不能用它推整表。
+        /// </summary>
+        public static void SendMsgrFriendListOf(SessionGroup session, bool repeat, List<KeyValuePair<uint, string>> users)
+        {
+            if (session?.Client == null || users == null || users.Count == 0)
+            {
+                return;
+            }
+            string packetName = repeat ? "PrRepeatGetMsgrFriendList" : "PrGetMsgrFriendList";
+            using (OutPacket outPacket = new OutPacket(packetName))
+            {
+                GetMsgrFriendList(outPacket, users.Count, users);
+                if (!repeat)
+                {
+                    outPacket.WriteInt(0);
+                }
+                outPacket.WriteByte(1);
+                outPacket.WriteBytes(new byte[8]);
+                session.Client.Send(outPacket);
             }
         }
 

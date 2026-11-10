@@ -262,9 +262,6 @@ public class GameRoom
     public ConcurrentDictionary<int, int> Ranking { get; set; } = new();
     public ConcurrentDictionary<string, bool> Ready { get; set; } = new(StringComparer.Ordinal);
 
-    /// <summary>开局等待期：收到过 PcReportStateInGame 的标记（仅用于记录/日志，不参与开局判定）。</summary>
-    public ConcurrentDictionary<string, bool> Loaded { get; set; } = new(StringComparer.Ordinal);
-
     /// <summary>发出 GrCommandStartPacket 的时刻（Environment.TickCount64），4 秒缓冲从这里开始算。</summary>
     public long StartPacketTicks;
 

@@ -174,9 +174,8 @@ public static class MultyPlayer
             }
         }
 
-        // 全员「准备」已在校验里通过；这里再等各客户端"加载完成"（PcReportStateInGame）。
-        // 不再有固定下限/超时：谁加载完谁知道，人齐了立刻开局。
-        Log.Info($"[Start] 房间 {roomId} 全员已准备，进入 4000ms 开赛缓冲");
+        // 全员「准备」已在校验里通过；接下来等各客户端上报 UDP 心跳（每人 2 次）后开局。
+        Log.Info($"[Start] 房间 {roomId} 全员已准备，进入开局等待");
         Set_startTrigger(Parent, room);
     }
 
@@ -371,8 +370,6 @@ public static class MultyPlayer
                 if (elapsed - lastLog >= 1000)
                 {
                     lastLog = elapsed;
-                    var parts = racers.Select(n => n + "(" + (IsReady(n, out string w) ? "OK" : w) + ")");
-                    Log.Info($"[Start] 房间 {room.RoomId} 等待开局 {elapsed}ms  " + string.Join(" ", parts));
                 }
             }
             catch (Exception ex)
@@ -487,7 +484,6 @@ public static class MultyPlayer
                 startTargets.Add((sp, BuildStartControl(room, sp)));
             }
         }
-        long sendAt = Environment.TickCount64;
         foreach (var (target, packet) in startTargets)
         {
             try
@@ -499,7 +495,6 @@ public static class MultyPlayer
                 Log.Warn($"[Start] 下发 state=1 失败 {target.Nickname}: {ex.Message}");
             }
         }
-        Log.Info($"[Start] 房间 {room.RoomId} state=1 已同时下发 {startTargets.Count} 人（耗时 {Environment.TickCount64 - sendAt}ms）");
         foreach (var (_, packet) in startTargets)
         {
             try { packet.Dispose(); } catch { }
@@ -511,7 +506,6 @@ public static class MultyPlayer
             BroadcastFlagScore(room);
         }
         ArmModeDeadline(room);
-        Log.Info($"StartTicks = {room.StartTicks}（= now + 3000）");
     }
 
     /// <summary>
@@ -530,15 +524,33 @@ public static class MultyPlayer
             BitConverter.GetBytes(1u).CopyTo(echo, 0);
             BitConverter.GetBytes(room.StartTicks).CopyTo(echo, 4);
             oPacket.WriteBytes(echo);
-            Log.Debug($"[Start] state=1 回声 {p.Nickname}，{echo.Length} 字节");
         }
         else
         {
             oPacket.WriteInt(1);
             oPacket.WriteUInt(room.StartTicks);
-            Log.Debug($"[Start] state=1 极简包 {p.Nickname}（无模板）");
         }
         return oPacket;
+    }
+
+    /// <summary>
+    /// 对局中有人掉线时广播。官方抓包实测：玩家 UDP 停发约 6.6 秒后，
+    /// 服务端下发 12 字节的 GameUserLeaveNoticePacket：[包ID][playerId][0]，
+    /// 其余玩家客户端据此弹出"XXX 掉线了"。
+    /// </summary>
+    public static void GameUserLeaveNoticePacket(GameRoom room, int playerId)
+    {
+        if (room == null)
+        {
+            return;
+        }
+        using (OutPacket oPacket = new OutPacket("GameUserLeaveNoticePacket"))
+        {
+            oPacket.WriteInt(playerId);
+            oPacket.WriteInt(0);
+            BroadCast(room.RoomId, oPacket);
+        }
+
     }
 
     /// <summary>夺旗赛比分广播（GameFlagSetScorePacket：红队夺旗数、蓝队夺旗数）。</summary>

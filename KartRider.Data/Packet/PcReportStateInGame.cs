@@ -35,11 +35,6 @@ namespace KartRider.Packet
             // IDA: PcReportStateInGame = int + int
             if (iPacket.Available >= 4) iPacket.ReadInt();
             if (iPacket.Available >= 4) iPacket.ReadInt();
-
-            // 官方抓包时序：客户端加载完赛道后才发这个包，随后服务端才下发
-            // GameControlPacket(state=1) 开始 3-2-1 倒计时。这里把它作为「加载完成」信号，
-            // 让倒计时起点与官方一致（而不是在发出开赛包时就开始读秒）。
-            RoomManager.MarkPlayerLoaded(Parent.Client.Nickname);
             return true;
         }
     }
