@@ -10,32 +10,51 @@ namespace KartRider
     /// <summary>
     /// 房间自动计分。
     ///
-    ///   #开始计分 [数字...]   开启（已开启则忽略，必须先 #结束计分）
-    ///       0 个数字 → 默认表：个人 {10,7,5,4,3,1,0,-1}、未完成 -5
-    ///       1~8 个   → 前 8 名分，未完成用默认
-    ///       9 个     → 8 个名次分 + 第 9 个是未完成分
+    ///   #开始计分 [总分|胜场] [数字...]   开启（已开启则忽略，必须先 #结束计分）
+    ///       个人竞速 → 只认数字，可自定义名次分表
+    ///           0 个数字 → 默认表 {10,7,5,4,3,1,0,-1}、未完成 -5
+    ///           1~8 个   → 前 8 名分，未完成用默认
+    ///           9 个     → 8 个名次分 + 第 9 个是未完成分
+    ///       组队竞速/双人 → 只认关键字「总分」或「胜场」，不支持自定义名次分
+    ///       组队道具      → 只能「胜场」
     ///   #结束计分             停止并清空
+    ///   #重置 / #重置计分 [总分|胜场] [数字...]
+    ///                         仅计分发起者：清零并保持计分，可顺便换表或换计分方式
     ///   #重赛                 仅发起者可发；撤销最近一局，恢复到上一局结束时的累计并播报
     ///
     /// 播报时机：本局所有参赛玩家回房（GrFirstRequestPacket）后 1.5 秒；
-    ///           部分回房 10 秒补播；全员不回 60 秒兜底。
+    ///           部分回房 10 秒补播；全员不回 35 秒兜底。
     ///
     /// 计分规则：
-    ///   个人：按名次分累计（含 AI，名字 AI{格子+1}）
-    ///   组队：红/蓝胜场
-    ///   双人：每队成员名次分之和
+    ///   个人竞速：按名次分累计（含 AI，名字 AI{格子+1}）
+    ///   组队竞速：默认**胜场**；带「总分」关键字则累计每队成员名次分之和
+    ///   双人组队：同上，队数按 DuoTeamCount（最多 4 队）
+    ///   组队道具：**只能胜场**（道具赛看第一名所在队伍获胜，没有积分概念）
     ///
     /// 掉线：开局瞬间记录参赛名单，结算时名单里有人不在场/没成绩 → 按未完成分计入，
     ///       并且分数保留在列表里（直到 #结束计分 或房间销毁）。
     /// </summary>
     public static class RoomScore
     {
+        /// <summary>组队计分方式。个人模式恒为名次分，不受此影响。</summary>
+        public enum ScoreKind
+        {
+            /// <summary>未指定：组队默认胜场。</summary>
+            Default = 0,
+            /// <summary>胜场：每局只给获胜队伍 +1。</summary>
+            WinCount = 1,
+            /// <summary>总分：累计每队成员的名次分之和。</summary>
+            TotalPoints = 2,
+        }
+
         private sealed class State
         {
             public string StarterNick;
             public int Round;
             public bool TeamMode;
             public bool DuoMode;
+            /// <summary>组队计分方式：true=总分，false=胜场。</summary>
+            public bool ByTotalScore;
             public Dictionary<string, int> Points = new(StringComparer.Ordinal);
             public Dictionary<int, int> TeamPoints = new();
             public int[] TeamWins = new int[5];
@@ -78,19 +97,44 @@ namespace KartRider
         }
 
         /// <summary>#开始计分：已在计分中则忽略。</summary>
-        public static StartResult TryStart(GameRoom room, Player starter, IReadOnlyList<int> args, out string message)
+        public static StartResult TryStart(GameRoom room, Player starter, IReadOnlyList<int> args, ScoreKind kind, out string message)
         {
             message = null;
             if (room == null || starter == null) { message = "房间状态异常"; return StartResult.NoRoom; }
-            if (room.GameType != 1 && room.GameType != 3)
+            if (room.GameType != 1 && room.GameType != 3 && room.GameType != 4)
             {
-                message = "仅竞速房支持计分";
+                message = "仅个人竞速、组队竞速、组队道具支持计分";
                 return StartResult.NotRacing;
+            }
+
+            bool teamRoom = room.GameType == 3 || room.GameType == 4;
+            bool individual = room.GameType == 1;
+
+            // 个人竞速只认数字（名次分表）；组队模式只认 总分/胜场，不接受自定义名次分
+            if (individual)
+            {
+                if (kind != ScoreKind.Default)
+                {
+                    message = "个人竞速按名次分计分，不支持「总分/胜场」参数";
+                    return StartResult.BadArgs;
+                }
+            }
+            else if (args != null && args.Count > 0)
+            {
+                message = "组队模式只支持「总分」或「胜场」，不支持自定义名次分";
+                return StartResult.BadArgs;
+            }
+
+            // 组队道具没有积分概念：只认第一名所在队伍获胜，一律按胜场。
+            bool byTotal = teamRoom && kind == ScoreKind.TotalPoints;
+            if (byTotal && room.GameType == 4)
+            {
+                message = "组队道具赛只能按胜场计分（道具赛没有积分）";
+                return StartResult.BadArgs;
             }
 
             int[] rank;
             int dnf;
-            bool individual = room.GameType == 1;
             if (individual)
             {
                 rank = new[] { 10, 7, 5, 4, 3, 1, 0, -1 };
@@ -115,13 +159,16 @@ namespace KartRider
                 States[room.RoomId] = new State
                 {
                     StarterNick = starter.Nickname,
-                    TeamMode = room.GameType == 3,
+                    TeamMode = teamRoom,
                     DuoMode = room.DuoTeam,
+                    ByTotalScore = byTotal,
                     Rank = rank,
                     Dnf = dnf
                 };
             }
-            message = "现在开始计分";
+            message = teamRoom
+                ? (byTotal ? "现在开始计分（总分）" : "现在开始计分（胜场）")
+                : "现在开始计分";
             return StartResult.Started;
         }
 
@@ -188,9 +235,9 @@ namespace KartRider
                     if (m is Player p && !string.IsNullOrEmpty(p.Nickname)) byNick[p.Nickname] = p;
                 }
 
-                if (st.TeamMode && st.DuoMode)
+                if (st.TeamMode && st.ByTotalScore)
                 {
-                    // 双人：每队成员名次分之和；掉线者按未完成分计入其原队伍
+                    // 组队总分：每队成员名次分之和；掉线者按未完成分计入其原队伍
                     if (st.RaceArmed)
                     {
                         foreach (var kv in st.RaceParticipants)
@@ -359,9 +406,31 @@ namespace KartRider
         /// #重置计分 / #重置：把累计清零但保持计分开着，下一局从「第1局」重新开始。
         /// 仅发起者可用；可带 1~9 个数字顺便换表（规则同 #开始计分）。
         /// </summary>
-        public static bool Reset(GameRoom room, Player asker, IReadOnlyList<int> args, out string message)
+        public static bool Reset(GameRoom room, Player asker, IReadOnlyList<int> args, ScoreKind kind, out string message)
         {
             if (room == null || asker == null) { message = "房间状态异常"; return false; }
+
+            bool individualRoom = room.GameType == 1;
+            // 个人竞速只认数字（名次分表）；组队模式只认 总分/胜场
+            if (individualRoom)
+            {
+                if (kind != ScoreKind.Default)
+                {
+                    message = "个人竞速按名次分计分，不支持「总分/胜场」参数";
+                    return false;
+                }
+            }
+            else if (args != null && args.Count > 0)
+            {
+                message = "组队模式只支持「总分」或「胜场」，不支持自定义名次分";
+                return false;
+            }
+
+            if (kind == ScoreKind.TotalPoints && room.GameType == 4)
+            {
+                message = "组队道具赛只能按胜场计分（道具赛没有积分）";
+                return false;
+            }
 
             int[] rank = null;
             int dnf = 0;
@@ -400,11 +469,16 @@ namespace KartRider
                     st.Rank = rank;
                     if (dnf != int.MinValue) st.Dnf = dnf;
                 }
+                // 显式带了 胜场/总分 才切换计分方式；否则保持原方式
+                if (kind == ScoreKind.TotalPoints) st.ByTotalScore = true;
+                else if (kind == ScoreKind.WinCount) st.ByTotalScore = false;
 
                 using (var pkt = new OutPacket("GrRiderEchoPacket"))
                 {
                     pkt.WriteInt(asker.ID);
-                    pkt.WriteString("（重置）计分已清零，从第 1 局重新开始");
+                    pkt.WriteString(st.TeamMode
+                        ? (st.ByTotalScore ? "（重置）计分已清零（总分），从第 1 局重新开始" : "（重置）计分已清零（胜场），从第 1 局重新开始")
+                        : "（重置）计分已清零，从第 1 局重新开始");
                     MultyPlayer.BroadCast(room.RoomId, pkt);
                 }
             }
@@ -430,6 +504,7 @@ namespace KartRider
                 if (st.LastRound == null) { message = "没有可重赛的局"; return false; }
 
                 // 恢复上一局结束时的累计
+                int undoneRound = st.Round;
                 st.Round = st.LastRound.Round;
                 st.Points = st.LastRound.Points;
                 st.TeamPoints = st.LastRound.TeamPoints;
@@ -438,29 +513,15 @@ namespace KartRider
                 st.LastRound = null;      // 只允许撤回最近一局
                 st.Pending = false;       // 取消本局待播报
 
-                lines.Add($"（重赛）第{st.Round}局，{st.LastTrack}：");
-                if (st.TeamMode && st.DuoMode)
+                if (st.Round <= 0)
                 {
-                    var parts = new List<string>();
-                    int teams = Math.Max(1, Math.Min(4, room.DuoTeamCount));
-                    for (int i = 1; i <= teams; i++)
-                    {
-                        st.TeamPoints.TryGetValue(i, out int tp);
-                        parts.Add($"队{i}={tp}");
-                    }
-                    lines.Add(string.Join("，", parts));
-                }
-                else if (st.TeamMode)
-                {
-                    lines.Add($"红队={st.TeamWins[1]}，蓝队={st.TeamWins[2]}");
+                    lines.Add($"（重赛）已撤销第{undoneRound}局，分数回到开局前");
                 }
                 else
                 {
-                    foreach (var kv in st.Points.OrderByDescending(k => k.Value).ThenBy(k => k.Key, StringComparer.Ordinal))
-                    {
-                        lines.Add($"[{kv.Key}={kv.Value}]");
-                    }
+                    lines.Add($"（重赛）已撤销第{undoneRound}局，当前为第{st.Round}局，{st.LastTrack}：");
                 }
+                lines.AddRange(FormatStandings(st, room));
 
                 foreach (string line in lines)
                 {
@@ -474,6 +535,34 @@ namespace KartRider
             return true;
         }
 
+        /// <summary>按当前计分方式生成一行排名/比分文案。</summary>
+        private static List<string> FormatStandings(State st, GameRoom room)
+        {
+            var lines = new List<string>();
+            if (st.TeamMode)
+            {
+                var parts = new List<string>();
+                int teams = st.DuoMode ? Math.Max(1, Math.Min(4, room.DuoTeamCount)) : 2;
+                for (int i = 1; i <= teams; i++)
+                {
+                    int val = st.ByTotalScore
+                        ? (st.TeamPoints.TryGetValue(i, out int tp) ? tp : 0)
+                        : (i < st.TeamWins.Length ? st.TeamWins[i] : 0);
+                    string label = st.DuoMode ? $"队{i}" : (i == 1 ? "红队" : "蓝队");
+                    parts.Add($"{label}={val}");
+                }
+                lines.Add(string.Join("，", parts));
+            }
+            else
+            {
+                foreach (var kv in st.Points.OrderByDescending(k => k.Value).ThenBy(k => k.Key, StringComparer.Ordinal))
+                {
+                    lines.Add($"[{kv.Key}={kv.Value}]");
+                }
+            }
+            return lines;
+        }
+
         private static void Post(int roomId)
         {
             var room = RoomManager.GetRoom(roomId);
@@ -485,31 +574,7 @@ namespace KartRider
             {
                 if (!States.TryGetValue(roomId, out State st) || st == null) return;
                 lines.Add($"第{st.Round}局，{st.LastTrack}：");
-                if (st.TeamMode)
-                {
-                    if (st.DuoMode)
-                    {
-                        var parts = new List<string>();
-                        int teams = Math.Max(1, Math.Min(4, room.DuoTeamCount));
-                        for (int i = 1; i <= teams; i++)
-                        {
-                            st.TeamPoints.TryGetValue(i, out int tp);
-                            parts.Add($"队{i}={tp}");
-                        }
-                        lines.Add(string.Join("，", parts));
-                    }
-                    else
-                    {
-                        lines.Add($"红队={st.TeamWins[1]}，蓝队={st.TeamWins[2]}");
-                    }
-                }
-                else
-                {
-                    foreach (var kv in st.Points.OrderByDescending(k => k.Value).ThenBy(k => k.Key, StringComparer.Ordinal))
-                    {
-                        lines.Add($"[{kv.Key}={kv.Value}]");
-                    }
-                }
+                lines.AddRange(FormatStandings(st, room));
 
                 speaker = RoomManager.GetPlayer(roomId, st.StarterNick);
                 if (speaker == null && room.RoomMaster >= 0 && room.RoomMaster < 8)
