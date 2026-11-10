@@ -74,6 +74,61 @@ public static class RoomManager
         {
             room.Ready[nickname] = true;
         }
+
+    }
+
+    /// <summary>
+    /// 开局等待期：累计一次「UDP 心跳」。收到 2 次才认为这个玩家真的在线，
+    /// 比"收到过一次包"可靠——掉线/半死的连接不会有连续心跳。
+    /// 只统计 UDP（客户端同时发 39311/39312，一个 echo 周期就 +2）。
+    /// </summary>
+    public static void MarkPlayerHeartbeat(string nickname)
+    {
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+        if (!_playerRoomMap.TryGetValue(nickname, out int roomId))
+        {
+            return;
+        }
+        var room = GetRoom(roomId);
+        if (room == null || !room.ReadinessCollect)
+        {
+            return;
+        }
+        if (room.Heartbeat.TryGetValue(nickname, out int hb))
+        {
+            room.Heartbeat[nickname] = hb + 1;
+            Log.Debug($"[Start] 房间 {roomId} {nickname} UDP心跳 +1 → {hb + 1}");
+        }
+    }
+
+    /// <summary>
+    /// 开局等待期：客户端上报状态（PcReportStateInGame）。注意：实测它在开赛约 40 秒后才作为
+    /// 与 <see cref="MarkPlayerPacket"/> 不同，这里只认这个明确的加载完成信号，
+    /// 用于和官方服务器保持一致的倒计时起点（官方是加载完成之后才下发 GameControlPacket(state=1)）。
+    /// </summary>
+    public static void MarkPlayerLoaded(string nickname)
+    {
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return;
+        }
+        if (!_playerRoomMap.TryGetValue(nickname, out int roomId))
+        {
+            return;
+        }
+        var room = GetRoom(roomId);
+        if (room == null || !room.ReadinessCollect)
+        {
+            return;
+        }
+        if (room.Loaded.TryGetValue(nickname, out bool loaded) && !loaded)
+        {
+            room.Loaded[nickname] = true;
+            Log.Info($"[Start] 房间 {roomId} 玩家 {nickname} 回报状态（PcReportStateInGame，仅记录不参与判定）");
+        }
     }
 
     // 检查房间是否有玩家，如果没有则删除房间

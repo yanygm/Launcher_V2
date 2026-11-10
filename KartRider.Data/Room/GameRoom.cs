@@ -262,6 +262,21 @@ public class GameRoom
     public ConcurrentDictionary<int, int> Ranking { get; set; } = new();
     public ConcurrentDictionary<string, bool> Ready { get; set; } = new(StringComparer.Ordinal);
 
+    /// <summary>开局等待期：收到过 PcReportStateInGame 的标记（仅用于记录/日志，不参与开局判定）。</summary>
+    public ConcurrentDictionary<string, bool> Loaded { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>发出 GrCommandStartPacket 的时刻（Environment.TickCount64），4 秒缓冲从这里开始算。</summary>
+    public long StartPacketTicks;
+
+    /// <summary>开局等待期：每个玩家的 UDP 心跳次数（只统计 UDP，收到 2 次即通过）。</summary>
+    public ConcurrentDictionary<string, int> Heartbeat { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// 各客户端 GameControlPacket(state=0) 的原始载荷（不含包 ID）。
+    /// 官方 state=1 就是把它回声回去：前 4 字节改成 1、再 4 字节写 StartTicks，其余原样。
+    /// </summary>
+    public ConcurrentDictionary<string, byte[]> StartControlTemplate { get; set; } = new(StringComparer.Ordinal);
+
     /// <summary>开局等待期：置 true 后，客户端任意包都算“已就绪/存活”。</summary>
     public volatile bool ReadinessCollect;
 

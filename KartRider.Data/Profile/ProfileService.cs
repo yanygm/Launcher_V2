@@ -138,46 +138,6 @@ namespace Profile
             if (File.Exists(FileName.Load_Settings))
             {
                 SettingConfig = JsonHelper.DeserializeNoBom<Setting>(FileName.Load_Settings) ?? new Setting();
-
-                // 旧版配置迁移（只做一次）：
-                // v8 时期 PacketTrace 默认 false，且设置界面保存时会把 false 写进 json，
-                // 单改代码默认值覆盖不了。这里按版本号强制迁移一次，之后以用户配置为准。
-                // v3：默认开局等待从 3000ms 调整为 4000ms，仅迁移仍在使用旧默认值的用户
-                if (SettingConfig.SettingsVersion < 3)
-                {
-                    if (SettingConfig.StartDelayMs == 3000)
-                    {
-                        SettingConfig.StartDelayMs = 4000;
-                    }
-                    SettingConfig.SettingsVersion = 3;
-                    SaveSettings();
-                }
-
-                if (SettingConfig.SettingsVersion < 2)
-                {
-                    SettingConfig.SettingsVersion = 2;
-                    SettingConfig.PacketTrace = true;
-                    SettingConfig.PacketTraceConsole = true;
-                    if (SettingConfig.PacketTraceSample <= 0)
-                    {
-                        SettingConfig.PacketTraceSample = 2;
-                    }
-                    SettingConfig.PacketTraceFilter ??= "";
-                    Log.Info("[Config] 旧版配置已迁移：包输出默认开启（PacketTrace/PacketTraceConsole=true，采样 1/2）");
-                    SaveSettings();
-                }
-
-                // v4：ModelMax 路径不再写进 Settings.json（改到管理后台「配置」页单独保存），
-                // 重写一次配置把旧文件里的 ModelMax_LoadFile 字段去掉。
-                if (SettingConfig.SettingsVersion < 4)
-                {
-                    SettingConfig.SettingsVersion = 4;
-                    SaveSettings();
-                }
-            }
-            else
-            {
-                SettingConfig = new Setting { SettingsVersion = 4 };
                 SaveSettings();
             }
         }

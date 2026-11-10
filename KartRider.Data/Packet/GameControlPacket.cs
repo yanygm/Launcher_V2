@@ -42,6 +42,15 @@ namespace KartRider.Packet
             //start
             if (state == 0 && room.StartTicks == 0)
             {
+                // 存档这个客户端的 state=0 原始载荷：官方下发的 state=1 就是把它回声回去
+                // （前 4 字节改成 1、再 4 字节写 StartTicks，其余原样），长度/内容各客户端不同。
+                byte[] raw = iPacket.GetRawBuffer();
+                if (raw != null && raw.Length >= 8)
+                {
+                    byte[] tpl = new byte[raw.Length];
+                    Buffer.BlockCopy(raw, 0, tpl, 0, raw.Length);
+                    room.StartControlTemplate[Parent.Client.Nickname] = tpl;
+                }
                 Start(Parent, roomId);
             }
             //finish

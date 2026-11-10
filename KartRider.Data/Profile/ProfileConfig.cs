@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,11 +10,6 @@ namespace Profile
 {
     public class Setting
     {
-        /// <summary>
-        /// 配置结构版本。0/缺失 = 旧版配置，加载时会做一次默认值迁移并写回 2。
-        /// </summary>
-        public int SettingsVersion { get; set; } = 0;
-
         /// <summary>
         /// 用户名
         /// </summary>
@@ -76,12 +71,6 @@ namespace Profile
         public string Proxy { get; set; } = "https://gh-proxy.com/";
 
         public string PatchUrl { get; set; } = "";
-
-        /// <summary>点击开始到发送开局包的等待（毫秒）。默认 3000，与计时赛的加载体感接近；范围 0~10000。</summary>
-        public int StartDelayMs { get; set; } = 4000;
-
-        /// <summary>等待全员就绪的上限（毫秒），超时未就绪的玩家按掉线剔除。默认 15000。</summary>
-        public int StartReadyTimeoutMs { get; set; } = 15000;
 
         /// <summary>日志级别：Trace/Debug/Info/Warn/Error/None（正式版默认 Info，排查时再改 Debug）</summary>
         public string LogLevel { get; set; } = "Info";

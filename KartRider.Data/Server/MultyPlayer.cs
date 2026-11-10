@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartRider.Common.Network;
 using KartRider.Common.Utilities;
 using KartRider.IO.Packet;
@@ -174,9 +174,9 @@ public static class MultyPlayer
             }
         }
 
-        // 全员「准备」已在校验里通过；这里再等各客户端"加载就绪"（ReadinessCollect），
-        // 由 Set_startTrigger 统一调度：下限 StartDelayMs + 全员就绪即走 + 上限 StartReadyTimeoutMs。
-        Log.Info($"[Start] 房间 {roomId} 全员已准备，进入开局等待（下限 {ProfileService.SettingConfig.StartDelayMs}ms）");
+        // 全员「准备」已在校验里通过；这里再等各客户端"加载完成"（PcReportStateInGame）。
+        // 不再有固定下限/超时：谁加载完谁知道，人齐了立刻开局。
+        Log.Info($"[Start] 房间 {roomId} 全员已准备，进入 4000ms 开赛缓冲");
         Set_startTrigger(Parent, room);
     }
 
@@ -262,35 +262,36 @@ public static class MultyPlayer
     }
 
     /// <summary>
-    /// 开局调度：固定下限（StartDelayMs）+ 全员就绪即走 + 超时上限（StartReadyTimeoutMs）。
-    /// 超时仍未就绪的玩家按掉线移除；房间无真人则取消开局并销毁房间。
+    /// 开局调度：从「发出 GrCommandStartPacket」那一刻开始计时。
+    ///
+    /// 判定（只统计 UDP 心跳）：每人累计 2 次 PqUdpEcho 即通过。
+    ///   · 满 4000ms 且全员通过  → 立刻下发 state=1
+    ///   · 到 15000ms 仍未通过  → 把不通过的玩家按掉线移出房间，剩下的人开局
     /// </summary>
     static void Set_startTrigger(SessionGroup Parent, GameRoom room)
     {
-        int delayMs = Math.Clamp(ProfileService.SettingConfig.StartDelayMs, 0, 10000);
-        int timeoutMs = Math.Clamp(ProfileService.SettingConfig.StartReadyTimeoutMs, delayMs, 60000);
+        const int GraceMs = 4000;      // 开赛包 → state=1 的最小缓冲（官方实测 3.99~4.17s）
+        const int HeartbeatNeed = 2;   // 每人需要的 UDP 心跳次数（客户端同时发 39311/39312，一个周期就是 2 次）
+        const int KickAtMs = 15000;    // 兜底：此时删人并开局
 
-        // 等待期就绪采集：先清空，再靠“客户端任意包”置位
-        room.Ready.Clear();
-        foreach (RoomMember member in room._slots)
+        long fallback = Environment.TickCount64;
+        long startTicks = room.StartPacketTicks != 0 ? room.StartPacketTicks : fallback;
+
+        // 单个玩家的通过判定：只看 UDP 心跳（收到 HeartbeatNeed 次就通过并结束检查）
+        bool IsReady(string nick, out string why)
         {
-            if (member is Player pl && !string.IsNullOrEmpty(pl.Nickname))
-            {
-                room.Ready[pl.Nickname] = false;
-            }
+            int udp = room.Heartbeat.TryGetValue(nick, out int hb) ? hb : 0;
+            why = "UDP" + udp + "/" + HeartbeatNeed;
+            return udp >= HeartbeatNeed;
         }
-        room.ReadinessCollect = true;
 
         var timer = new System.Timers.Timer();
-        timer.Interval = 200;
+        timer.Interval = 100;
         timer.AutoReset = true;
-        long startTicks = Environment.TickCount64;
-        bool sawSignal = false;
         long lastLog = 0;
 
         void Finish(string reason)
         {
-            room.ReadinessCollect = false;
             try
             {
                 timer.Stop();
@@ -299,7 +300,7 @@ public static class MultyPlayer
             catch
             {
             }
-            Log.Info($"[Start] 房间 {room.RoomId} 开局（{reason}，等待 {Environment.TickCount64 - startTicks}ms）");
+            Log.Info($"[Start] 房间 {room.RoomId} 开局（{reason}，开赛包后 {Environment.TickCount64 - startTicks}ms）");
             startTrigger(Parent, room, null, null);
         }
 
@@ -315,23 +316,43 @@ public static class MultyPlayer
                 }
 
                 long elapsed = Environment.TickCount64 - startTicks;
-                if (room.Ready.Values.Any(v => v))
-                {
-                    sawSignal = true;
-                }
-                bool allReady = IsAllReady(room);
+                var racers = room._slots.OfType<Player>()
+                    .Where(p => !string.IsNullOrEmpty(p.Nickname))
+                    .Select(p => p.Nickname)
+                    .ToList();
 
-                // 下限已到：全员就绪直接走；若始终没有任何就绪信号，按下限直接走（避免硬等 15 秒）
-                if (elapsed >= delayMs && (allReady || !sawSignal))
+                if (racers.Count == 0)
                 {
-                    Finish(allReady ? "全员就绪" : "无就绪信号，按下限开局");
+                    timer.Stop();
+                    timer.Dispose();
+                    room.ReadinessCollect = false;
+                    room.Started = false;
+                    room.StartedPlayerCount = 0;
+                    Log.Warn($"[Start] 房间 {room.RoomId} 已无真人，取消开局");
+                    RoomManager.RemoveRoom(room);
                     return;
                 }
 
-                // 超时：未就绪的按掉线剔除
-                if (elapsed >= timeoutMs)
+                var notOk = new List<string>();
+                foreach (string n in racers)
                 {
-                    KickNotReady(room);
+                    if (!IsReady(n, out _))
+                    {
+                        notOk.Add(n);
+                    }
+                }
+
+                // ① 4 秒到了，且全员 TCP+UDP 都通过
+                if (elapsed >= GraceMs && notOk.Count == 0)
+                {
+                    Finish($"4 秒到点，{racers.Count} 人 UDP 心跳全部通过");
+                    return;
+                }
+
+                // ② 15 秒兜底：删人不通过的，剩下的人开局
+                if (elapsed >= KickAtMs)
+                {
+                    int kicked = KickStartFailed(room);
                     if (room.GetPlayerCount() == 0)
                     {
                         timer.Stop();
@@ -339,24 +360,24 @@ public static class MultyPlayer
                         room.ReadinessCollect = false;
                         room.Started = false;
                         room.StartedPlayerCount = 0;
-                        Log.Warn($"[Start] 房间 {room.RoomId} 超时后已无真人，取消开局");
+                        Log.Warn($"[Start] 房间 {room.RoomId} 兜底后已无真人，取消开局");
                         RoomManager.RemoveRoom(room);
                         return;
                     }
-                    Finish("超时剔除未就绪玩家");
+                    Finish($"兜底 {KickAtMs}ms，剔除 {kicked} 人后开局");
                     return;
                 }
 
                 if (elapsed - lastLog >= 1000)
                 {
                     lastLog = elapsed;
-                    int readyCount = room.Ready.Values.Count(v => v);
-                    Log.Debug($"[Start] 就绪进度 ready={readyCount}/{room.Ready.Count} elapsed={elapsed}ms");
+                    var parts = racers.Select(n => n + "(" + (IsReady(n, out string w) ? "OK" : w) + ")");
+                    Log.Info($"[Start] 房间 {room.RoomId} 等待开局 {elapsed}ms  " + string.Join(" ", parts));
                 }
             }
             catch (Exception ex)
             {
-                Log.Warn("[Start] 就绪检测异常，直接开局", ex);
+                Log.Warn("[Start] 开局调度异常，直接开局", ex);
                 Finish("异常兜底");
             }
         };
@@ -364,37 +385,53 @@ public static class MultyPlayer
         timer.Start();
     }
 
-    /// <summary>开局超时：未就绪玩家按掉线移出房间（保留连接），并处理房主转移。</summary>
-    static void KickNotReady(GameRoom room)
+    /// <summary>
+    /// 开局兜底：把「TCP 没动静 / UDP 心跳不足 3 次」的玩家按掉线移出房间，并处理房主转移。
+    /// 返回被移出的人数。
+    /// </summary>
+    static int KickStartFailed(GameRoom room)
     {
-        foreach (var pair in room.Ready.ToArray())
+        var kicked = new List<string>();
+        foreach (RoomMember member in room._slots.ToArray())
         {
-            if (pair.Value)
+            if (!(member is Player p) || string.IsNullOrEmpty(p.Nickname))
             {
                 continue;
             }
-            string nickname = pair.Key;
-            // 只剔除确实没有活动的玩家：加载慢但有 TCP/UDP 心跳的人不能踢
-            if (HeartbeatMonitor.IsPlayerAlive(nickname))
+            string nick = p.Nickname;
+            int udp = room.Heartbeat.TryGetValue(nick, out int hb) ? hb : 0;
+            if (udp >= 2)   // 与 Set_startTrigger 的 HeartbeatNeed 保持一致
             {
-                continue;
+                continue;   // 已通过，不动
             }
-            int slotId = RoomManager.GetPlayerSlotId(room.RoomId, nickname);
+
+            int slotId = RoomManager.GetPlayerSlotId(room.RoomId, nick);
             if (slotId == -1)
             {
-                room.Ready.TryRemove(nickname, out _);
+                room.Ready.TryRemove(nick, out _);
+                room.Heartbeat.TryRemove(nick, out _);
                 continue;
             }
-            Log.Warn($"[Start] 房间 {room.RoomId} 玩家 {nickname} 未就绪，按掉线移出房间");
-            RoomManager.RemovePlayer(room.RoomId, (byte)slotId, nickname);
-            room.Ready.TryRemove(nickname, out _);
+
+            Log.Warn($"[Start] 房间 {room.RoomId} 玩家 {nick} 开局检测未通过（UDP心跳={udp}/2），移出房间");
+            try
+            {
+                RoomManager.RemovePlayer(room.RoomId, (byte)slotId, nick);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[Start] 移出 {nick} 失败：{ex.Message}");
+            }
+            room.Ready.TryRemove(nick, out _);
+            room.Heartbeat.TryRemove(nick, out _);
+            kicked.Add(nick);
         }
 
-        // 房主被移除时，把房主转给剩余玩家中 slot 最小者
-        bool masterAlive = room._slots.Any(m => m is Player p && p.ID == room.RoomMaster);
+        // 房主被移出时，把房主转给剩余玩家中 slot 最小者
+        bool masterAlive = room._slots.Any(m => m is Player mp && mp.ID == room.RoomMaster);
         if (!masterAlive && room.GetPlayerCount() > 0)
         {
-            Player next = room._slots.OfType<Player>().OrderBy(p => p.ID).FirstOrDefault();
+            Player next = room._slots.OfType<Player>().OrderBy(pp => pp.ID).FirstOrDefault();
             if (next != null)
             {
                 room.RoomMaster = next.ID;
@@ -402,6 +439,8 @@ public static class MultyPlayer
                 Log.Info($"[Start] 房主已转移给 {next.Nickname}");
             }
         }
+
+        return kicked.Count;
     }
 
     static void startTrigger(SessionGroup Parent, GameRoom room, object sender, System.Timers.ElapsedEventArgs e)
@@ -438,11 +477,32 @@ public static class MultyPlayer
             oPacket.WriteInt(aiMaster);
             BroadCast(room.RoomId, oPacket);
         }
-        using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+        // state=1：先全部构造好，再一口气发出去，尽量保证所有客户端在同一时刻收到
+        room.ReadinessCollect = false;
+        var startTargets = new List<(Player Player, OutPacket Packet)>();
+        foreach (RoomMember member in room._slots)
         {
-            oPacket.WriteInt(1);
-            oPacket.WriteUInt(room.StartTicks);
-            BroadCast(room.RoomId, oPacket);
+            if (member is Player sp && !string.IsNullOrEmpty(sp.Nickname))
+            {
+                startTargets.Add((sp, BuildStartControl(room, sp)));
+            }
+        }
+        long sendAt = Environment.TickCount64;
+        foreach (var (target, packet) in startTargets)
+        {
+            try
+            {
+                target.Session.Client.Send(packet);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[Start] 下发 state=1 失败 {target.Nickname}: {ex.Message}");
+            }
+        }
+        Log.Info($"[Start] 房间 {room.RoomId} state=1 已同时下发 {startTargets.Count} 人（耗时 {Environment.TickCount64 - sendAt}ms）");
+        foreach (var (_, packet) in startTargets)
+        {
+            try { packet.Dispose(); } catch { }
         }
 
         // 夺旗赛：抓包中服务端在开局后立即下发 0:0 初始化比分板
@@ -451,7 +511,34 @@ public static class MultyPlayer
             BroadcastFlagScore(room);
         }
         ArmModeDeadline(room);
-        Log.Debug($"StartTicks = {room.StartTicks}");
+        Log.Info($"StartTicks = {room.StartTicks}（= now + 3000）");
+    }
+
+    /// <summary>
+    /// 下发 GameControlPacket(state=1)。
+    /// 官方抓包里这个包是「把该客户端自己发的 state=0 载荷回声回来」：
+    /// 前 4 字节改成 1、再 4 字节写 StartTicks，其余（槽位/名次等）原样保留。
+    /// 拿不到模板时退回极简包（只有 state + ticks），客户端也能跑。
+    /// </summary>
+    static OutPacket BuildStartControl(GameRoom room, Player p)
+    {
+        OutPacket oPacket = new OutPacket("GameControlPacket");
+        if (room.StartControlTemplate.TryGetValue(p.Nickname, out byte[] tpl) && tpl != null && tpl.Length >= 8)
+        {
+            byte[] echo = new byte[tpl.Length];
+            Buffer.BlockCopy(tpl, 0, echo, 0, tpl.Length);
+            BitConverter.GetBytes(1u).CopyTo(echo, 0);
+            BitConverter.GetBytes(room.StartTicks).CopyTo(echo, 4);
+            oPacket.WriteBytes(echo);
+            Log.Debug($"[Start] state=1 回声 {p.Nickname}，{echo.Length} 字节");
+        }
+        else
+        {
+            oPacket.WriteInt(1);
+            oPacket.WriteUInt(room.StartTicks);
+            Log.Debug($"[Start] state=1 极简包 {p.Nickname}（无模板）");
+        }
+        return oPacket;
     }
 
     /// <summary>夺旗赛比分广播（GameFlagSetScorePacket：红队夺旗数、蓝队夺旗数）。</summary>
@@ -963,6 +1050,21 @@ public static class MultyPlayer
                 oPacket.WriteInt(0);
                 Parent.Client.Send(oPacket);
             }
+
+            // 开赛包即将下发：以这一刻作为缓冲计时起点（对齐官方 3.99~4.17s）
+            room.StartPacketTicks = Environment.TickCount64;
+            room.StartControlTemplate.Clear();   // 上一局的 state=0 模板不要带到这局
+
+            // 重置 UDP 心跳计数：从现在起每个 UDP 包算一次，满 2 次即通过
+            room.Heartbeat.Clear();
+            foreach (RoomMember hbMember in room._slots)
+            {
+                if (hbMember is Player hbPlayer && !string.IsNullOrEmpty(hbPlayer.Nickname))
+                {
+                    room.Heartbeat[hbPlayer.Nickname] = 0;
+                }
+            }
+            room.ReadinessCollect = true;
 
             foreach (RoomMember member in room.ObIDs)
             {

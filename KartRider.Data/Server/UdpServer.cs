@@ -238,6 +238,9 @@ namespace KartRider
                 peer.LastSeen = Environment.TickCount64;
                 udpLastActivity[nickname] = peer.LastSeen;
                 p2p = peer.P2P;
+
+                // 开局等待期：每个 UDP 包都算一次「在线确认」（客户端加载期约 1~6 秒一个 echo）
+                RoomManager.MarkPlayerHeartbeat(nickname);
             }
 
             if (PacketDispatcher.Dispatch(typeof(UdpServer), packetValue, p, receiveBuffer, clientEP, this))
@@ -249,12 +252,15 @@ namespace KartRider
             {
                 case PacketName.PqUdpEcho:
                 {
+                    // 官方回包（抓包实测）：[acc][hash][PrUdpEcho][请求里的 4 字节 nonce][服务器 tick]
+                    // 请求体只有 4 字节，原来读两个 int 会越界，导致回包发不出去，
+                    // 客户端收不到回应就退避重试（实测心跳从 1 秒一次掉到 4~8 秒一次）。
                     using OutPacket outPacket = new OutPacket();
                     outPacket.WriteUInt(accountID);
                     outPacket.WriteUInt(hash);
                     outPacket.WriteInt((int)PacketName.PrUdpEcho);
-                    outPacket.WriteInt(p.ReadInt());
-                    outPacket.WriteInt(p.ReadInt());
+                    outPacket.WriteInt(p.Available >= 4 ? p.ReadInt() : 0);
+                    outPacket.WriteUInt(MultyPlayer.ConvertTick());
                     BeginSend(outPacket, clientEP);
                     break;
                 }
