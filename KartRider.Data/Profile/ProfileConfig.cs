@@ -68,6 +68,14 @@ namespace Profile
 
         public bool SoloRank { get; set; } = true;
 
+        /// <summary>
+        /// 是否读入「重复文件」：同一虚拟路径在基础包与补丁包里各有一份时（日志里的
+        /// "[Data] 索引里有 N 条虚拟路径在多个分包中重复出现"），true = 每份都读入，
+        /// 条目按主键（赛道 ID / 车辆·飞宠 ID / 道具 (类别,ID)）合并去重；
+        /// false = 每个虚拟路径只读先装载的那一份。
+        /// </summary>
+        public bool ReadDuplicateLpkFiles { get; set; } = false;
+
         public string Proxy { get; set; } = "https://gh-proxy.com/";
 
         public string PatchUrl { get; set; } = "";

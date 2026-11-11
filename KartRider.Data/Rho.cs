@@ -31,6 +31,9 @@ namespace KartRider
             {
                 // 与 KartRider.exe.c 的资源管理层一致：所有 .lpk 的记录表先合并成一张按路径索引的全局表，
                 // 只有真正需要解析的条目才打开分包、定位到数据区并解密（见 LpkResourceManager）。
+                // Profile.Setting.ReadDuplicateLpkFiles：true = 同一路径的多份分包副本全部读入后按条目去重，
+                // false = 回到旧行为，每个虚拟路径只读先装载的那一份。
+                LpkResourceManager.ReadDuplicateSources = ProfileService.SettingConfig.ReadDuplicateLpkFiles;
                 var archives = new LpkResourceManager();
                 if (!archives.Open(input, out string openError))
                 {
@@ -48,6 +51,33 @@ namespace KartRider
                 // 目录树里只放「可能需要解析」的条目，GetData() 才真正读盘解密
                 archives.BuildRequiredTree(regionCode);
                 Log.Debug($"[Data] 索引 {archives.ArchiveCount} 个 LPK / {archives.PathCount} 条记录，待解析 {archives.RequiredCount} 条");
+                string duplicateMode = LpkResourceManager.ReadDuplicateSources
+                    ? "全部读入并按条目去重"
+                    : "只读先装载的一份（旧行为）";
+                if (archives.DuplicatePathCount > 0)
+                    Log.Warn($"[Data] 索引里有 {archives.DuplicatePathCount} 条虚拟路径在多个分包中重复出现（多余副本 {archives.DuplicateRecordCount} 条），ReadDuplicateLpkFiles={LpkResourceManager.ReadDuplicateSources} → {duplicateMode}：{string.Join("；", archives.DuplicateSamples)}");
+                else
+                    Log.Debug($"[Data] 索引里没有跨分包重复的虚拟路径（ReadDuplicateLpkFiles={LpkResourceManager.ReadDuplicateSources}）");
+
+                // 这几张是「单例」数据表：track@zz / trackLocale@区服 / etc_/itemTable.kml /
+                // etc_/itemTable@区服.xml / zeta_/区服/shop/data/item.kml。
+                // 重复可能有两层：① 同一路径在基础包+补丁包里各有一份；② track_/ 与 track/ 这类不同目录写法
+                // 让同一张表在目录树里出现两次。两种都「照读」，解析出的条目按各自主键归并到
+                // TrackList / kartName / flyingName / NewRider.items 这些 List·Dictionary 里，
+                // 已存在的只补齐缺失字段、不重复追加，因此最终集合里同一份内容只有一条。
+                // tableFiles 只用于统计「哪张表读了几份文件」，便于日志确认数据里是否真有重复。
+                var tableFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+                void NoteTableFile(string fullName)
+                {
+                    string logicalPath = NormalizeSingletonPath(fullName);
+                    if (!tableFiles.TryGetValue(logicalPath, out List<string> paths))
+                        tableFiles[logicalPath] = paths = new List<string>();
+                    int sources = Math.Max(1, archives.SourceCount(fullName));
+                    for (int i = 0; i < sources; i++)
+                        paths.Add(fullName);
+                }
+
                 Queue<LpkFolderInfo> packFolderInfoQueue = new Queue<LpkFolderInfo>();
                 packFolderInfoQueue.Enqueue(archives.GetRootFolder());
                 while (packFolderInfoQueue.Count > 0)
@@ -86,137 +116,56 @@ namespace KartRider
                             // 不再死写 track/ 与 zz：补丁包可能是 track_/ 或其它区服后缀，只要文件名对得上就读取
                             if (IsTrackDataFile(fullName, $"track@zz"))
                             {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                NoteTableFile(fullName);
+                                // 同一路径可能在基础包与补丁包里各有一份：逐份读入，条目按赛道 ID 合并不重复
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
                                 {
-                                    XmlDocument trackDocument = new XmlDocument();
-                                    trackDocument.Load(stream);
-                                    ProcessTrackList(trackDocument, fullName);
+                                    Log.Debug($"{fullName} ← {source}");
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                    {
+                                        XmlDocument trackDocument = new XmlDocument();
+                                        trackDocument.Load(stream);
+                                        ProcessTrackList(trackDocument, $"{fullName} ← {source}");
+                                    }
                                 }
                             }
                             if (IsTrackDataFile(fullName, $"trackLocale@{regionCode}"))
                             {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                NoteTableFile(fullName);
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
                                 {
-                                    XmlDocument localeDocument = new XmlDocument();
-                                    localeDocument.Load(stream);
-                                    ProcessTrackLocale(localeDocument, fullName);
+                                    Log.Debug($"{fullName} ← {source}");
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                    {
+                                        XmlDocument localeDocument = new XmlDocument();
+                                        localeDocument.Load(stream);
+                                        ProcessTrackLocale(localeDocument, $"{fullName} ← {source}");
+                                    }
                                 }
                             }
                             if (fullName == "etc_/itemTable.kml")
                             {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                NoteTableFile(fullName);
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
                                 {
-                                    XDocument doc = XDocument.Load(stream);
-                                    var kartsWithName = doc.Descendants("kart").Where(kart => kart.Attribute("name") != null);
-                                    if (kartsWithName.Count() > 0)
+                                    Log.Debug($"{fullName} ← {source}");
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                     {
-                                        foreach (var kart in kartsWithName)
-                                        {
-                                            int id = int.Parse(kart.Attribute("id").Value);
-                                            string name = kart.Attribute("name").Value;
-                                            byte grade = byte.Parse(kart.Attribute("grade")?.Value ?? "0");
-                                            List<short> defaultEnchant = (kart.Attribute("defaultEnchant")?.Value ?? "")
-                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                                .Select(s => short.TryParse(s.Trim(), out var v) ? (short?)v : null)
-                                                .Where(v => v.HasValue)
-                                                .Select(v => v.Value)
-                                                .ToList();
-                                            if (Kart.kartName.ContainsKey(id))
-                                            {
-                                                var kartTable = Kart.kartName[id];
-                                                if (kartTable.grade == 0 && grade != 0)
-                                                {
-                                                    kartTable.grade = grade;
-                                                }
-                                                if (kartTable.defaultEnchant.Count < 1 && defaultEnchant.Count > 0)
-                                                {
-                                                    kartTable.defaultEnchant = defaultEnchant;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                var kartTable = new KartTable { Name = name, grade = grade, defaultEnchant = defaultEnchant };
-                                                Kart.kartName.Add(id, kartTable);
-                                            }
-                                        }
-                                    }
-                                    var flyingWithName = doc.Descendants("flyingPet").Where(kart => kart.Attribute("name") != null);
-                                    if (flyingWithName.Count() > 0)
-                                    {
-                                        foreach (var flyingPet in flyingWithName)
-                                        {
-                                            int id = int.Parse(flyingPet.Attribute("id").Value);
-                                            string name = flyingPet.Attribute("name").Value;
-                                            if (!(FlyingPet.flyingName.ContainsKey(id)))
-                                            {
-                                                FlyingPet.flyingName.Add(id, name);
-                                            }
-                                        }
+                                        // 与 itemTable@区服.xml 是同一张表的两份：条目按 id 归并，先到的不被覆盖
+                                        ProcessItemTable(XDocument.Load(stream), $"{fullName} ← {source}", overrideFlyingName: false);
                                     }
                                 }
                             }
                             if (fullName == $"etc_/itemTable@{regionCode}.xml")
                             {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                NoteTableFile(fullName);
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
                                 {
-                                    XDocument doc = XDocument.Load(stream);
-                                    var kartsWithName = doc.Descendants("kart").Where(kart => kart.Attribute("name") != null);
-                                    if (kartsWithName.Count() > 0)
+                                    Log.Debug($"{fullName} ← {source}");
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                     {
-                                        foreach (var kart in kartsWithName)
-                                        {
-                                            int id = int.Parse(kart.Attribute("id").Value);
-                                            string name = kart.Attribute("name").Value;
-                                            byte grade = byte.Parse(kart.Attribute("grade")?.Value ?? "0");
-                                            List<short> defaultEnchant = (kart.Attribute("defaultEnchant")?.Value ?? "")
-                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                                .Select(s => short.TryParse(s.Trim(), out var v) ? (short?)v : null)
-                                                .Where(v => v.HasValue)
-                                                .Select(v => v.Value)
-                                                .ToList();
-                                            if (Kart.kartName.ContainsKey(id))
-                                            {
-                                                var kartTable = Kart.kartName[id];
-                                                if (kartTable.grade == 0 && grade != 0)
-                                                {
-                                                    kartTable.grade = grade;
-                                                }
-                                                if (kartTable.defaultEnchant.Count < 1 && defaultEnchant.Count > 0)
-                                                {
-                                                    kartTable.defaultEnchant = defaultEnchant;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                var kartTable = new KartTable { Name = name, grade = grade, defaultEnchant = defaultEnchant };
-                                                Kart.kartName.Add(id, kartTable);
-                                            }
-                                        }
-                                    }
-                                    var flyingsWithName = doc.Descendants("flyingPet").Where(flyingPet => flyingPet.Attribute("name") != null);
-                                    if (flyingsWithName.Count() > 0)
-                                    {
-                                        foreach (var flyingPet in flyingsWithName)
-                                        {
-                                            int id = int.Parse(flyingPet.Attribute("id").Value);
-                                            string name = flyingPet.Attribute("name").Value;
-                                            if (FlyingPet.flyingName.ContainsKey(id))
-                                            {
-                                                FlyingPet.flyingName[id] = name;
-                                            }
-                                            else
-                                            {
-                                                FlyingPet.flyingName.Add(id, name);
-                                            }
-                                        }
+                                        // 区服表是权威数据：同名飞宠用区服表的名字覆盖，车辆只补缺失字段
+                                        ProcessItemTable(XDocument.Load(stream), $"{fullName} ← {source}", overrideFlyingName: true);
                                     }
                                 }
                             }
@@ -504,32 +453,46 @@ namespace KartRider
                             // 下面的 shop/data/item.kml 分支还要加载商店道具表，跳过它客户端进大厅会闪退
                             if (fullName == $"zeta_/{regionCode}/shop/data/item.kml")
                             {
-                                Log.Debug(fullName);
-                                byte[] data = packFileInfo.GetData();
-                                ClientItemRules.Load(data);
-                                ClientItemRules.LogSummary();
-                                using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
+                                NoteTableFile(fullName);
+                                // 基础包与补丁包可能各带一份 item.kml：逐份读入，按 (类别, 道具 ID) 合并去重
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
                                 {
-                                    XmlDocument doc = new XmlDocument();
-                                    doc.Load(stream);
-                                    XmlNodeList bodyParams = doc.GetElementsByTagName("item");
-                                    if (bodyParams.Count > 0)
+                                    Log.Debug($"{fullName} ← {source}");
+                                    ClientItemRules.Load(data);
+                                    ClientItemRules.LogSummary();
+                                    using (MemoryStream stream = new MemoryStream(GameSupport.NormalizeXmlEncoding(data)))
                                     {
-                                        foreach (XmlNode xn in bodyParams)
+                                        XmlDocument doc = new XmlDocument();
+                                        doc.Load(stream);
+                                        XmlNodeList bodyParams = doc.GetElementsByTagName("item");
+                                        int itemTotal = bodyParams.Count;
+                                        int itemAdded = 0;
+                                        int itemDuplicated = 0;
+                                        if (bodyParams.Count > 0)
                                         {
-                                            XmlElement xe = (XmlElement)xn;
-                                            ushort itemCatId = ushort.Parse(xe.GetAttribute("itemCatId"));
-                                            ushort itemId = ushort.Parse(xe.GetAttribute("itemId"));
-                                            string itemName = xe.GetAttribute("itemName");
-                                            if (!NewRider.items.ContainsKey(itemCatId))
+                                            foreach (XmlNode xn in bodyParams)
                                             {
-                                                NewRider.items[itemCatId] = new Dictionary<ushort, string>();
-                                            }
-                                            if (!NewRider.items[itemCatId].ContainsKey(itemId))
-                                            {
-                                                NewRider.items[itemCatId][itemId] = itemName;
+                                                XmlElement xe = (XmlElement)xn;
+                                                ushort itemCatId = ushort.Parse(xe.GetAttribute("itemCatId"));
+                                                ushort itemId = ushort.Parse(xe.GetAttribute("itemId"));
+                                                string itemName = xe.GetAttribute("itemName");
+                                                if (!NewRider.items.ContainsKey(itemCatId))
+                                                {
+                                                    NewRider.items[itemCatId] = new Dictionary<ushort, string>();
+                                                }
+                                                // 以 (道具类别, 道具 ID) 为主键：重复文件/重复条目只保留先读到的那条
+                                                if (!NewRider.items[itemCatId].ContainsKey(itemId))
+                                                {
+                                                    NewRider.items[itemCatId][itemId] = itemName;
+                                                    itemAdded++;
+                                                }
+                                                else
+                                                {
+                                                    itemDuplicated++;
+                                                }
                                             }
                                         }
+                                        Log.Debug($"[ItemKml] {fullName}: 条目 {itemTotal} 条（新增 {itemAdded} / 已存在跳过 {itemDuplicated}），NewRider.items 现有 {NewRider.items.Sum(cat => cat.Value.Count)} 条");
                                     }
                                 }
                             }
@@ -921,6 +884,27 @@ namespace KartRider
                     foreach (LpkFolderInfo packFolderInfo2 in packFolderInfo1.GetFoldersInfo())
                         packFolderInfoQueue.Enqueue(packFolderInfo2);
                 }
+                int duplicatedTables = 0;
+                var duplicatedTableNames = new List<string>();
+                foreach (KeyValuePair<string, List<string>> table in tableFiles)
+                {
+                    if (table.Value.Count <= 1) continue;
+                    duplicatedTables++;
+                    // 同一路径的多个来源合并显示为「路径 ×N 份」，不同路径写法逐个列出
+                    var groups = table.Value
+                        .GroupBy(path => path, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.Count() > 1 ? $"{g.Key} ×{g.Count()} 份" : g.Key);
+                    duplicatedTableNames.Add($"{table.Key} ← {string.Join(" , ", groups)}");
+                }
+                if (duplicatedTables > 0)
+                {
+                    string action = LpkResourceManager.ReadDuplicateSources
+                        ? "已全部读入并按条目主键合并去重"
+                        : "ReadDuplicateLpkFiles=false，每张只读第一份（旧行为）";
+                    Log.Warn($"[Data] 单例表：{tableFiles.Count} 张表中 {duplicatedTables} 张存在重复文件（{action}）：{string.Join("；", duplicatedTableNames)}");
+                }
+                else
+                    Log.Debug($"[Data] 单例表：读入 {tableFiles.Count} 张表，每张只有 1 份文件，未发现重复");
                 // 所有 track/locale 都读完后再收尾：缺名称的用 ID 兜底，避免新增赛道被随机池静默过滤
                 RandomTrack.FinalizeTrackList();
                 return archives;
@@ -1010,6 +994,39 @@ namespace KartRider
         }
 
         /// <summary>
+        /// 单例数据表（track@zz / trackLocale@区服 / itemTable.* / shop item.kml）的去重键：
+        /// 目录部分把 '_' 视作 '/'、折叠重复斜杠、去掉末尾斜杠，文件名保持原样，
+        /// 使「track_/common/track@zz.xml」与「track/common/track@zz.xml」被判为同一份表。
+        /// </summary>
+        private static string NormalizeSingletonPath(string fullName)
+        {
+            if (string.IsNullOrEmpty(fullName)) return string.Empty;
+            int slash = fullName.LastIndexOf('/');
+            ReadOnlySpan<char> directory = slash >= 0 ? fullName.AsSpan(0, slash) : ReadOnlySpan<char>.Empty;
+            ReadOnlySpan<char> fileName = slash >= 0 ? fullName.AsSpan(slash + 1) : fullName.AsSpan();
+
+            var builder = new StringBuilder(directory.Length + fileName.Length + 1);
+            bool lastSlash = false;
+            foreach (char c in directory)
+            {
+                char ch = c == '_' ? '/' : c;
+                if (ch == '/')
+                {
+                    if (lastSlash) continue;
+                    lastSlash = true;
+                }
+                else
+                {
+                    lastSlash = false;
+                }
+                builder.Append(ch);
+            }
+            if (builder.Length == 0 || builder[builder.Length - 1] != '/') builder.Append('/');
+            builder.Append(fileName);
+            return builder.ToString();
+        }
+
+        /// <summary>
         /// 解析 channel.xml 的 openPeriod 开始时间。
         /// 兼容 "yyyy-MM-ddTHH:mm:ss"、"yyyyMMddTHHmmss" 等写法；"*" 或空表示不限开始时间。
         /// </summary>
@@ -1032,6 +1049,83 @@ namespace KartRider
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
                 out time);
+        }
+
+        /// <summary>
+        /// etc_/itemTable.kml 与 etc_/itemTable@区服.xml：两张表内容重叠，数据里还可能存在重复文件。
+        /// 条目按主键读进 Dictionary（车辆/飞宠均以 id 为键），已存在的只补齐缺失字段、不重复追加，
+        /// 因此文件读几遍，Kart.kartName / FlyingPet.flyingName 里每个 id 都只有一条。
+        /// </summary>
+        private static void ProcessItemTable(XDocument doc, string sourceName, bool overrideFlyingName)
+        {
+            if (doc == null) return;
+
+            int kartTotal = 0, kartAdded = 0, kartMerged = 0, kartInvalid = 0;
+            foreach (XElement kart in doc.Descendants("kart").Where(kart => kart.Attribute("name") != null))
+            {
+                kartTotal++;
+                if (!int.TryParse(kart.Attribute("id")?.Value, out int id))
+                {
+                    kartInvalid++;
+                    continue;
+                }
+                string name = kart.Attribute("name").Value;
+                byte grade = byte.Parse(kart.Attribute("grade")?.Value ?? "0");
+                List<short> defaultEnchant = (kart.Attribute("defaultEnchant")?.Value ?? "")
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => short.TryParse(s.Trim(), out var v) ? (short?)v : null)
+                    .Where(v => v.HasValue)
+                    .Select(v => v.Value)
+                    .ToList();
+                if (Kart.kartName.TryGetValue(id, out KartTable kartTable))
+                {
+                    // 已存在（重复文件或另一份表）：只补缺失字段，不新增条目
+                    kartMerged++;
+                    if (kartTable.grade == 0 && grade != 0)
+                    {
+                        kartTable.grade = grade;
+                    }
+                    if (kartTable.defaultEnchant.Count < 1 && defaultEnchant.Count > 0)
+                    {
+                        kartTable.defaultEnchant = defaultEnchant;
+                    }
+                }
+                else
+                {
+                    Kart.kartName.Add(id, new KartTable { Name = name, grade = grade, defaultEnchant = defaultEnchant });
+                    kartAdded++;
+                }
+            }
+
+            int flyingTotal = 0, flyingAdded = 0, flyingDuplicated = 0, flyingInvalid = 0;
+            foreach (XElement flyingPet in doc.Descendants("flyingPet").Where(f => f.Attribute("name") != null))
+            {
+                flyingTotal++;
+                if (!int.TryParse(flyingPet.Attribute("id")?.Value, out int id))
+                {
+                    flyingInvalid++;
+                    continue;
+                }
+                string name = flyingPet.Attribute("name").Value;
+                if (!FlyingPet.flyingName.ContainsKey(id))
+                {
+                    FlyingPet.flyingName.Add(id, name);
+                    flyingAdded++;
+                }
+                else
+                {
+                    flyingDuplicated++;
+                    // 区服表优先；同一份表的重复文件保留先读到的那条
+                    if (overrideFlyingName)
+                    {
+                        FlyingPet.flyingName[id] = name;
+                    }
+                }
+            }
+
+            Log.Debug($"[ItemTable] {sourceName}: 车辆 {kartTotal} 条（新增 {kartAdded} / 已存在合并 {kartMerged} / 无效 {kartInvalid}），" +
+                      $"飞宠 {flyingTotal} 条（新增 {flyingAdded} / 重复 {flyingDuplicated} / 无效 {flyingInvalid}），" +
+                      $"合计 kartName {Kart.kartName.Count} / flyingName {FlyingPet.flyingName.Count}");
         }
 
         /// <summary>
@@ -1398,12 +1492,33 @@ namespace KartRider
             // 并行预解密时多个线程会同时写各自的 key，用并发字典保证线程安全
             private readonly ConcurrentDictionary<string, byte[]> _decoded =
                 new ConcurrentDictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            // 每个来源各自的解密结果（同一路径在多个分包里重复时用）
+            private readonly ConcurrentDictionary<(string Key, int Source), byte[]> _decodedBySource = new();
             private int _requiredCount;
 
             public int ArchiveCount => _archives.Count;
             public int PathCount => _allPaths.Count;
             public int RequiredCount => _requiredCount;
             public IEnumerable<string> AllPaths => _allPaths;
+
+            /// <summary>
+            /// 是否读入同一虚拟路径在多个分包里的所有副本；由 Profile.Setting.ReadDuplicateLpkFiles 控制。
+            /// true = 每份都读、条目按主键合并去重；false = 回到旧行为，只读先装载的那一份。
+            /// </summary>
+            public static bool ReadDuplicateSources { get; set; } = true;
+
+            /// <summary>在多个分包里重复出现的虚拟路径数量（同一路径被多个 .lpk 各带一份）。</summary>
+            public int DuplicatePathCount { get; private set; }
+            /// <summary>重复路径多出来的副本总数（每多一个分包 +1）。</summary>
+            public int DuplicateRecordCount { get; private set; }
+            /// <summary>重复路径的示例（路径 + 来源分包），用于日志排查。</summary>
+            public List<string> DuplicateSamples { get; } = new List<string>();
+
+            /// <summary>该虚拟路径在索引里共有几个来源（跨分包副本数）；不存在返回 0。</summary>
+            public int SourceCount(string key)
+            {
+                return key != null && _records.TryGetValue(key, out List<RecordEntry> entries) ? entries.Count : 0;
+            }
 
             /// <summary>只读每个分包的头部与记录表，合并成全局路径索引；不读取任何文件数据。</summary>
             public bool Open(string input, out string error)
@@ -1468,7 +1583,33 @@ namespace KartRider
                     error = "没有任何可用的 .lpk 分包";
                     return false;
                 }
+                CountDuplicatePaths();
                 return true;
+            }
+
+            /// <summary>
+            /// 统计「同一虚拟路径出现在多个分包」的重复记录：基础包 + 补丁包里各带一份是最常见的情况。
+            /// 这些副本不会再进目录树（树按路径只挂一份），所以必须在这里统计，否则上层永远看不到重复。
+            /// </summary>
+            private void CountDuplicatePaths()
+            {
+                DuplicatePathCount = 0;
+                DuplicateRecordCount = 0;
+                DuplicateSamples.Clear();
+                foreach (KeyValuePair<string, List<RecordEntry>> record in _records)
+                {
+                    int sources = record.Value.Count;
+                    if (sources <= 1) continue;
+                    DuplicatePathCount++;
+                    DuplicateRecordCount += sources - 1;
+                    if (DuplicateSamples.Count < 10)
+                    {
+                        var names = new List<string>(sources);
+                        foreach (RecordEntry entry in record.Value)
+                            names.Add(System.IO.Path.GetFileName(entry.Archive.Path));
+                        DuplicateSamples.Add($"{record.Key} ×{sources}（{string.Join(" , ", names)}）");
+                    }
+                }
             }
 
             /// <summary>统一解析输入并枚举 .lpk，按 MaxLpkSubdirectoryLevel 限制子目录深度。</summary>
@@ -1586,23 +1727,57 @@ namespace KartRider
                 // 先装载的分包优先；记录损坏/解密失败时，回退到其它分包里的同路径记录
                 for (int i = 0; i < entries.Count; i++)
                 {
-                    RecordEntry entry = entries[i];
                     try
                     {
-                        using var fs = new FileStream(entry.Archive.Path, FileMode.Open, FileAccess.Read,
-                            FileShare.ReadWrite);
-                        byte[] data = LpkV4.Extract(fs, entry.Record, entry.Archive.Index.DataBegin,
-                            entry.Archive.Digits, entry.Archive.Nonce);
+                        byte[] data = ReadSource(key, entries, i);
                         _decoded[key] = data;
                         return data;
                     }
                     catch (Exception ex)
                     {
                         lastError = ex;
-                        Log.Debug($"[Data] {key} 在 {System.IO.Path.GetFileName(entry.Archive.Path)} 解密失败：{ex.Message}");
+                        Log.Debug($"[Data] {key} 在 {System.IO.Path.GetFileName(entries[i].Archive.Path)} 解密失败：{ex.Message}");
                     }
                 }
                 throw new LpkException($"{key} 无法解密：{lastError?.Message}");
+            }
+
+            private byte[] ReadSource(string key, List<RecordEntry> entries, int index)
+            {
+                if (_decodedBySource.TryGetValue((key, index), out byte[] cached)) return cached;
+                RecordEntry entry = entries[index];
+                using var fs = new FileStream(entry.Archive.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                byte[] data = LpkV4.Extract(fs, entry.Record, entry.Archive.Index.DataBegin,
+                    entry.Archive.Digits, entry.Archive.Nonce);
+                _decodedBySource[(key, index)] = data;
+                return data;
+            }
+
+            /// <summary>
+            /// 读出该虚拟路径在**所有**分包里的副本（解密失败的来源记日志后跳过），连同来源分包名。
+            /// 同一路径同时存在于基础包与补丁包时，只看第一份会漏掉补丁里的条目；
+            /// 上层拿到多份后按条目主键合并去重即可。
+            /// </summary>
+            public List<(byte[] Data, string Archive)> ReadAllSources(string key)
+            {
+                var result = new List<(byte[] Data, string Archive)>();
+                if (key == null || !_records.TryGetValue(key, out List<RecordEntry> entries)) return result;
+                // 设置关掉时回到旧行为：每个虚拟路径只读第一份
+                int count = ReadDuplicateSources ? entries.Count : 1;
+                for (int i = 0; i < count; i++)
+                {
+                    string archiveName = System.IO.Path.GetFileName(entries[i].Archive.Path);
+                    try
+                    {
+                        // 只读一份时走 Read()，直接复用预解密缓存
+                        result.Add((count == 1 ? Read(key) : ReadSource(key, entries, i), archiveName));
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug($"[Data] {key} 在 {archiveName} 解密失败：{ex.Message}");
+                    }
+                }
+                return result;
             }
 
             private void AddToTree(string key, Func<byte[]> loader)

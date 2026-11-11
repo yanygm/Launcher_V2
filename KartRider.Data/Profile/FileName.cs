@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Xml.Linq;
@@ -64,7 +65,7 @@ namespace Profile
             new ConcurrentDictionary<string, fileName>(StringComparer.Ordinal);
 
         /// <summary>
-        /// 确保 Profile 数据目录已创建，并把该目录（含已存在的昵称子目录）设置为「大小写敏感」。
+        /// 确保 Profile 数据目录已创建，并只把**根目录本身**设置为「大小写敏感」（不递归子目录）。
         ///
         /// Windows 默认大小写不敏感，昵称 abc / ABC 会落到同一个 Profile\abc 目录里互相覆盖；
         /// 打开 Win10 1803+ 的目录级开关后，之后新建的子目录/文件会继承该标志。
@@ -80,26 +81,7 @@ namespace Profile
                 }
                 try
                 {
-                    if (!Directory.Exists(ProfileDir))
-                    {
-                        Directory.CreateDirectory(ProfileDir);
-                        Log.Info($"[Profile] 已创建数据目录: {ProfileDir}");
-                    }
-
-                    bool enabled = EnableCaseSensitivity(ProfileDir);
-                    int subDirs = 0;
-                    if (enabled)
-                    {
-                        // 开关只对「之后新建」的子目录生效，老账号目录要补一遍
-                        foreach (string dir in Directory.GetDirectories(ProfileDir))
-                        {
-                            if (EnableCaseSensitivity(dir)) subDirs++;
-                        }
-                        if (subDirs > 0)
-                        {
-                            Log.Info($"[Profile] 已为 {subDirs} 个昵称目录开启大小写敏感");
-                        }
-                    }
+                    PrepareProfileDir();
                 }
                 catch (Exception ex)
                 {
@@ -107,6 +89,164 @@ namespace Profile
                 }
                 profileDirPrepared = true;
                 return ProfileDir;
+            }
+        }
+
+        /// <summary>
+        /// 只处理 Profile 根目录：
+        ///   1. 不存在 → 创建并开启大小写敏感；
+        ///   2. 已开启 → 什么都不做；
+        ///   3. 未开启且为空 → 原地开启；
+        ///   4. 未开启且非空 → 原目录整体备份 → 新建空目录并先开启标志 → 把备份内容复制回来。
+        /// 先开标志再复制，新建的子目录才会继承，昵称目录因此不用再逐个设置。
+        /// </summary>
+        private static void PrepareProfileDir()
+        {
+            if (!Directory.Exists(ProfileDir))
+            {
+                Directory.CreateDirectory(ProfileDir);
+                Log.Info($"[Profile] 已创建数据目录: {ProfileDir}");
+                EnableCaseSensitivity(ProfileDir);
+                return;
+            }
+
+            if (TryGetCaseSensitivity(ProfileDir, out bool enabled))
+            {
+                if (enabled) return; // 已经是大小写敏感，不动它
+            }
+            else
+            {
+                // 系统不支持该标志（Win10 1803 之前）：只尽力设置一次，绝不搬目录
+                EnableCaseSensitivity(ProfileDir);
+                return;
+            }
+
+            if (!Directory.EnumerateFileSystemEntries(ProfileDir).Any())
+            {
+                // 空目录可以直接开，不需要重建
+                EnableCaseSensitivity(ProfileDir);
+                return;
+            }
+
+            RebuildCaseSensitiveProfileDir();
+        }
+
+        /// <summary>
+        /// 非空的旧 Profile 目录无法可靠地原地开启大小写敏感（已有文件的大小写可能已经混用），
+        /// 因此整体备份后重建：新目录先开标志，再把备份里的文件/文件夹复制回来。
+        /// 复制失败时新目录可能不完整，但备份始终完整保留，便于人工恢复。
+        /// </summary>
+        private static void RebuildCaseSensitiveProfileDir()
+        {
+            string backupDir = CreateProfileBackupPath();
+            try
+            {
+                Directory.Move(ProfileDir, backupDir);
+            }
+            catch (Exception ex)
+            {
+                // 有文件被占用（例如另一个实例开着 Launcher.json）时搬不动目录，退化为原地设置
+                Log.Warn($"[Profile] 备份原目录失败（{ex.Message}），改为原地开启大小写敏感");
+                EnableCaseSensitivity(ProfileDir);
+                return;
+            }
+
+            Log.Info($"[Profile] 原数据目录已备份: {backupDir}");
+
+            Directory.CreateDirectory(ProfileDir);
+            if (!EnableCaseSensitivity(ProfileDir))
+            {
+                // 新目录开不了标志：把备份移回原位，保持原来的可用状态
+                try
+                {
+                    Directory.Delete(ProfileDir, true);
+                    Directory.Move(backupDir, ProfileDir);
+                    Log.Warn("[Profile] 新目录开启大小写敏感失败，已回滚到原目录");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[Profile] 回滚失败，原数据在 {backupDir}", ex);
+                }
+                return;
+            }
+
+            if (CopyDirectoryContents(backupDir, ProfileDir))
+            {
+                Log.Info($"[Profile] 已将 {backupDir} 的内容复制回大小写敏感目录 {ProfileDir}");
+            }
+            else
+            {
+                Log.Error($"[Profile] 复制回数据不完整，原始数据仍完整保留在 {backupDir}");
+            }
+        }
+
+        private static string CreateProfileBackupPath()
+        {
+            string parent = Path.GetDirectoryName(ProfileDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(parent)) parent = appDir;
+            string stamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string candidate = Path.Combine(parent, $"Profile.backup.{stamp}");
+            for (int i = 1; Directory.Exists(candidate) || File.Exists(candidate); i++)
+            {
+                candidate = Path.Combine(parent, $"Profile.backup.{stamp}_{i}");
+            }
+            return candidate;
+        }
+
+        /// <summary>把 source 下的文件与子目录复制到已存在的 target（子目录用 CreateDirectory 新建，继承父目录的大小写敏感标志）。</summary>
+        private static bool CopyDirectoryContents(string source, string target)
+        {
+            bool ok = true;
+            Directory.CreateDirectory(target);
+            foreach (string file in Directory.EnumerateFiles(source))
+            {
+                try
+                {
+                    File.Copy(file, Path.Combine(target, Path.GetFileName(file)), true);
+                }
+                catch (Exception ex)
+                {
+                    ok = false;
+                    Log.Warn($"[Profile] 复制文件失败 {file}: {ex.Message}");
+                }
+            }
+            foreach (string dir in Directory.EnumerateDirectories(source))
+            {
+                try
+                {
+                    ok &= CopyDirectoryContents(dir, Path.Combine(target, Path.GetFileName(dir)));
+                }
+                catch (Exception ex)
+                {
+                    ok = false;
+                    Log.Warn($"[Profile] 复制目录失败 {dir}: {ex.Message}");
+                }
+            }
+            return ok;
+        }
+
+        /// <summary>查询目录是否已开启大小写敏感；目录打不开或系统不支持时返回 false。</summary>
+        public static bool TryGetCaseSensitivity(string directory, out bool enabled)
+        {
+            enabled = false;
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return false;
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return false;
+
+            SafeFileHandle handle = CreateFileW(
+                directory,
+                GenericRead,
+                FileShareRead | FileShareWrite | FileShareDelete,
+                IntPtr.Zero,
+                OpenExisting,
+                FileFlagBackupSemantics, // 打开目录必须带这个标志
+                IntPtr.Zero);
+            if (handle.IsInvalid) return false;
+
+            using (handle)
+            {
+                if (!TryQueryCaseSensitiveFlags(handle, out uint flags)) return false;
+                enabled = (flags & FileCsFlagCaseSensitiveDir) != 0;
+                return true;
             }
         }
 
@@ -135,7 +275,8 @@ namespace Profile
 
             using (handle)
             {
-                uint flags = QueryCaseSensitiveFlags(handle);
+                // 查不出标志（老系统）时按「未开启」处理，继续尝试设置
+                TryQueryCaseSensitiveFlags(handle, out uint flags);
                 if ((flags & FileCsFlagCaseSensitiveDir) != 0)
                 {
                     return true; // 已经是大小写敏感
@@ -155,16 +296,16 @@ namespace Profile
             }
         }
 
-        private static uint QueryCaseSensitiveFlags(SafeFileHandle handle)
+        /// <summary>读取目录的大小写敏感标志；系统不支持（老 Windows）时返回 false。</summary>
+        private static bool TryQueryCaseSensitiveFlags(SafeFileHandle handle, out uint flags)
         {
-            uint flags = 0;
+            flags = 0;
             if (NtQueryInformationFile(handle, out _, ref flags, sizeof(uint), FileCaseSensitiveInformationForceAccessCheck) == 0)
             {
-                return flags;
+                return true;
             }
             flags = 0;
-            NtQueryInformationFile(handle, out _, ref flags, sizeof(uint), FileCaseSensitiveInformation);
-            return flags;
+            return NtQueryInformationFile(handle, out _, ref flags, sizeof(uint), FileCaseSensitiveInformation) == 0;
         }
 
         /// <summary>

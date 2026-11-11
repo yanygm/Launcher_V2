@@ -336,8 +336,6 @@ public static class ClientItemRules
     };
 
     private static int _parsedKarts;
-    private static int _plainKarts;
-    private static int _plainRules;
     private static bool _loaded;
     private static bool _enabled = true;
 
@@ -393,6 +391,10 @@ public static class ClientItemRules
             return;
         }
 
+        // 本份文件的统计（同一份 item.kml 可能被多个分包各带一份，累计值会把人误导成"规则翻倍"）
+        int plainKarts = 0;
+        int plainRules = 0;
+
         lock (Rules)
         {
             // 不能 Clear：item.kml 位于 rho5，item/slot 的规则表位于 rho，
@@ -419,7 +421,7 @@ public static class ClientItemRules
                     continue;
                 }
 
-                KartRule rule = effect.IndexOf('[') >= 0 ? Parse(kartId, effect) : ParsePlainText(kartId, effect);
+                KartRule rule = effect.IndexOf('[') >= 0 ? Parse(kartId, effect) : ParsePlainText(kartId, effect, ref plainRules);
                 if (rule != null)
                 {
                     if (!Rules.TryGetValue(kartId, out KartRule existing))
@@ -452,7 +454,7 @@ public static class ClientItemRules
 
                     if (effect.IndexOf('[') < 0)
                     {
-                        _plainKarts++;
+                        plainKarts++;
                     }
                 }
             }
@@ -461,9 +463,9 @@ public static class ClientItemRules
             _loaded = true;
         }
 
-        if (_plainKarts > 0)
+        if (plainKarts > 0)
         {
-        Log.Debug($"[KartRules] 其中纯文本词条 {_plainKarts} 辆，解析出 {_plainRules} 条规则");
+            Log.Debug($"[KartRules] 本份 item.kml：纯文本词条 {plainKarts} 辆，解析出 {plainRules} 条规则");
         }
 
         Log.Info($"[KartRules] 已从客户端解析 {_parsedKarts} 辆道具车词条");
@@ -472,8 +474,9 @@ public static class ClientItemRules
     /// <summary>
     /// 纯文本词条解析（老车）：没有 [] 分隔，靠关键词 + 名字最长匹配。
     /// 支持：受到X攻击时获得Y / 使用X时获得|变更为Y / 将X变更为Y / 获得X变更为Y / 发射X / 比赛开始获得X。
+    /// ruleCount 只统计本次 Load 里这份文件解析出的条目数（调用方传入局部变量）。
     /// </summary>
-    private static KartRule ParsePlainText(int kartId, string effect)
+    private static KartRule ParsePlainText(int kartId, string effect, ref int ruleCount)
     {
         var rule = new KartRule();
         bool any = false;
@@ -507,7 +510,7 @@ public static class ClientItemRules
                         {
                             rule.OnAttacked.Add(new Rule { From = from, To = to, Probability = probability });
                             any = true;
-                            _plainRules++;
+                            ruleCount++;
                         }
                     }
                 }
@@ -526,7 +529,7 @@ public static class ClientItemRules
                         {
                             rule.OnAttacked.Add(new Rule { From = from, To = to, Probability = probability });
                             any = true;
-                            _plainRules++;
+                            ruleCount++;
                         }
                     }
                 }
@@ -552,7 +555,7 @@ public static class ClientItemRules
                         {
                             rule.OnUse.Add(new Rule { From = from, To = to, Probability = probability });
                             any = true;
-                            _plainRules++;
+                            ruleCount++;
                         }
                     }
                 }
@@ -574,7 +577,7 @@ public static class ClientItemRules
                         {
                             rule.Convert.Add(new Rule { From = from, To = to, Probability = 100 });
                             any = true;
-                            _plainRules++;
+                            ruleCount++;
                         }
                     }
                 }
@@ -590,7 +593,7 @@ public static class ClientItemRules
                     {
                         rule.StartItems.Add(to);
                         any = true;
-                        _plainRules++;
+                        ruleCount++;
                     }
                 }
                 continue;
@@ -605,7 +608,7 @@ public static class ClientItemRules
                     {
                         rule.StartItems.Add(to);
                         any = true;
-                        _plainRules++;
+                        ruleCount++;
                     }
                 }
             }
@@ -622,6 +625,23 @@ public static class ClientItemRules
     private static bool HasOnUse(KartRule rule, short from, short to)
     {
         return rule.OnUse.Any(r => r.From == from && r.To == to);
+    }
+
+    /// <summary>
+    /// 只追加尚不存在的 (From → To) 规则：同一份 item.kml 里的重复词条、
+    /// 以及数据里重复出现的 item.kml 文件，都不会在 List 里留下第二份相同条目。
+    /// </summary>
+    private static bool AddUnique(List<Rule> target, short from, short to, int probability, bool fromClientTable = false)
+    {
+        foreach (Rule exist in target)
+        {
+            if (exist.From == from && exist.To == to)
+            {
+                return false;
+            }
+        }
+        target.Add(new Rule { From = from, To = to, Probability = probability, FromClientTable = fromClientTable });
+        return true;
     }
 
     /// <summary>把文本里出现的道具名全部解析成 id（最长匹配，避免"水炸弹"吃掉"毒性水炸弹"）。</summary>
@@ -736,8 +756,7 @@ public static class ClientItemRules
                         {
                             if (from != acquireTo)
                             {
-                                rule.Convert.Add(new Rule { From = from, To = acquireTo, Probability = 100 });
-                                any = true;
+                                any |= AddUnique(rule.Convert, from, acquireTo, 100);
                             }
                         }
                     }
@@ -758,8 +777,7 @@ public static class ClientItemRules
                         {
                             if (from != to)
                             {
-                                rule.Convert.Add(new Rule { From = from, To = to, Probability = prob });
-                                any = true;
+                                any |= AddUnique(rule.Convert, from, to, prob);
                             }
                         }
                     }
@@ -774,8 +792,7 @@ public static class ClientItemRules
                 short to = Resolve(onUse.Groups[3].Value);
                 if (from > 0 && to > 0)
                 {
-                    rule.OnUse.Add(new Rule { From = from, To = to, Probability = ParseProbability(onUse.Groups[2].Value) });
-                    any = true;
+                    any |= AddUnique(rule.OnUse, from, to, ParseProbability(onUse.Groups[2].Value));
                 }
                 continue;
             }
@@ -791,8 +808,7 @@ public static class ClientItemRules
                     {
                         foreach (short from in ResolveMany(fromName.Groups[1].Value))
                         {
-                            rule.OnAttacked.Add(new Rule { From = from, To = to, Probability = prob });
-                            any = true;
+                            any |= AddUnique(rule.OnAttacked, from, to, prob);
                         }
                     }
                 }
