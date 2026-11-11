@@ -238,6 +238,8 @@ namespace KartRider
                 peer.LastSeen = Environment.TickCount64;
                 udpLastActivity[nickname] = peer.LastSeen;
                 p2p = peer.P2P;
+                // 开局等待期：收到任意 UDP 包也算“客户端在线/已就绪”
+                RoomManager.MarkPlayerPacket(nickname);
 
                 // 开局等待期：每个 UDP 包都算一次「在线确认」（客户端加载期约 1~6 秒一个 echo）
                 RoomManager.MarkPlayerHeartbeat(nickname);

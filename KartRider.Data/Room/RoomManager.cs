@@ -78,9 +78,9 @@ public static class RoomManager
     }
 
     /// <summary>
-    /// 开局等待期：累计一次「UDP 心跳」。收到 2 次才认为这个玩家真的在线，
-    /// 比"收到过一次包"可靠——掉线/半死的连接不会有连续心跳。
-    /// 只统计 UDP（客户端同时发 39311/39312，一个 echo 周期就 +2）。
+    /// 开局等待期：累计一次「UDP 心跳」。
+    /// 判定已经放宽为「TCP 或 UDP 有一个包就通过」，这里只负责计数，供日志和兜底使用。
+    /// 注意：实测 UDP 几乎全走 39311，39312(P2P) 基本没流量，所以一次周期通常只 +1。
     /// </summary>
     public static void MarkPlayerHeartbeat(string nickname)
     {

@@ -174,7 +174,7 @@ public static class MultyPlayer
             }
         }
 
-        // 全员「准备」已在校验里通过；接下来等各客户端上报 UDP 心跳（每人 2 次）后开局。
+        // 全员「准备」已在校验里通过；接下来等各客户端在开赛包后发回任意包（TCP/UDP）即可开局。
         Log.Info($"[Start] 房间 {roomId} 全员已准备，进入开局等待");
         Set_startTrigger(Parent, room);
     }
@@ -269,19 +269,20 @@ public static class MultyPlayer
     /// </summary>
     static void Set_startTrigger(SessionGroup Parent, GameRoom room)
     {
-        const int GraceMs = 4000;      // 开赛包 → state=1 的最小缓冲（官方实测 3.99~4.17s）
-        const int HeartbeatNeed = 2;   // 每人需要的 UDP 心跳次数（客户端同时发 39311/39312，一个周期就是 2 次）
+        const int GraceMs = 5000;      // 开赛包 → state=1 的最小缓冲（4 秒起步动画过渡不完整，放 5 秒）
         const int KickAtMs = 15000;    // 兜底：此时删人并开局
 
         long fallback = Environment.TickCount64;
         long startTicks = room.StartPacketTicks != 0 ? room.StartPacketTicks : fallback;
 
-        // 单个玩家的通过判定：只看 UDP 心跳（收到 HeartbeatNeed 次就通过并结束检查）
+        // 通过判定：开赛包之后收到过任意一个包就通过（TCP 或 UDP 都算，由 MarkPlayerPacket 统一置位）。
+        // 实测官服每局都有 GameControlPacket(state=0) 这一个 TCP 包，UDP 也会有若干；
+        // 但把门槛设成「UDP 两次」会让开局经常被拖到 10~15 秒（39312 P2P 端口几乎没流量）。
         bool IsReady(string nick, out string why)
         {
-            int udp = room.Heartbeat.TryGetValue(nick, out int hb) ? hb : 0;
-            why = "UDP" + udp + "/" + HeartbeatNeed;
-            return udp >= HeartbeatNeed;
+            bool seen = room.Ready.TryGetValue(nick, out bool v) && v;
+            why = seen ? "OK" : "无包";
+            return seen;
         }
 
         var timer = new System.Timers.Timer();
@@ -341,10 +342,10 @@ public static class MultyPlayer
                     }
                 }
 
-                // ① 4 秒到了，且全员 TCP+UDP 都通过
+                // ① 缓冲到点，且全员 TCP/UDP 至少有一个包
                 if (elapsed >= GraceMs && notOk.Count == 0)
                 {
-                    Finish($"4 秒到点，{racers.Count} 人 UDP 心跳全部通过");
+                    Finish($"{GraceMs / 1000} 秒到点，{racers.Count} 人 TCP/UDP 全部通过");
                     return;
                 }
 
@@ -367,9 +368,17 @@ public static class MultyPlayer
                     return;
                 }
 
+                // 每秒输出一次等待进度（谁还没就绪、为什么），方便排查"卡在起步界面"
                 if (elapsed - lastLog >= 1000)
                 {
                     lastLog = elapsed;
+                    var parts = new List<string>();
+                    foreach (string n in racers)
+                    {
+                        IsReady(n, out string w);
+                        parts.Add(n + "(" + w + ")");
+                    }
+                    Log.Info($"[Start] 房间 {room.RoomId} 等待开局 {elapsed}ms  " + string.Join(" ", parts));
                 }
             }
             catch (Exception ex)
@@ -396,8 +405,8 @@ public static class MultyPlayer
                 continue;
             }
             string nick = p.Nickname;
-            int udp = room.Heartbeat.TryGetValue(nick, out int hb) ? hb : 0;
-            if (udp >= 2)   // 与 Set_startTrigger 的 HeartbeatNeed 保持一致
+            bool seen = room.Ready.TryGetValue(nick, out bool v) && v;
+            if (seen)
             {
                 continue;   // 已通过，不动
             }
@@ -410,10 +419,14 @@ public static class MultyPlayer
                 continue;
             }
 
-            Log.Warn($"[Start] 房间 {room.RoomId} 玩家 {nick} 开局检测未通过（UDP心跳={udp}/2），移出房间");
+            Log.Warn($"[Start] 房间 {room.RoomId} 玩家 {nick} 开局检测未通过（15 秒内 TCP/UDP 都没有包），移出房间并断开");
             try
             {
                 RoomManager.RemovePlayer(room.RoomId, (byte)slotId, nick);
+                // 只从房间移除而不通知，客户端会永远停在起步界面等 state=1（实测玩家会一直打"结束比赛"）。
+                // 直接断开连接，让客户端回到登录界面。
+                SessionGroup sg = ClientManager.GetParent(nick);
+                sg?.Client?.Disconnect();
             }
             catch (Exception ex)
             {
@@ -1067,7 +1080,7 @@ public static class MultyPlayer
             room.StartPacketTicks = Environment.TickCount64;
             room.StartControlTemplate.Clear();   // 上一局的 state=0 模板不要带到这局
 
-            // 重置 UDP 心跳计数：从现在起每个 UDP 包算一次，满 2 次即通过
+            // 重置 UDP 心跳计数：从现在起每个 UDP 包算一次
             room.Heartbeat.Clear();
             foreach (RoomMember hbMember in room._slots)
             {
