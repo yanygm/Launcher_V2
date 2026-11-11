@@ -118,31 +118,8 @@ public static class MultyPlayer
             return;
         }
 
-        // 双人房：按「颜色」统计人数（颜色 = 队伍），各队人数必须一致且至少 2 队。
-        // 单人房（只有 1 名玩家）跳过校验。必须在 arm 之前判定，否则校验失败后无法重试。
-        if (room.DuoTeam)
-        {
-            int duoPlayers = room.GetPlayerCount();
-            var colorCounts = new List<int>();
-            for (byte c = 1; c <= 4; c++)
-            {
-                int n = room.GetColorCount(c);
-                if (n > 0)
-                {
-                    colorCounts.Add(n);
-                }
-            }
-            bool unbalanced = colorCounts.Count < 2 || colorCounts.Distinct().Count() > 1;
-            if (duoPlayers > 1 && unbalanced)
-            {
-                using (OutPacket denyPacket = new OutPacket("GrReplyStartPacket"))
-                {
-                    denyPacket.WriteInt(18);
-                    Parent.Client.Send(denyPacket);
-                }
-                return;
-            }
-        }
+        // 双人房不再校验队伍人数：允许单队、也允许各队人数不一致（测试/娱乐用途）。
+        // 原来这里会回 GrReplyStartPacket(18) 拒绝，客户端不显示原因，表现为卡在起步界面。
 
         // 全员准备校验：没准备齐就绝不进等待流程（必须在 arm 之前判定，否则失败后无法重试）
         if (!EnsureAllPlayersReady(room, Parent, "GameControl/Start"))
