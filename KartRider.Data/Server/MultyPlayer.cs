@@ -480,6 +480,15 @@ public static class MultyPlayer
                 startTargets.Add((sp, BuildStartControl(room, sp)));
             }
         }
+        // 观战位同样要下发 state=1：它是倒计时（3-2-1）和比赛时间基准的触发包。
+        // 之前只遍历 _slots，观战者收不到 → 没有倒数、车辆走位一抖一抖。
+        foreach (RoomMember member in room.ObIDs)
+        {
+            if (member is Player op && !string.IsNullOrEmpty(op.Nickname))
+            {
+                startTargets.Add((op, BuildStartControl(room, op)));
+            }
+        }
         foreach (var (target, packet) in startTargets)
         {
             try

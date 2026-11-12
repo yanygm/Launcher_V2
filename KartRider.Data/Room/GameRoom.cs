@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using KartLibrary.File;
 using KartRider.Common.Utilities;
+using KartRider.IO.Packet;
 using Profile;
 
 namespace KartRider;
@@ -767,11 +768,17 @@ public class GameRoom
             }
             if (!transferred)
             {
-                // 只有观战者时，房主转给观战者，避免房间彻底没有房主
+                // 只有观战者时，房主转给观战者，避免房间彻底没有房主。
+                // 但 pmap=590 是「纯观战」账号，没有开局权限，转给它会让房间再也开不了。
                 foreach (RoomMember member in ObIDs)
                 {
                     if (member is Player p && !ReferenceEquals(p, player))
                     {
+                        uint obPmap = ProfileService.GetProfileConfig(p.Nickname)?.Rider?.pmap ?? 0;
+                        if (obPmap == 590)
+                        {
+                            continue;   // 纯观战不继承房主（718 观战房主可以）
+                        }
                         RoomMaster = p.ID;
                         p.PlayerType = PlayerTypeRoomMaster;
                         transferred = true;
@@ -794,10 +801,64 @@ public class GameRoom
         {
             ClearIdReference(player);
             _slots[slotId] = null;
+
+            // 房间已经没有赛车手了：把 pmap=590 的「纯观战」账号请出去。
+            // 它们留在房间里会让 GetOBCount()>0，房间无法销毁，而且它们又不能开局，
+            // 后续玩家进这个房间就永远开不了局。
+            if (GetPlayerCount() == 0)
+            {
+                EvictPureObservers();
+            }
         }
 
         RoomManager.RemoveRoom(this);
         return true;
+    }
+
+    /// <summary>把 pmap=590（纯观战）成员移出房间，并通知其客户端。</summary>
+    private void EvictPureObservers()
+    {
+        foreach (RoomMember member in ObIDs.ToArray())
+        {
+            if (member is not Player ob || string.IsNullOrEmpty(ob.Nickname))
+            {
+                continue;
+            }
+            uint pmap = ProfileService.GetProfileConfig(ob.Nickname)?.Rider?.pmap ?? 0;
+            if (pmap != 590)
+            {
+                continue;   // 718 观战房主保留
+            }
+
+            SessionGroup session = ob.Session;
+            bool removed = RoomManager.RemovePlayerByNickname(RoomId, ob.Nickname);
+            try
+            {
+                if (session?.Client != null)
+                {
+                    using (OutPacket outPacket = new OutPacket("ChLeaveRoomReplyPacket"))
+                    {
+                        outPacket.WriteBool(removed);
+                        session.Client.Send(outPacket);
+                    }
+                }
+            }
+            catch
+            {
+            }
+            try
+            {
+                using (OutPacket outPacket = new OutPacket("GrKickBroadcastPacket"))
+                {
+                    outPacket.WriteString(ob.Nickname);
+                    MultyPlayer.BroadCast(RoomId, outPacket);
+                }
+            }
+            catch
+            {
+            }
+            KartRider.Logging.Log.Info($"[Room] 房间 {RoomId} 已无赛车手，移出纯观战 {ob.Nickname}（pmap=590）");
+        }
     }
 
     // 其他方法：设置AI、获取格子信息等（沿用之前的逻辑，略）

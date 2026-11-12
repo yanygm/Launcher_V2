@@ -118,6 +118,7 @@ public static class RoomManager
 
         _rooms.TryRemove(room.RoomId, out _);
         RoomScore.Clear(room.RoomId);   // 房间销毁：清掉自动计分状态
+        Log.Info($"[Room] 房间 {room.RoomId} 已销毁（无玩家/观战者）");
 
         // 二次确认：删除与 AddPlayer 之间存在窗口期，若期间真的有玩家进来了就把房间挂回去，
         // 否则 _playerRoomMap 会指向一个不存在的房间（永久幽灵，无法离开/重进）。
@@ -422,23 +423,21 @@ public static class RoomManager
         if (room == null)
             return false;
 
-        // 移除前先抓住成员对象：移除后就取不到 ID 了，而掉线通知要带 playerId
-        Player leavingPlayer = null;
-        try
-        {
-            leavingPlayer = room.GetSlotMember(slotId) as Player;
-        }
-        catch
-        {
-        }
+        // 移除前先抓住成员对象：移除后就取不到 ID 了，而掉线通知要带 playerId。
+        // 注意：观战者掉线时传入的 slotId 是 ObIDs 的下标(0~7)，不能拿去索引 _slots，
+        // 否则会抓到某个正在比赛的玩家，广播出错人的掉线通知。这里统一按昵称查。
+        Player leavingPlayer = room._slots.OfType<Player>()
+            .FirstOrDefault(p => string.Equals(p.Nickname, nickname, StringComparison.OrdinalIgnoreCase));
+        bool leavingIsObserver = room.ObIDs.OfType<Player>()
+            .Any(p => string.Equals(p.Nickname, nickname, StringComparison.OrdinalIgnoreCase));
 
         bool removed = room.RemoveMember(slotId, nickname);
         if (removed)
         {
             // 对局中掉线：官方抓包实测会在约 6.6 秒后下发 GameUserLeaveNoticePacket
             // （12 字节：[包ID][playerId][0]），客户端据此弹出"XXX 掉线了"。
-            // 只有对局进行中才发（StartTicks 在 ResetForNextGame 里归零）。
-            if (room.StartTicks != 0 && leavingPlayer != null && room.GetPlayerCount() > 0)
+            // 只有「对局进行中 + 离开的是竞技位玩家」才发（StartTicks 在 ResetForNextGame 里归零）。
+            if (!leavingIsObserver && room.StartTicks != 0 && leavingPlayer != null && room.GetPlayerCount() > 0)
             {
                 try
                 {
