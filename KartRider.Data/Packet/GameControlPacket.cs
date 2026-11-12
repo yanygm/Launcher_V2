@@ -99,20 +99,47 @@ namespace KartRider.Packet
             return true;
         }
 
-        /// <summary>读取 GameControlPacket(state=2) 的完赛时间，兼容有/无保留字节两种布局。</summary>
+        /// <summary>合理完赛用时区间：5 秒 ~ 4 小时（计时赛专用短图可能只有 7 秒左右）。</summary>
+        static bool PlausibleTime(uint t) => t >= 5000u && t <= 4u * 60 * 60 * 1000;
+
+        /// <summary>
+        /// 读取 GameControlPacket(state=2) 的完赛时间。
+        ///
+        /// 历史：老版本客户端在 state 后多写了一个保留字节，所以这里曾有
+        /// 「第一个字节是 0 就从下一个字节读」的兼容分支。但用时是小端 uint32，
+        /// 第一个字节就是**最低字节**：用时恰好是 256 的整数倍时（约 1/256 的概率）
+        /// 会把正常数据误判成「带保留字节」，读出来的值被除以 256。
+        /// 例：110080ms(0x0001AE00) 被读成 430ms，结算界面显示成 0:00.43。
+        ///
+        /// 现在改为：先按正常 4 字节读，只有读出来明显不合理时才回退到旧布局。
+        /// </summary>
         static uint ReadFinishTime(InPacket iPacket)
         {
             byte[] raw = iPacket.GetRawBuffer();
             int pos = iPacket.Position;
-            if (raw != null && pos >= 0 && raw.Length >= pos + 5 && raw[pos] == 0)
+            if (raw == null || pos < 0 || raw.Length < pos + 4)
+            {
+                return iPacket.ReadUInt();
+            }
+
+            uint direct = BitConverter.ToUInt32(raw, pos);
+            if (PlausibleTime(direct))
+            {
+                iPacket.Skip(4);
+                return direct;
+            }
+
+            // 正常读法不合理 → 可能是旧布局（多一个保留字节）
+            if (raw.Length >= pos + 5)
             {
                 uint shifted = BitConverter.ToUInt32(raw, pos + 1);
-                if (shifted <= 4u * 60 * 60 * 1000)
+                if (PlausibleTime(shifted))
                 {
                     iPacket.Skip(5);
                     return shifted;
                 }
             }
+
             return iPacket.ReadUInt();
         }
     }
