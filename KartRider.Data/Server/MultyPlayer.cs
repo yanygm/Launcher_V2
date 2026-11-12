@@ -397,10 +397,19 @@ public static class MultyPlayer
             try
             {
                 RoomManager.RemovePlayer(room.RoomId, (byte)slotId, nick);
-                // 只从房间移除而不通知，客户端会永远停在起步界面等 state=1（实测玩家会一直打"结束比赛"）。
+                // 只从房间移除而不通知，客户端会永远停在起步界面等 state=1
                 // 直接断开连接，让客户端回到登录界面。
                 SessionGroup sg = ClientManager.GetParent(nick);
-                sg?.Client?.Disconnect();
+
+                // 让客户端回到自己小屋
+                if (sg != null && sg.Client != null)
+                {
+                    MyRoomData.ChRpEnterMyRoomPacket(sg, nick);
+                }
+                else
+                {
+                    sg?.Client?.Disconnect();
+                }
             }
             catch (Exception ex)
             {
@@ -877,13 +886,25 @@ public static class MultyPlayer
                 // 端点无法解析时仅对该字段补占位，其余内容照常写入
                 outPacket.WriteEndPoint(client == null ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(client.Address, pConfig.Rider.P2pPort));
                 outPacket.WriteEndPoint(new IPEndPoint(IPAddress.Any, 0));
-                // 房间名关键字功能已移除：不再识别“比赛”（隐藏昵称/装备）
-                outPacket.WriteString(p.Nickname);
-                outPacket.WriteShort(pConfig.Rider.Emblem1);
-                outPacket.WriteShort(pConfig.Rider.Emblem2);
-                outPacket.WriteShort(0);
-                GameSupport.GetRider(p.Nickname, outPacket);
-                outPacket.WriteString(pConfig.Rider.Card);
+                // 房间名关键字功能：识别“比赛”（隐藏昵称/装备）
+                if (room.RoomName.Contains("比赛") && !string.IsNullOrEmpty(nickname) && nickname != p.Nickname && !ob)
+                {
+                    outPacket.WriteString("跑跑卡丁车");
+                    outPacket.WriteShort(0);
+                    outPacket.WriteShort(0);
+                    outPacket.WriteShort(0);
+                    GameSupport.GetRider(nickname, outPacket);
+                    outPacket.WriteString("");
+                }
+                else
+                {
+                    outPacket.WriteString(p.Nickname);
+                    outPacket.WriteShort(pConfig.Rider.Emblem1);
+                    outPacket.WriteShort(pConfig.Rider.Emblem2);
+                    outPacket.WriteShort(0);
+                    GameSupport.GetRider(p.Nickname, outPacket);
+                    outPacket.WriteString(pConfig.Rider.Card);
+                }
                 outPacket.WriteUInt(pConfig.Rider.RP);
                 if (room.IsTeamMode || GameModes.IsChallenger(room.GameType))
                 {

@@ -35,7 +35,7 @@ namespace KartRider
             }
             else
             {
-                GameSupport.OnDisconnect(Parent);
+                Parent?.Client?.Disconnect();
             }
         }
 

@@ -63,14 +63,19 @@ namespace KartRider.Packet
                     outPacket.WriteString(ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) ?? "");
                     BroadCast(roomId, outPacket, Parent.Client.Nickname, player.Team);
                 }
-                if (room.GetPlayerCount(0) == 1)
+                if (ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "结束游戏" ||
+                    ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "結束遊戲" ||
+                    ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "结束游戏" ||
+                    ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "結束遊戲")
                 {
-                    if (ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "结束游戏" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.QuickMsg.GetValueOrDefault(id) == "結束遊戲" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "结束游戏" ||
-                        ProfileService.GetProfileConfig(Parent.Client.Nickname)?.GameOption?.TeamQuickMsg.GetValueOrDefault(id) == "結束遊戲")
+                    if (room.GetPlayerCount(0) == 1)
                     {
                         StopGame(roomId, Parent);
+                    }
+                    else
+                    {
+                        bool remove = RoomManager.RemovePlayer(room.RoomId, player.SlotId, player.Nickname);
+                        if (remove) MyRoomData.ChRpEnterMyRoomPacket(Parent, Parent.Client.Nickname);
                     }
                 }
             }

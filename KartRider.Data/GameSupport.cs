@@ -237,11 +237,6 @@ namespace KartRider
             return key.first_val ^ key.second_val;
         }
 
-        public static void OnDisconnect(SessionGroup Parent)
-        {
-            Parent.Client.Disconnect();
-        }
-
         public static void PrGetGameOption(SessionGroup Parent, string Nickname)
         {
             var config = ProfileService.GetProfileConfig(Nickname);
