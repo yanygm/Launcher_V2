@@ -1116,8 +1116,14 @@ public static class MultyPlayer
             //kart data
             ushort KartID = ProfileService.GetProfileConfig(p.Nickname)?.RiderItem?.Set_Kart ?? 0;
             ushort FlyingPetID = ProfileService.GetProfileConfig(p.Nickname)?.RiderItem?.Set_FlyingPet ?? 0;
-            // 房间名关键字功能已移除：不再识别“原版”（全员使用原版车辆数据）
-            StartGameData.GetKartSpac(oPacket, p.Nickname, room.SpeedType, KartID, FlyingPetID);
+            if (room.RoomName.Contains("原版"))
+            {
+                StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
+            }
+            else
+            {
+                StartGameData.GetKartSpac(oPacket, p.Nickname, room.SpeedType, KartID, FlyingPetID);
+            }
 
             oPacket.WriteInt(room.GetAiCount()); //AI count
             if (room.GetAiCount() > 0)
@@ -1216,10 +1222,6 @@ public static class MultyPlayer
                 outPacket.WriteBytes(new byte[5]);
                 Parent.Client.Send(outPacket);
             }
-            // 密码错误不再动房间：
-            // 客户端收到 3 后会自己发 ChGetRoomListRequestPacket 刷新房间列表（日志已确认），
-            // 原来这里调 RemoveRoom(room) 对非空房间只会给房内玩家多发一次 GrSlotDataPacket，
-            // 既不是列表刷新，也没有实际意义。
             return;
         }
 
