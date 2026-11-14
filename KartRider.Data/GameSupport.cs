@@ -451,43 +451,46 @@ namespace KartRider
             // （官服抓包确认：赛前重发槽位时就是把 Set_Kart 换掉，SN 多为 0）
             bool hasRpKart = false;
             ushort rpKartId = 0;
+            RpKartAssign rpAssign = default;
             try
             {
                 int rpRoomId = RoomManager.TryGetRoomId(Nickname);
                 var rpRoom = rpRoomId != -1 ? RoomManager.GetRoom(rpRoomId) : null;
-                if (rpRoom != null && rpRoom.IsRpRoom && rpRoom.RpKarts.TryGetValue(Nickname, out var rpAssign))
+                if (rpRoom != null && rpRoom.IsRpRoom && rpRoom.RpKarts.TryGetValue(Nickname, out var assign))
                 {
                     hasRpKart = true;
-                    rpKartId = rpAssign.KartId;
+                    rpKartId = assign.KartId;
+                    rpAssign = assign;
                 }
             }
             catch
             {
             }
 
-            WriteRiderItem(config.RiderItem, outPacket, hasRpKart, rpKartId);
+            WriteRiderItem(config.RiderItem, outPacket, hasRpKart, rpKartId, rpAssign);
         }
 
         /// <summary>
         /// 按固定字段顺序写入装备数据（30×UShort + 1×Byte + 7×UShort）。
         /// </summary>
-        static void WriteRiderItem(RiderItemData item, OutPacket outPacket, bool overrideKart = false, ushort overrideKartId = 0)
+        static void WriteRiderItem(RiderItemData item, OutPacket outPacket, bool overrideKart = false,
+                                   ushort overrideKartId = 0, RpKartAssign rp = default)
         {
             outPacket.WriteUShort(item.Set_Character);
             outPacket.WriteUShort(item.Set_Paint);
             outPacket.WriteUShort(overrideKart ? overrideKartId : item.Set_Kart);
             outPacket.WriteUShort(item.Set_Plate);
-            outPacket.WriteUShort(item.Set_Goggle);
-            outPacket.WriteUShort(item.Set_Balloon);
+            outPacket.WriteUShort(overrideKart && rp.GoggleId != 0 ? rp.GoggleId : item.Set_Goggle);
+            outPacket.WriteUShort(overrideKart && rp.BalloonId != 0 ? rp.BalloonId : item.Set_Balloon);
             outPacket.WriteUShort(item.Set_Unknown1);
-            outPacket.WriteUShort(item.Set_HeadBand);
+            outPacket.WriteUShort(overrideKart && rp.HeadBandId != 0 ? rp.HeadBandId : item.Set_HeadBand);
             outPacket.WriteUShort(item.Set_HeadPhone);
             outPacket.WriteUShort(item.Set_HandGearL);
             outPacket.WriteUShort(item.Set_Unknown2);
             outPacket.WriteUShort(item.Set_Uniform);
             outPacket.WriteUShort(item.Set_Decal);
-            outPacket.WriteUShort(item.Set_Pet);
-            outPacket.WriteUShort(item.Set_FlyingPet);
+            outPacket.WriteUShort(overrideKart && rp.PetNormalId != 0 ? rp.PetNormalId : item.Set_Pet);
+            outPacket.WriteUShort(overrideKart && rp.PetId != 0 ? rp.PetId : item.Set_FlyingPet);
             outPacket.WriteUShort(item.Set_Aura);
             outPacket.WriteUShort(item.Set_SkidMark);
             outPacket.WriteUShort(item.Set_SpecialKit);

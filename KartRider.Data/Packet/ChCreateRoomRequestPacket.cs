@@ -30,6 +30,42 @@ namespace KartRider.Packet
     {
         public override PacketName TargetPacket => PacketName.ChCreateRoomRequestPacket;
 
+        /// <summary>房间频道路径的标准值（32 字节 UTF-16："PopKart\M01\Chan"）。</summary>
+        private static byte[] DefaultRoomData()
+        {
+            return Encoding.Unicode.GetBytes("PopKart\\M01\\Chan");
+        }
+
+        /// <summary>校验客户端送来的房间数据；不可信时回退到标准值，避免回显后客户端解析异常。</summary>
+        private static byte[] SanitizeRoomData(byte[] data)
+        {
+            if (data == null || data.Length != 32)
+            {
+                return DefaultRoomData();
+            }
+            string text;
+            try
+            {
+                text = Encoding.Unicode.GetString(data);
+            }
+            catch
+            {
+                return DefaultRoomData();
+            }
+            foreach (char ch in text)
+            {
+                if (ch < 0x20 || ch > 0xD7A3)   // ASCII + 韩文区以外（乱码/指针值）一律视为无效
+                {
+                    return DefaultRoomData();
+                }
+            }
+            if (text.IndexOf("PopKart", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return DefaultRoomData();
+            }
+            return data;
+        }
+
         protected override bool Handle(SessionGroup Parent, InPacket iPacket)
         {
             // 房间人数不在已解析的字段里，而是紧跟在标记 BA 7C 70 之后的一个字节（2/4/6/8）
@@ -45,6 +81,11 @@ namespace KartRider.Packet
             int raw2 = iPacket.ReadInt();
             int raw3 = iPacket.ReadInt();
             byte[] RoomData = iPacket.ReadBytes(32);
+
+            // 客户端偶尔会送一段"内存垃圾"当房间数据（实测出现过 0x17D2898888 这类指针值）。
+            // 这份数据会被原样回显到 GrSlotDataPacket，客户端解析时可能直接闪退，
+            // 所以这里做一次白名单校验：不是「PopKart\M01\Chan」这种字符串就换成标准值。
+            RoomData = SanitizeRoomData(RoomData);
             iPacket.ReadBytes(5);
             byte AiSwitch = iPacket.ReadByte();
             Log.Info($"[Room] create raw1={raw1} ai={AiCount} raw2={raw2} raw3={raw3} data={BitConverter.ToString(RoomData)}");
@@ -136,12 +177,19 @@ namespace KartRider.Packet
             }
             else if (RoomName != null && RoomName.Contains("RP赛") && GameType == 4)
             {
-                // 道具 RP 还没做（除车辆外还需要道具/装备设计），先按普通组队道具房创建
-                Log.Debug($"[RP] 房间 {RoomId} 房名含「RP赛」但为组队道具房：道具 RP 暂未开放，按普通组队道具创建");
+                GameType = GameModes.RpItemTeam;
+                Room.IsRpRoom = true;
+                Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「组队道具RP赛」（模式 28，房名={RoomName}）");
+            }
+            else if (RoomName != null && RoomName.Contains("RP赛") && GameType == 2)
+            {
+                GameType = GameModes.RpItemIndi;
+                Room.IsRpRoom = true;
+                Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「个人道具RP赛」（模式 27，房名={RoomName}）");
             }
 
             // 客户端在 RP 频道建房时会直接带模式 30（channel.xml: bokbulbokSpeedTeamInfinit）
-            if (GameModes.IsRpSpeedMode(GameType))
+            if (GameModes.IsRpMode(GameType))
             {
                 Room.IsRpRoom = true;
                 Log.Debug($"[RP] 房间 {RoomId} 识别为「{GameModes.Name(GameType)}」（模式 {GameType}，频道 {Room.Channel}）");

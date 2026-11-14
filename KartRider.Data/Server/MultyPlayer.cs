@@ -747,6 +747,10 @@ public static class MultyPlayer
             BroadcastFlagScore(room);
         }
 
+        // 结算画面（领奖台/名次）已经拿到本局分配的车了，这里才清空 RP 分配：
+        // 玩家回到房间后再请求槽位，就会显示自己装备的车（官服也是这样，大厅不保留 RP 车）。
+        room.RpKarts.Clear();
+
         int firstID = room.Ranking.FirstOrDefault(x => x.Value == 0).Key;
         if (room.RoomMaster < 8 && RoomManager.TryGetIdDetail(room.RoomId, firstID) is Player p1)
         {
@@ -843,7 +847,8 @@ public static class MultyPlayer
         room.Ready.Clear();
         room.TimeData.Clear();
         room.Ranking.Clear();
-        room.RpKarts.Clear();          // RP 赛：本局分配作废，回大厅用各自装备车
+        // RP 分配在这里先**保留**：结算/领奖台要在同一份槽位数据下显示本局分配的车。
+        // 真正的清空放在 SettleRoom 发完 state=4 之后（见 ClearRpAssignAfterSettle）。
         room.redGauge = 0f;
         room.blueGauge = 0f;
         // 注意：夺旗/死斗积分必须保留到 GameResultPacket 结算之后再清理，
@@ -1097,6 +1102,7 @@ public static class MultyPlayer
             if (room.IsRpRoom)
             {
                 RpKartPools.AssignForRace(room);
+
                 // 官服抓包：分配完车辆会先单独广播一份 GrSlotDataPacket（换 Set_Kart），再发开赛包。
                 // 这里照做：有些客户端只认槽位包的车辆变化。
                 try
@@ -1187,16 +1193,20 @@ public static class MultyPlayer
             ushort FlyingPetID = ProfileService.GetProfileConfig(p.Nickname)?.RiderItem?.Set_FlyingPet ?? 0;
             // RP 赛：用本局分配到的那辆车（素车：不叠加任何改装/飞宠）
             bool rpKart = false;
+            bool rpGood = false;
             if (room.IsRpRoom && room.RpKarts.TryGetValue(p.Nickname, out var rpAssign))
             {
                 rpKart = true;
+                rpGood = rpAssign.IsGood;
                 KartID = rpAssign.KartId;
-                FlyingPetID = 0;
+                FlyingPetID = rpAssign.PetId;   // 好运车配飞宠，霉运车为 0
             }
             if (rpKart)
             {
-                StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
+                // 飞宠的效果来自规格块里的 FlyingPet.* 加成，必须把分配到的飞宠传进去（原来固定 0 → 飞宠没效果）
+                StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, FlyingPetID);
             }
+
             else if (room.RoomName.Contains("原版"))
             {
                 StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
@@ -1236,6 +1246,29 @@ public static class MultyPlayer
             }
             //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
             Log.Debug($"Track : {RandomTrack.GetTrackName(room.trackTemp)}");
+
+            // 道具 RP 的「道具换位卡」：客户端收到 GrGetBokbulBokSlotChanger 才会给卡。
+            // 按这名玩家本局车的等级取概率（好运默认 30% / 霉运默认 0%），抽中才单独发给他。
+            if (rpKart && GameModes.IsRpItemMode(room.GameType))
+            {
+                try
+                {
+                    int cardChance = RpKartPools.GetCardChance(rpGood ? RpPoolKind.Good : RpPoolKind.Bad);
+                    if (cardChance >= 100 || (cardChance > 0 && Random.Shared.Next(100) < cardChance))
+                    {
+                        using (OutPacket cardPkt = new OutPacket("GrGetBokbulBokSlotChanger"))
+                        {
+                            p.Session.Client.Send(cardPkt);
+                        }
+                        Log.Debug($"[RP] 房间 {room.RoomId} {p.Nickname} 抽到道具换位卡（{(rpGood ? "好运" : "霉运")}概率 {cardChance}%）");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"[RP] 房间 {room.RoomId} 发道具卡失败 {p.Nickname}: {ex.Message}");
+                }
+            }
+
             p.Session.Client.Send(oPacket);
         }
     }
@@ -1700,6 +1733,12 @@ public static class MultyPlayer
         {
             return;
         }
+        // RP 赛同样没有 AI（和双人赛一致：进去是纯玩家对局）
+        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType))
+        {
+            Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，跳过添加 {count} 个 AI");
+            return;
+        }
         var selector = new DictionaryRandomSelector();
         // 要补的 AI 数量与角色/卡丁车字典容量无关：字典可能只有 6 个角色，
         // 而 ai=8 建房要补 7 个 AI。字典不够时必须跨轮重复抽取，
@@ -1834,6 +1873,12 @@ public static class MultyPlayer
         if (room == null)
         {
             Log.Info($"GetRoom Failed, roomId = {roomId}");
+            return;
+        }
+        // RP 赛不允许加 AI
+        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType))
+        {
+            Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，忽略添加 AI 请求");
             return;
         }
         var selector = new DictionaryRandomSelector();
@@ -2290,7 +2335,14 @@ public static class MultyPlayer
                     outPacket.WriteInt(p4.ID); // player id
                     outPacket.WriteUInt(timeData[p4.ID]);
                     outPacket.WriteByte();
-                    outPacket.WriteUShort(p4Config.RiderItem.Set_Kart);
+                    // 结算包里带的是「这名玩家本局用的车」。RP 房必须写分配到的车，
+                    // 否则写玩家存档里的 Set_Kart（没装备车时是 0）→ 结算/领奖台显示练习用卡丁车。
+                    ushort resultKartId = p4Config.RiderItem.Set_Kart;
+                    if (room.IsRpRoom && room.RpKarts.TryGetValue(p4.Nickname, out var rpResult))
+                    {
+                        resultKartId = rpResult.KartId;
+                    }
+                    outPacket.WriteUShort(resultKartId);
                     int playerRanking = ranking[p4.ID];
                     int playerPoint = scoreMode
                         ? room.ModeScore(p4.ID)

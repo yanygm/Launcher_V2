@@ -39,6 +39,20 @@ public static class BokbulbokPool
     public static List<ushort> ItemGood { get; } = new();
     public static List<ushort> ItemBad { get; } = new();
 
+    // 飞行宠物（itemCatId=52）：官服 RP 赛里「好运车」会配一只随机飞宠，「霉运车」不配
+    public static List<ushort> SpeedGoodPets { get; } = new();
+    public static List<ushort> ItemGoodPets { get; } = new();
+
+    /// <summary>道具 RP 的其它部位（itemCatId → 好运池）：8 眼镜 / 9 气球 / 11 头饰 / 21 宠物</summary>
+    public static Dictionary<int, List<ushort>> ItemParts { get; } = new();
+
+    public const int BokbulCatKart = 3;
+    public const int BokbulCatGoggle = 8;
+    public const int BokbulCatBalloon = 9;
+    public const int BokbulCatHeadBand = 11;
+    public const int BokbulCatPet = 21;
+    public const int BokbulCatFlyingPet = 52;
+
     public static bool Loaded { get; private set; }
 
     /// <summary>
@@ -51,6 +65,11 @@ public static class BokbulbokPool
         SpeedBad.AddRange(new ushort[] { 1401, 1430, 1440, 1459, 1466 });
         ItemGood.AddRange(new ushort[] { 1565, 1575, 1588, 1600 });
         ItemBad.AddRange(new ushort[] { 1455, 1467, 1487, 1496, 1510 });
+        SpeedGoodPets.AddRange(new ushort[] { 85, 97, 115, 122, 127 });
+        ItemParts[BokbulCatGoggle] = new List<ushort> { 31, 38, 56, 58, 100, 149 };
+        ItemParts[BokbulCatBalloon] = new List<ushort> { 151, 190, 191, 207, 998, 1108, 1363 };
+        ItemParts[BokbulCatHeadBand] = new List<ushort> { 54, 79, 80, 91, 152, 177, 466, 643 };
+        ItemParts[BokbulCatPet] = new List<ushort> { 61, 105, 107, 116, 120, 147, 172, 186, 187 };
     }
 
     /// <summary>解析一份 bokbulbok.xml（基础包/补丁包可能各带一份，按 id 去重合并）。</summary>
@@ -74,6 +93,9 @@ public static class BokbulbokPool
                 SpeedBad.Clear();
                 ItemGood.Clear();
                 ItemBad.Clear();
+                SpeedGoodPets.Clear();
+                ItemGoodPets.Clear();
+                ItemParts.Clear();
                 foreach (XElement info in doc.Descendants("bokbulbokInfo"))
                 {
                     string type = (info.Attribute("type")?.Value ?? "").Trim().ToLowerInvariant();
@@ -85,8 +107,12 @@ public static class BokbulbokPool
                     }
                     foreach (XElement item in info.Descendants("item"))
                     {
-                        // 只关心车辆：itemCatId=3
-                        if (!ushort.TryParse(item.Attribute("itemCatId")?.Value, out ushort cat) || cat != 3)
+                        if (!ushort.TryParse(item.Attribute("itemCatId")?.Value, out ushort cat))
+                        {
+                            continue;
+                        }
+                        // 3 = 车辆，52 = 飞行宠物，其余类别忽略
+                        if (cat != 3 && cat != 52 && cat != 8 && cat != 9 && cat != 11 && cat != 21)
                         {
                             continue;
                         }
@@ -96,6 +122,33 @@ public static class BokbulbokPool
                         }
                         if (!int.TryParse(item.Attribute("grade")?.Value, out int grade))
                         {
+                            continue;
+                        }
+                        if (cat == 8 || cat == 9 || cat == 11 || cat == 21)
+                        {
+                            // 道具 RP 的其它部位：只收好运（grade=1）
+                            if (!isItem || grade != 1)
+                            {
+                                continue;
+                            }
+                            if (!ItemParts.TryGetValue(cat, out var partList))
+                            {
+                                ItemParts[cat] = partList = new List<ushort>();
+                            }
+                            if (!partList.Contains(kartId))
+                            {
+                                partList.Add(kartId);
+                            }
+                            continue;
+                        }
+                        if (cat == 52)
+                        {
+                            // 飞行宠物：只进「好运飞宠」池
+                            var pets = isSpeed ? SpeedGoodPets : ItemGoodPets;
+                            if (!pets.Contains(kartId))
+                            {
+                                pets.Add(kartId);
+                            }
                             continue;
                         }
                         var good = isSpeed ? SpeedGood : ItemGood;
@@ -138,8 +191,9 @@ public static class BokbulbokPool
     {
         lock (Sync)
         {
-            Log.Info($"[Bokbul] 客户端 RP 池：竞速 好运 {SpeedGood.Count} / 霉运 {SpeedBad.Count}，" +
-                     $"道具 好运 {ItemGood.Count} / 霉运 {ItemBad.Count}" +
+            string parts = string.Join(" ", ItemParts.Select(kv => $"{kv.Key}:{kv.Value.Count}"));
+            Log.Info($"[Bokbul] 客户端 RP 池：竞速 好运 {SpeedGood.Count} / 霉运 {SpeedBad.Count} / 飞宠 {SpeedGoodPets.Count}，" +
+                     $"道具 好运 {ItemGood.Count} / 霉运 {ItemBad.Count} / 飞宠 {ItemGoodPets.Count} / 部位[{parts}]" +
                      $"（竞速好运 {string.Join(",", SpeedGood)}；竞速霉运 {string.Join(",", SpeedBad)}）");
         }
     }
