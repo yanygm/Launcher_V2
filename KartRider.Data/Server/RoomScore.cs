@@ -101,14 +101,13 @@ namespace KartRider
         {
             message = null;
             if (room == null || starter == null) { message = "房间状态异常"; return StartResult.NoRoom; }
-            if (room.GameType != 1 && room.GameType != 3 && room.GameType != 4)
+            bool individual = GameModes.IsIndiSpeed(room.GameType);
+            bool teamRoom = GameModes.IsTeamSpeed(room.GameType) || GameModes.IsTeamItem(room.GameType);
+            if (!individual && !teamRoom)
             {
-                message = "仅个人竞速、组队竞速、组队道具支持计分";
+                message = "仅个人竞速、组队竞速（含RP）、组队道具支持计分";
                 return StartResult.NotRacing;
             }
-
-            bool teamRoom = room.GameType == 3 || room.GameType == 4;
-            bool individual = room.GameType == 1;
 
             // 个人竞速只认数字（名次分表）；组队模式只认 总分/胜场，不接受自定义名次分
             if (individual)
@@ -127,7 +126,7 @@ namespace KartRider
 
             // 组队道具没有积分概念：只认第一名所在队伍获胜，一律按胜场。
             bool byTotal = teamRoom && kind == ScoreKind.TotalPoints;
-            if (byTotal && room.GameType == 4)
+            if (byTotal && GameModes.IsTeamItem(room.GameType))
             {
                 message = "组队道具赛只能按胜场计分（道具赛没有积分）";
                 return StartResult.BadArgs;
@@ -426,7 +425,7 @@ namespace KartRider
                 return false;
             }
 
-            if (kind == ScoreKind.TotalPoints && room.GameType == 4)
+            if (kind == ScoreKind.TotalPoints && GameModes.IsTeamItem(room.GameType))
             {
                 message = "组队道具赛只能按胜场计分（道具赛没有积分）";
                 return false;

@@ -90,6 +90,12 @@ namespace KartRider
                 if (p == "/api/stock") return LookupStock(GetQuery(query, "id"));
                 if (p == "/api/stock/search") return SearchStock(GetQuery(query, "q"), GetQuery(query, "limit"));
 
+                // RP 赛车辆池（后台 RP竞速赛 页签）
+                if (p == "/api/rp/pool") return RpPoolView(GetQuery(query, "mode"));
+                if (p == "/api/rp/pool/add" && post) return RpPoolAdd(GetQuery(query, "mode"), GetQuery(query, "kind"), GetQuery(query, "id"), GetQuery(query, "name"));
+                if (p == "/api/rp/pool/del" && post) return RpPoolDel(GetQuery(query, "mode"), GetQuery(query, "kind"), GetQuery(query, "id"));
+                if (p == "/api/rp/kart/search") return RpKartSearch(GetQuery(query, "q"), GetQuery(query, "limit"));
+
                 // 兑换码
                 if (p == "/api/coupons") return Json(ReadCoupons());
                 if (p == "/api/coupon" && post) return AddCoupon(GetQuery(query, "code"), GetQuery(query, "stock"), GetQuery(query, "count"));
@@ -783,6 +789,68 @@ namespace KartRider
             return null;
         }
 
+        // ---------- RP 赛车辆池 ----------
+        private static RpPoolMode RpModeOf(string mode) =>
+            string.Equals(mode, "item", StringComparison.OrdinalIgnoreCase) ? RpPoolMode.Item : RpPoolMode.Speed;
+
+        private static RpPoolKind RpKindOf(string kind) =>
+            string.Equals(kind, "bad", StringComparison.OrdinalIgnoreCase) ? RpPoolKind.Bad : RpPoolKind.Good;
+
+        private static Result RpPoolView(string mode)
+        {
+            var m = RpModeOf(mode);
+            var good = RpKartPools.Get(m, RpPoolKind.Good)
+                .Select(x => new { kartId = x.KartId, name = string.IsNullOrEmpty(x.Name) ? RpKartPools.ResolveName(x.KartId) : x.Name, clientGrade = RpKartPools.ClientGrade(x.KartId) })
+                .ToList();
+            var bad = RpKartPools.Get(m, RpPoolKind.Bad)
+                .Select(x => new { kartId = x.KartId, name = string.IsNullOrEmpty(x.Name) ? RpKartPools.ResolveName(x.KartId) : x.Name, clientGrade = RpKartPools.ClientGrade(x.KartId) })
+                .ToList();
+            return Json(new { ok = true, mode = m == RpPoolMode.Item ? "item" : "speed", good, bad });
+        }
+
+        private static Result RpPoolAdd(string mode, string kind, string idText, string name)
+        {
+            if (!int.TryParse(idText, out int kartId) || kartId <= 0)
+                return Err(400, "车辆ID不合法");
+            bool ok = RpKartPools.Add(RpModeOf(mode), RpKindOf(kind), kartId, name);
+            return Json(new { ok, error = ok ? null : "该车已在池子里（或 ID 无效）" });
+        }
+
+        private static Result RpPoolDel(string mode, string kind, string idText)
+        {
+            if (!int.TryParse(idText, out int kartId) || kartId <= 0)
+                return Err(400, "车辆ID不合法");
+            bool ok = RpKartPools.Remove(RpModeOf(mode), RpKindOf(kind), kartId);
+            return Json(new { ok, error = ok ? null : "池子里没有这辆车" });
+        }
+
+        /// <summary>按车名检索车辆（数据来自客户端 shop/data/item.kml 的 itemCatId=3 条目）。</summary>
+        private static Result RpKartSearch(string q, string limitText)
+        {
+            int limit = int.TryParse(limitText, out int l) ? Math.Clamp(l, 1, 100) : 20;
+            string key = (q ?? "").Trim();
+            var list = new List<object>();
+            if (RiderData.NewRider.items.TryGetValue(3, out var karts) && karts != null)
+            {
+                foreach (var kv in karts)
+                {
+                    string name = kv.Value ?? "";
+                    if (key.Length > 0
+                        && name.IndexOf(key, StringComparison.OrdinalIgnoreCase) < 0
+                        && kv.Key.ToString() != key)
+                    {
+                        continue;
+                    }
+                    list.Add(new { id = (int)kv.Key, name });
+                    if (list.Count >= limit)
+                    {
+                        break;
+                    }
+                }
+            }
+            return Json(new { ok = true, total = karts?.Count ?? 0, items = list });
+        }
+
         private static Result Json(object value) => new Result
         {
             Code = 200,
@@ -813,6 +881,15 @@ namespace KartRider
   nav { display:flex; gap:6px; padding:10px 22px 0; background:#fff; border-bottom:1px solid #e3e8ef; }
   nav button { border:none; background:transparent; padding:10px 14px; cursor:pointer; font-size:14px; color:#5b6b7f; border-bottom:2px solid transparent; }
   nav button.active { color:#2f80ed; border-bottom-color:#2f80ed; font-weight:600; }
+.rp-row { display:grid; grid-template-columns:64px minmax(0,1fr) 76px; gap:8px; align-items:center;
+          padding:6px 8px; border-radius:6px; cursor:pointer; transition:background .12s; }
+.rp-row:hover { background:#eef4ff; }
+.rp-row.owned { cursor:default; opacity:.55; }
+.rp-row.owned:hover { background:transparent; }
+.rp-id { color:#8794a6; font-variant-numeric:tabular-nums; }
+.rp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rp-add { color:#2f80ed; font-size:12px; text-align:right; white-space:nowrap; }
+.rp-row.owned .rp-add { color:#8794a6; }
   main { padding:18px 22px 40px; }
   .cards { display:flex; gap:12px; flex-wrap:wrap; }
   .card { background:#fff; border:1px solid #e3e8ef; border-radius:10px; padding:14px 16px; min-width:150px; flex:1; }
@@ -863,6 +940,8 @@ namespace KartRider
   <button data-tab="coupon">兑换码</button>
   <button data-tab="settings">配置</button>
   <button data-tab="rank">赛道记录</button>
+  <button data-tab="rp-speed">RP竞速赛</button>
+  <button data-tab="rp-item">RP道具赛</button>
 </nav>
 <main>
   <section id="tab-overview">
@@ -1065,6 +1144,48 @@ namespace KartRider
       </div>
     </div>
   </section>
+  <section id="tab-rp-speed" class="hide">
+    <div class="panel">
+      <h3>RP 竞速赛 · 车辆池</h3>
+      <div class="muted" style="margin-bottom:10px;">
+        房名带「RP赛」的组队竞速房会建成 RP 房：每局开赛前从两个池子合并抽车，同局全局不重复。<br>
+        <b>好运/霉运的画面由客户端 <code>bokbulbok.xml</code> 决定</b>：池子里带 ⚠ 的车客户端不认识，
+        抽到时会显示成默认（霉运）画面。
+      </div>
+      <div class="row">
+        <div class="col" style="flex:1;">
+          <h4 style="margin:0 0 8px;">好运车（<span id="rpGoodCount">0</span>）</h4>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="rpGoodQ" placeholder="输入车名检索，回车搜索" onkeydown="if(event.key==='Enter')rpSearch('good')">
+            <button class="btn gray" onclick="rpSearch('good')">检索</button>
+          </div>
+          <div class="list" id="rpGoodResults" style="max-height:150px;overflow:auto;margin-bottom:8px;"></div>
+          <table><thead><tr><th style="width:80px;">车辆ID</th><th>车名</th><th style="width:70px;"></th></tr></thead><tbody id="rpGoodBody"></tbody></table>
+        </div>
+        <div class="col" style="flex:1;">
+          <h4 style="margin:0 0 8px;">霉运车（<span id="rpBadCount">0</span>）</h4>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="rpBadQ" placeholder="输入车名检索，回车搜索" onkeydown="if(event.key==='Enter')rpSearch('bad')">
+            <button class="btn gray" onclick="rpSearch('bad')">检索</button>
+          </div>
+          <div class="list" id="rpBadResults" style="max-height:150px;overflow:auto;margin-bottom:8px;"></div>
+          <table><thead><tr><th style="width:80px;">车辆ID</th><th>车名</th><th style="width:70px;"></th></tr></thead><tbody id="rpBadBody"></tbody></table>
+        </div>
+      </div>
+      <div class="muted" id="rpMsg" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <section id="tab-rp-item" class="hide">
+    <div class="panel">
+      <h3>RP 道具赛</h3>
+      <div class="muted" style="line-height:1.9;">
+        该模式除车辆列表外还需要独立的道具/装备设计，暂未开放。<br>
+        模式号 28（bokbulbokItemNewItemTeam）已在服务端预留，等设计确定后再接入。
+      </div>
+    </div>
+  </section>
+
 </main>
 <script>
 let players = [], curNick = null, curFile = null;
@@ -1073,7 +1194,7 @@ let histPage = 1, histPages = 1;
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  ['overview','players','bans','grant','coupon','settings','rank'].forEach(t => document.getElementById('tab-'+t).classList.toggle('hide', t !== b.dataset.tab));
+  ['overview','players','bans','grant','coupon','settings','rank','rp-speed','rp-item'].forEach(t => document.getElementById('tab-'+t).classList.toggle('hide', t !== b.dataset.tab));
   if (b.dataset.tab === 'overview') loadOverview();
   if (b.dataset.tab === 'players') loadPlayers();
   if (b.dataset.tab === 'bans') { loadIpBans(); loadHistory(); loadNickBans(); }
@@ -1081,11 +1202,69 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   if (b.dataset.tab === 'coupon') loadCoupons();
   if (b.dataset.tab === 'settings') { loadModelMax(); loadSettings(); }
   if (b.dataset.tab === 'rank') loadRankList();
+  if (b.dataset.tab === 'rp-speed') loadRpPools();
 });
 
 async function jget(u) { const r = await fetch(u); return await r.json(); }
 async function jpost(u) { const r = await fetch(u, { method:'POST' }); return await r.json(); }
 function fmtSec(s) { s = s||0; const h=Math.floor(s/3600), m=Math.floor(s%3600/60); return h>0 ? h+'h'+m+'m' : m+'m'; }
+
+// ---------------- RP 竞速赛 车辆池 ----------------
+let rpPools = { good: [], bad: [] };
+
+async function loadRpPools() {
+  rpPools = await jget('/api/rp/pool?mode=speed') || { good: [], bad: [] };
+  renderRpPool('good');
+  renderRpPool('bad');
+}
+
+function renderRpPool(kind) {
+  const list = rpPools[kind] || [];
+  const body = document.getElementById(kind === 'good' ? 'rpGoodBody' : 'rpBadBody');
+  const cnt = document.getElementById(kind === 'good' ? 'rpGoodCount' : 'rpBadCount');
+  if (cnt) cnt.textContent = list.length;
+  if (!body) return;
+  body.innerHTML = list.map(k => {
+    const warn = (k.clientGrade === 0) ? ' <span style="color:#e0a000;" title="客户端 bokbulbok.xml 里没有这辆车，抽车动画会显示成默认（霉运）画面">⚠</span>' : '';
+    return `<tr><td>${k.kartId}</td><td>${k.name || ''}${warn}</td>
+    <td><button class="btn gray" style="width:64px;padding:5px 0;white-space:nowrap;" onclick="rpDelete('${kind}',${k.kartId})">删除</button></td></tr>`;
+  }).join('') || '<tr><td colspan="3" class="muted">暂无（开赛时会用默认池）</td></tr>';
+}
+
+async function rpSearch(kind) {
+  const box = document.getElementById(kind === 'good' ? 'rpGoodQ' : 'rpBadQ');
+  const out = document.getElementById(kind === 'good' ? 'rpGoodResults' : 'rpBadResults');
+  const q = (box?.value || '').trim();
+  if (!q) { out.innerHTML = ''; return; }
+  const res = await jget('/api/rp/kart/search?limit=30&q=' + encodeURIComponent(q));
+  const arr = Array.isArray(res) ? res : (res?.items || []);
+  const owned = new Set((rpPools[kind] || []).map(k => k.kartId));
+  out.innerHTML = (arr.length ? arr : []).map(it => {
+    const id = it.id ?? it.itemId ?? it.stockId;
+    const nm = (it.name ?? it.itemName ?? '');
+    const has = owned.has(id);
+    const cls = has ? 'rp-row owned' : 'rp-row';
+    const act = has
+      ? '<span class="rp-add">已在池中</span>'
+      : '<span class="rp-add">点击添加</span>';
+    const click = has ? '' : ` onclick="rpAdd('${kind}',${id},'${(nm||'').replace(/'/g,'')}')"`;
+    return `<div class="${cls}"${click} title="${(nm||'').replace(/"/g,'')}">
+      <span class="rp-id">${id}</span>
+      <span class="rp-name">${nm}</span>${act}</div>`;
+  }).join('') || '<span class="muted">没有匹配结果</span>';
+}
+
+async function rpAdd(kind, id, name) {
+  const r = await jpost('/api/rp/pool/add?mode=speed&kind=' + kind + '&id=' + id + '&name=' + encodeURIComponent(name || ''));
+  document.getElementById('rpMsg').textContent = r?.ok ? ('已添加 ' + id) : (r?.error || '添加失败');
+  await loadRpPools();
+}
+
+async function rpDelete(kind, id) {
+  const r = await jpost('/api/rp/pool/del?mode=speed&kind=' + kind + '&id=' + id);
+  document.getElementById('rpMsg').textContent = r?.ok ? ('已删除 ' + id) : (r?.error || '删除失败');
+  await loadRpPools();
+}
 
 async function loadOverview() {
   const d = await jget('/api/overview');

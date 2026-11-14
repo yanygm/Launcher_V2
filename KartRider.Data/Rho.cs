@@ -1,4 +1,4 @@
-﻿using ExcData;
+using ExcData;
 using KartLibrary.File;
 using KartLibrary.File.Lpk;
 using KartRider;
@@ -495,6 +495,17 @@ namespace KartRider
                                         Log.Debug($"[ItemKml] {fullName}: 条目 {itemTotal} 条（新增 {itemAdded} / 已存在跳过 {itemDuplicated}），NewRider.items 现有 {NewRider.items.Sum(cat => cat.Value.Count)} 条");
                                     }
                                 }
+                            }
+                            // RP 赛（福不福）池子：客户端决定"好运/霉运"画面的唯一依据
+                            if (fullName.EndsWith($"/content/bokbulbok/bokbulbok.xml", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Log.Debug(fullName);
+                                NoteTableFile(fullName);
+                                foreach ((byte[] data, string source) in archives.ReadAllSources(fullName))
+                                {
+                                    BokbulbokPool.Load(data, source);
+                                }
+                                BokbulbokPool.LogSummary();
                             }
                             if (fullName == $"zeta_/{regionCode}/engine/kart12TuningData.xml")
                             {
@@ -1454,6 +1465,9 @@ namespace KartRider
                 $"zeta_/{region}/lottery/lottery.xml",
                 $"zeta_/{region}/shop/data/stock.kml",
                 $"zeta_/{region}/content/channel.xml",
+                // RP 赛（福不福）池子：客户端决定"好运/霉运"画面的唯一依据，必须读
+                $"zeta_/{region}/content/bokbulbok/bokbulbok.xml",
+                $"zeta/{region}/content/bokbulbok/bokbulbok.xml",
                 $"zeta_/{region}/content/mix/mixTable.xml",
             };
         }

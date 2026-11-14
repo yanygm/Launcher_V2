@@ -271,7 +271,7 @@ public static class RoomManager
             {
                 team = GameModes.DefaultTeam(room.GameType, room.GetPlayerCount(1), room.GetPlayerCount(2));
             }
-            else if (room.GameType == 3 || room.GameType == 4)
+            else if (GameModes.IsTeamSpeed(room.GameType) || GameModes.IsTeamItem(room.GameType))
             {
                 // 组队房间：未指定队伍时自动平衡（红蓝人数差不超过 1）
                 int t1 = room.GetPlayerCount(1);

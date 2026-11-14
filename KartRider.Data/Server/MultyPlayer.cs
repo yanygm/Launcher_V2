@@ -243,11 +243,12 @@ public static class MultyPlayer
     /// </summary>
     static void Set_startTrigger(SessionGroup Parent, GameRoom room)
     {
-        const int GraceMs = 5000;      // 开赛包 → state=1 的最小缓冲（4 秒起步动画过渡不完整，放 5 秒）
+        const int GraceMs = 4000;      // 客户端就绪 → state=1 的最小缓冲（起步动画过渡需要时间）
         const int KickAtMs = 15000;    // 兜底：此时删人并开局
 
         long fallback = Environment.TickCount64;
-        long startTicks = room.StartPacketTicks != 0 ? room.StartPacketTicks : fallback;
+        // 缓冲从「客户端就绪（state=0）」这一刻起算：地图加载再久也保证有完整前置等待
+        long startTicks = fallback;
 
         // 通过判定：开赛包之后收到过任意一个包就通过（TCP 或 UDP 都算，由 MarkPlayerPacket 统一置位）。
         // 实测官服每局都有 GameControlPacket(state=0) 这一个 TCP 包，UDP 也会有若干；
@@ -274,7 +275,7 @@ public static class MultyPlayer
             catch
             {
             }
-            Log.Info($"[Start] 房间 {room.RoomId} 开局（{reason}，开赛包后 {Environment.TickCount64 - startTicks}ms）");
+            Log.Info($"[Start] 房间 {room.RoomId} 开局（{reason}，就绪后 {Environment.TickCount64 - startTicks}ms）");
             startTrigger(Parent, room, null, null);
         }
 
@@ -450,6 +451,8 @@ public static class MultyPlayer
         room.SettleTriggered = false;
         room.TeamGauge.Clear();
         room.Ready.Clear();
+        // 对局代际 +1：本局之前挂着的到期定时器/结算定时器全部作废
+        int raceEpoch = Interlocked.Increment(ref room.RaceEpoch);
         room.ResetModeScores();
 
         // 挑战者模式由指定的 AI 主机模拟 AI（抓包值 = 房内最后的真人 ID）；
@@ -510,7 +513,7 @@ public static class MultyPlayer
         {
             BroadcastFlagScore(room);
         }
-        ArmModeDeadline(room);
+        ArmModeDeadline(room, raceEpoch);
     }
 
     /// <summary>
@@ -573,7 +576,7 @@ public static class MultyPlayer
     /// 夺旗赛/死斗没有冲线，正赛时长由服务端计时：
     /// 到时下发 GameControl(3)，客户端回包后走原有结算流程。
     /// </summary>
-    internal static void ArmModeDeadline(GameRoom room)
+    internal static void ArmModeDeadline(GameRoom room, int epoch)
     {
         int duration = GameModes.RaceDurationMs(room.GameType);
         if (duration <= 0)
@@ -594,6 +597,13 @@ public static class MultyPlayer
             {
                 return;
             }
+            // 只认「本局」的计时：上一局遗留的定时器直接丢弃，
+            // 否则它会在下一局里到点触发，把新对局提前结束（3 分钟没到就结束的根因）。
+            if (Volatile.Read(ref room.RaceEpoch) != epoch)
+            {
+                Log.Debug($"[Mode] 房间 {room.RoomId} 丢弃过期到期定时器（局号 {epoch} ≠ 当前 {room.RaceEpoch}）");
+                return;
+            }
             EndModeRace(room, "时间到");
         });
     }
@@ -607,7 +617,8 @@ public static class MultyPlayer
         }
         lock (room.Sync)
         {
-            if (!room.Started || room.SettleTriggered || room.EndTicks != 0)
+            // StartTicks == 0 说明这局已经收尾（InitRoom 会归零），迟到的定时器不能再结束任何东西
+            if (!room.Started || room.StartTicks == 0 || room.SettleTriggered || room.EndTicks != 0)
             {
                 return;
             }
@@ -629,7 +640,8 @@ public static class MultyPlayer
                 }
                 BroadcastFlagScore(room);
                 Interlocked.Exchange(ref room.ModeDeadlineArmed, 0);
-                ArmModeDeadline(room);
+                // 加时属于同一局的延续，沿用当前代际
+                ArmModeDeadline(room, Volatile.Read(ref room.RaceEpoch));
                 Log.Info($"[Mode] 房间 {room.RoomId} 夺旗赛正赛打平，进入加时 startTick={overtimeTick}");
                 return;
             }
@@ -657,16 +669,22 @@ public static class MultyPlayer
 
     internal static void Set_settleTrigger(GameRoom room, int intervalMs = 10000)
     {
+        // 记下触发时的「局号 + 结束时刻」：迟到的结算定时器不能结算下一局
+        int epoch = Volatile.Read(ref room.RaceEpoch);
+        uint endTicks = room.EndTicks;
         var onceTimer = new System.Timers.Timer();
         onceTimer.Interval = intervalMs;
-        onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) => settleTrigger(room, s, _event));
+        onceTimer.Elapsed += new System.Timers.ElapsedEventHandler((s, _event) =>
+        {
+            if (Volatile.Read(ref room.RaceEpoch) != epoch || room.EndTicks != endTicks || endTicks == 0)
+            {
+                Log.Debug($"[Mode] 房间 {room.RoomId} 丢弃过期结算定时器（局号 {epoch} / 结束刻 {endTicks}）");
+                return;
+            }
+            SettleRoom(room);
+        });
         onceTimer.AutoReset = false;
         onceTimer.Start();
-    }
-
-    static void settleTrigger(GameRoom room, object sender, System.Timers.ElapsedEventArgs e)
-    {
-        SettleRoom(room);
     }
 
     /// <summary>
@@ -825,6 +843,7 @@ public static class MultyPlayer
         room.Ready.Clear();
         room.TimeData.Clear();
         room.Ranking.Clear();
+        room.RpKarts.Clear();          // RP 赛：本局分配作废，回大厅用各自装备车
         room.redGauge = 0f;
         room.blueGauge = 0f;
         // 注意：夺旗/死斗积分必须保留到 GameResultPacket 结算之后再清理，
@@ -1074,6 +1093,26 @@ public static class MultyPlayer
             // 每个客户端拿到的 AI 速度都不同，必然不同步。
             room.PrepareAiSpecs();
 
+            // RP 赛：每局开赛前重新抽签分配车辆（官服抓包：赛前重发 GrSlotDataPacket 换 Set_Kart）
+            if (room.IsRpRoom)
+            {
+                RpKartPools.AssignForRace(room);
+                // 官服抓包：分配完车辆会先单独广播一份 GrSlotDataPacket（换 Set_Kart），再发开赛包。
+                // 这里照做：有些客户端只认槽位包的车辆变化。
+                try
+                {
+                    using (OutPacket rpSlot = new OutPacket("GrSlotDataPacket"))
+                    {
+                        GrSlotDataPacket(roomId, rpSlot);
+                        BroadCast(roomId, rpSlot);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"[RP] 房间 {roomId} 广播分配后的槽位失败：{ex.Message}");
+                }
+            }
+
             using (OutPacket oPacket = new OutPacket("GrReplyStartPacket"))
             {
                 oPacket.WriteInt(0);
@@ -1146,7 +1185,19 @@ public static class MultyPlayer
             //kart data
             ushort KartID = ProfileService.GetProfileConfig(p.Nickname)?.RiderItem?.Set_Kart ?? 0;
             ushort FlyingPetID = ProfileService.GetProfileConfig(p.Nickname)?.RiderItem?.Set_FlyingPet ?? 0;
-            if (room.RoomName.Contains("原版"))
+            // RP 赛：用本局分配到的那辆车（素车：不叠加任何改装/飞宠）
+            bool rpKart = false;
+            if (room.IsRpRoom && room.RpKarts.TryGetValue(p.Nickname, out var rpAssign))
+            {
+                rpKart = true;
+                KartID = rpAssign.KartId;
+                FlyingPetID = 0;
+            }
+            if (rpKart)
+            {
+                StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
+            }
+            else if (room.RoomName.Contains("原版"))
             {
                 StartGameData.GetDefaultSpac(oPacket, p.Nickname, room.SpeedType, KartID, 0);
             }
@@ -2015,9 +2066,9 @@ public static class MultyPlayer
         {
             return (short)Math.Max(0, room.FlagRegulationTotal);
         }
-        if (room.GameType == 3 || room.GameType == 4)
+        if (GameModes.IsTeamSpeed(room.GameType) || GameModes.IsTeamItem(room.GameType))
         {
-            return 2;
+            return 2;   // 组队模式（含 RP）：结算包写队伍数，客户端据此画领奖台
         }
         return 0;
     }
@@ -2181,7 +2232,7 @@ public static class MultyPlayer
         }
 
         byte winnerTeam;
-        if (room.GameType == 3)
+        if (GameModes.IsTeamSpeed(room.GameType))
         {
             if (room.DuoTeam)
             {
@@ -2196,7 +2247,7 @@ public static class MultyPlayer
                 winnerTeam = (byte)(redTeam > blueTeam ? 1 : 2);
             }
         }
-        else if (room.GameType == 4)
+        else if (GameModes.IsTeamItem(room.GameType))
         {
             winnerTeam = firstTeam;
         }

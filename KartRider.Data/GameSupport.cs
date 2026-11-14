@@ -447,17 +447,35 @@ namespace KartRider
                 WriteRiderItem(new RiderItemData(), outPacket);
                 return;
             }
-            WriteRiderItem(config.RiderItem, outPacket);
+            // RP 赛：本局分配到的那辆车替换装备块里的 Set_Kart / Set_KartSN
+            // （官服抓包确认：赛前重发槽位时就是把 Set_Kart 换掉，SN 多为 0）
+            bool hasRpKart = false;
+            ushort rpKartId = 0;
+            try
+            {
+                int rpRoomId = RoomManager.TryGetRoomId(Nickname);
+                var rpRoom = rpRoomId != -1 ? RoomManager.GetRoom(rpRoomId) : null;
+                if (rpRoom != null && rpRoom.IsRpRoom && rpRoom.RpKarts.TryGetValue(Nickname, out var rpAssign))
+                {
+                    hasRpKart = true;
+                    rpKartId = rpAssign.KartId;
+                }
+            }
+            catch
+            {
+            }
+
+            WriteRiderItem(config.RiderItem, outPacket, hasRpKart, rpKartId);
         }
 
         /// <summary>
         /// 按固定字段顺序写入装备数据（30×UShort + 1×Byte + 7×UShort）。
         /// </summary>
-        static void WriteRiderItem(RiderItemData item, OutPacket outPacket)
+        static void WriteRiderItem(RiderItemData item, OutPacket outPacket, bool overrideKart = false, ushort overrideKartId = 0)
         {
             outPacket.WriteUShort(item.Set_Character);
             outPacket.WriteUShort(item.Set_Paint);
-            outPacket.WriteUShort(item.Set_Kart);
+            outPacket.WriteUShort(overrideKart ? overrideKartId : item.Set_Kart);
             outPacket.WriteUShort(item.Set_Plate);
             outPacket.WriteUShort(item.Set_Goggle);
             outPacket.WriteUShort(item.Set_Balloon);
@@ -484,7 +502,7 @@ namespace KartRider
             outPacket.WriteUShort(item.Set_FishingPole);
             outPacket.WriteUShort(item.Set_Tachometer);
             outPacket.WriteUShort(item.Set_Dye);
-            outPacket.WriteUShort(item.Set_KartSN);
+            outPacket.WriteUShort(overrideKart ? (ushort)0 : item.Set_KartSN);
             outPacket.WriteByte(item.Set_Unknown4);
             outPacket.WriteUShort(item.Set_KartCoating);
             outPacket.WriteUShort(item.Set_KartTailLamp);

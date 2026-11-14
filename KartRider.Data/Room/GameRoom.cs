@@ -76,6 +76,20 @@ public class GameRoom
     /// <summary>正赛计时器是否已布置（每个房间每局一次）。</summary>
     public int ModeDeadlineArmed;
 
+    /// <summary>
+    /// 对局代际：每开一局 +1。
+    /// 夺旗/死斗的到期定时器、结算定时器都是「一次性延时任务」，以前只认 room 对象，
+    /// 上一局遗留的定时器会在下一局里正常触发并把新对局提前结束（表现为"3 分钟没到就突然结束"）。
+    /// 定时器触发时必须比对代际，对不上就直接丢弃。
+    /// </summary>
+    public int RaceEpoch;
+
+    /// <summary>房间名带「RP赛」创建出来的 RP 房（福不福：开赛前随机分配车辆）。</summary>
+    public bool IsRpRoom { get; set; }
+
+    /// <summary>本局分配到的车辆：昵称 → (车辆ID, 是否好运车)。每局开赛前重算，结算后清空。</summary>
+    public ConcurrentDictionary<string, RpKartAssign> RpKarts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public int ModeScore(int playerId) =>
         ModeScores.TryGetValue(playerId, out int score) ? score : 0;
 

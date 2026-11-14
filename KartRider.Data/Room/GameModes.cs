@@ -25,6 +25,18 @@ public static class GameModes
     public const byte DeathMatchIndividual = 57;
     public const byte DeathMatchTeam = 58;
 
+    /// <summary>组队竞速 无限 RP 赛（channel.xml: bokbulbokSpeedTeamInfinit, createSpeed=4）。</summary>
+    public const byte RpSpeedTeam = 30;
+
+    /// <summary>组队道具 RP 赛（channel.xml: bokbulbokItemNewItemTeam, createSpeed=7）。暂未启用。</summary>
+    public const byte RpItemTeam = 28;
+
+    /// <summary>个人竞速 无限 RP 赛（channel.xml: bokbulbokSpeedIndi / bokbulbokSpeedIndiInfinit, gameType=29）。</summary>
+    public const byte RpSpeedIndi = 29;
+
+    /// <summary>个人道具 RP 赛（channel.xml: bokbulbokItemNewItemIndi, gameType=27）。暂未启用。</summary>
+    public const byte RpItemIndi = 27;
+
     /// <summary>夺旗赛正赛时长（抓包：结算 time = 180000）。</summary>
     public const int FlagRaceDurationMs = 180_000;
 
@@ -45,10 +57,32 @@ public static class GameModes
 
     public static bool IsChallenger(byte gameType) => gameType == Challenger;
 
+    /// <summary>RP 赛（福不福）：开赛前由服务端随机分配车辆。</summary>
+    public static bool IsRpMode(byte gameType) =>
+        gameType == RpSpeedTeam || gameType == RpItemTeam || gameType == RpSpeedIndi || gameType == RpItemIndi;
+
+    /// <summary>组队竞速类（3 = 普通，30 = 无限 RP）。名次/阵营判定都按这一套。</summary>
+    public static bool IsTeamSpeed(byte gameType) => gameType == 3 || gameType == RpSpeedTeam;
+
+    /// <summary>组队道具类（4 = 普通，28 = RP）。</summary>
+    public static bool IsTeamItem(byte gameType) => gameType == 4 || gameType == RpItemTeam;
+
+    /// <summary>个人竞速类（1 = 普通，29 = 无限 RP）。</summary>
+    public static bool IsIndiSpeed(byte gameType) => gameType == 1 || gameType == RpSpeedIndi;
+
+    /// <summary>个人道具类（2 = 普通，27 = RP）。</summary>
+    public static bool IsIndiItem(byte gameType) => gameType == 2 || gameType == RpItemIndi;
+
+    /// <summary>RP 竞速（无限）。</summary>
+    public static bool IsRpSpeedMode(byte gameType) => gameType == RpSpeedTeam || gameType == RpSpeedIndi;
+
+    /// <summary>RP 道具（暂未启用，先按普通组队道具处理）。</summary>
+    public static bool IsRpItemMode(byte gameType) => gameType == RpItemTeam || gameType == RpItemIndi;
+
     /// <summary>按红/蓝两队分席位（4+4 格）的模式。</summary>
     public static bool IsTeamGameType(byte gameType) =>
         gameType == 3 || gameType == 4 || gameType == FlagTeam ||
-        gameType == DeathMatchTeam;
+        gameType == DeathMatchTeam || gameType == RpSpeedTeam || gameType == RpItemTeam;
 
     /// <summary>按阵营积分结算的模式（没有冲线名次）。</summary>
     public static bool IsScoreMode(byte gameType) =>
@@ -56,7 +90,8 @@ public static class GameModes
 
     /// <summary>会使用道具箱的模式（决定 AI 车辆池 / 随机赛道池）。</summary>
     public static bool IsItemEnabled(byte gameType) =>
-        gameType == 2 || gameType == 4 || IsFlagMode(gameType) || IsDeathMatch(gameType);
+        gameType == 2 || gameType == 4 || IsFlagMode(gameType) || IsDeathMatch(gameType)
+        || gameType == RpItemTeam || gameType == RpItemIndi;
 
     /// <summary>正赛时长；0 表示按冲线结算。</summary>
     public static int RaceDurationMs(byte gameType)
@@ -110,6 +145,10 @@ public static class GameModes
         {
             return "death";
         }
+        if (gameType == RpItemTeam)
+        {
+            return "item";     // RP 道具：走道具赛道池
+        }
         return null;
     }
 
@@ -121,6 +160,10 @@ public static class GameModes
         Challenger => "挑战者模式",
         DeathMatchIndividual => "死斗(个人)",
         DeathMatchTeam => "死斗(团队)",
+        RpSpeedTeam => "组队竞速无限RP赛",
+        RpItemTeam => "组队道具RP赛",
+        RpSpeedIndi => "个人竞速无限RP赛",
+        RpItemIndi => "个人道具RP赛",
         _ => $"模式{gameType}"
     };
 }

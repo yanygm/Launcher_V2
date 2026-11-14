@@ -118,6 +118,34 @@ namespace KartRider.Packet
                 baseGameType = channelInfo.GameType;
             }
             GameType = baseGameType;
+
+            // RP 赛（福不福）：房名带「RP赛」的组队房 → 建成 RP 房。
+            // 官服抓包确认模式号：组队竞速无限RP = 30；组队道具RP = 28（暂未启用，先不转）。
+            Room.IsRpRoom = false;
+            if (RoomName != null && RoomName.Contains("RP赛") && GameType == 3)
+            {
+                GameType = GameModes.RpSpeedTeam;
+                Room.IsRpRoom = true;
+                Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「组队竞速无限RP赛」（模式 30，房名={RoomName}）");
+            }
+            else if (RoomName != null && RoomName.Contains("RP赛") && GameType == 1)
+            {
+                GameType = GameModes.RpSpeedIndi;
+                Room.IsRpRoom = true;
+                Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「个人竞速无限RP赛」（模式 29，房名={RoomName}）");
+            }
+            else if (RoomName != null && RoomName.Contains("RP赛") && GameType == 4)
+            {
+                // 道具 RP 还没做（除车辆外还需要道具/装备设计），先按普通组队道具房创建
+                Log.Debug($"[RP] 房间 {RoomId} 房名含「RP赛」但为组队道具房：道具 RP 暂未开放，按普通组队道具创建");
+            }
+
+            // 客户端在 RP 频道建房时会直接带模式 30（channel.xml: bokbulbokSpeedTeamInfinit）
+            if (GameModes.IsRpSpeedMode(GameType))
+            {
+                Room.IsRpRoom = true;
+                Log.Debug($"[RP] 房间 {RoomId} 识别为「{GameModes.Name(GameType)}」（模式 {GameType}，频道 {Room.Channel}）");
+            }
             Room.GameType = GameType;
             Room.DuoTeam = duoRequested && (GameType == 3 || GameType == 4) && ProfileService.SettingConfig.DuoTeamChannel;
             Room.DuoTeamSize = Room.DuoTeam
@@ -129,6 +157,7 @@ namespace KartRider.Packet
             Room.WireGameType = GameModes.IsFlagMode(GameType)
                 || GameModes.IsDeathMatch(GameType)
                 || GameModes.IsChallenger(GameType)
+                || GameModes.IsRpMode(GameType)
                 ? GameType
                 : (DuoTeamMode.IsBaseGameType(rawGameType)
                     ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
