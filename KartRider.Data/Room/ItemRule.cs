@@ -82,6 +82,153 @@ public static class ItemRule
         [13] = new[] { 0, 30, 50, 0 },       // 定时炸弹
     };
 
+    // ===== 迷你道具赛（组队地板赛，wire mode 51）=====
+    // 客户端这一模式只实现了 5 种道具：香蕉/力场/超级护盾/天使/路障。
+    // 表为千分比（原表列和 100，×10）：
+    //          1位   上位   中位   下位
+    //   香蕉    900   700    200     0
+    //   力场    100   100      0     0
+    //   超级护盾  0   200    400   550
+    //   天使      0     0    100   150
+    //   路障      0     0    300   300
+    public const byte MiniWireGameType = 51;
+    public const short MiniBanana = 8;
+    public const short MiniForceZone = 25;
+    public const short MiniSuperShield = 18;
+
+    //          1位   上位   中位   下位
+    //   香蕉    900   600    100     0
+    //   力场    100   100      0     0
+    //   超级护盾  0   300    600   700
+    //   天使      0     0      0   100
+    //   路障      0     0    300   200
+    private static readonly Dictionary<short, int[]> MiniTable = new Dictionary<short, int[]>
+    {
+        [8] = new[] { 900, 600, 100, 0 },      // 香蕉
+        [25] = new[] { 100, 100, 0, 0 },       // 力场
+        [18] = new[] { 0, 300, 600, 700 },     // 超级护盾
+        [11] = new[] { 0, 0, 0, 100 },         // 天使
+        [113] = new[] { 0, 0, 300, 200 },      // 路障
+    };
+
+    // ===== 迷你道具赛·个人加速赛（子频道 50）=====
+    // 客户端这一模式只实现了 5 种道具：加速器 / 超级加速器 / 磁铁 / 警灯 / 超级盾牌。
+    // 千分比（原表列和 100，×10）：
+    //          1位   上位   中位   下位
+    //   超级盾牌 1000     0      0      0
+    //   加速器      0   650    400    300
+    //   超级加速器   0   100    200    300
+    //   磁铁        0    50    200    200
+    //   警灯        0   200    200    200
+    public const byte MiniAccelWireGameType = 50;
+    public const short AccelBooster = 6;        // 加速器
+    public const short AccelSuperBooster = 31;  // 超级加速器
+    public const short AccelMagnet = 5;         // 磁铁
+    public const short AccelSiren = 24;         // 警灯
+    public const short AccelSuperShield = 18;   // 超级盾牌
+
+    private static readonly Dictionary<short, int[]> MiniAccelTable = new Dictionary<short, int[]>
+    {
+        [18] = new[] { 1000, 0, 0, 0 },        // 超级盾牌
+        [6] = new[] { 0, 650, 400, 300 },      // 加速器
+        [31] = new[] { 0, 100, 200, 300 },     // 超级加速器
+        [5] = new[] { 0, 50, 200, 200 },       // 磁铁
+        [24] = new[] { 0, 200, 200, 200 },     // 警灯
+    };
+
+    /// <summary>是否个人加速赛房间（子频道号 50）。</summary>
+    public static bool IsAccelMode(byte wireGameType) => wireGameType == MiniAccelWireGameType;
+
+    /// <summary>是否个人加速赛合法道具（客户端只实现了这 5 种）。</summary>
+    public static bool IsAccelItem(short itemId) => MiniAccelTable.ContainsKey(itemId);
+
+    /// <summary>按档位抽一个个人加速赛道具。</summary>
+    public static short RollMiniAccel(int playerCount, int rank)
+    {
+        RankGroup group = Group(playerCount, rank);
+        int g = (int)group;
+        int total = 0;
+        foreach (KeyValuePair<short, int[]> kv in MiniAccelTable) total += kv.Value[g];
+        if (total <= 0) return AccelBooster;
+        int pick = Random.Shared.Next(total);
+        int acc = 0;
+        foreach (KeyValuePair<short, int[]> kv in MiniAccelTable)
+        {
+            acc += kv.Value[g];
+            if (pick < acc) return kv.Key;
+        }
+        return AccelBooster;
+    }
+
+    /// <summary>该档位权重最高的加速赛道具（兜底用）。</summary>
+    public static short MiniAccelFallback(int playerCount, int rank)
+    {
+        RankGroup group = Group(playerCount, rank);
+        int g = (int)group;
+        short best = AccelBooster;
+        int bestWeight = -1;
+        foreach (KeyValuePair<short, int[]> kv in MiniAccelTable)
+        {
+            if (kv.Value[g] > bestWeight) { bestWeight = kv.Value[g]; best = kv.Key; }
+        }
+        return best;
+    }
+
+    /// <summary>是否迷你道具赛房间（房间线上模式号 51）。</summary>
+    public static bool IsMiniMode(byte wireGameType) => wireGameType == MiniWireGameType;
+
+    /// <summary>是否迷你赛合法道具（客户端只实现了这 5 种）。</summary>
+    public static bool IsMiniItem(short itemId) => MiniTable.ContainsKey(itemId);
+
+    /// <summary>迷你赛的稀有道具：天使 / 力场（每人每局各最多 2 个）。</summary>
+    public static bool IsMiniRare(short itemId) => itemId == 11 || itemId == 25;
+
+    /// <summary>按档位抽一个迷你赛道具；可分别排除天使 / 力场。</summary>
+    public static short RollMini(int playerCount, int rank, bool excludeAngel, bool excludeForceZone)
+    {
+        bool Skip(short id) => (excludeAngel && id == 11) || (excludeForceZone && id == 25);
+        RankGroup group = Group(playerCount, rank);
+        int g = (int)group;
+        int total = 0;
+        foreach (KeyValuePair<short, int[]> kv in MiniTable)
+        {
+            if (Skip(kv.Key)) continue;
+            total += kv.Value[g];
+        }
+        if (total <= 0)
+        {
+            return MiniBanana;
+        }
+        int pick = Random.Shared.Next(total);
+        int acc = 0;
+        foreach (KeyValuePair<short, int[]> kv in MiniTable)
+        {
+            if (Skip(kv.Key)) continue;
+            acc += kv.Value[g];
+            if (pick < acc) return kv.Key;
+        }
+        return MiniBanana;
+    }
+
+    /// <summary>兼容旧调用：两种稀有一起排除。</summary>
+    public static short RollMini(int playerCount, int rank, bool excludeRare)
+        => RollMini(playerCount, rank, excludeRare, excludeRare);
+
+    /// <summary>该档位权重最高的非稀有迷你道具（兜底用）。</summary>
+    public static short MiniFallback(int playerCount, int rank)
+    {
+        RankGroup group = Group(playerCount, rank);
+        int g = (int)group;
+        short best = MiniBanana;
+        int bestWeight = -1;
+        foreach (KeyValuePair<short, int[]> kv in MiniTable)
+        {
+            if (IsMiniRare(kv.Key)) continue;
+            if (kv.Value[g] > bestWeight) { bestWeight = kv.Value[g]; best = kv.Key; }
+        }
+        return best;
+    }
+
     /// <summary>夺旗赛专用道具池（客户端 item/slot/itemProb_flag@zz.xml 的默认值，文件读不到时兜底）。</summary>
     /// <remarks>
     /// 夺旗赛客户端只实现了这一组道具：盾牌/导弹/磁铁/加速器/大魔王/天使/5连导弹/

@@ -25,6 +25,12 @@ public class GameRoom
     /// <summary>是否双人组队（每队 N 人、多支队伍并存；内部 GameType 仍为 3/4）</summary>
     public bool DuoTeam { get; set; } = false;
 
+    /// <summary>迷你道具赛·组队地板赛（子频道号 51）。玩法按组队道具跑，道具用迷你表。</summary>
+    public bool MiniItemMode { get; set; } = false;
+
+    /// <summary>迷你道具赛·个人加速赛（子频道号 50）。玩法按个人道具跑，道具用加速赛表。</summary>
+    public bool MiniAccelMode { get; set; } = false;
+
     /// <summary>双人组队每队人数（默认 2）</summary>
     public byte DuoTeamSize { get; set; } = 2;
 
@@ -318,10 +324,36 @@ public class GameRoom
         return updated <= ItemRule.RareCapPerGame;
     }
 
+    /// <summary>迷你赛：每个玩家各道具的已获得数量（天使与力场分别计数）。</summary>
+    public ConcurrentDictionary<int, ConcurrentDictionary<short, int>> MiniRareItems { get; } = new();
+
+    public int MiniRareCount(int playerId, short itemId)
+    {
+        if (MiniRareItems.TryGetValue(playerId, out var map) && map.TryGetValue(itemId, out int count))
+        {
+            return count;
+        }
+        return 0;
+    }
+
+    /// <summary>占用该道具的一个名额；已满返回 false。</summary>
+    public bool TryConsumeMiniRare(int playerId, short itemId, int max = 2)
+    {
+        var map = MiniRareItems.GetOrAdd(playerId, _ => new ConcurrentDictionary<short, int>());
+        int updated = map.AddOrUpdate(itemId, 1, (_, old) => old + 1);
+        if (updated > max)
+        {
+            map[itemId] = max;
+            return false;
+        }
+        return true;
+    }
+
     /// <summary>开局时清空稀有道具计数。</summary>
     public void ResetRareItems()
     {
         RareItems.Clear();
+        MiniRareItems.Clear();
     }
 
     /// <summary>房间状态互斥量：槽位增删、开局、结算等结构性变更都串行化在这个锁上。</summary>
@@ -1020,23 +1052,6 @@ public class Close : RoomMember
 {
     public int ID { get; set; }
     public int PlayerType { get; set; }
-}
-
-// 玩家实时赛道跟踪数据：坐标、圈数、累计里程
-public class TrackPos
-{
-    public float X { get; set; }          // 最近一次主向坐标 f1
-    public float Y { get; set; }          // 最近一次横向坐标 f2
-    public uint Ts { get; set; }          // 最近一次时间戳 ts1
-    public bool HasPrev { get; set; }     // 是否有上一采样点
-    public bool InStartZone { get; set; } // 上一采样是否在起点区
-    public int Lap { get; set; }          // 已完成的圈数
-    public float TotalDist { get; set; }  // 累计路径距离（里程）
-    public float DistAtLap { get; set; }  // 过线时的累计距离（用于估算单圈长度）
-    public float LapLength { get; set; }  // 最近一圈长度
-    public bool HasDir { get; set; }      // 是否已建立前进方向参考
-    public float DirX { get; set; }       // 前进方向单位向量 X
-    public float DirY { get; set; }       // 前进方向单位向量 Y
 }
 
 public enum SlotStatus

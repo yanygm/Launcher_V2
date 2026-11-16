@@ -37,6 +37,13 @@ namespace KartRider.Packet
             {
                 return true;
             }
+            // 迷你道具赛（wire 51）：官服在进房后、槽位包之前先下发本局 5 个道具清单，
+            // 客户端靠它切到迷你模式；缺这个包时客户端收到 GrSlotDataPacket 会直接闪退。
+            var miniRoom = RoomManager.GetRoom(roomId);
+            if (miniRoom != null && (miniRoom.MiniItemMode || miniRoom.MiniAccelMode))
+            {
+                SendMiniSession(Parent, miniRoom);
+            }
             GrSessionDataPacket(Parent, Parent.Client.Nickname);
             //Thread.Sleep(10);
             GrSlotDataPacket(roomId);

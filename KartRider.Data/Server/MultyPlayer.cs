@@ -1273,6 +1273,51 @@ public static class MultyPlayer
         }
     }
 
+    /// <summary>
+    /// 下发迷你道具赛的「本局道具清单」（GrItemMiniSessionDataPacket）。
+    ///
+    /// 布局按官服抓包还原（payload，不含包 ID）：
+    ///   [string 房间名]
+    ///   [4B 0][4B 0x733][2B 0][1B 8][4B ?][7B ?]      ← 后 11 字节官服每玩家不同，暂时发 0
+    ///   [4B 数量=5][5 × 2B 道具 id]
+    ///   [22B 固定尾部]
+    /// </summary>
+    internal static void SendMiniSession(SessionGroup Parent, GameRoom room)
+    {
+        using (OutPacket o = new OutPacket("GrItemMiniSessionDataPacket"))
+        {
+            o.WriteString(room.RoomName ?? string.Empty);
+            // 头部第 2 个字段区分变体：0x733=组队地板赛，0x732=个人加速赛
+            string header = room.MiniAccelMode
+                ? "00 00 00 00 32 07 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00"
+                : "00 00 00 00 33 07 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00";
+            o.WriteHexString(header);
+            o.WriteInt(5);
+            if (room.MiniAccelMode)
+            {
+                o.WriteShort(6);    // 加速器
+                o.WriteShort(31);   // 超级加速器
+                o.WriteShort(18);   // 超级盾牌
+                o.WriteShort(5);    // 磁铁
+                o.WriteShort(24);   // 警灯
+                // 个人加速赛尾部（0x594）
+                o.WriteHexString("03 00 00 00 03 00 94 05 00 00 15 00 0b 00 00 00 34 00 01 00 00 00");
+            }
+            else
+            {
+                o.WriteShort(8);    // 香蕉
+                o.WriteShort(25);   // 力场
+                o.WriteShort(18);   // 超级盾牌
+                o.WriteShort(11);   // 天使
+                o.WriteShort(113);  // 路障
+                // 组队地板赛尾部（0x379）
+                o.WriteHexString("03 00 00 00 03 00 79 03 00 00 15 00 0b 00 00 00 34 00 01 00 00 00");
+            }
+            Parent.Client.Send(o);
+        }
+        Log.Info($"[Mini] 已下发迷你道具清单（{(room.MiniAccelMode ? "个人加速赛" : "组队地板赛")}）→ {Parent.Client.Nickname}");
+    }
+
     internal static void GrSessionDataPacket(SessionGroup Parent, string Nickname)
     {
         using (OutPacket oPacket = new OutPacket("GrSessionDataPacket"))
@@ -1739,6 +1784,12 @@ public static class MultyPlayer
             Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，跳过添加 {count} 个 AI");
             return;
         }
+        // 迷你道具赛（子频道 51 / 房名含「地板赛」）也不生成 AI
+        if (room.MiniItemMode || room.MiniAccelMode)
+        {
+            Log.Info($"[Room] 房间 {room.RoomId} 是迷你道具赛，跳过添加 {count} 个 AI");
+            return;
+        }
         var selector = new DictionaryRandomSelector();
         // 要补的 AI 数量与角色/卡丁车字典容量无关：字典可能只有 6 个角色，
         // 而 ai=8 建房要补 7 个 AI。字典不够时必须跨轮重复抽取，
@@ -1879,6 +1930,12 @@ public static class MultyPlayer
         if (room.IsRpRoom || GameModes.IsRpMode(room.GameType))
         {
             Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，忽略添加 AI 请求");
+            return;
+        }
+        // 迷你道具赛不允许加 AI
+        if (room.MiniItemMode || room.MiniAccelMode)
+        {
+            Log.Info($"[Room] 房间 {room.RoomId} 是迷你道具赛，忽略添加 AI 请求");
             return;
         }
         var selector = new DictionaryRandomSelector();

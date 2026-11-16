@@ -58,14 +58,17 @@ namespace KartRider.Packet
                     // 客户端是按频道模式渲染列表的：实测在 RotationMode 频道（gameType=71）里建的双人组队房
                     // （mode=68），条目原样下发时会被客户端整条丢弃（服务端 total=1，客户端列表依旧空白）。
                     // 房间的真实模式仍由 ChJoinRoomReplyPacket / GrSessionDataPacket 下发，这里只影响列表显示。
-                    byte listMode = (gameType > 0 && gameType <= 255) ? (byte)gameType : _room.Value.ModeByte;
-                    if (listMode != _room.Value.ModeByte)
-                    {
-                        Log.Warn($"[RoomList] 房间 {_room.Key} 实际模式={_room.Value.ModeByte}，列表按请求模式 {listMode} 下发（模式不一致时客户端会丢弃条目）");
-                    }
+                    // 【测试】列表条目写「房间自己的模式号」，而不是本次请求的频道号。
+                    // 官服抓包：星期模式-双人竞速 的列表里 10 条中正好 2 条 mode=68，
+                    // 客户端只显示这两条；写 71 会一条都不显示。
+                    // 迷你地板赛：对外仍然写 51（官方列表里 mode=51），内部是组队道具
+                    byte listMode = _room.Value.MiniItemMode ? (byte)ItemRule.MiniWireGameType
+                                    : _room.Value.MiniAccelMode ? (byte)ItemRule.MiniAccelWireGameType
+                                    : _room.Value.ModeByte;
                     // 刚建好的房间还没选图，track 是 0。真实房间一定带合法赛道 hash，
                     // 客户端拿到 0（不存在的赛道）时很可能整条丢弃该房间条目，这里补一个可用占位图。
                     uint listTrack = _room.Value.track;
+                    if (listTrack == 7) listTrack = 0x1C1802BE;   // 星期模式：房间内字段是 7，列表要给真实赛道
                     if (listTrack == 0)
                     {
                         listTrack = ListFallbackTrack(_room.Value.GameType);
@@ -82,7 +85,20 @@ namespace KartRider.Packet
                     oPacket.WriteBool(_room.Value.Started); // 房间状态
                     oPacket.WriteByte((byte)(8 - _room.Value.CloseSlotIds.Count)); // 房间最大人数
                     oPacket.WriteByte((byte)_room.Value.GetCount()); // 房间人数
-                    oPacket.WriteHexString("00 00 00 00 00 00");
+                    // 官方条目尾部 6 字节不是全 0：
+                    //   mode=68(双人竞速) 的条目是 00 00 03 00 00 00
+                    //   mode=51(迷你地板赛) 的条目是 XX 00 07 00 00 00
+                    // 第三字节正好是该房间的「基础模式」(3=组队竞速 / 7=夺旗)，
+                    // 写 0 会让客户端无法归类 → 整条不显示。
+                    oPacket.WriteUShort(0);
+                    // 官服：mode=51（迷你地板赛）的条目尾部是 07，mode=68 是 03，mode=8 是 01。
+                    // 迷你房内部按组队道具(4)跑，但列表里要写官方那个值，否则客户端列表不显示。
+                    // 迷你赛房间对外仍是 51/50，但内部 GameType 是 4/2，所以按标记判断
+                    ushort listBase = _room.Value.MiniItemMode ? (ushort)7
+                                    : _room.Value.MiniAccelMode ? (ushort)12
+                                    : _room.Value.GameType;
+                    oPacket.WriteUShort(listBase);
+                    oPacket.WriteUShort(0);
                 }
                 Parent.Client.Send(oPacket);
             }

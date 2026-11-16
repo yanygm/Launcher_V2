@@ -11,6 +11,7 @@ namespace KartRider;
 
 public class SlotData
 {
+
     private static readonly Random _random = new Random();
 
     public static void GameSlotPacket(SessionGroup Parent, InPacket iPacket)
@@ -47,11 +48,23 @@ public class SlotData
                 uint ticks = iPacket.ReadUInt();
 
                 // 按名次档位（人数+名次表）加权抽道具；已达稀有上限时排除天使/锁/闪电
+                // 人数含 AI（带 AI 时按真实名次档位发道具）
                 int playerCount = room.GetCount();
                 int rank = ItemRule.ComputeRank(room, id, playerRank, playerCount);
+                Log.Debug($"[ItemRule] 迷你赛档位：人数={playerCount} 客户端名次={playerRank} → 名次={rank} 档位={ItemRule.Group(playerCount, rank)}");
                 bool rareCapped = room.RareCount(id) >= ItemRule.RareCapPerGame;
+                // 迷你道具赛（组队地板赛）：客户端只认 5 种道具，走独立表。
+                bool isMini = room.MiniItemMode;
+                bool isAccel = room.MiniAccelMode;
+                // 迷你赛：天使与力场各自上限 2 个，分别判断
+                bool angelCapped = room.MiniRareCount(id, 11) >= ItemRule.RareCapPerGame;
+                bool forceCapped = room.MiniRareCount(id, 25) >= ItemRule.RareCapPerGame;
                 // 统一由服务端抽签（type=2 时 skill2 是“被切换的道具”，不能直接回给客户端）
-                short rolled = ItemRule.Roll(room.GameType, playerCount, rank, rareCapped);
+                short rolled = isAccel
+                    ? ItemRule.RollMiniAccel(playerCount, rank)
+                    : (isMini
+                        ? ItemRule.RollMini(playerCount, rank, angelCapped, forceCapped)
+                        : ItemRule.Roll(room.GameType, playerCount, rank, rareCapped));
                 short skill = rolled;
                 bool tuneConverted = false;
 
@@ -86,18 +99,83 @@ public class SlotData
                 // ③ 词条改写（纯文本规则：获得[X]时转换为[Y] / 将[X]变更为[Y]）：放在最后
                 skill = GetItemSkill(Parent.Client.Nickname, skill);
 
-                if (ItemRule.IsRare(skill) && !room.TryConsumeRare(id, ItemRule.AllowLimit(skill) > 0 ? ItemRule.AllowLimit(skill) : 2))
+                if (isAccel)
                 {
-                    // 词条转换后变成稀有道具但名额已满：退回加速器
-                    skill = ItemRule.Booster;
+                    // 个人加速赛：客户端只认 5 种道具；改装/词条转出别的 → 重抽，仍不行兜底
+                    if (!ItemRule.IsAccelItem(skill))
+                    {
+                        short fixedItem = skill;
+                        for (int attempt = 0; attempt < 3; attempt++)
+                        {
+                            fixedItem = ItemRule.RollMiniAccel(playerCount, rank);
+                            if (ItemRule.IsAccelItem(fixedItem)) break;
+                        }
+                        if (!ItemRule.IsAccelItem(fixedItem))
+                        {
+                            fixedItem = ItemRule.MiniAccelFallback(playerCount, rank);
+                        }
+                        Log.Debug($"[ItemRule] 加速赛非法道具 {skill} → {fixedItem}（{Parent.Client.Nickname}）");
+                        skill = fixedItem;
+                    }
                 }
-
-                // 夺旗赛客户端只实现了 itemProb_flag 里的道具；车辆改装/词条可能把道具转成
-                // 香蕉、云、水炸弹等普通道具，直接下发会让客户端吃道具时闪退，这里强制改回加速器。
-                if (GameModes.IsFlagMode(room.GameType) && !ItemRule.IsFlagItem(skill))
+                else if (isMini)
                 {
-                    Log.Info($"[ItemRule] 夺旗赛过滤非法道具 {skill} → {ItemRule.Booster}（{Parent.Client.Nickname}）");
-                    skill = ItemRule.Booster;
+                    // 迷你赛：改装/词条可能把道具转成 5 种之外 → 重抽（用户要求允许词条，但非法道具必须纠正）
+                    if (!ItemRule.IsMiniItem(skill))
+                    {
+                        short fixedItem = skill;
+                        for (int attempt = 0; attempt < 3; attempt++)
+                        {
+                            fixedItem = ItemRule.RollMini(playerCount, rank, false);
+                            if (ItemRule.IsMiniItem(fixedItem)) break;
+                        }
+                        if (!ItemRule.IsMiniItem(fixedItem))
+                        {
+                            fixedItem = ItemRule.MiniFallback(playerCount, rank);
+                        }
+                        Log.Debug($"[ItemRule] 迷你赛非法道具 {skill} → {fixedItem}（{Parent.Client.Nickname}）");
+                        skill = fixedItem;
+                    }
+                    // 天使 / 力场：各自每人每局最多 2 个；单个超限就重抽（只排除超限的那个）
+                    if (ItemRule.IsMiniRare(skill))
+                    {
+                        bool overLimit = (skill == 11 && room.MiniRareCount(id, 11) >= ItemRule.RareCapPerGame)
+                                      || (skill == 25 && room.MiniRareCount(id, 25) >= ItemRule.RareCapPerGame);
+                        if (overLimit)
+                        {
+                            bool exAngel = room.MiniRareCount(id, 11) >= ItemRule.RareCapPerGame;
+                            bool exForce = room.MiniRareCount(id, 25) >= ItemRule.RareCapPerGame;
+                            short alt = skill;
+                            for (int attempt = 0; attempt < 3; attempt++)
+                            {
+                                alt = ItemRule.RollMini(playerCount, rank, exAngel, exForce);
+                                if (!ItemRule.IsMiniRare(alt)) break;
+                            }
+                            if (ItemRule.IsMiniRare(alt))
+                            {
+                                alt = ItemRule.MiniFallback(playerCount, rank);
+                            }
+                            Log.Debug($"[ItemRule] 迷你赛稀有超限 {skill} → {alt}（{Parent.Client.Nickname}）");
+                            skill = alt;
+                        }
+                        room.TryConsumeMiniRare(id, skill, ItemRule.RareCapPerGame);
+                    }
+                }
+                else
+                {
+                    if (ItemRule.IsRare(skill) && !room.TryConsumeRare(id, ItemRule.AllowLimit(skill) > 0 ? ItemRule.AllowLimit(skill) : 2))
+                    {
+                        // 词条转换后变成稀有道具但名额已满：退回加速器
+                        skill = ItemRule.Booster;
+                    }
+
+                    // 夺旗赛客户端只实现了 itemProb_flag 里的道具；车辆改装/词条可能把道具转成
+                    // 香蕉、云、水炸弹等普通道具，直接下发会让客户端吃道具时闪退，这里强制改回加速器。
+                    if (GameModes.IsFlagMode(room.GameType) && !ItemRule.IsFlagItem(skill))
+                    {
+                        Log.Info($"[ItemRule] 夺旗赛过滤非法道具 {skill} → {ItemRule.Booster}（{Parent.Client.Nickname}）");
+                        skill = ItemRule.Booster;
+                    }
                 }
                 using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                 {

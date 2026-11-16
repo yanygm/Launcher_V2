@@ -139,6 +139,24 @@ namespace KartRider.Packet
             bool rawSpecialMode = GameModes.IsFlagMode(rawGameType)
                 || GameModes.IsDeathMatch(rawGameType)
                 || GameModes.IsChallenger(rawGameType);
+            // 星期模式（channel.xml gameType=71）：7 个子频道各自有自己的模式号，
+            // 官方房间列表条目尾部（第 3 字节）给的就是它们的基础模式：
+            //   68(双人竞速) -> 3 组队竞速
+            //   51(迷你地板赛) -> 7 夺旗组队
+            //    8(双人1v1?) -> 1 个人竞速
+            if (channelInfo != null && channelInfo.WireGameType == 71
+                && !DuoTeamMode.IsBaseGameType(baseGameType))
+            {
+                baseGameType = rawGameType switch
+                {
+                    68 => (byte)3,
+                    51 => (byte)4,   // 迷你地板赛：玩法等同组队道具（写 7 会变成夺旗赛）
+                    50 => (byte)2,   // 迷你个人加速赛：玩法等同个人道具
+                    8 => (byte)1,
+                    _ => (byte)3,
+                };
+                Log.Debug($"[Room] 星期子频道号={rawGameType} → 基础模式={baseGameType}");
+            }
             if (!DuoTeamMode.IsBaseGameType(baseGameType))
             {
                 if (channelInfo != null && DuoTeamMode.IsBaseGameType(channelInfo.GameType))
@@ -210,6 +228,43 @@ namespace KartRider.Packet
                 : (DuoTeamMode.IsBaseGameType(rawGameType)
                     ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
                     : rawGameType);
+            // 迷你地板赛（子频道号 51）：客户端不认识 51 这个房间模式，
+            // GrSessionDataPacket / GrSlotDataPacket 里带 51 会在进房时闪退。
+            // 这里对客户端统一按「组队道具(4)」下发，只在本服内部打标记走迷你道具表。
+            if (channelInfo != null && channelInfo.WireGameType == 71 && rawGameType == ItemRule.MiniWireGameType)
+            {
+                Room.MiniItemMode = true;
+                Room.WireGameType = Room.GameType;
+                Log.Info($"[Room] 迷你地板赛：对客户端按组队道具下发（wire={Room.WireGameType}）");
+            }
+            // 迷你个人加速赛（子频道号 50）：对客户端按「个人道具(2)」下发，内部走加速赛表
+            else if (channelInfo != null && channelInfo.WireGameType == 71 && rawGameType == ItemRule.MiniAccelWireGameType)
+            {
+                Room.MiniAccelMode = true;
+                Room.WireGameType = Room.GameType;
+                Log.Info($"[Room] 迷你个人加速赛：对客户端按个人道具下发（wire={Room.WireGameType}）");
+            }
+            // 普通组队道具房：房名带「地板赛」时同样按迷你地板赛处理（道具走迷你表）
+            else if (Room.GameType == 4 && !string.IsNullOrEmpty(RoomName) && RoomName.Contains("地板赛"))
+            {
+                Room.MiniItemMode = true;
+                Log.Info($"[Room] 房名含「地板赛」→ 按迷你地板赛处理（room={RoomName}）");
+            }
+            // 普通个人道具房：房名带「加速赛」时按迷你个人加速赛处理
+            else if (Room.GameType == 2 && !string.IsNullOrEmpty(RoomName) && RoomName.Contains("加速赛"))
+            {
+                Room.MiniAccelMode = true;
+                Log.Info($"[Room] 房名含「加速赛」→ 按迷你个人加速赛处理（room={RoomName}）");
+            }
+            // 【测试】星期模式房间给一条真实赛道：列表里官方可见的条目都是真实 hash，
+            // 我们没选图时是 0 → 列表回填占位图 forest_B01，客户端很可能按"该子频道允许的赛道"过滤掉。
+            if (channelInfo != null && channelInfo.WireGameType == 71)
+            {
+                // 官服建房后第一份 GrSlotDataPacket 的这个字段是 00000007（不是赛道 hash），
+                // 写赛道 hash 时客户端解析槽位包会闪退。列表条目另用真实赛道（见 ChGetRoomListRequestPacket）。
+                Room.track = 7;
+                Log.Debug("[Room] 星期模式房间默认赛道 = 0x1C1802BE");
+            }
             Room.RoomData = RoomData;
             Log.Info($"[Room] create gameType={rawGameType} -> base={GameType} duo={Room.DuoTeam} wire={Room.WireGameType} channel={Room.Channel}({channelInfo?.Name ?? "未知频道"} cfgGameType={channelInfo?.WireGameType.ToString() ?? "-"} cfgDuo={channelInfo?.DuoTeam.ToString() ?? "-"})");
             Log.Debug($"CreateRoom = {RoomId}");
