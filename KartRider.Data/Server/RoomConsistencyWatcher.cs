@@ -116,7 +116,7 @@ namespace KartRider
 
                 if (reason == null) continue;
 
-                Log.Debug($"[Sweep] 房间 {room.RoomId} {tag} {s} 清理幽灵玩家 {p.Nickname}（{reason}）");
+                Log.Info($"[诊断] 巡检：房间 {room.RoomId} {tag} {s} 清理幽灵玩家 {p.Nickname}（{reason}）");
                 try
                 {
                     if (RoomManager.RemovePlayerByNickname(room.RoomId, p.Nickname))

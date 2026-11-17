@@ -119,6 +119,19 @@ public static class RoomManager
         _rooms.TryRemove(room.RoomId, out _);
         RoomScore.Clear(room.RoomId);   // 房间销毁：清掉自动计分状态
         Log.Info($"[Room] 房间 {room.RoomId} 已销毁（无玩家/观战者）");
+        // 临时诊断（挑战赛排查用）：打印调用栈，定位是谁把空房清掉的
+        try
+        {
+            var st = new System.Diagnostics.StackTrace(1, false);
+            var frames = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < st.FrameCount && i < 5; i++)
+            {
+                var m = st.GetFrame(i)?.GetMethod();
+                if (m != null) frames.Add($"{m.DeclaringType?.Name}.{m.Name}");
+            }
+            Log.Info($"[诊断] 销毁调用栈：{string.Join(" <- ", frames)}");
+        }
+        catch { }
 
         // 二次确认：删除与 AddPlayer 之间存在窗口期，若期间真的有玩家进来了就把房间挂回去，
         // 否则 _playerRoomMap 会指向一个不存在的房间（永久幽灵，无法离开/重进）。
@@ -280,6 +293,14 @@ public static class RoomManager
             }
         }
 
+        // 挑战赛（模式 17）：官服抓包显示真人坐在 0~3 号格（槽位包末尾 8 个 int 是每格成员 ID），
+        // 每个玩家块里的队伍字节恒为 2；4~7 号格是客户端按所选战队渲染的对面 AI。
+        // 所以不管客户端/建房流程传的是什么队伍，一律按 2 队入座（TryAddPlayer 的 team==2 分支 = 0~3 号格）。
+        if (room != null && GameModes.IsChallenger(room.GameType))
+        {
+            team = 2;
+        }
+
         if (room == null || string.IsNullOrEmpty(nickname))
             return 255;
 
@@ -315,6 +336,8 @@ public static class RoomManager
         byte added = room.TryAddPlayer(nickname, team, playerType, client);
         if (added != 255)
         {
+            // 临时诊断（挑战赛排查用）：入座结果
+            Log.Info($"[诊断] 房间 {roomId} 玩家 {nickname} 入座槽位 {added}（team={team}）");
             return added;
         }
 
@@ -371,7 +394,7 @@ public static class RoomManager
             {
                 if (room._slots[s] is Player p && ReferenceEquals(p.Session, session))
                 {
-                    Log.Debug($"[Cleanup] 房间 {room.RoomId} 清理会话占用的槽位 {s}（{p.Nickname}）");
+                    Log.Info($"[诊断] 房间 {room.RoomId} 清理会话占用的槽位 {s}（{p.Nickname}）");
                     removed |= RemovePlayer(room.RoomId, s, p.Nickname);
                 }
             }
@@ -432,6 +455,8 @@ public static class RoomManager
             .Any(p => string.Equals(p.Nickname, nickname, StringComparison.OrdinalIgnoreCase));
 
         bool removed = room.RemoveMember(slotId, nickname);
+        // 临时诊断（挑战赛排查用）：谁把玩家从房间里删了
+        Log.Info($"[诊断] RemovePlayer 房间 {roomId} 昵称 {nickname} 槽位 {slotId} 结果 {removed}，剩余真人 {room.GetPlayerCount()} AI {room.GetAiCount()}");
         if (removed)
         {
             // 对局中掉线：官方抓包实测会在约 6.6 秒后下发 GameUserLeaveNoticePacket

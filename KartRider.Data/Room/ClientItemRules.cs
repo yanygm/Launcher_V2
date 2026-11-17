@@ -250,7 +250,8 @@ public static class ClientItemRules
             short from = ResolveEnglish((string)el.Attribute("firingItemIdx"));
             short to = ResolveEnglish((string)el.Attribute("gainItemIdx"));
             int prob = int.TryParse((string)el.Attribute("probability"), out int pr) ? pr : 100;
-            if (from <= 0 || to <= 0 || prob <= 0)
+            // from == to 的条目要丢掉：否则「使用 X 获得 X」等于没生效
+            if (from <= 0 || to <= 0 || from == to || prob <= 0)
             {
                 continue;
             }
@@ -895,7 +896,7 @@ public static class ClientItemRules
         }
         foreach (Rule r in rule.Convert)
         {
-            if (r.From == itemId && Roll(r.Probability))
+            if (r.From == itemId && r.To != itemId && Roll(r.Probability))
             {
                 target = r.To;
                 return true;
@@ -913,7 +914,7 @@ public static class ClientItemRules
         }
         foreach (Rule r in rule.OnUse)
         {
-            if (r.From == itemId && Roll(r.Probability))
+            if (r.From == itemId && r.To != itemId && Roll(r.Probability))
             {
                 target = r.To;
                 return true;
@@ -931,7 +932,7 @@ public static class ClientItemRules
         }
         foreach (Rule r in rule.OnAttacked)
         {
-            if (r.From == itemId && Roll(r.Probability))
+            if (r.From == itemId && r.To != itemId && Roll(r.Probability))
             {
                 target = r.To;
                 return true;

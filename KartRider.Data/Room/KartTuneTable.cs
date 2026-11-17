@@ -261,6 +261,8 @@ public static class KartTuneTable
             if (effect == null || effect.Kind != kind || effect.Prob <= 0) continue;
             if (effect.BoxOnly && !fromBox) continue;
             if (!effect.TryGetTarget(item, out short to) || to <= 0) continue;
+            // 映射后还是同一个道具 → 视为无效转换，继续看下一条（否则客户端表现成「用了没变化」）
+            if (to == item) continue;
             if (Random.Shared.Next(100) >= effect.Prob) continue;
             hit = effect;
             target = to;

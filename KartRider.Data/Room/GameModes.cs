@@ -110,6 +110,16 @@ public static class GameModes
     /// <summary>开启挑战者/AI 指令模式的房间：开局下发 GrCommandStartAiPacket。</summary>
     public static bool UsesAiStartPacket(byte gameType) => IsChallenger(gameType);
 
+    /// <summary>挑战赛一局三盘（官服抓包：三局地图不同、第三局打完才回房间）。</summary>
+    public const int CampaignMaxRounds = 3;
+
+    /// <summary>
+    /// 挑战赛三局制总开关。2026-11-17 00:49 重新打开（之前因为结算闪退关过）：
+    /// 改成照抄官服 —— state=3 / state=4 都用**每人 84 字节的回声负载**（抓包实证两者只差 state 与 tick），
+    /// 结算顺序也按官服（NextStage → Result → state=4）。若仍闪退，把这里改回 false 即可回退到单局。
+    /// </summary>
+    public const bool CampaignSeriesEnabled = true;
+
     /// <summary>房间人数上限修正：挑战者模式固定 4 人。</summary>
     public static int ClampMaxPlayers(byte gameType, int maxPlayers)
     {
@@ -120,7 +130,13 @@ public static class GameModes
         return maxPlayers;
     }
 
-    /// <summary>入座时的默认队伍：挑战者模式全员蓝队（2）；团队模式按人数平衡。</summary>
+    /// <summary>
+    /// 入座时的默认队伍：挑战者模式全员 2 队（0~3 号格）；团队模式按人数平衡。
+    /// 官服抓包（挑战赛，模式 17）逐字节核对：槽位包末尾 8 个 int 是每格成员 ID，
+    /// 4 人房里是 0,1,2,3,-1,-1,-1,-1 —— 真人在 0~3 号格；
+    /// 每个玩家块里的队伍字节恒为 2（房主创建回包第 2 字节也是 2）。
+    /// 4~7 号格留给客户端按所选战队渲染的对面 AI。
+    /// </summary>
     public static byte DefaultTeam(byte gameType, int team1Count, int team2Count)
     {
         if (IsChallenger(gameType))
@@ -148,6 +164,14 @@ public static class GameModes
         if (gameType == RpItemTeam)
         {
             return "item";     // RP 道具：走道具赛道池
+        }
+        if (IsChallenger(gameType))
+        {
+            // 挑战赛：对面是道具战队（aiCampaign 的 AiRider + SpecialAttack），必须走道具图。
+            // 官服挑战赛抓包三局全是 gameType='item' 的图：
+            //   moonhill_I04 月光之城 小镇铁路 / forest_I09 森林 藤蔓天桥 / moonhill_I01 月光之城 直角夜道
+            // （用 Adler32_UNICODE(trackId) 还原 hash 得到，见 _work/rt_hash2.py）
+            return "item";
         }
         return null;
     }

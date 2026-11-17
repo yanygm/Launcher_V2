@@ -119,7 +119,8 @@ public static class MultyPlayer
         }
 
         // 全员准备校验：没准备齐就绝不进等待流程（必须在 arm 之前判定，否则失败后无法重试）
-        if (!EnsureAllPlayersReady(room, Parent, "GameControl/Start"))
+        // 挑战赛续局（客户端在结算画面点「继续」）时玩家不可能点准备，走豁免。
+        if (!room.CampaignContinue && !EnsureAllPlayersReady(room, Parent, "GameControl/Start"))
         {
             return;
         }
@@ -451,6 +452,7 @@ public static class MultyPlayer
         room.SettleTriggered = false;
         room.TeamGauge.Clear();
         room.Ready.Clear();
+        room.CampaignContinue = false;   // 续局豁免到此为止，下一局恢复正常校验
         // 对局代际 +1：本局之前挂着的到期定时器/结算定时器全部作废
         int raceEpoch = Interlocked.Increment(ref room.RaceEpoch);
         room.ResetModeScores();
@@ -472,6 +474,19 @@ public static class MultyPlayer
         {
             oPacket.WriteInt(aiMaster);
             BroadCast(room.RoomId, oPacket);
+            // AI 定位已完成（AI 会动了），这里降级为 Debug 留痕
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                var ids = new List<string>();
+                foreach (RoomMember m in room._slots)
+                {
+                    if (m is Player cp && !string.IsNullOrEmpty(cp.Nickname))
+                    {
+                        ids.Add($"{cp.Nickname}#id{cp.ID}/slot{cp.SlotId}");
+                    }
+                }
+                Log.Debug($"[挑战赛] AI 主机下发 id={aiMaster}；房内真人 {string.Join(", ", ids)}");
+            }
         }
         // state=1：先全部构造好，再一口气发出去，尽量保证所有客户端在同一时刻收到
         room.ReadinessCollect = false;
@@ -517,28 +532,99 @@ public static class MultyPlayer
     }
 
     /// <summary>
-    /// 下发 GameControlPacket(state=1)。
+    /// 下发 GameControlPacket(state)（默认 state=1）。
     /// 官方抓包里这个包是「把该客户端自己发的 state=0 载荷回声回来」：
-    /// 前 4 字节改成 1、再 4 字节写 StartTicks，其余（槽位/名次等）原样保留。
+    /// 前 4 字节改成目标 state、再 4 字节写 tick，其余（槽位/名次等）原样保留。
     /// 拿不到模板时退回极简包（只有 state + ticks），客户端也能跑。
+    /// state=4 也用同一条路：官服挑战赛每局结算后紧跟一个 88 字节的 per-client GameControl，
+    /// 客户端据此进「本局结算」画面，之后才会发 GrRequestStartPacket 申请下一局。
     /// </summary>
-    static OutPacket BuildStartControl(GameRoom room, Player p)
+    static OutPacket BuildStartControl(GameRoom room, Player p, uint state = 1, uint? tick = null)
     {
+        uint useTick = tick ?? (state == 1 ? room.StartTicks : ConvertTick());
         OutPacket oPacket = new OutPacket("GameControlPacket");
+
+        // 挑战赛的 state=3 / state=4：官方是固定结构（客户端反编译读法见 CampaignControlPayloads 注释）。
+        // ⚠ 2026-11-17 修正：官服那局是 **3 真人 + 3 AI**，那份负载里的槽位表也是按 6 个格子填的，
+        // 直接硬编码到 1 人房可能反而不对。先用 false（退回「拿该客户端 state=0 模板改 state/tick」）。
+        const bool UseOfficialControlPayload = false;
+        if (UseOfficialControlPayload && GameModes.IsChallenger(room.GameType))
+        {
+            byte[] official = CampaignControlPayloads.Build(state, useTick);
+            if (official != null)
+            {
+                oPacket.WriteBytes(official);
+                return oPacket;
+            }
+        }
+
         if (room.StartControlTemplate.TryGetValue(p.Nickname, out byte[] tpl) && tpl != null && tpl.Length >= 8)
         {
             byte[] echo = new byte[tpl.Length];
             Buffer.BlockCopy(tpl, 0, echo, 0, tpl.Length);
-            BitConverter.GetBytes(1u).CopyTo(echo, 0);
-            BitConverter.GetBytes(room.StartTicks).CopyTo(echo, 4);
+            BitConverter.GetBytes(state).CopyTo(echo, 0);
+            BitConverter.GetBytes(useTick).CopyTo(echo, 4);
             oPacket.WriteBytes(echo);
         }
         else
         {
-            oPacket.WriteInt(1);
-            oPacket.WriteUInt(room.StartTicks);
+            oPacket.WriteInt((int)state);
+            oPacket.WriteUInt(useTick);
         }
         return oPacket;
+    }
+
+    /// <summary>
+    /// 挑战赛：按官服抓包形状，给每个客户端单独发一份 GameControlPacket（state=3 / state=4）。
+    ///
+    /// 抓包证据（`_work/官服挑战赛抓包全解析.md` 6.2）：官服 state=3 与 state=4 都是 **84 字节**，
+    /// 两者**逐字节只差 `[4..7]`=state 和 `[8..11]`=tick**，其余 76 字节完全相同 ——
+    /// 也就是「每人一份的固定负载」，不是 8 字节最小包。我做的是拿该客户端自己 state=0 的模板
+    /// 改 state/tick 再发回去（模板里就是它自己的槽位/名次数据）。
+    /// </summary>
+    internal static void SendControlEcho(GameRoom room, uint state, uint tick, string excludeNickname = null)
+    {
+        if (room == null)
+        {
+            return;
+        }
+        int sent = 0;
+        foreach (RoomMember member in room._IDs)
+        {
+            if (member is not Player p || string.IsNullOrEmpty(p.Nickname))
+            {
+                continue;
+            }
+            if (!string.IsNullOrEmpty(excludeNickname) && p.Nickname == excludeNickname)
+            {
+                continue;   // 官服：state=3 不回给刚冲线的那个人
+            }
+            if (p.Session?.Client == null)
+            {
+                continue;
+            }
+            try
+            {
+                using (OutPacket oPacket = BuildStartControl(room, p, state, tick))
+                {
+                    if (!p.Session.Client.IsAlive)
+                    {
+                        // Send() 对已断开的会话是静默丢包，不检查就会出现「已发 1 人」但其实一个字节都没出去的假日志。
+                        Log.Warn($"[挑战赛] 房间 {room.RoomId} 会话已断开，GameControl(state={state}) 无法送达 {p.Nickname}");
+                        continue;
+                    }
+                    int len = oPacket.Length;
+                    p.Session.Client.Send(oPacket);
+                    sent++;
+                    Log.Debug($"[挑战赛] GameControl(state={state}) → {p.Nickname}，{len} 字节");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"[挑战赛] 房间 {room.RoomId} 下发 GameControl(state={state}) 失败 {p.Nickname}: {ex.Message}");
+            }
+        }
+        Log.Info($"[挑战赛] GameControl(state={state}) 回声已发 {sent} 人（房间 {room.RoomId}）");
     }
 
     /// <summary>
@@ -720,6 +806,57 @@ public static class MultyPlayer
 
         InitRoom(room);
 
+        // 挑战赛（模式 17）三局制：一局打完不发 state=4 的「回房间」，而是发本局结算，
+        // 然后等客户端自己申请下一局。
+        //
+        // 总开关 GameModes.CampaignSeriesEnabled（改 false 即退回「单局 + 正常结算」）。
+        // 官服 pcapng 三盘实测：**服务端动作三盘完全一样**（NextStage → Result → state=4 回声），
+        // 客户端靠结算包尾段的第 2、3 字节判断还有没有下一盘：
+        //   第 1 盘 01 00 01 … / 第 2 盘 01 00 02 … / 第 3 盘 01 01 03 …
+        //                                              ^^ 最后一局标记
+        // 看到「最后一局」它就不再申请下一盘，而是 +21.5 秒发 GrFirstRequestPacket 回房间
+        // （官服第 3 盘 GrFinalRequest 之后服务端一个包都没发）。
+        if (GameModes.CampaignSeriesEnabled && GameModes.IsChallenger(room.GameType))
+        {
+            // ⚠ 局数必须在**生成结算包之前**就是本局真实值。
+            // 老代码把「三局打完」写在挑战赛分支之后，先把 CampaignRound 复位成 1 再调
+            // GameResultPacket，尾段就变成「第 1 局、非最后局」→ 客户端申请第 4 局；
+            // 而第 4 局开局因 CampaignPending 已清不算续局，又把局数重置回 1 —— 于是无限循环。
+            bool finalRound = room.CampaignRound >= GameModes.CampaignMaxRounds;
+            int thisRound = room.CampaignRound;
+
+            // 顺序照抄官服抓包（251.903 NextStage → 251.965 Result → 251.965 state=4）：
+            // 先发结算（内含 NextStage），再给每个客户端发那份 **84 字节的 state=4 回声**
+            // （官服 state=3/4 是自建固定负载，逐字节只差 state 与 tick，见全解析报告 6.2）。
+            GameResultPacket(room, menbers, timeData);
+            SendControlEcho(room, 4, settleTick);
+
+            if (finalRound)
+            {
+                // 三局打完：尾段已带「最后一局」标记，客户端会自己走回房间流程，
+                // 这里**不再发任何后续包**（官服也没有），只把局数归位，下次开局重新从第 1 局算。
+                room.CampaignRound = 1;
+                room.CampaignPending = false;
+                Log.Info($"[挑战赛] 房间 {room.RoomId} 第 {thisRound} 局（最后一局）结算已发，"
+                         + "尾段标「最后一局」，等客户端自己回房间");
+                return;
+            }
+
+            room.CampaignRound++;
+            room.CampaignPending = true;
+            Log.Info($"[挑战赛] 房间 {room.RoomId} 第 {thisRound} 局结算已发，等客户端申请第 {room.CampaignRound} 局");
+            // 看门狗：客户端 7 秒内既不发 GrFinalRequest、也不申请下一局，就判定它没进结算画面。
+            // 见 ArmCampaignWatchdog 里为什么是 7 秒而不是原来的 60 秒。
+            ArmCampaignWatchdog(room, CampaignResultAckMs, "结算画面");
+            return;
+        }
+        if (GameModes.IsChallenger(room.GameType))
+        {
+            // 三局制开关关掉时的回退：照常 state=4 回房间，局数归零
+            room.CampaignRound = 1;
+            room.CampaignPending = false;
+        }
+
         if (scoreMode)
         {
             // 结算前再同步一次最终比分，保证客户端进结算阶段时缓存的是终局比分
@@ -764,6 +901,105 @@ public static class MultyPlayer
         }
         Log.Info($"EndTicks = {room.EndTicks + 6000}");
     }
+
+    /// <summary>
+    /// 挑战赛结算后，客户端多久没反应就判定它没进结算画面。
+    ///
+    /// 实测（01:19 / 09:51 两局，现象完全一致）：结算包 + state=4 发出后，客户端
+    /// **一个包都不回**（官服那局 6.4 秒必发 `GrFinalRequestPacket`），约 **9.6 秒后自己把 TCP 关掉**。
+    /// 原来的兜底是 60 秒 —— 等它醒来客户端早断线了。7 秒卡在「官服 6.4 秒确认」之后、
+    /// 「客户端 9.6 秒放弃」之前，用其它模式验证过的「最小 state=4 = 回房间」把客户端捞回来。
+    ///
+    /// 注意：这里的目的**只是止血**，不是让三局制生效。真要三局连打，得让客户端进结算画面
+    /// （发得出 GrFinalRequest），那是结算包内容的问题，见 长期记忆 8.39 / 8.40。
+    ///
+    /// 2026-11-17 10:33 那局又测出一条：7 秒时发**12 字节的最小 GameControl(state=4)**
+    /// 会让客户端 0.5 秒后立刻断开（10:10、10:33 两次复现），而不发则能撑到约 10 秒。
+    /// 官服抓包里**从来没有 12 字节的 GameControl**（state=1/3/4 全是 84/88 字节），
+    /// 说明这个最小包在挑战赛状态下是非法的 —— 已经废掉，改用完整回声，且只在客户端还活着时才发。
+    /// </summary>
+    const int CampaignResultAckMs = 12000;
+
+    /// <summary>客户端已确认结算（发过 GrFinalRequest）、正等它申请下一局时的最长等待（官服实测 ~21 秒）。</summary>
+    const int CampaignNextRoundMs = 25000;
+
+    /// <summary>
+    /// 挑战赛续局看门狗。<paramref name="stage"/> 只用于日志。
+    /// 到点后如果 <see cref="GameRoom.CampaignPending"/> 还是真，就按「这一局到此为止」处理：
+    /// 下发其它模式通用的最小 `GameControlPacket(state=4)`（回房间），局数归 1。
+    /// </summary>
+    static void ArmCampaignWatchdog(GameRoom room, int delayMs, string stage)
+    {
+        int roomId = room.RoomId;
+        // 自增不需要原子：只靠「代号不相等就退出」判失效，最坏情况是多挂一个多余的定时器，
+        // 而那个定时器醒来时同样会因为代号不符 / CampaignPending 已清而直接返回。
+        int gen = ++room.CampaignWatchdogGen;
+        var timer = new System.Timers.Timer(delayMs);
+        timer.AutoReset = false;
+        timer.Elapsed += (s, e) =>
+        {
+            try
+            {
+                timer.Stop();
+                timer.Dispose();
+            }
+            catch
+            {
+            }
+            if (RoomManager.GetRoom(roomId) != room) return;        // 房间没了
+            if (room.CampaignWatchdogGen != gen) return;            // 已经被新的看门狗取代
+            if (!room.CampaignPending) return;                      // 客户端已经往下走了
+
+            room.CampaignPending = false;
+            room.CampaignRound = 1;
+            // 2026-11-17 10:33：这里原来无条件发 12 字节的最小 GameControl(state=4)，
+            // 实测客户端收到后 0.5 秒就断开（官服从没发过这个长度）。改成先看客户端还在不在，
+            // 活着才用 84/88 字节的完整回声把它捞回房间；已经断开的只清理房间，不再发无用的包。
+            bool alive = false;
+            foreach (RoomMember m in room._IDs)
+            {
+                if (m is Player ap && ap.Session?.Client != null && ap.Session.Client.IsAlive)
+                {
+                    alive = true;
+                    break;
+                }
+            }
+            Log.Warn($"[挑战赛] 房间 {roomId} 在「{stage}」阶段等了 {delayMs / 1000} 秒没有任何客户端回应"
+                     + $"（客户端存活={alive}），按单局处理");
+            if (alive)
+            {
+                ReturnToRoomAfterCampaign(room);
+            }
+        };
+        timer.Start();
+    }
+
+    /// <summary>挑战赛兜底：用该客户端自己的 state=0 模板回声一份 state=4，让客户端回到房间。</summary>
+    static void ReturnToRoomAfterCampaign(GameRoom room)
+    {
+        try
+        {
+            SendControlEcho(room, 4, ConvertTick());
+            Log.Info($"[挑战赛] 房间 {room.RoomId} 已广播「回房间」GameControl(state=4)");
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[挑战赛] 房间 {room.RoomId} 回房间包发送失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 客户端发来 `GrFinalRequestPacket`：说明它**真的进过结算画面**了，三局制有戏，
+    /// 只是还要等它申请下一局（官服 ~21 秒）。把 7 秒的止血看门狗换成 25 秒的长等待。
+    /// </summary>
+    internal static void OnCampaignFinalRequest(int roomId)
+    {
+        var room = RoomManager.GetRoom(roomId);
+        if (room == null || !room.CampaignPending) return;
+        Log.Info($"[挑战赛] 房间 {roomId} 客户端已完成结算画面，等它申请第 {room.CampaignRound} 局（最长 {CampaignNextRoundMs / 1000} 秒）");
+        ArmCampaignWatchdog(room, CampaignNextRoundMs, "申请下一局");
+    }
+
 
     /// <summary>
     /// 建房失败必须回包。客户端发完 ChCreateRoomRequestPacket 后一直在等 ChCreateRoomReplyPacket，
@@ -854,6 +1090,9 @@ public static class MultyPlayer
         // 注意：夺旗/死斗积分必须保留到 GameResultPacket 结算之后再清理，
         // 因此这里不调用 ResetModeScores（下一局 startTrigger 会重置）。
         Interlocked.Exchange(ref room.StartGate, 0);
+        // 每局收尾时清掉挑战赛续局标记：下一局要么是新的开局请求，要么等结算后重新 arm
+        room.CampaignContinue = false;
+        room.CampaignPending = false;
     }
 
     static void GrSlotDataPacket(int roomId, OutPacket outPacket, bool enter = false, string nickname = "", uint? trackOverride = null)
@@ -880,13 +1119,39 @@ public static class MultyPlayer
         outPacket.WriteBytes(room.RoomData); // 32
         outPacket.WriteInt(room.RoomMaster); // RoomMaster
 
-        outPacket.WriteBytes(new byte[11]);
-        outPacket.WriteInt(room.CloseSlotIds.Count); // 房间格子锁定数量 格子ID byte
-        foreach (var slotId in room.CloseSlotIds)
+        // 保留区 11 字节：官服抓包（挑战赛，模式 17）逐字节比对确认，
+        // 第 3~6 字节 = AI 战队 id、第 7~10 字节 = 难度，其余字节恒为 0。
+        // 客户端把这两个值回读成"当前选的战队/难度"，全写 0 等于没选战队。
+        outPacket.WriteBytes(new byte[2]);
+        outPacket.WriteInt(room.CampaignId);
+        outPacket.WriteInt(room.CampaignDifficulty);
+        outPacket.WriteByte(0);
+
+        if (GameModes.IsChallenger(room.GameType))
         {
-            outPacket.WriteByte(slotId);
+            // 挑战赛（模式 17）官服抓包逐字节核对（_work/ch_tail.py、ch_walk2.py）：
+            //  1) 真人坐在 0~3 号格 —— 槽位包末尾 8 个 int 是「每格成员 ID」，
+            //     4 人房里官服是 0,1,2,3,-1,-1,-1,-1；1 人房是 0,-1,-1,-1,-1,-1,-1,-1。
+            //  2) closeCount 恒为 0（不锁格）。
+            //  3) 紧接着的 16 字节是「对面 AI 战队所占的格子号」：1/2/3/4 人房里依次是
+            //     {4} / {4,5} / {4,5,6} / {4,5,6,7}，不足补 0。
+            //     客户端按这个列表把所选战队的 AI 画到对面，1 人房只画 1 个 AI（与官服表现一致）。
+            outPacket.WriteInt(0);
+            int aiSlotCount = Math.Min(room.GetPlayerCount(), 4);
+            for (int i = 0; i < 4; i++)
+            {
+                outPacket.WriteInt(i < aiSlotCount ? 4 + i : 0);
+            }
         }
-        outPacket.WriteBytes(new byte[16]);
+        else
+        {
+            outPacket.WriteInt(room.CloseSlotIds.Count); // 房间格子锁定数量 格子ID byte
+            foreach (var slotId in room.CloseSlotIds)
+            {
+                outPacket.WriteByte(slotId);
+            }
+            outPacket.WriteBytes(new byte[16]);
+        }
 
         /* ---- Player ---- */
         foreach (RoomMember member in room._IDs)
@@ -1066,8 +1331,25 @@ public static class MultyPlayer
             return;
         }
 
+        // 挑战赛三局制：这一局是「结算后客户端申请继续」，玩家还在结算画面里，
+        // 不可能点准备，所以要跳过准备校验；同时别把局数重置回 1。
+        // 续局两个硬条件：结算后挂起了 Pending，且局数落在 2..上限之间。
+        // 加上界是防「三局打完仍被当成续局」——那样 CampaignRound 会一路涨到 4、5，
+        // 尾段越界被 clamp 成 3，客户端永远以为还有下一盘（三局结束后进第 4 局的另一个入口）。
+        bool campaignContinue = room.CampaignPending
+            && GameModes.IsChallenger(room.GameType)
+            && room.CampaignRound > 1
+            && room.CampaignRound <= GameModes.CampaignMaxRounds;
+        room.CampaignPending = false;
+        room.CampaignContinue = campaignContinue;
+        if (GameModes.IsChallenger(room.GameType))
+        {
+            Log.Info($"[挑战赛] 房间 {room.RoomId} 开局：续局={campaignContinue} 局数={room.CampaignRound}"
+                     + $"（上限 {GameModes.CampaignMaxRounds}，Pending 已被消费）");
+        }
+
         // 全员准备校验：还有队友没点准备时不允许开局（单跑/AI 不受影响）
-        if (!EnsureAllPlayersReady(room, Parent, "GrRequestStart"))
+        if (!campaignContinue && !EnsureAllPlayersReady(room, Parent, "GrRequestStart"))
         {
             return;
         }
@@ -1085,11 +1367,20 @@ public static class MultyPlayer
         {
             room.Started = true;
             room.StartedPlayerCount = playerCount;
-            RoomScore.OnRaceStart(room);   // 记录本局参赛者，掉线者结算时按未完成计
-            room.ResetRareItems(); // 每局重置「天使/道具锁/闪电」计数
+            // 挑战赛三局制：只有「从房间重新开打」才回到第 1 局；中途续局要保留当前局数
+            if (GameModes.IsChallenger(room.GameType) && !campaignContinue)
+            {
+                room.CampaignRound = 1;
+            }
+            // 续局不再重复记分/重置稀有道具（会把这局的统计算两遍）
+            if (!campaignContinue)
+            {
+                RoomScore.OnRaceStart(room);   // 记录本局参赛者，掉线者结算时按未完成计
+                room.ResetRareItems(); // 每局重置「天使/道具锁/闪电」计数
+            }
 
             bool ai = room.GetAiCount() > 0;
-            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType));
+            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType), GameModes.IsChallenger(room.GameType));
             room.trackTemp = track;
             // 抽到的地图必须留痕：出问题时能一眼看出是哪张图（随机图导致闪退的排查依赖这条）
             Log.Info($"[Start] 房间 {room.RoomId} 抽到地图：{RandomTrack.GetTrackName(track)} (0x{track:X8})，随机选项={room.track}");
@@ -1184,7 +1475,11 @@ public static class MultyPlayer
             oPacket.WriteUInt((uint)PacketName.GrSlotDataPacket);
             // 夺旗/死斗开局包里的槽位数据必须带“实际随机到的地图”，
             // 否则客户端会按 track=0 自行随机到非本模式地图，进图即闪退。
-            bool forceTrackType = GameModes.TrackGameType(room.GameType) != null;
+            // 只有「必须限定地图类型」的模式（夺旗/死斗/RP 道具）才把实际随机到的地图写进内嵌槽位包。
+            // 挑战赛不要写：实测（23:41 那版 AI 会动）内嵌槽位包的 track 是 room.track（=0），
+            // 改成实际地图之后 AI 反而不动了，先退回旧行为。
+            bool forceTrackType = GameModes.TrackGameType(room.GameType) != null
+                                  && !GameModes.IsChallenger(room.GameType);
             GrSlotDataPacket(roomId, oPacket, true, p.Nickname, forceTrackType ? room.trackTemp : null);
             oPacket.WriteInt();
 
@@ -1235,14 +1530,42 @@ public static class MultyPlayer
             oPacket.WriteString("008a000445d4dd3c21fc030e");
             oPacket.WriteInt(10000);
 
-            oPacket.WriteInt();
+            // AI 等级列表（官服抓包逐字节核对，_work/ch_tail_struct.py / ch_ai_count.py）：
+            //   10000 之后是 [int n][n × ushort 等级]，然后才是 MissionInfo。
+            //   普通模式官服 n=0（我们原来写死一个 int 0，正好等价）；
+            //   挑战赛 n = 对面 AI 数（= 真人数，最多 4，与槽位包里的 AI 格子一一对应），等级 24。
+            int aiLevelCount = 0;
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                aiLevelCount = Math.Min(room.GetPlayerCount(), 4);
+            }
+            oPacket.WriteInt(aiLevelCount);
+            for (int j = 0; j < aiLevelCount; j++)
+            {
+                oPacket.WriteUShort(AI.GetCampaignAiLevel(room.CampaignDifficulty));
+            }
             oPacket.WriteUInt((uint)PacketName.MissionInfo);
             oPacket.WriteHexString("00 00 00 00 00 00 00 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 00");
             if (GameModes.UsesAiStartPacket(room.GameType))
             {
-                // GrCommandStartAiPacket 在基础开局包后追加：AI 主机/保留字段 + AI 列表长度
+                // GrCommandStartAiPacket 在基础开局包后追加：一个 int + 一个「空字符串」。
+                // 官服挑战赛实测第一局 19、后两局 21 / 22（第二项恒 0 = 字符串长度 0）。
+                // 我方原来写 0,0；先按房间所选战队 id 下发（默认 19，与官服第一局一致）。
+                oPacket.WriteInt(GameModes.IsChallenger(room.GameType) ? room.CampaignId : 0);
                 oPacket.WriteInt(0);
-                oPacket.WriteInt(0);
+                // 临时 [诊断]：挑战赛 AI 动不动还在查（反向图/内嵌槽位地图/AI 等级），定位后降级
+                if (GameModes.IsChallenger(room.GameType))
+                {
+                    KartRider.Track ti = null;
+                    if (RandomTrack.TrackList != null)
+                    {
+                        RandomTrack.TrackList.TryGetValue(room.trackTemp, out ti);
+                    }
+                    Log.Info($"[诊断] [挑战赛] 第 {room.CampaignRound} 局开局包：地图={RandomTrack.GetTrackName(room.trackTemp)}"
+                             + $" type={ti?.gameType ?? "?"} basicAi={ti?.basicAi}"
+                             + $" AI等级n={aiLevelCount} 值={AI.GetCampaignAiLevel(room.CampaignDifficulty)}"
+                             + $" 内嵌槽位track={room.track:X8} campaign={room.CampaignId} 难度={room.CampaignDifficulty}");
+                }
             }
             //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
             Log.Debug($"Track : {RandomTrack.GetTrackName(room.trackTemp)}");
@@ -1735,16 +2058,12 @@ public static class MultyPlayer
             return;
         }
 
-        // 挑战者模式：4 人同队，直接锁掉右半场（4~7 号格）
+        // 挑战者模式：4 人同队，真人坐 0~3 号格、队伍号 2（见 GameModes.DefaultTeam）。
+        // 官服抓包（模式 17）里槽位包的 closeCount 恒为 0、没有任何 Close 成员，
+        // 4~7 号格是留给客户端按所选战队渲染的对面 AI，所以这里不锁格；
+        // 人数上限由「0~3 号格只有 4 个」自然限制（第 5 个人 TryAddPlayer 直接失败）。
         if (GameModes.IsChallenger(room.GameType))
         {
-            for (byte slot = GameModes.ChallengerMaxPlayers; slot < 8; slot++)
-            {
-                if (room._slots[slot] == null && room._IDs[slot] == null)
-                {
-                    room.AddClose(slot, slot);
-                }
-            }
             GrSlotDataPacket(room.RoomId);
             return;
         }
@@ -1788,6 +2107,14 @@ public static class MultyPlayer
         if (room.MiniItemMode || room.MiniAccelMode)
         {
             Log.Info($"[Room] 房间 {room.RoomId} 是迷你道具赛，跳过添加 {count} 个 AI");
+            return;
+        }
+        // 挑战赛（模式 17）：对面 4 名 AI 完全由客户端按所选战队的 aiCampaign 数据渲染，
+        // 官服槽位包里只有真人玩家块、一个 AI 块都没有。服务端再补 AI 反而会在
+        // 对面格子里多画一份（实测会多出一个 AI 车手），所以挑战赛不生成服务端 AI。
+        if (GameModes.IsChallenger(room.GameType))
+        {
+            Log.Debug($"[Room] 房间 {room.RoomId} 是挑战赛，跳过添加 {count} 个 AI（对面 AI 由客户端渲染）");
             return;
         }
         var selector = new DictionaryRandomSelector();
@@ -1991,9 +2318,8 @@ public static class MultyPlayer
                 Log.Warn($"[Room] AI 角色不足（{Ais.Count}/2），跳过组队 AI 添加");
                 return;
             }
-            byte slot0 = room.TrySetAi(Ais[0], 2);
-            // 挑战者模式全员蓝队（右半场已锁），AI 也只能进蓝队
-            byte slot1 = room.TrySetAi(Ais[1], GameModes.IsChallenger(room.GameType) ? (byte)2 : (byte)1);
+            byte slot0 = room.TrySetAi(Ais[0], (byte)2);
+            byte slot1 = room.TrySetAi(Ais[1], (byte)1);
             if (slot0 != 255 && slot1 != 255)
             {
                 var ai0 = RoomManager.TryGetSlotDetail(roomId, slot0) as Ai;
@@ -2394,16 +2720,22 @@ public static class MultyPlayer
                     outPacket.WriteByte();
                     // 结算包里带的是「这名玩家本局用的车」。RP 房必须写分配到的车，
                     // 否则写玩家存档里的 Set_Kart（没装备车时是 0）→ 结算/领奖台显示练习用卡丁车。
-                    ushort resultKartId = p4Config.RiderItem.Set_Kart;
-                    if (room.IsRpRoom && room.RpKarts.TryGetValue(p4.Nickname, out var rpResult))
+                    // 挑战赛：官服这里恒写 0xFFFF（-1）。pcapng 三盘 9 条真人记录全是 FFFF，
+                    // 说明挑战赛结算界面的车不走这个字段（对面 AI 的车由客户端按 aiCampaign 渲染）。
+                    bool challenger = GameModes.IsChallenger(room.GameType);
+                    ushort resultKartId = challenger ? (ushort)0xFFFF : p4Config.RiderItem.Set_Kart;
+                    if (!challenger && room.IsRpRoom && room.RpKarts.TryGetValue(p4.Nickname, out var rpResult))
                     {
                         resultKartId = rpResult.KartId;
                     }
                     outPacket.WriteUShort(resultKartId);
                     int playerRanking = ranking[p4.ID];
-                    int playerPoint = scoreMode
-                        ? room.ModeScore(p4.ID)
-                        : timeData[p4.ID] == uint.MaxValue ? 0 : RankPoint(room, playerRanking);
+                    // 挑战赛的 TP 列官服恒写 0（9 条记录全 0）。
+                    int playerPoint = challenger
+                        ? 0
+                        : scoreMode
+                            ? room.ModeScore(p4.ID)
+                            : timeData[p4.ID] == uint.MaxValue ? 0 : RankPoint(room, playerRanking);
                     Log.Debug($"Player {p4.ID} 排名 {playerRanking} 得分 {playerPoint}");
                     outPacket.WriteInt(playerRanking);
                     // 抓包：该 short 在普通组队=2（队伍数），夺旗赛=正赛总夺旗数（3:1 → 4），
@@ -2412,6 +2744,19 @@ public static class MultyPlayer
                     outPacket.WriteByte();
 
                     var reward = TimeReward.Reward(playerRanking);
+                    // 挑战赛按难度在原结算基础上加成：简单无加成 / 普通 +30% / 困难 +50%。
+                    // 只放大 RP 与 Lucci，名次和随机性不动。
+                    if (challenger)
+                    {
+                        int bonusPercent = TimeReward.CampaignBonusPercent(room.CampaignDifficulty);
+                        if (bonusPercent > 0)
+                        {
+                            var before = reward;
+                            reward = TimeReward.ApplyPercent(before, bonusPercent);
+                            Log.Info($"[挑战赛] 难度={room.CampaignDifficulty}(+{bonusPercent}%) {p4.Nickname} 名次={playerRanking} "
+                                     + $"RP {before.RP}→{reward.RP} Lucci {before.Lucci}→{reward.Lucci}");
+                        }
+                    }
                     if (p4Complete)
                     {
                         p4Config.Rider.RP += reward.RP;
@@ -2461,7 +2806,16 @@ public static class MultyPlayer
                 }
             }
 
-            outPacket.WriteInt(aiCount); // AI count
+            // 挑战赛（模式 17）：对面 AI 由客户端渲染，服务端没有 Ai 对象，但**结算包必须补上它们**。
+            // 实测账（官服那局是 **3 真人 + 3 AI**，773 字节）：
+            //   我方固定开销 56B + 3×217B(真人) = 707B，773 - 707 = **66 = 3 × 22B**
+            //   —— 正好是本包 AI 段的条目大小，说明官服就是「真人全写 + 每只 AI 一条」。
+            // 少写这些条目，客户端结算界面按 AI 数量去取就会越界闪退。
+            int campaignAi = (GameModes.IsChallenger(room.GameType) && aiCount == 0)
+                ? Math.Min(room.GetPlayerCount(), 4)
+                : 0;
+
+            outPacket.WriteInt(aiCount + campaignAi); // AI count
             foreach (RoomMember member in members)
             {
                 if (member is Ai a4)
@@ -2489,10 +2843,67 @@ public static class MultyPlayer
                     }
                 }
             }
+
+            // 挑战赛补的 AI 条目：ID 用对面格子号（4~7），名次排在真人后面，成绩记「未完赛」。
+            // 字段值照抄官服 1 人房→4 人房都用过的那套（抓包 1486：id=4..7、time=FFFFFFFF、
+            // kart=0、rank=真人条数+i、team=**0**、得分 0）。team 以前写 1，与官服不一致。
+            for (int i = 0; i < campaignAi; i++)
+            {
+                int aiId = 4 + i;
+                outPacket.WriteInt(aiId);
+                outPacket.WriteUInt(uint.MaxValue);   // 没有完赛时间
+                outPacket.WriteByte();
+                outPacket.WriteShort(0);              // 车：官服这里也写 0（AI 车由客户端按 aiCampaign 渲染）
+                outPacket.WriteInt(playerCount + i);  // 名次：排在所有真人之后
+                outPacket.WriteShort(0);
+                outPacket.WriteByte(0);               // 队伍：官服写 0
+                outPacket.WriteInt(0);                // 得分
+            }
             Log.Info($"红队得分 {redTeam} 蓝队得分 {blueTeam}");
-            outPacket.WriteBytes(new byte[34]);
+            // 尾段 43 字节：官服 pcapng 三盘实测，**只有前 3 个字节有意义，且逐盘不同**：
+            //   第 1 盘 01 00 01 20 00 3F 00 29 00 7D 00 ... 55 00 73 00 FF FF FF FF 00 00 00 00 00
+            //   第 2 盘 01 00 02 20 00 3F 00 29 00 7D 00 ... 04 00 00 00 FF FF FF FF 00 00 00 00 00
+            //   第 3 盘 01 01 03 00 00 00 00 04 00 00 00 ... 04 00 00 00 FF FF FF FF 00 00 00 00 00
+            // → [0] 恒 1、[1] = 最后一局标记（第 3 盘才变 1）、[2] = 当前局数。
+            // 其余字节三盘互不相同（第 1 盘还能读出 UTF-16 的 "Us"），是服务端未初始化内存的残留，不能照抄。
+            // 我们原来整段写 0，等于告诉客户端「现在是第 0 局」，怀疑就是它建不出结算画面、
+            // 静默 7~10 秒后自己关连接的原因（见 长期记忆 8.40）。
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                int round = Math.Max(1, Math.Min(room.CampaignRound, GameModes.CampaignMaxRounds));
+                outPacket.WriteByte(1);
+                outPacket.WriteByte((byte)(round >= GameModes.CampaignMaxRounds ? 1 : 0));
+                outPacket.WriteByte((byte)round);
+                outPacket.WriteBytes(new byte[31]);
+            }
+            else
+            {
+                outPacket.WriteBytes(new byte[34]);
+            }
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
+            // 临时 [诊断]：挑战赛结算闪退排查用（结算包里 playerCount / aiCount 是重点怀疑对象）
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                Log.Info($"[诊断] [挑战赛] 结算包：playerCount={playerCount} aiCount={aiCount}+{campaignAi} "
+                         + $"members={members.Length} 三局制开关={GameModes.CampaignSeriesEnabled}");
+                // [S] 行会被 Log.Packet 采样/限速丢掉，这里无条件打一份全字节，方便和 pcapng 逐字段对比。
+                byte[] dbgResult = outPacket.ToArray();
+                Log.Info($"[诊断] [挑战赛] 结算包 {dbgResult.Length} 字节: {BitConverter.ToString(dbgResult).Replace('-', ' ')}");
+            }
             BroadCast(room.RoomId, outPacket);
+            if (GameModes.IsChallenger(room.GameType))
+            {
+                Log.Info($"[诊断] [挑战赛] 结算包已广播（房间 {room.RoomId}）");
+                // 投递核对：BroadCast 用 p.Session?.Client?.Send()，会话为空时会**静默跳过**。
+                foreach (RoomMember m in room._slots)
+                {
+                    if (m is Player dp)
+                    {
+                        Log.Info($"[诊断] [挑战赛] 结算投递对象：槽位 {dp.SlotId} {dp.Nickname} "
+                                 + $"会话={((dp.Session?.Client == null) ? "空" : "有")} 在线={dp.Session?.Client?.IsAlive}");
+                    }
+                }
+            }
         }
 
     }

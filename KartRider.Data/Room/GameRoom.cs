@@ -31,6 +31,37 @@ public class GameRoom
     /// <summary>迷你道具赛·个人加速赛（子频道号 50）。玩法按个人道具跑，道具用加速赛表。</summary>
     public bool MiniAccelMode { get; set; } = false;
 
+    /// <summary>挑战赛（模式 17）：客户端选中的 AI 战队 id（aiCampaign.xml 的 Campaign id，0 表示未选）。</summary>
+    public int CampaignId { get; set; } = 0;
+
+    /// <summary>挑战赛难度：0 简单 / 1 普通 / 2 困难（对应 aiCampaign.xml 的 SpeedFactorByPveLevel）。</summary>
+    public byte CampaignDifficulty { get; set; } = 0;
+
+    /// <summary>
+    /// 挑战赛（模式 17）当前是第几局（1..3）。三局制：打完一局不结算回房间，直接开下一局；
+    /// 官方抓包一局三盘，每盘地图不同（道具图），第三局打完才回房间。
+    /// </summary>
+    public int CampaignRound { get; set; } = 1;
+
+    /// <summary>
+    /// 挑战赛：本局结算已发、正等客户端自己发 GrRequestStartPacket 申请下一局。
+    /// 官服抓包：结算包之后约 21 秒，客户端才发 GrRequestStartPacket，服务端回包后立刻发开局包
+    /// —— 下一局是**客户端驱动**的，服务端不能抢跑。
+    /// </summary>
+    public bool CampaignPending { get; set; } = false;
+
+    /// <summary>
+    /// 挑战赛续局中：客户端已经在结算画面里点了继续、开局包已发，正等它的 state=0。
+    /// 这种情况下玩家不可能点「准备」，所以 <c>Start()</c> 的准备校验要跳过。
+    /// </summary>
+    public bool CampaignContinue { get; set; } = false;
+
+    /// <summary>
+    /// 挑战赛续局的看门狗代号。每挂一次新定时器就 +1，旧定时器醒来发现代号对不上就直接退出，
+    /// 避免「结算 7 秒没回应」和「已确认结算、等下一局 25 秒」两个定时器互相覆盖。
+    /// </summary>
+    public int CampaignWatchdogGen { get; set; }
+
     /// <summary>双人组队每队人数（默认 2）</summary>
     public byte DuoTeamSize { get; set; } = 2;
 

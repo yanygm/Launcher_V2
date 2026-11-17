@@ -51,6 +51,8 @@ namespace KartRider.Packet
                     Buffer.BlockCopy(raw, 0, tpl, 0, raw.Length);
                     room.StartControlTemplate[Parent.Client.Nickname] = tpl;
                 }
+                // 注意：这里必须调 Start() —— 它是「arm 就绪等待 → 4 秒后下发 state=1」的唯一入口。
+                // 11-17 00:12 曾在开局包发出后跳过这一步，结果客户端卡在起步线永远等不到 3-2-1。
                 Start(Parent, roomId);
             }
             //finish
@@ -81,11 +83,22 @@ namespace KartRider.Packet
                     }
                     room.SnapshotMembers = DeepCopyMembers(room._IDs); // 结束瞬间拍快照
                     room.EndTicks = ConvertTick() + 10000;
-                    using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                    if (GameModes.IsChallenger(room.GameType))
                     {
-                        oPacket.WriteInt(3);
-                        oPacket.WriteUInt(room.EndTicks);
-                        BroadCast(roomId, oPacket, Parent.Client.Nickname);
+                        // 挑战赛：官服这个包是「每人一份的 84 字节负载」（抓包 241.945，84B），
+                        // 不是 8 字节的最小包；用该客户端自己 state=0 的模板回声，只改 state 和 tick。
+                        // 注意：**不能排除刚冲线的人** —— 官服那局只有 1 名真人，state=3 照样发给了他；
+                        // 11-17 00:55 那次就是因为排除了冲线者，回声发给了 0 人，客户端没收到结束信号。
+                        MultyPlayer.SendControlEcho(room, 3, room.EndTicks);
+                    }
+                    else
+                    {
+                        using (OutPacket oPacket = new OutPacket("GameControlPacket"))
+                        {
+                            oPacket.WriteInt(3);
+                            oPacket.WriteUInt(room.EndTicks);
+                            BroadCast(roomId, oPacket, Parent.Client.Nickname);
+                        }
                     }
                     Set_settleTrigger(room);
                 }

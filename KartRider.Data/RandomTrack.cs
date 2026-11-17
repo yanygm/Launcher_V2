@@ -317,7 +317,7 @@ namespace KartRider
             return (double)lcsLength / Math.Max(m, n);
         }
 
-        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false, string forceGameType = null)
+        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false, string forceGameType = null, bool requireAiPath = false)
         {
             // 如果 TrackList 为空，直接返回默认 Track 的 hash，避免返回无效值
             if (TrackList == null || TrackList.Count == 0)
@@ -330,7 +330,7 @@ namespace KartRider
             // 否则客户端加载地图时找不到模式需要的对象会闪退。
             if (!string.IsNullOrEmpty(forceGameType))
             {
-                return GetModeTrack(Parent, usedTracksName, Track, forceGameType);
+                return GetModeTrack(Parent, usedTracksName, Track, forceGameType, requireAiPath);
             }
 
             string RandomTrackGameType = "speed";
@@ -614,7 +614,7 @@ namespace KartRider
         /// 按模式限定地图类型抽图（flag/death）。
         /// Track 是具体地图时校验类型；0/随机模式则从该类型的地图池里随机。
         /// </summary>
-        private static uint GetModeTrack(SessionGroup Parent, string usedTracksName, uint Track, string gameType)
+        private static uint GetModeTrack(SessionGroup Parent, string usedTracksName, uint Track, string gameType, bool requireAiPath = false)
         {
             if (!_usedTracks.TryGetValue(usedTracksName, out HashSet<uint> usedTracks))
             {
@@ -634,6 +634,12 @@ namespace KartRider
             List<uint> pool = TrackList.Values
                 .Where(t => string.Equals(t.gameType, gameType, StringComparison.OrdinalIgnoreCase))
                 .Where(t => !t.blocked && !t.missing && !t.nameFallback && !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                // 反向图（名字带「[反]」）不放进 AI 模式的池子：客户端没有反向图的 AI 导航数据，
+                // 抽到反向图时挑战赛的 AI 会站着不动（2026-11-17 实测 [反]太空 高速轨道）。
+                .Where(t => !t.Name.StartsWith("[反]", StringComparison.Ordinal))
+                // 挑战赛还要再过一层「有没有 aiPath/<id>_N.kap」的白名单：
+                // 没 AI 导航数据的图，客户端画得出 AI 但 AI 不跑（见 CampaignAiTracks 注释）。
+                .Where(t => !requireAiPath || CampaignAiTracks.Hashes.Contains(t.hash))
                 .Select(t => t.hash)
                 .ToList();
             if (pool.Count == 0)

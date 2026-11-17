@@ -54,7 +54,20 @@ namespace KartRider.Common.Network
 
         public uint SIV { get; set; }
 
+        /// <summary>
+        /// 握手阶段协商出来的帧 IV（还没写进 <see cref="RIV"/> 时的暂存）。
+        /// 解析时 <see cref="RIV"/> 为 0 就退回用它 —— 防止「首消息已发出、客户端已经按新 IV 回包、
+        /// 本地 IV 还没赋值」这一瞬间把加密帧误判成明文帧（表现为「非法明文帧长」后掉线）。
+        /// </summary>
+        public uint PendingIv { get; set; }
+
         public long LastReceiveTime { get; set; }
+
+        /// <summary>
+        /// 会话是否还能发包。`Send()` 在断开/套接字已关时会静默丢弃，调用方拿不到任何反馈，
+        /// 于是「回声已发 1 人」这种日志会说谎。需要确认送达时先看这个。
+        /// </summary>
+        public bool IsAlive => mDisconnected == 0 && _socket != null && _socket.Connected;
 
         public string Label => _label;
 
@@ -226,7 +239,9 @@ namespace KartRider.Common.Network
         {
             while (mDisconnected == 0)
             {
-                uint riv = RIV;
+                // RIV 为 0 时退回握手阶段协商好的 PendingIv（见字段注释），
+                // 避免首消息与 IV 赋值之间的竞态把加密帧当明文帧解析。
+                uint riv = RIV != 0 ? RIV : PendingIv;
                 SessionFrame.FrameStatus status = SessionFrame.TryExtract(
                     mBuffer, mCursor, ref riv, out byte[] payload, out int consumed, out bool checksumOk, out string error);
 

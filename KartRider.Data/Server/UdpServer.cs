@@ -35,6 +35,25 @@ namespace KartRider
         private static readonly ConcurrentDictionary<string, UdpPeer> udpClients = new(StringComparer.Ordinal);
         private static readonly ConcurrentDictionary<string, long> udpLastActivity = new(StringComparer.Ordinal);
 
+        /// <summary>
+        /// 这些包允许「走 UDP 也交给内置处理器」。
+        ///
+        /// 原因：<c>BuiltInPacketHandler.HandlePacket</c> 只接受 <c>ServerType == typeof(ClientSession)</c>
+        /// 且 <c>ClientInfo is SessionGroup</c>，走 UDP 到达时两个条件都不满足，包会被**整个静默丢弃**。
+        /// 官方的结算后续（`PcGameRequestRelay` → `GrSlotItemOnPacket` → `GrFinalRequestPacket`、
+        /// 以及下一局的 `GrRequestStartPacket`）都属于这一类；客户端一旦改走 UDP，服务端就再也看不见，
+        /// 表现就是「结算后一个包都不回 → 9.6 秒后自己断开」。
+        /// 这里只放行结算/续局相关的包，避免 GameSlot/GameControl 这类高频包被双通道重复处理。
+        /// </summary>
+        private static readonly System.Collections.Generic.HashSet<PacketName> UdpBuiltInForward = new()
+        {
+            PacketName.PcGameRequestRelay,
+            PacketName.LoRqSetRiderItemOnPacket,
+            PacketName.GrFinalRequestPacket,
+            PacketName.GrRequestStartPacket,
+            PacketName.GrFirstRequestPacket,
+        };
+
         private byte[] _sendScratch = new byte[2048];
         private static long _ivCounter = Environment.TickCount64;
 
@@ -248,6 +267,29 @@ namespace KartRider
             if (PacketDispatcher.Dispatch(typeof(UdpServer), packetValue, p, receiveBuffer, clientEP, this))
             {
                 return;
+            }
+
+            // 结算/续局类包：改走「TCP 语义」再派发一次内置处理器（详见 UdpBuiltInForward 的注释）。
+            if (UdpBuiltInForward.Contains(packetValue) && !string.IsNullOrEmpty(nickname))
+            {
+                SessionGroup udpGroup = ClientManager.GetParent(nickname);
+                if (udpGroup != null)
+                {
+                    var builtInContext = new PacketContext
+                    {
+                        ServerType = typeof(ClientSession),
+                        PacketName = packetValue,
+                        Packet = new InPacket(p.ToArray()) { Position = p.Position },
+                        RawData = receiveBuffer,
+                        ClientInfo = udpGroup,
+                        Server = this
+                    };
+                    if (PacketDispatcher.Dispatch(builtInContext, false, true))
+                    {
+                        Log.Info($"[UDP] 包 {packetValue} 由内置处理器接管（{nickname}）");
+                        return;
+                    }
+                }
             }
 
             switch (packetValue)

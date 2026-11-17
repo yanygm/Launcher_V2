@@ -71,8 +71,17 @@ public static class ClientManager
 
         session.Client.OnDisconnected += s => RemoveClient(s.Socket);
 
-        uint IV = GameSupport.PcFirstMessageAsync(session);
+        // 顺序很讲究，踩过一次掉线（2026-11-17 11:19 切频道复现）：
+        //
+        // 1) 接收侧 IV 必须**先**就绪：发包是异步的，客户端收到首消息后可能立刻回一个加密帧，
+        //    此时本地 RIV 若还是 0 就会把加密数据当「明文帧」解析 → 非法明文帧长 → 断开。
+        // 2) 首消息本身必须**明文**发出（SIV=0）：客户端就是靠包里的 first_val/second_val
+        //    自己算出 IV 的，先加密就成了死循环。
+        // 3) 首消息入队后再把 SIV 设成 IV，后续包才加密。
+        Keys key = GameSupport.PickFirstMessageKeys(out uint IV);
+        session.Client.PendingIv = IV;
         session.Client.RIV = IV;
+        GameSupport.SendFirstMessage(session, key);
         session.Client.SIV = IV;
         Log.Info($"客户端 {clientId} 已连接，当前在线数：{_clientSessions.Count}");
 

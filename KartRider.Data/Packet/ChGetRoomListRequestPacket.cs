@@ -83,7 +83,11 @@ namespace KartRider.Packet
                     oPacket.WriteByte(listMode); // 模式（列表上下文模式）
                     oPacket.WriteByte(_room.Value.SpeedType); // 速度模式
                     oPacket.WriteBool(_room.Value.Started); // 房间状态
-                    oPacket.WriteByte((byte)(8 - _room.Value.CloseSlotIds.Count)); // 房间最大人数
+                    // 挑战赛不锁格（官服槽位包 closeCount 恒为 0），人数上限要单独写 4，
+                    // 否则列表会显示成 8 人房
+                    oPacket.WriteByte(GameModes.IsChallenger(_room.Value.GameType)
+                        ? (byte)GameModes.ChallengerMaxPlayers
+                        : (byte)(8 - _room.Value.CloseSlotIds.Count)); // 房间最大人数
                     oPacket.WriteByte((byte)_room.Value.GetCount()); // 房间人数
                     // 官方条目尾部 6 字节不是全 0：
                     //   mode=68(双人竞速) 的条目是 00 00 03 00 00 00

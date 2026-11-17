@@ -88,7 +88,7 @@ namespace KartRider.Packet
             RoomData = SanitizeRoomData(RoomData);
             iPacket.ReadBytes(5);
             byte AiSwitch = iPacket.ReadByte();
-            Log.Info($"[Room] create raw1={raw1} ai={AiCount} raw2={raw2} raw3={raw3} data={BitConverter.ToString(RoomData)}");
+            Log.Info($"[Room] create raw1={raw1} ai={AiCount} aiSwitch={AiSwitch} raw2={raw2} raw3={raw3} data={BitConverter.ToString(RoomData)}");
 
             if (UdpServer.GetUdp(Parent.Client.Nickname).Item2 == 0)
             {
@@ -275,9 +275,18 @@ namespace KartRider.Packet
             }
             Room.RandomTrackGameType = randomTrackGameType;
 
-            // 挑战者模式是 4 人同队（抓包：全部坐在蓝队 0~3 号格），人数上限固定 4
+            // 挑战者模式是 4 人同队（抓包：我方 4 人坐 4~7 号格），人数上限固定 4
             maxPlayers = GameModes.ClampMaxPlayers(GameType, maxPlayers);
             Room.MaxPlayers = maxPlayers;
+
+            if (GameModes.IsChallenger(GameType))
+            {
+                // 官服抓包：刚进挑战赛房间时客户端默认选中的就是战队 id=19（深渊队）、难度 1（普通），
+                // 槽位包必须回同样的值，客户端才会把房间画成「我方 4 格 + 对面 AI 战队」。
+                Room.CampaignId = 19;
+                Room.CampaignDifficulty = 1;
+                Log.Info($"[挑战赛] 房间 {RoomId} 默认战队 id={Room.CampaignId}，难度={Room.CampaignDifficulty}");
+            }
 
             if (GameModes.IsTeamGameType(GameType) || GameModes.IsChallenger(GameType))
             {

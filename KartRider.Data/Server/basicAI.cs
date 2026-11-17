@@ -117,6 +117,17 @@ namespace KartRider
 
     public class AI
     {
+        /// <summary>
+        /// 挑战赛（模式 17）开局包里的「AI 等级」= aiCampaign@cn.xml 的 AiLevelList 索引。
+        /// 官服抓包实测（_work/ch_ai.py / ch_tail_struct.py）：1 人对局 n=1、等级 24，
+        /// 三局都是 24；普通模式官服这个列表是空的（n=0）。
+        /// 目前只有「普通」这一组样本，难度映射等拿到更多抓包再补，先统一用 24。
+        /// </summary>
+        public static ushort GetCampaignAiLevel(byte difficulty)
+        {
+            return 24;
+        }
+
         public static List<float> GetAISpec(byte GameType)
         {
             Random random = new Random();

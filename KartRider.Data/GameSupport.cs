@@ -213,11 +213,25 @@ namespace KartRider
             new Keys { first_val = 912740103, second_val = 3754337362, key1 = "A7H8oUUAoWg65+rFF8h9xcr/aiYwecEfNQyGNF5WHhs=", key2 = "ycsTsKSzTxbOraG5PrjtBWP81YCor02tCxJquIl+5NM=" }
         };
 
-        public static uint PcFirstMessageAsync(SessionGroup Parent)
+        /// <summary>
+        /// 挑一组握手密钥，并给出双方约定的帧 IV（客户端用 <c>first_val ^ second_val</c>）。
+        ///
+        /// 注意：**必须先拿到 IV、把会话的 RIV/SIV 设好，再调 <see cref="SendFirstMessage"/>**。
+        /// 发包是异步的（入队后由发送线程写出），包可能先到客户端、客户端立刻回一个加密帧，
+        /// 而此时服务端还停在 RIV=0 就会把加密数据按「明文帧」解析 →
+        /// 报「非法明文帧长」并断开，客户端表现就是掉线（2026-11-17 11:19 切频道复现）。
+        /// </summary>
+        public static Keys PickFirstMessageKeys(out uint iv)
         {
             Random random = new Random();
-            int index = random.Next(keys.Length);
-            Keys key = keys[index];
+            Keys key = keys[random.Next(keys.Length)];
+            iv = key.first_val ^ key.second_val;
+            return key;
+        }
+
+        /// <summary>下发 PcFirstMessage（首消息）。调用前会话的 RIV/SIV 必须已经设成对应的 IV。</summary>
+        public static void SendFirstMessage(SessionGroup Parent, Keys key)
+        {
             string updateUrl = ProfileService.SettingConfig.PatchUrl;
             ushort ClientVersion = ProfileService.SettingConfig.ClientVersion;
             using (OutPacket outPacket = new OutPacket("PcFirstMessage"))
@@ -234,7 +248,6 @@ namespace KartRider
                 outPacket.WriteString(key.key2);
                 Parent.Client.Send(outPacket);
             }
-            return key.first_val ^ key.second_val;
         }
 
         public static void PrGetGameOption(SessionGroup Parent, string Nickname)

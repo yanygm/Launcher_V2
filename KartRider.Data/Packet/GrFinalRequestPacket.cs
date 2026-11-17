@@ -20,6 +20,9 @@ namespace KartRider.Packet
             int roomId = RoomManager.TryGetRoomId(session.Client.Nickname);
             var room = RoomManager.GetRoom(roomId);
             Log.Info($"[Mode] {session.Client.Nickname} 完成结算（房间 {roomId}，模式 {(room == null ? "-" : GameModes.Name(room.GameType))}）");
+            // 这个包是「结算画面看完了」的唯一证据：客户端进了结算画面才会发。
+            // 挑战赛三局制靠它把 7 秒止血看门狗换成 25 秒长等待（见 MultyPlayer.OnCampaignFinalRequest）。
+            MultyPlayer.OnCampaignFinalRequest(roomId);
             return true;
         }
     }

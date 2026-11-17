@@ -60,13 +60,20 @@ public class SlotData
                 bool angelCapped = room.MiniRareCount(id, 11) >= ItemRule.RareCapPerGame;
                 bool forceCapped = room.MiniRareCount(id, 25) >= ItemRule.RareCapPerGame;
                 // 统一由服务端抽签（type=2 时 skill2 是“被切换的道具”，不能直接回给客户端）
+                // type==2 = 更换道具（变更卡）：新道具不能还是被更换的那一个，
+                // 否则客户端表现为「用了变更卡但道具没变」。
+                short excludeSkill = type == 2 ? skill2 : (short)0;
                 short rolled = isAccel
-                    ? ItemRule.RollMiniAccel(playerCount, rank)
+                    ? ItemRule.RollMiniAccel(playerCount, rank, excludeSkill)
                     : (isMini
-                        ? ItemRule.RollMini(playerCount, rank, angelCapped, forceCapped)
-                        : ItemRule.Roll(room.GameType, playerCount, rank, rareCapped));
+                        ? ItemRule.RollMini(playerCount, rank, angelCapped, forceCapped, excludeSkill)
+                        : ItemRule.Roll(room.GameType, playerCount, rank, rareCapped, excludeSkill));
                 short skill = rolled;
                 bool tuneConverted = false;
+                if (excludeSkill != 0)
+                {
+                    Log.Debug($"[ItemRule] {Parent.Client.Nickname} 更换道具：原 {excludeSkill} → 新 {rolled}");
+                }
 
                 // ① 12 代车改装（kart12 tuning）的「获得即转换」：如 加速器→警灯、香蕉→水地雷。
                 //    按“刚获得的那件道具”判定，并且**排在最前面**：
@@ -107,7 +114,7 @@ public class SlotData
                         short fixedItem = skill;
                         for (int attempt = 0; attempt < 3; attempt++)
                         {
-                            fixedItem = ItemRule.RollMiniAccel(playerCount, rank);
+                            fixedItem = ItemRule.RollMiniAccel(playerCount, rank, excludeSkill);
                             if (ItemRule.IsAccelItem(fixedItem)) break;
                         }
                         if (!ItemRule.IsAccelItem(fixedItem))
@@ -126,7 +133,7 @@ public class SlotData
                         short fixedItem = skill;
                         for (int attempt = 0; attempt < 3; attempt++)
                         {
-                            fixedItem = ItemRule.RollMini(playerCount, rank, false);
+                            fixedItem = ItemRule.RollMini(playerCount, rank, false, false, excludeSkill);
                             if (ItemRule.IsMiniItem(fixedItem)) break;
                         }
                         if (!ItemRule.IsMiniItem(fixedItem))
@@ -148,7 +155,7 @@ public class SlotData
                             short alt = skill;
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
-                                alt = ItemRule.RollMini(playerCount, rank, exAngel, exForce);
+                                alt = ItemRule.RollMini(playerCount, rank, exAngel, exForce, excludeSkill);
                                 if (!ItemRule.IsMiniRare(alt)) break;
                             }
                             if (ItemRule.IsMiniRare(alt))
@@ -177,6 +184,8 @@ public class SlotData
                         skill = ItemRule.Booster;
                     }
                 }
+                // 注：抽签阶段已排除原道具（excludeSkill）。若改装/词条又把它转回原道具，
+                // 说明这是玩家自己的词条/改装结果，按原样下发，不做二次重抽。
                 using (OutPacket oPacket = new OutPacket("GameSlotPacket"))
                 {
                     oPacket.WriteInt(id);
@@ -232,7 +241,7 @@ public class SlotData
                     short clientBonus = 0;
                     bool handledByClient = useKartId != 0
                                            && ClientItemRules.TryOnUse(useKartId, skill, out clientBonus);
-                    if (handledByClient)
+                    if (handledByClient && clientBonus != skill)
                     {
                         AddItemSkill(roomId, id, Parent, clientBonus);
                     }
@@ -240,7 +249,8 @@ public class SlotData
                     // 12 代车改装：使用 X 时获得 Y（如 用磁铁获得加速器，组 521）
                     var riderOnUse = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
                     List<TuneEffect> tuneOnUse = KartTuneTable.GetPlayerEffects(Parent.Client.Nickname, riderOnUse?.Set_Kart ?? 0, riderOnUse?.Set_KartSN ?? 0);
-                    if (KartTuneTable.TryRoll(tuneOnUse, skill, TuneEffectKind.FiringGain, false, out TuneEffect onUseHit, out short onUseTo))
+                    if (KartTuneTable.TryRoll(tuneOnUse, skill, TuneEffectKind.FiringGain, false, out TuneEffect onUseHit, out short onUseTo)
+                        && onUseTo != skill)
                     {
                         AddItemSkill(roomId, id, Parent, onUseTo);
                     }
@@ -264,7 +274,7 @@ public class SlotData
                 short clientBonus = 0;
                 bool handledByClient = hitKartId != 0
                                        && ClientItemRules.TryOnAttacked(hitKartId, skill, out clientBonus);
-                if (handledByClient)
+                if (handledByClient && clientBonus != skill)
                 {
                     AttackedSkill(roomId, id, Parent, type, uni, clientBonus);
                 }
@@ -272,7 +282,8 @@ public class SlotData
                 // 12 代车改装：被 X 击中时获得 Y（如 受飞碟攻击获盾牌，组 514）
                 var riderFired = ProfileService.GetProfileConfig(Parent.Client.Nickname)?.RiderItem;
                 List<TuneEffect> tuneFired = KartTuneTable.GetPlayerEffects(Parent.Client.Nickname, riderFired?.Set_Kart ?? 0, riderFired?.Set_KartSN ?? 0);
-                if (KartTuneTable.TryRoll(tuneFired, skill, TuneEffectKind.FiredGain, false, out TuneEffect firedHit, out short firedTo))
+                if (KartTuneTable.TryRoll(tuneFired, skill, TuneEffectKind.FiredGain, false, out TuneEffect firedHit, out short firedTo)
+                    && firedTo != skill)
                 {
                     AttackedSkill(roomId, id, Parent, type, uni, firedTo);
                 }

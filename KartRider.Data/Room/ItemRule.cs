@@ -143,17 +143,23 @@ public static class ItemRule
     public static bool IsAccelItem(short itemId) => MiniAccelTable.ContainsKey(itemId);
 
     /// <summary>按档位抽一个个人加速赛道具。</summary>
-    public static short RollMiniAccel(int playerCount, int rank)
+    /// <param name="excludeItem">本次抽签不想要的源道具（更换道具时不能换成同一个）</param>
+    public static short RollMiniAccel(int playerCount, int rank, short excludeItem = 0)
     {
         RankGroup group = Group(playerCount, rank);
         int g = (int)group;
         int total = 0;
-        foreach (KeyValuePair<short, int[]> kv in MiniAccelTable) total += kv.Value[g];
+        foreach (KeyValuePair<short, int[]> kv in MiniAccelTable)
+        {
+            if (excludeItem != 0 && kv.Key == excludeItem) continue;
+            total += kv.Value[g];
+        }
         if (total <= 0) return AccelBooster;
         int pick = Random.Shared.Next(total);
         int acc = 0;
         foreach (KeyValuePair<short, int[]> kv in MiniAccelTable)
         {
+            if (excludeItem != 0 && kv.Key == excludeItem) continue;
             acc += kv.Value[g];
             if (pick < acc) return kv.Key;
         }
@@ -184,9 +190,12 @@ public static class ItemRule
     public static bool IsMiniRare(short itemId) => itemId == 11 || itemId == 25;
 
     /// <summary>按档位抽一个迷你赛道具；可分别排除天使 / 力场。</summary>
-    public static short RollMini(int playerCount, int rank, bool excludeAngel, bool excludeForceZone)
+    /// <param name="excludeItem">本次抽签不想要的源道具（更换道具时不能换成同一个）</param>
+    public static short RollMini(int playerCount, int rank, bool excludeAngel, bool excludeForceZone, short excludeItem = 0)
     {
-        bool Skip(short id) => (excludeAngel && id == 11) || (excludeForceZone && id == 25);
+        bool Skip(short id) => (excludeAngel && id == 11)
+                               || (excludeForceZone && id == 25)
+                               || (excludeItem != 0 && id == excludeItem);
         RankGroup group = Group(playerCount, rank);
         int g = (int)group;
         int total = 0;
@@ -412,13 +421,14 @@ public static class ItemRule
     /// </summary>
     /// <param name="gameType">2=个人，4=组队</param>
     /// <param name="excludeRare">已达上限时排除「天使/锁/闪电」</param>
-    public static short Roll(byte gameType, int playerCount, int rank, bool excludeRare)
+    /// <param name="excludeItem">本次抽签不想要的源道具（更换道具时不能换成同一个）</param>
+    public static short Roll(byte gameType, int playerCount, int rank, bool excludeRare, short excludeItem = 0)
     {
-        return RollGroup(gameType, Group(playerCount, rank), excludeRare);
+        return RollGroup(gameType, Group(playerCount, rank), excludeRare, excludeItem);
     }
 
     /// <summary>按指定档位加权抽一个道具。</summary>
-    public static short RollGroup(byte gameType, RankGroup group, bool excludeRare)
+    public static short RollGroup(byte gameType, RankGroup group, bool excludeRare, short excludeItem = 0)
     {
         IReadOnlyDictionary<short, int[]> table = Table(gameType);
         int g = (int)group;
@@ -430,11 +440,17 @@ public static class ItemRule
             {
                 continue;
             }
+            // 更换道具：新道具不能和原道具相同，否则客户端表现为「用了变更卡但没变化」
+            if (excludeItem != 0 && kv.Key == excludeItem)
+            {
+                continue;
+            }
             total += kv.Value[g];
         }
         if (total <= 0)
         {
-            return Booster;
+            // 全被排除时退回原道具（总比给个非法值好），但只在确实只剩它时才会走到
+            return excludeItem != 0 ? excludeItem : Booster;
         }
 
         int pick = Random.Shared.Next(total);
@@ -444,13 +460,17 @@ public static class ItemRule
             {
                 continue;
             }
+            if (excludeItem != 0 && kv.Key == excludeItem)
+            {
+                continue;
+            }
             pick -= kv.Value[g];
             if (pick < 0)
             {
                 return kv.Key;
             }
         }
-        return Booster;
+        return excludeItem != 0 ? excludeItem : Booster;
     }
 
     /// <summary>
