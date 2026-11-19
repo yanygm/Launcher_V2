@@ -54,7 +54,23 @@ namespace KartRider.Packet
                 }
             }
 
-            if (channelData == null) return true;
+            // 原实现：channelData == null 就直接 return，不回包。
+            // 实测（2026-11-19 21:03 爆日志）客户端会因此空等并重发切频道请求，
+            // 每次重发都新建一条 TCP（97 条连接 / 酷奇一个人 65 条），表现为"包疯狂刷"。
+            // 现在无论认不认识这个频道号都必须回包。
+            if (channelData == null)
+            {
+                Log.Warn($"[ChannelSwitch] {Parent.Client.Nickname} 请求未知频道 raw={rawChannel}(idx={channel})，按安全值回包");
+                using (OutPacket fallback = new OutPacket("PrChannelSwitch"))
+                {
+                    fallback.WriteInt(0);
+                    fallback.WriteUShort((ushort)(channel < 0 ? 0 : channel));
+                    fallback.WriteUShort(0);
+                    fallback.WriteEndPoint(GetServerEndPoint(Parent));
+                    Parent.Client.Send(fallback);
+                }
+                return true;
+            }
             StartTimeAttack[Parent.Client.Nickname] = channelData.CreateSpeed;
             Log.Info($"Channel Switch, channel = {channelData.Name}");
 

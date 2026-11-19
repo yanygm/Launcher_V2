@@ -37,6 +37,17 @@ public static class GameModes
     /// <summary>个人道具 RP 赛（channel.xml: bokbulbokItemNewItemIndi, gameType=27）。暂未启用。</summary>
     public const byte RpItemIndi = 27;
 
+    /// <summary>
+    /// 个人混战（channel.xml: crossoverIndi, gameType=70）。竞速物理 + 道具箱的个人赛。
+    /// 官服抓包（`官服个人混战模式抓包.pcapng`）：建房 raw=70、会话包 `46 07`、
+    /// 列表条目 mode=70 且基础模式字节为 0、结算 8 人 1792B（胜方 0 / team 全 0 /
+    /// kart 全 0xFFFF / 未完赛 0xFFFFFFFF）、抽到的图是 item 类（fengshen_I01）。
+    /// </summary>
+    public const byte CrossoverIndi = 70;
+
+    /// <summary>是否为个人混战模式。</summary>
+    public static bool IsCrossover(byte gameType) => gameType == CrossoverIndi;
+
     /// <summary>夺旗赛正赛时长（抓包：结算 time = 180000）。</summary>
     public const int FlagRaceDurationMs = 180_000;
 
@@ -91,7 +102,8 @@ public static class GameModes
     /// <summary>会使用道具箱的模式（决定 AI 车辆池 / 随机赛道池）。</summary>
     public static bool IsItemEnabled(byte gameType) =>
         gameType == 2 || gameType == 4 || IsFlagMode(gameType) || IsDeathMatch(gameType)
-        || gameType == RpItemTeam || gameType == RpItemIndi;
+        || gameType == RpItemTeam || gameType == RpItemIndi
+        || gameType == CrossoverIndi;   // 个人混战：有道具箱
 
     /// <summary>正赛时长；0 表示按冲线结算。</summary>
     public static int RaceDurationMs(byte gameType)
@@ -165,6 +177,11 @@ public static class GameModes
         {
             return "item";     // RP 道具：走道具赛道池
         }
+        if (gameType == CrossoverIndi)
+        {
+            // 个人混战：必须有道具箱，所以只从 item 图里抽（官服那张是 fengshen_I01）。
+            return "item";
+        }
         if (IsChallenger(gameType))
         {
             // 挑战赛：对面是道具战队（aiCampaign 的 AiRider + SpecialAttack），必须走道具图。
@@ -185,8 +202,7 @@ public static class GameModes
         DeathMatchIndividual => "死斗(个人)",
         DeathMatchTeam => "死斗(团队)",
         RpSpeedTeam => "组队竞速无限RP赛",
-        RpItemTeam => "组队道具RP赛",
-        RpSpeedIndi => "个人竞速无限RP赛",
+        RpItemTeam => "组队道具RP赛",        RpSpeedIndi => "个人竞速无限RP赛",
         RpItemIndi => "个人道具RP赛",
         _ => $"模式{gameType}"
     };

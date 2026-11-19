@@ -205,6 +205,13 @@ namespace KartRider.Packet
                 Room.IsRpRoom = true;
                 Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「个人道具RP赛」（模式 27，房名={RoomName}）");
             }
+            // 房名含「混战」：把个人竞速(1) / 个人道具(2) 房改成个人混战（模式 70）。
+            // 混战的箱子/集气/结算界面都是客户端按模式号渲染的，所以下面还要把 wire 也改成 70。
+            else if (RoomName != null && RoomName.Contains("混战") && (GameType == 1 || GameType == 2))
+            {
+                GameType = GameModes.CrossoverIndi;
+                Log.Info($"[混战] 房间 {RoomId} 按房名创建为「个人混战」（模式 70，原频道模式 {rawGameType}，房名={RoomName}）");
+            }
 
             // 客户端在 RP 频道建房时会直接带模式 30（channel.xml: bokbulbokSpeedTeamInfinit）
             if (GameModes.IsRpMode(GameType))
@@ -228,6 +235,13 @@ namespace KartRider.Packet
                 : (DuoTeamMode.IsBaseGameType(rawGameType)
                     ? (Room.DuoTeam ? DuoTeamMode.ToWireGameType(GameType) : rawGameType)
                     : rawGameType);
+            // 房名转来的个人混战：必须把 wire 也改成 70，客户端才会按混战渲染（道具箱 + 集气 + 混战结算）。
+            // 注意 rawGameType 是频道基础模式（1/2），上面那段会把它当成 wire，所以这里要覆盖。
+            if (GameModes.IsCrossover(GameType))
+            {
+                Room.WireGameType = GameModes.CrossoverIndi;
+                Log.Info($"[混战] 房间 {RoomId} 对外模式号=70（wire=70）");
+            }
             // 迷你地板赛（子频道号 51）：客户端不认识 51 这个房间模式，
             // GrSessionDataPacket / GrSlotDataPacket 里带 51 会在进房时闪退。
             // 这里对客户端统一按「组队道具(4)」下发，只在本服内部打标记走迷你道具表。
@@ -357,7 +371,8 @@ namespace KartRider.Packet
             // 立刻发槽位包会因为房间界面还没建好而黑屏。
             Room.PendingMaxPlayers = maxPlayers;
 
-            if (AiCount > 0 && AiSwitch == 6)
+            // 个人混战（70）没有 AI：和 RP / 双人 / 迷你赛一样是纯玩家对局
+            if (AiCount > 0 && AiSwitch == 6 && !GameModes.IsCrossover(Room.GameType))
             {
                 // 新增 AI 数量
                 AddAis(Room, AiCount - 1, randomTrackGameType);

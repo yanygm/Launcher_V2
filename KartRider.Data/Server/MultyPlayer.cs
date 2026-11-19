@@ -1380,7 +1380,7 @@ public static class MultyPlayer
             }
 
             bool ai = room.GetAiCount() > 0;
-            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType), GameModes.IsChallenger(room.GameType));
+            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType), GameModes.IsChallenger(room.GameType), GameModes.IsRpMode(room.GameType), GameModes.IsRpSpeedMode(room.GameType));
             room.trackTemp = track;
             // 抽到的地图必须留痕：出问题时能一眼看出是哪张图（随机图导致闪退的排查依赖这条）
             Log.Info($"[Start] 房间 {room.RoomId} 抽到地图：{RandomTrack.GetTrackName(track)} (0x{track:X8})，随机选项={room.track}");
@@ -2098,7 +2098,7 @@ public static class MultyPlayer
             return;
         }
         // RP 赛同样没有 AI（和双人赛一致：进去是纯玩家对局）
-        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType))
+        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType) || GameModes.IsCrossover(room.GameType))
         {
             Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，跳过添加 {count} 个 AI");
             return;
@@ -2254,7 +2254,7 @@ public static class MultyPlayer
             return;
         }
         // RP 赛不允许加 AI
-        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType))
+        if (room.IsRpRoom || GameModes.IsRpMode(room.GameType) || GameModes.IsCrossover(room.GameType))
         {
             Log.Debug($"[Room] 房间 {room.RoomId} 是 RP 房，忽略添加 AI 请求");
             return;
@@ -2722,8 +2722,10 @@ public static class MultyPlayer
                     // 否则写玩家存档里的 Set_Kart（没装备车时是 0）→ 结算/领奖台显示练习用卡丁车。
                     // 挑战赛：官服这里恒写 0xFFFF（-1）。pcapng 三盘 9 条真人记录全是 FFFF，
                     // 说明挑战赛结算界面的车不走这个字段（对面 AI 的车由客户端按 aiCampaign 渲染）。
+                    // 挑战赛与个人混战：结算界面的车不走这个字段（官服 8 条全是 0xFFFF）
                     bool challenger = GameModes.IsChallenger(room.GameType);
-                    ushort resultKartId = challenger ? (ushort)0xFFFF : p4Config.RiderItem.Set_Kart;
+                    ushort resultKartId = (challenger || GameModes.IsCrossover(room.GameType))
+                        ? (ushort)0xFFFF : p4Config.RiderItem.Set_Kart;
                     if (!challenger && room.IsRpRoom && room.RpKarts.TryGetValue(p4.Nickname, out var rpResult))
                     {
                         resultKartId = rpResult.KartId;

@@ -101,7 +101,8 @@ namespace KartRider
         {
             message = null;
             if (room == null || starter == null) { message = "房间状态异常"; return StartResult.NoRoom; }
-            bool individual = GameModes.IsIndiSpeed(room.GameType);
+            // 个人混战（70）也是个人赛，按名次分计分
+            bool individual = GameModes.IsIndiSpeed(room.GameType) || GameModes.IsCrossover(room.GameType);
             bool teamRoom = GameModes.IsTeamSpeed(room.GameType) || GameModes.IsTeamItem(room.GameType);
             if (!individual && !teamRoom)
             {

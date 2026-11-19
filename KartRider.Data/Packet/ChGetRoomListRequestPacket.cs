@@ -100,6 +100,9 @@ namespace KartRider.Packet
                     // 迷你赛房间对外仍是 51/50，但内部 GameType 是 4/2，所以按标记判断
                     ushort listBase = _room.Value.MiniItemMode ? (ushort)7
                                     : _room.Value.MiniAccelMode ? (ushort)12
+                                    // 个人混战（70）：官服列表条目的基础模式字节是 0
+                                    // （抓包：mode=70 的条目尾部是 00 00 00 00 00 00 / 10 00 00 00 00 00）
+                                    : GameModes.IsCrossover(_room.Value.GameType) ? (ushort)0
                                     : _room.Value.GameType;
                     oPacket.WriteUShort(listBase);
                     oPacket.WriteUShort(0);

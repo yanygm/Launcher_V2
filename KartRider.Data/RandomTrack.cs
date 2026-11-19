@@ -317,7 +317,7 @@ namespace KartRider
             return (double)lcsLength / Math.Max(m, n);
         }
 
-        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false, string forceGameType = null, bool requireAiPath = false)
+        public static uint GetRandomTrack(SessionGroup Parent, string usedTracksName, byte GameType, uint Track, bool ai = false, string forceGameType = null, bool requireAiPath = false, bool excludeCrazy = false, bool speedOnly = false)
         {
             // 如果 TrackList 为空，直接返回默认 Track 的 hash，避免返回无效值
             if (TrackList == null || TrackList.Count == 0)
@@ -330,7 +330,7 @@ namespace KartRider
             // 否则客户端加载地图时找不到模式需要的对象会闪退。
             if (!string.IsNullOrEmpty(forceGameType))
             {
-                return GetModeTrack(Parent, usedTracksName, Track, forceGameType, requireAiPath);
+                return GetModeTrack(Parent, usedTracksName, Track, forceGameType, requireAiPath, excludeCrazy);
             }
 
             string RandomTrackGameType = "speed";
@@ -456,6 +456,26 @@ namespace KartRider
                     }
 
                     availableTracks = allTracks.Select(t => t.hash).ToList();
+
+                    // RP 竞速：只保留竞速图。
+                    // 「全部随机」在竞速模式下会把 item 图并进来（speed 房也能跑道具图），
+                    // 但 RP 房只有一个「全部随机」，玩家没法避开，所以 RP 竞速直接只要竞速图。
+                    // 注意：crazy 那 8 张是 item 类，这一步之后自然也被排除。
+                    if (speedOnly && RandomTrackGameType == "speed")
+                    {
+                        int before = allTracks.Count;
+                        allTracks = allTracks.Where(t => t.gameType == "speed").ToList();
+                        availableTracks = allTracks.Select(t => t.hash).ToList();
+                        Log.Info($"[RandomTrack] RP 竞速只要竞速图：{before} → {availableTracks.Count} 张（已排除道具图与 crazy）");
+                    }
+                    else if (excludeCrazy && RandomTrackGameType == "speed")
+                    {
+                        // RP 道具走不到这里；保留给「只去 crazy、要留道具图」的场景
+                        HashSet<uint> crazy = new HashSet<uint>(GetRandomTracksFromXml("item", "crazy"));
+                        int before = availableTracks.Count;
+                        availableTracks = availableTracks.Where(h => !crazy.Contains(h)).ToList();
+                        Log.Info($"[RandomTrack] RP 去 crazy：排除 {before - availableTracks.Count} 张疯狂图，池子剩 {availableTracks.Count} 张");
+                    }
                 }
 
                 // 如果仍然没有可用 track（TrackList 中没有对应 gameType 的 track），返回默认
@@ -614,13 +634,18 @@ namespace KartRider
         /// 按模式限定地图类型抽图（flag/death）。
         /// Track 是具体地图时校验类型；0/随机模式则从该类型的地图池里随机。
         /// </summary>
-        private static uint GetModeTrack(SessionGroup Parent, string usedTracksName, uint Track, string gameType, bool requireAiPath = false)
+        private static uint GetModeTrack(SessionGroup Parent, string usedTracksName, uint Track, string gameType, bool requireAiPath = false, bool excludeCrazy = false)
         {
             if (!_usedTracks.TryGetValue(usedTracksName, out HashSet<uint> usedTracks))
             {
                 usedTracks = new HashSet<uint>();
                 _usedTracks[usedTracksName] = usedTracks;
             }
+
+            // RP 赛：把「疯狂（crazy）」那 8 张 _crz 变体排除掉。
+            // 它们在客户端是 item 类（gameType 继承自基础图），会随道具池一起进随机池；
+            // RP 房只有一个「全部随机」选项，玩家没法自己避开，所以服务端替它排除。
+            HashSet<uint> crazy = excludeCrazy ? new HashSet<uint>(GetRandomTracksFromXml("item", "crazy")) : null;
 
             if (Track != 0 && IsTrackOfGameType(Track, gameType))
             {
@@ -640,8 +665,13 @@ namespace KartRider
                 // 挑战赛还要再过一层「有没有 aiPath/<id>_N.kap」的白名单：
                 // 没 AI 导航数据的图，客户端画得出 AI 但 AI 不跑（见 CampaignAiTracks 注释）。
                 .Where(t => !requireAiPath || CampaignAiTracks.Hashes.Contains(t.hash))
+                .Where(t => crazy == null || !crazy.Contains(t.hash))
                 .Select(t => t.hash)
                 .ToList();
+            if (crazy != null)
+            {
+                Log.Info($"[RandomTrack] RP 去 crazy：排除 {crazy.Count} 张疯狂图，{gameType} 池子剩 {pool.Count} 张");
+            }
             if (pool.Count == 0)
             {
                 Log.Warn($"[RandomTrack] 客户端数据里没有 {gameType} 类型地图，回退默认地图");

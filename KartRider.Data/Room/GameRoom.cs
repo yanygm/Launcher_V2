@@ -565,6 +565,13 @@ public class GameRoom
 
     public RoomMember GetIdMember(int Id)
     {
+        // 越界返回 null：客户端踢基础 AI 时发的 ID 可能是 100+ 这种界外值，
+        // 原来直接 _IDs[Id] 会抛 IndexOutOfRangeException，把整个 GrRequestBasicAiPacket
+        // 处理器打断 → 后面的 GrReplyBasicAiPacket 永远发不出去 → 客户端“踢 AI 踢不掉、操作卡住”。
+        if (Id < 0 || Id >= (_IDs?.Length ?? 0))
+        {
+            return null;
+        }
         return _IDs[Id];
     }
 

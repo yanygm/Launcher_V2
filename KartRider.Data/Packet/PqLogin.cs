@@ -164,6 +164,7 @@ namespace KartRider.Packet
             }
             // 好友上线推送（官服 PrNotifyFriendLoginoutPacket）
             try { ClientManager.NotifyFriendLoginout(session.Client.Nickname, true); } catch { }
+            try { ClientManager.PushOnlineRoster(session); } catch (Exception ex) { Log.Debug($"[Friend] 补发在线名单失败: {ex.Message}"); }
             return true;
         }
     }

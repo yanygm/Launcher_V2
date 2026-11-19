@@ -306,6 +306,39 @@ public static class ClientManager
         }
     }
 
+/// <summary>
+    /// 登录后补发「当前在线名单」：官方好友窗口是在线状态列表，
+    /// 而 NotifyFriendLoginout 只在别人登录时推送，导致后登录的人看不到先上线的人。
+    /// 这里在 PrLogin 之后把此刻在线的其他人一次性推给新登录者。
+    /// </summary>
+    public static void PushOnlineRoster(SessionGroup self)
+    {
+        string me = self?.Client?.Nickname;
+        if (string.IsNullOrEmpty(me))
+        {
+            return;
+        }
+        var list = new List<KeyValuePair<uint, string>>();
+        foreach (SessionGroup group in new List<SessionGroup>(_clientSessions.Values))
+        {
+            string other = group?.Client?.Nickname;
+            if (string.IsNullOrEmpty(other) || string.Equals(other, me, StringComparison.Ordinal))
+            {
+                continue;
+            }
+            uint no = GetUserNO(other);
+            if (no != 0)
+            {
+                list.Add(new KeyValuePair<uint, string>(no, other));
+            }
+        }
+        if (list.Count > 0)
+        {
+            GameSupport.SendMsgrFriendListOf(self, true, list);
+            Log.Info($"[Friend] 登录补发在线名单 {me}：{list.Count} 人");
+        }
+    }
+
     private static bool IsFriendKnown(string nickname, uint userNO)
     {
         if (!_friendKnown.TryGetValue(nickname, out HashSet<uint> set))
