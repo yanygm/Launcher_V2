@@ -50,9 +50,29 @@ namespace KartRider.Packet
                 return true;
             }
             room.track = newTrack;
+            // AI 房（建房时自动固定了一张 basicAi 图）要跟着用户的选择走，否则槽位包和开局
+            // 都会继续用建房时那张固定图（表现：AI 房里换不了地图）。
+            //   · 选了「随机图池」（0=全部随机，1~40=人气/热门/新图/反向/专业/疯狂等随机码）
+            //     → 清掉固定图，开局交给 RandomTrack：它按 room.track 的随机码抽池，
+            //       并且 ai=true 时会再筛一遍 basicAi（随机池 = AI 图）
+            //   · 选了具体地图（真实 hash）→ 就用它（AiFixedTrack 保留，避免开局再随机）
+            if (newTrack <= 40)
+            {
+                room.AiFixedTrack = false;
+                room.trackTemp = 0;
+            }
+            else
+            {
+                room.AiFixedTrack = true;
+                room.trackTemp = newTrack;
+                if (room.GetAiCount() > 0 && RandomTrack.TrackList.TryGetValue(newTrack, out var chosen) && !chosen.basicAi)
+                {
+                    Log.Warn($"[Room] 房间 {roomId} 换到没有 AI 导航数据的图 {RandomTrack.GetTrackName(newTrack)}，AI 可能不会跑");
+                }
+            }
             // IDA: GrChangeTrackPacket = int + int
             if (iPacket.Available >= 4) iPacket.ReadInt();
-            Log.Debug($"Gr Track Changed : {RandomTrack.GetTrackName(room.track)}");
+            Log.Info($"[Room] 房间 {roomId} 换图：{RandomTrack.GetTrackName(room.track)}（AI 房固定图={room.AiFixedTrack}）");
             GrSlotDataPacket(roomId);
             return true;
         }

@@ -580,6 +580,23 @@ namespace KartRider
                     return Adler32Helper.GenerateAdler32_UNICODE(GameTrack, 0);
                 }
 
+                // AI 房：随机池也要限定在 basicAi 图上（否则抽到没有 AI 导航数据的图，AI 不会跑）
+                if (ai)
+                {
+                    List<uint> filtered = availableHashes
+                        .Where(h => TrackList.TryGetValue(h, out Track t) && t.basicAi)
+                        .ToList();
+                    if (filtered.Count > 0)
+                    {
+                        Log.Debug($"[RandomTrack] AI 房随机池 {RandomTrackSetRandomTrack}：{availableHashes.Count} → {filtered.Count} 张（basicAi）");
+                        availableHashes = filtered;
+                    }
+                    else
+                    {
+                        Log.Info($"[RandomTrack] Warning: AI 房随机池 {RandomTrackSetRandomTrack} 里没有 basicAi 图，回退不过滤");
+                    }
+                }
+
                 // 排除已使用的 track
                 var unusedHashes = availableHashes.Where(h => !usedTracks.Contains(h)).ToList();
 
