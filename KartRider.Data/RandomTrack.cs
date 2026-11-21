@@ -630,6 +630,52 @@ namespace KartRider
                 && string.Equals(track.gameType, gameType, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>疯狂（crazy）赛道：客户端基于基础图派生的 _crz 变体。</summary>
+        public static bool IsCrazyTrack(Track track)
+        {
+            return track != null
+                && !string.IsNullOrEmpty(track.ID)
+                && track.ID.EndsWith("_crz", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 挑战赛可用赛道：客户端 basicAi 标记为 true、gameType 为 item、且不是疯狂（_crz）赛道。
+        /// （替代原 CampaignAiTracks 手工白名单）
+        /// </summary>
+        public static bool IsCampaignAiTrack(Track track)
+        {
+            return track != null
+                && track.basicAi
+                && string.Equals(track.gameType, "item", StringComparison.OrdinalIgnoreCase)
+                && !IsCrazyTrack(track);
+        }
+
+        private static readonly Random Rng = new Random();
+
+        /// <summary>
+        /// AI 房固定地图：从 TrackList 里按模式抽一张 basicAi 的图。
+        /// itemMode=true 取 gameType 为 item 的池，否则取 speed 的池；池为空返回 0。
+        /// （替代原 AiTracks 手工白名单）
+        /// </summary>
+        public static uint PickBasicAiTrack(bool itemMode)
+        {
+            string gameType = itemMode ? "item" : "speed";
+            List<Track> pool = TrackList.Values
+                .Where(t => t.basicAi)
+                .Where(t => string.Equals(t.gameType, gameType, StringComparison.OrdinalIgnoreCase))
+                .Where(t => !t.blocked && !t.missing && !t.nameFallback)
+                .Where(t => !string.IsNullOrEmpty(t.ID) && !string.IsNullOrEmpty(t.Name))
+                .ToList();
+            if (pool.Count == 0)
+            {
+                Log.Info($"[RandomTrack] Warning: TrackList 中没有 basicAi 的 {gameType} 图，AI 房无法固定地图");
+                return 0;
+            }
+            uint hash = pool[Rng.Next(pool.Count)].hash;
+            Log.Info($"[RandomTrack] AI 房地图池（{gameType}，basicAi）：{pool.Count} 张，抽中 {GetTrackName(hash)}");
+            return hash;
+        }
+
         /// <summary>
         /// 按模式限定地图类型抽图（flag/death）。
         /// Track 是具体地图时校验类型；0/随机模式则从该类型的地图池里随机。
@@ -662,9 +708,9 @@ namespace KartRider
                 // 反向图（名字带「[反]」）不放进 AI 模式的池子：客户端没有反向图的 AI 导航数据，
                 // 抽到反向图时挑战赛的 AI 会站着不动（2026-11-17 实测 [反]太空 高速轨道）。
                 .Where(t => !t.Name.StartsWith("[反]", StringComparison.Ordinal))
-                // 挑战赛还要再过一层「有没有 aiPath/<id>_N.kap」的白名单：
-                // 没 AI 导航数据的图，客户端画得出 AI 但 AI 不跑（见 CampaignAiTracks 注释）。
-                .Where(t => !requireAiPath || CampaignAiTracks.Hashes.Contains(t.hash))
+                // 挑战赛还要再过一层 AI 判定（客户端 basicAi 标记）：
+                // 没 AI 导航数据的图，客户端画得出 AI 但 AI 不跑。
+                .Where(t => !requireAiPath || IsCampaignAiTrack(t))
                 .Where(t => crazy == null || !crazy.Contains(t.hash))
                 .Select(t => t.hash)
                 .ToList();

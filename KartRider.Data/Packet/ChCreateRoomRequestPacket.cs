@@ -383,8 +383,8 @@ namespace KartRider.Packet
                 // 官服行为（抓包 `官服建立组队竞速房踢出AI添加AI抓包2`）：
                 // 建 AI 房时服务端会把地图固定成一张「有 aiPath 导航数据」的图（槽位包 track = 具体 hash；
                 // 0 AI 房才是随机选项码 7）。固定图之后客户端才显示「+ 添加 AI」按钮、AI 也才会跑。
-                // 竞速/道具分池：randomTrackGameType==0 取竞速池、==1 取道具池。
-                uint aiTrack = AiTracks.PickRandom(randomTrackGameType == 1);
+                // 竞速/道具分池：从 TrackList 里筛 basicAi = true 的图，randomTrackGameType==0 取竞速池、==1 取道具池。
+                uint aiTrack = RandomTrack.PickBasicAiTrack(randomTrackGameType == 1);
                 if (aiTrack != 0)
                 {
                     Room.trackTemp = aiTrack;
