@@ -213,10 +213,7 @@ public class SlotData
             {
                 // 个人夺旗：type5=捡起、type7=掉落（官服抓包实测字段）：
                 //   +0 u32 发起者ID、+8 u8 type、+14 u32 捡起tick、type7 的 +22 u32 掉落tick
-                // 只对「个人夺旗」采集持旗毫秒。组队夺旗的 ModeScores 存的是**个人夺旗次数**
-                // （GameFlagRequestAddScorePacket 里 AddModeScore(player.ID, +1)，结算 TP 列就读它），
-                // 把持旗秒累进同一个计数器 → 结算界面 TP 变成几十~一百多的无意义数字。
-                // 组队的结算 +92 用的是队伍夺旗数，也用不到个人持旗时长。
+                // 只有个人夺旗要累计「持旗时长」；组队夺旗的 ModeScore 是夺旗次数（别掺秒数）
                 if (room.GameType == GameModes.FlagIndividual)
                 {
                     // ⚠ iPacket.ToArray() 里含最前面 4 字节包 ID，数据字段要整体 +4：

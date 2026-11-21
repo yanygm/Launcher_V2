@@ -129,7 +129,7 @@ public static class RoomManager
                 var m = st.GetFrame(i)?.GetMethod();
                 if (m != null) frames.Add($"{m.DeclaringType?.Name}.{m.Name}");
             }
-            Log.Info($"[诊断] 销毁调用栈：{string.Join(" <- ", frames)}");
+            Log.Debug($"销毁调用栈：{string.Join(" <- ", frames)}");
         }
         catch { }
 
@@ -336,8 +336,8 @@ public static class RoomManager
         byte added = room.TryAddPlayer(nickname, team, playerType, client);
         if (added != 255)
         {
-            // 临时诊断（挑战赛排查用）：入座结果
-            Log.Info($"[诊断] 房间 {roomId} 玩家 {nickname} 入座槽位 {added}（team={team}）");
+            // 入座结果（排座位/AI 相关排查用）
+            Log.Debug($"房间 {roomId} 玩家 {nickname} 入座槽位 {added}（team={team}）");
             return added;
         }
 
@@ -394,7 +394,7 @@ public static class RoomManager
             {
                 if (room._slots[s] is Player p && ReferenceEquals(p.Session, session))
                 {
-                    Log.Info($"[诊断] 房间 {room.RoomId} 清理会话占用的槽位 {s}（{p.Nickname}）");
+                    Log.Debug($"房间 {room.RoomId} 清理会话占用的槽位 {s}（{p.Nickname}）");
                     removed |= RemovePlayer(room.RoomId, s, p.Nickname);
                 }
             }
@@ -455,8 +455,8 @@ public static class RoomManager
             .Any(p => string.Equals(p.Nickname, nickname, StringComparison.OrdinalIgnoreCase));
 
         bool removed = room.RemoveMember(slotId, nickname);
-        // 临时诊断（挑战赛排查用）：谁把玩家从房间里删了
-        Log.Info($"[诊断] RemovePlayer 房间 {roomId} 昵称 {nickname} 槽位 {slotId} 结果 {removed}，剩余真人 {room.GetPlayerCount()} AI {room.GetAiCount()}");
+        // 谁把玩家从房间里删了（掉线/换房/踢人排查用）
+        Log.Debug($"RemovePlayer 房间 {roomId} 昵称 {nickname} 槽位 {slotId} 结果 {removed}，剩余真人 {room.GetPlayerCount()} AI {room.GetAiCount()}");
         if (removed)
         {
             // 对局中掉线：官方抓包实测会在约 6.6 秒后下发 GameUserLeaveNoticePacket

@@ -1116,7 +1116,9 @@ public static class MultyPlayer
 
         // 官服最小抓包实测：槽位包 +0 是「已选地图 hash」，全部随机时写 0；
         // 我们原来直接把随机选项码(0~40)写进去 → 客户端把它当具体图，显示成「极难随机」。
-        uint trackField = trackOverride ?? room.track;
+        // AI 房在建房时就固定了一张「支持 AI」的图，槽位包要把具体 hash 下发（官服行为）；
+        // 普通房仍下发随机选项码（room.track）。
+        uint trackField = trackOverride ?? (room.AiFixedTrack && room.trackTemp != 0 ? room.trackTemp : room.track);
         if (!trackOverride.HasValue && trackField <= 40 && GameModes.IsFlagMode(room.GameType)) trackField = 0;
         outPacket.WriteUInt(trackField); // track name hash（开局包用实际随机到的地图）
         outPacket.WriteInt(0);
@@ -1384,7 +1386,10 @@ public static class MultyPlayer
             }
 
             bool ai = room.GetAiCount() > 0;
-            uint track = RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType), GameModes.IsChallenger(room.GameType), GameModes.IsRpMode(room.GameType), GameModes.IsRpSpeedMode(room.GameType));
+            // AI 房在建房时已固定地图（官服行为）：开局不再随机，避免 AI 房跑到不支持的图上。
+            uint track = room.AiFixedTrack && room.trackTemp != 0
+                ? room.trackTemp
+                : RandomTrack.GetRandomTrack(Parent, $"[{room.RoomName}][{room.RoomId.ToString()}]", room.RandomTrackGameType, room.track, ai, GameModes.TrackGameType(room.GameType), GameModes.IsChallenger(room.GameType), GameModes.IsRpMode(room.GameType), GameModes.IsRpSpeedMode(room.GameType));
             room.trackTemp = track;
             // 抽到的地图必须留痕：出问题时能一眼看出是哪张图（随机图导致闪退的排查依赖这条）
             Log.Info($"[Start] 房间 {room.RoomId} 抽到地图：{RandomTrack.GetTrackName(track)} (0x{track:X8})，随机选项={room.track}");
@@ -1557,19 +1562,6 @@ public static class MultyPlayer
                 // 我方原来写 0,0；先按房间所选战队 id 下发（默认 19，与官服第一局一致）。
                 oPacket.WriteInt(GameModes.IsChallenger(room.GameType) ? room.CampaignId : 0);
                 oPacket.WriteInt(0);
-                // 临时 [诊断]：挑战赛 AI 动不动还在查（反向图/内嵌槽位地图/AI 等级），定位后降级
-                if (GameModes.IsChallenger(room.GameType))
-                {
-                    KartRider.Track ti = null;
-                    if (RandomTrack.TrackList != null)
-                    {
-                        RandomTrack.TrackList.TryGetValue(room.trackTemp, out ti);
-                    }
-                    Log.Info($"[诊断] [挑战赛] 第 {room.CampaignRound} 局开局包：地图={RandomTrack.GetTrackName(room.trackTemp)}"
-                             + $" type={ti?.gameType ?? "?"} basicAi={ti?.basicAi}"
-                             + $" AI等级n={aiLevelCount} 值={AI.GetCampaignAiLevel(room.CampaignDifficulty)}"
-                             + $" 内嵌槽位track={room.track:X8} campaign={room.CampaignId} 难度={room.CampaignDifficulty}");
-                }
             }
             //oPacket.WriteString("[applied param]\r\ntransAccelFactor='1.8555' driftEscapeForce='4720' steerConstraint='24.95' normalBoosterTime='3860' \r\npartsBoosterLock='1' \r\n\r\n[equipped / default parts param]\r\ntransAccelFactor='1.86' driftEscapeForce='2120' steerConstraint='2.7' normalBoosterTime='860' \r\n\r\n\r\n[gamespeed param]\r\ntransAccelFactor='-0.0045' driftEscapeForce='2600' steerConstraint='22.25' normalBoosterTime='3000' \r\n\r\n\r\n[factory enchant param]\r\n");
             Log.Debug($"Track : {RandomTrack.GetTrackName(room.trackTemp)}");
@@ -2801,12 +2793,11 @@ public static class MultyPlayer
                     outPacket.WriteBytes(new byte[29]);
 
                     // 计分模式（夺旗/组队死斗）的 TP 列写个人积分；个人夺旗没有阵营，team 写 0。
-                    // 组队夺旗的 ModeScore = 该玩家本局**夺旗次数**（GameFlagRequestAddScorePacket 里 +1），
-                    // 持旗毫秒只对个人夺旗采集，所以这里直接写 ModeScore 就是官方的「个人夺旗数」。
-                    int tpValue = scoreMode ? room.ModeScore(p4.ID) : playerPoint;
+                    // 计分模式（夺旗/组队死斗）的 TP 列写个人积分；个人夺旗没有阵营，team 写 0。
+                    // 组队夺旗的 ModeScore = 该玩家本局夺旗次数（GameFlagRequestAddScorePacket 每次 +1），照常显示。
                     if (room.IsTeamMode || scoreMode || GameModes.IsChallenger(room.GameType))
                     {
-                        outPacket.WriteInt(tpValue);
+                        outPacket.WriteInt(scoreMode ? room.ModeScore(p4.ID) : playerPoint);
                         outPacket.WriteByte(p4.Team); // Team
                     }
                     else
@@ -2922,29 +2913,7 @@ public static class MultyPlayer
                 outPacket.WriteBytes(new byte[34]);
             }
             outPacket.WriteHexString("FF FF FF FF 00 00 00 00 00");
-            // 临时 [诊断]：挑战赛结算闪退排查用（结算包里 playerCount / aiCount 是重点怀疑对象）
-            if (GameModes.IsChallenger(room.GameType))
-            {
-                Log.Info($"[诊断] [挑战赛] 结算包：playerCount={playerCount} aiCount={aiCount}+{campaignAi} "
-                         + $"members={members.Length} 三局制开关={GameModes.CampaignSeriesEnabled}");
-                // [S] 行会被 Log.Packet 采样/限速丢掉，这里无条件打一份全字节，方便和 pcapng 逐字段对比。
-                byte[] dbgResult = outPacket.ToArray();
-                Log.Info($"[诊断] [挑战赛] 结算包 {dbgResult.Length} 字节: {BitConverter.ToString(dbgResult).Replace('-', ' ')}");
-            }
             BroadCast(room.RoomId, outPacket);
-            if (GameModes.IsChallenger(room.GameType))
-            {
-                Log.Info($"[诊断] [挑战赛] 结算包已广播（房间 {room.RoomId}）");
-                // 投递核对：BroadCast 用 p.Session?.Client?.Send()，会话为空时会**静默跳过**。
-                foreach (RoomMember m in room._slots)
-                {
-                    if (m is Player dp)
-                    {
-                        Log.Info($"[诊断] [挑战赛] 结算投递对象：槽位 {dp.SlotId} {dp.Nickname} "
-                                 + $"会话={((dp.Session?.Client == null) ? "空" : "有")} 在线={dp.Session?.Client?.IsAlive}");
-                    }
-                }
-            }
         }
 
     }

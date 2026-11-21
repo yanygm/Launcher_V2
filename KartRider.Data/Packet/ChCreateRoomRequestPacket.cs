@@ -380,6 +380,17 @@ namespace KartRider.Packet
             // 个人混战（70）没有 AI：和 RP / 双人 / 迷你赛一样是纯玩家对局
             if (AiCount > 0 && AiSwitch == 6 && !GameModes.IsCrossover(Room.GameType))
             {
+                // 官服行为（抓包 `官服建立组队竞速房踢出AI添加AI抓包2`）：
+                // 建 AI 房时服务端会把地图固定成一张「有 aiPath 导航数据」的图（槽位包 track = 具体 hash；
+                // 0 AI 房才是随机选项码 7）。固定图之后客户端才显示「+ 添加 AI」按钮、AI 也才会跑。
+                // 竞速/道具分池：randomTrackGameType==0 取竞速池、==1 取道具池。
+                uint aiTrack = AiTracks.PickRandom(randomTrackGameType == 1);
+                if (aiTrack != 0)
+                {
+                    Room.trackTemp = aiTrack;
+                    Room.AiFixedTrack = true;
+                    Log.Info($"[Room] AI 房 {RoomId} 固定地图：{RandomTrack.GetTrackName(aiTrack)} (0x{aiTrack:X8})，模式池={(randomTrackGameType == 1 ? "道具" : "竞速")}");
+                }
                 // 新增 AI 数量
                 AddAis(Room, AiCount - 1, randomTrackGameType);
             }

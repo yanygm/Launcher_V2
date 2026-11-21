@@ -17,6 +17,8 @@ public class GameRoom
     public string RoomName { get; set; } = "";
     public uint track { get; set; } = 0;
     public uint trackTemp { get; set; } = 0;
+    /// <summary>AI 房在建房时已固定地图（官服行为）：开局不再随机，直接用 trackTemp。</summary>
+    public bool AiFixedTrack { get; set; } = false;
     public uint StartTicks { get; set; } = 0;
     public uint EndTicks { get; set; } = 0;
     public byte SpeedType { get; set; } = 0;
@@ -144,7 +146,8 @@ public class GameRoom
     /// </summary>
     public void FlushFlagHoldTime()
     {
-        // 只对个人夺旗生效：组队夺旗的 ModeScores 是「个人夺旗次数」，不能被持旗秒污染
+        // 只有个人夺旗需要「持旗时长」（结算 +92 与 TP 列）；
+        // 组队夺旗的 ModeScore 是「夺旗次数」（GameFlagRequestAddScorePacket 每次 +1），不能再掺秒数。
         if (GameType != GameModes.FlagIndividual || FlagPickupTicks.IsEmpty)
         {
             return;
