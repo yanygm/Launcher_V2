@@ -296,15 +296,17 @@ namespace KartRider
             {
                 case PacketName.PqUdpEcho:
                 {
-                    // 官方回包（抓包实测）：[acc][hash][PrUdpEcho][请求里的 4 字节 nonce][服务器 tick]
-                    // 请求体只有 4 字节，原来读两个 int 会越界，导致回包发不出去，
-                    // 客户端收不到回应就退避重试（实测心跳从 1 秒一次掉到 4~8 秒一次）。
+                    // 官方抓包实测（24 个官服抓包、所有模式一致）：Echo 的回包就是
+                    // 「把请求 data 逐字节原样回显」——请求 8B = [userNO 4B][nonce 4B]，回包同为 8B。
+                    // （TimeSync 才是「请求 4B → 回包 = 请求 + 服务器 tick 4B」，别混用。）
+                    // 原实现写的是 [请求前 4 字节][服务器 tick]，客户端校验不过就退避重试
+                    // （表现：心跳 4~8 秒才 1 次、UDP 同步发量偏低）。
+                    byte[] echoData = p.ReadBytes(p.Available);
                     using OutPacket outPacket = new OutPacket();
                     outPacket.WriteUInt(accountID);
                     outPacket.WriteUInt(hash);
                     outPacket.WriteInt((int)PacketName.PrUdpEcho);
-                    outPacket.WriteInt(p.Available >= 4 ? p.ReadInt() : 0);
-                    outPacket.WriteUInt(MultyPlayer.ConvertTick());
+                    outPacket.WriteBytes(echoData);
                     BeginSend(outPacket, clientEP);
                     break;
                 }
