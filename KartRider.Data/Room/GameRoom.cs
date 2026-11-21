@@ -130,6 +130,37 @@ public class GameRoom
     public int ModeScore(int playerId) =>
         ModeScores.TryGetValue(playerId, out int score) ? score : 0;
 
+    /// <summary>
+    /// 个人夺旗：当前「正把旗拿在手上」的玩家 → 捡起时刻（**服务端** Environment.TickCount64 毫秒）。
+    /// 结算时要补算这段还没掉落的持旗时长（否则一直持旗到终场的人会计 0）。
+    /// 用服务端时钟而不是客户端 tick：客户端 tick 只有 type5/7 包里才有，
+    /// 一直拿着旗时后面没有新 tick 可参照，算不出「到现在为止」。
+    /// </summary>
+    public ConcurrentDictionary<int, long> FlagPickupTicks { get; } = new();
+
+    /// <summary>
+    /// 个人夺旗结算前调用：把「手里还没掉落」的持旗时长补进个人积分（秒）。
+    /// 官方结算包 +92 是该玩家的总持旗毫秒，只算「掉落过」的会让终场还拿着旗的人变 0。
+    /// </summary>
+    public void FlushFlagHoldTime()
+    {
+        // 只对个人夺旗生效：组队夺旗的 ModeScores 是「个人夺旗次数」，不能被持旗秒污染
+        if (GameType != GameModes.FlagIndividual || FlagPickupTicks.IsEmpty)
+        {
+            return;
+        }
+        long now = Environment.TickCount64;
+        foreach (var pair in FlagPickupTicks)
+        {
+            long ms = now - pair.Value;
+            if (ms > 0 && ms < 600000)
+            {
+                AddModeScore(pair.Key, (int)(ms / 1000));
+            }
+        }
+        FlagPickupTicks.Clear();
+    }
+
     /// <summary>累加玩家个人积分并返回新值。</summary>
     public int AddModeScore(int playerId, int delta)
     {
@@ -147,6 +178,7 @@ public class GameRoom
         DeathMatchBlueScore = 0;
         DeathMatchSequence = 0;
         ModeScores.Clear();
+        FlagPickupTicks.Clear();
         Interlocked.Exchange(ref ModeDeadlineArmed, 0);
     }
 

@@ -198,7 +198,7 @@ public class SlotData
                     oPacket.WriteFloat(y);
                     oPacket.WriteFloat(z);
                     oPacket.WriteShort(skill);
-                    oPacket.WriteByte(1);
+                    oPacket.WriteByte(skill == 15 ? (byte)5 : (byte)1);   // 夺旗连发导弹(15)：官服给 5 发
                     oPacket.WriteBytes(data2);
                     oPacket.WriteByte(2);
                     oPacket.WriteShort(skill);
@@ -211,6 +211,40 @@ public class SlotData
             }
             else if (type is 5 or 7 or 8 or 17)
             {
+                // 个人夺旗：type5=捡起、type7=掉落（官服抓包实测字段）：
+                //   +0 u32 发起者ID、+8 u8 type、+14 u32 捡起tick、type7 的 +22 u32 掉落tick
+                // 只对「个人夺旗」采集持旗毫秒。组队夺旗的 ModeScores 存的是**个人夺旗次数**
+                // （GameFlagRequestAddScorePacket 里 AddModeScore(player.ID, +1)，结算 TP 列就读它），
+                // 把持旗秒累进同一个计数器 → 结算界面 TP 变成几十~一百多的无意义数字。
+                // 组队的结算 +92 用的是队伍夺旗数，也用不到个人持旗时长。
+                if (room.GameType == GameModes.FlagIndividual)
+                {
+                    // ⚠ iPacket.ToArray() 里含最前面 4 字节包 ID，数据字段要整体 +4：
+                    //   data[0..4]=发起者ID / data[8]=type / data[14]=捡起tick / type7 的 data[22]=掉落tick
+                    //   → raw 偏移 = 4 / 12 / 18 / 26
+                    byte[] raw = iPacket.ToArray();
+                    if (raw.Length >= 30)
+                    {
+                        int who = BitConverter.ToInt32(raw, 4);
+                        uint t1 = BitConverter.ToUInt32(raw, 18);
+                        if (type == 5)
+                        {
+                            // 捡起：记下服务端时刻；结算时按服务端时钟补算这段还没掉落的时长
+                            room.FlagPickupTicks[who] = Environment.TickCount64;
+                        }
+                        else if (type == 7)
+                        {
+                            uint t2 = BitConverter.ToUInt32(raw, 26);
+                            room.FlagPickupTicks.TryRemove(who, out _);
+                            int ms = (int)(t2 - t1);
+                            if (ms > 0 && ms < 600000)
+                            {
+                                room.AddModeScore(who, ms / 1000);
+                                Log.Debug($"[Flag] {who} 持旗 {ms} ms，累计 {room.ModeScore(who)}");
+                            }
+                        }
+                    }
+                }
                 using (OutPacket oPacket = new OutPacket())
                 {
                     oPacket.WriteBytes(iPacket.ToArray());

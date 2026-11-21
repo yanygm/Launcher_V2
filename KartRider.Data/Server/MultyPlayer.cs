@@ -1114,7 +1114,11 @@ public static class MultyPlayer
             return;
         }
 
-        outPacket.WriteUInt(trackOverride ?? room.track); // track name hash（开局包用实际随机到的地图）
+        // 官服最小抓包实测：槽位包 +0 是「已选地图 hash」，全部随机时写 0；
+        // 我们原来直接把随机选项码(0~40)写进去 → 客户端把它当具体图，显示成「极难随机」。
+        uint trackField = trackOverride ?? room.track;
+        if (!trackOverride.HasValue && trackField <= 40 && GameModes.IsFlagMode(room.GameType)) trackField = 0;
+        outPacket.WriteUInt(trackField); // track name hash（开局包用实际随机到的地图）
         outPacket.WriteInt(0);
         outPacket.WriteBytes(room.RoomData); // 32
         outPacket.WriteInt(room.RoomMaster); // RoomMaster
@@ -1664,8 +1668,18 @@ public static class MultyPlayer
         outPacket.WriteByte(room.ModeByte);
         outPacket.WriteByte(room.SpeedType); //7
         outPacket.WriteInt(0);
-        outPacket.WriteByte(0);
-        outPacket.WriteInt(0);
+        // 官服实测（个人夺旗抓包）：这里是 0x08 + 4 字节 seed（房号相关），不是 0；
+        // 写 0 会让客户端读错随机选项（显示成"极难随机"），也可能导致开局异常。
+        if (GameModes.IsFlagMode(room.GameType))
+        {
+            outPacket.WriteByte(8);
+            outPacket.WriteInt(unchecked((int)(room.RoomId * 2654435761u)));
+        }
+        else
+        {
+            outPacket.WriteByte(0);
+            outPacket.WriteInt(0);
+        }
         outPacket.WriteBytes(new byte[7]);
     }
 
@@ -2591,6 +2605,10 @@ public static class MultyPlayer
             }
         }
 
+        // 个人夺旗：结算前把「还拿在手上、没掉落」的持旗时长补进个人积分，
+        // 否则一直持旗到终场（或中途直接结束）的人拿到 0，结算「占领时间」就是空。
+        room.FlushFlagHoldTime();
+
         Dictionary<int, int> ranking = scoreMode
             ? BuildModeRanking(room, members)
             : GetAllRanks(timeData);
@@ -2723,8 +2741,11 @@ public static class MultyPlayer
                     // 挑战赛：官服这里恒写 0xFFFF（-1）。pcapng 三盘 9 条真人记录全是 FFFF，
                     // 说明挑战赛结算界面的车不走这个字段（对面 AI 的车由客户端按 aiCampaign 渲染）。
                     // 挑战赛与个人混战：结算界面的车不走这个字段（官服 8 条全是 0xFFFF）
+                    // 夺旗赛（个人/组队）：人是「步行」状态、没有车，官服这里恒写 0xFFFF；
+                    // 写 0 时客户端按 kart id 0 去取模型，取不到 → 结算界面连角色模型都不显示。
                     bool challenger = GameModes.IsChallenger(room.GameType);
-                    ushort resultKartId = (challenger || GameModes.IsCrossover(room.GameType))
+                    ushort resultKartId = (challenger || GameModes.IsCrossover(room.GameType)
+                        || GameModes.IsFlagMode(room.GameType))
                         ? (ushort)0xFFFF : p4Config.RiderItem.Set_Kart;
                     if (!challenger && room.IsRpRoom && room.RpKarts.TryGetValue(p4.Nickname, out var rpResult))
                     {
@@ -2779,10 +2800,13 @@ public static class MultyPlayer
                     }
                     outPacket.WriteBytes(new byte[29]);
 
-                    // 计分模式（夺旗/组队死斗）的 TP 列写个人积分；个人夺旗没有阵营，team 写 0
+                    // 计分模式（夺旗/组队死斗）的 TP 列写个人积分；个人夺旗没有阵营，team 写 0。
+                    // 组队夺旗的 ModeScore = 该玩家本局**夺旗次数**（GameFlagRequestAddScorePacket 里 +1），
+                    // 持旗毫秒只对个人夺旗采集，所以这里直接写 ModeScore 就是官方的「个人夺旗数」。
+                    int tpValue = scoreMode ? room.ModeScore(p4.ID) : playerPoint;
                     if (room.IsTeamMode || scoreMode || GameModes.IsChallenger(room.GameType))
                     {
-                        outPacket.WriteInt(scoreMode ? room.ModeScore(p4.ID) : playerPoint);
+                        outPacket.WriteInt(tpValue);
                         outPacket.WriteByte(p4.Team); // Team
                     }
                     else
@@ -2794,12 +2818,27 @@ public static class MultyPlayer
                     outPacket.WriteInt(1);
                     outPacket.WriteByte(0);
                     outPacket.WriteUShort(p4Config.RiderItem.Set_Character);
-                    // 抓包：+92 偏移是该玩家所在队伍的夺旗数（3:1 时红队记录=3、蓝队记录=1），
-                    // 客户端结算界面的队伍比分就读这里；整段写 0 就会显示 0:0。
                     outPacket.WriteBytes(new byte[5]);
-                    outPacket.WriteInt(GameModes.IsTeamFlagMode(room.GameType)
-                        ? room.TeamModeScore(p4.Team)
-                        : 0);
+                    // +92 偏移的语义（2026-11-21 复核官服抓包）：
+                    //   组队夺旗 = 该玩家所在队伍的夺旗数（3:1 → 红队 3、蓝队 1，客户端队伍比分读这里）；
+                    //   个人夺旗 = **该玩家自己的持旗毫秒**（官服样本 95209 / 55132 / 21485 / 117783）；
+                    //   其它模式 = 0。
+                    // ⚠ 个人夺旗以前一直写 0（这里只判 IsTeamFlagMode），导致结算界面「占领时间」空白。
+                    // GameSlotPacket 里按「秒」累计持旗时长（ms/1000），这里换算回毫秒。
+                    int resultFlagField;
+                    if (GameModes.IsTeamFlagMode(room.GameType))
+                    {
+                        resultFlagField = room.TeamModeScore(p4.Team);
+                    }
+                    else if (GameModes.IsFlagMode(room.GameType))
+                    {
+                        resultFlagField = room.ModeScore(p4.ID) * 1000;
+                    }
+                    else
+                    {
+                        resultFlagField = 0;
+                    }
+                    outPacket.WriteInt(resultFlagField);
                     outPacket.WriteBytes(new byte[40]);
                     outPacket.WriteHexString("FF");
                     outPacket.WriteBytes(new byte[37]);

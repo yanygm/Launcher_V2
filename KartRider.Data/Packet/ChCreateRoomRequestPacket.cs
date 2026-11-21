@@ -152,7 +152,7 @@ namespace KartRider.Packet
                     68 => (byte)3,
                     51 => (byte)4,   // 迷你地板赛：玩法等同组队道具（写 7 会变成夺旗赛）
                     50 => (byte)2,   // 迷你个人加速赛：玩法等同个人道具
-                    8 => (byte)1,
+                    8 => GameModes.FlagIndividual,   // 星期模式的 8 号子频道 = 个人夺旗赛，不是个人竞速（写 1 会按竞速抽图 → 开局客户端闪退）
                     _ => (byte)3,
                 };
                 Log.Debug($"[Room] 星期子频道号={rawGameType} → 基础模式={baseGameType}");
@@ -204,6 +204,12 @@ namespace KartRider.Packet
                 GameType = GameModes.RpItemIndi;
                 Room.IsRpRoom = true;
                 Log.Debug($"[RP] 房间 {RoomId} 按房名创建为「个人道具RP赛」（模式 27，房名={RoomName}）");
+            }
+            // 房名含「个人夺旗」：组队夺旗(7)房改建成个人夺旗(8)房（个人夺旗频道过期时的备用入口）
+            else if (RoomName != null && RoomName.Contains("个人夺旗") && GameType == GameModes.FlagTeam)
+            {
+                GameType = GameModes.FlagIndividual;
+                Log.Info($"[夺旗] 房间 {RoomId} 按房名创建为「个人夺旗」（模式 8，原模式 7，房名={RoomName}）");
             }
             // 房名含「混战」：把个人竞速(1) / 个人道具(2) 房改成个人混战（模式 70）。
             // 混战的箱子/集气/结算界面都是客户端按模式号渲染的，所以下面还要把 wire 也改成 70。
