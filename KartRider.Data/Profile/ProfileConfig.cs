@@ -181,13 +181,37 @@ namespace Profile
         /// </summary>
         public List<byte> TrainingCenterStages { get; set; } = new List<byte> { 0, 0, 0 };
 
-        /// <summary>PRO 徽章（PRO 驾照前置任务，完成计时成绩后 PqRewardProEmblemPacket 领取）。</summary>
+        /// <summary>
+        /// PRO 徽章 = PRO 挑战资格（3 条 proCategory 纪录达标后由 PqRewardProEmblemPacket 领取）。
+        /// **永久保留**：拿徽章本身不给 PRO 驾照，但跨周期退回 L1 后可凭它直接挑战当期两关，不用重新达标。
+        /// </summary>
         public bool ProEmblemEarned { get; set; } = false;
 
-        /// <summary>PRO 计时赛（关卡 31/33/35/37/39/41）已通过的数量 0~6，客户端 PRO 面板靠它决定能不能进。</summary>
+        /// <summary>
+        /// PRO 驾照有效期截止时间（本地时间）。DateTime.MinValue = 从未持有过。
+        ///
+        /// 官方规则：考取 PRO 驾照后有效 90 天；单数月 1 号轮换赛道后可以重新考取来**重置**这 90 天。
+        /// 到期未续期 → 掉回 L1（徽章保留，可重新挑战当期两关）。
+        /// 注意：不是“跨月就掉级”，跨月只是换赛道，掉级只看这里是否过期。
+        /// </summary>
+        public DateTime ProLicenseUntil { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// PRO 两关完成位（bit0 = 计时赛、bit1 = 对决）**所属周期**（RouterListener.DataTime() 的奇数月计数）。
+        /// 完成位只在“当期”有效：单数月 1 号换赛道时清零，玩家重新打通当期两关即可续 90 天。
+        /// </summary>
+        public int ProLicensePeriod { get; set; } = 0;
+
+        /// <summary>
+        /// 当前周期（ProLicensePeriod）内 PRO 两关的完成位：bit0 = 计时赛、bit1 = 对决。
+        /// 3 = 当期两关都通过；换赛道后自动清零（驾照本身仍按 ProLicenseUntil 保持有效）。
+        /// </summary>
+        public byte ProPeriodCleared { get; set; } = 0;
+
+        /// <summary>PRO 计时赛（关卡 31/33/35/37/39/41）已通过的数量 0~6（旧版遗留字段，仅作兼容保留）。</summary>
         public byte ProSpeedCleared { get; set; } = 0;
 
-        /// <summary>PRO 对决（关卡 32/34/36/38/40/42）已通过的数量 0~6。</summary>
+        /// <summary>PRO 对决（关卡 32/34/36/38/40/42）已通过的数量 0~6（旧版遗留字段，仅作兼容保留）。</summary>
         public byte ProVersusCleared { get; set; } = 0;
 
         public byte Ranker { get; set; } = 0;

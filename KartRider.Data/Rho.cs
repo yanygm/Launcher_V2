@@ -218,20 +218,35 @@ namespace KartRider
                                     {
                                         RiderSchool.catLevel = validCatLevels.Max();
                                     }
-                                    // 驾照等级表：catLevel（1 起）→ 该等级的关卡数，客户端按这张表渲染关卡
+                                    // 驾照等级表：catLevel（1 起）→ 该等级的关卡数 + 真实关号区间（min/max step）
                                     var licenseTable = new SortedDictionary<byte, byte>();
+                                    var licenseRanges = new SortedDictionary<byte, RiderSchool.LicenseRange>();
                                     foreach (var category in xdoc.Descendants("category"))
                                     {
                                         if (!byte.TryParse(category.Attribute("catLevel")?.Value, out byte licenseLevel) || licenseLevel == 0)
                                         {
                                             continue;
                                         }
-                                        int stepCount = category.Descendants("item")
-                                            .Count(i => byte.TryParse(i.Attribute("step")?.Value, out byte stepValue) && stepValue > 0);
-                                        if (stepCount > 0)
+                                        var steps = new List<byte>();
+                                        foreach (var item in category.Descendants("item"))
                                         {
-                                            licenseTable[licenseLevel] = (byte)System.Math.Min(stepCount, byte.MaxValue);
+                                            if (byte.TryParse(item.Attribute("step")?.Value, out byte stepValue) && stepValue > 0)
+                                            {
+                                                steps.Add(stepValue);
+                                            }
                                         }
+                                        if (steps.Count == 0)
+                                        {
+                                            continue;
+                                        }
+                                        steps.Sort();
+                                        licenseTable[licenseLevel] = (byte)System.Math.Min(steps.Count, byte.MaxValue);
+                                        licenseRanges[licenseLevel] = new RiderSchool.LicenseRange
+                                        {
+                                            Min = steps[0],
+                                            Max = steps[steps.Count - 1],
+                                            Count = (byte)System.Math.Min(steps.Count, byte.MaxValue)
+                                        };
                                     }
                                     if (licenseTable.Count > 0)
                                     {
@@ -240,8 +255,16 @@ namespace KartRider
                                         {
                                             RiderSchool.LicenseSteps[license.Key] = license.Value;
                                         }
+                                        RiderSchool.LicenseRanges.Clear();
+                                        foreach (var range in licenseRanges)
+                                        {
+                                            RiderSchool.LicenseRanges[range.Key] = range.Value;
+                                        }
                                         Log.Info($"[RiderSchool] 驾照等级表 {licenseTable.Count} 档: "
                                             + string.Join(", ", licenseTable.Select(kv => $"{kv.Key}={kv.Value}")));
+                                        Log.Info($"[RiderSchool] 驾照关号区间: "
+                                            + string.Join(", ", licenseRanges.Select(kv => $"cat{kv.Key} {kv.Value.Min}~{kv.Value.Max}"))
+                                            + $"；L1 最后一关(PRO 起点)={RiderSchool.ProBaseStep}，总关卡={RiderSchool.LicenseTotalSteps}");
                                     }
                                     // PRO 特殊设定：proCategory 定义徽章编号与 3 条“达成赛道纪录”时限
                                     var proCategory = xdoc.Descendants("proCategory").FirstOrDefault();
@@ -299,6 +322,12 @@ namespace KartRider
                                             RiderSchool.oddProStep = validSteps
                                                 .Where((step, index) => index % 2 != 0) // 索引%2!=0 → 奇索引
                                                 .ToList();
+                                            // 对数完全由数据决定：TW 6 关=3 对，本项目 CN 12 关=6 对（31~42）
+                                            Log.Info($"[RiderSchool] PRO 关卡 {validSteps.Count} 关 → {validSteps.Count / 2} 对"
+                                                + $"（1~{validSteps.Max()}）："
+                                                + $"计时赛={string.Join("/", RiderSchool.evenProStep)}，"
+                                                + $"对决={string.Join("/", RiderSchool.oddProStep)}，"
+                                                + $"轮换周期 {RiderSchool.ProPairCount} 个");
                                         }
                                     }
                                 }

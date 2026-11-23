@@ -29,12 +29,14 @@ namespace KartRider.Packet
         {
             // PqUpdateRiderSchoolLevelPacket 只有一个字节：[u8 新等级]
             byte requestedLevel = inPacket.Available >= 1 ? inPacket.ReadByte() : (byte)0;
-            byte level = RiderSchool.RecordPromotion(session, requestedLevel);
+            byte level = RiderSchool.RecordPromotion(session, requestedLevel, out DateTime licenseDate);
             using (OutPacket outPacket = new OutPacket("PrUpdateRiderSchoolLevelPacket"))
             {
                 // 本客户端的应答结构：[u8 等级][u16 时间(天)][u16 时间(刻)][u8 标志]，共 6 字节
+                // 时间 = 这一档驾照的获得日期：升到 PRO 时就是 ProLicenseUntil − 90 天（考取日），
+                // 不是“现在”，否则每次点获取驾照都会把 PRO 的 90 天倒计时刷新。
                 outPacket.WriteByte(level);
-                outPacket.WriteDateTime(DateTime.Now);
+                outPacket.WriteDateTime(licenseDate);
                 outPacket.WriteByte(1);
                 session.Client.Send(outPacket);
             }

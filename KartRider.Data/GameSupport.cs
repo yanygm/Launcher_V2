@@ -532,6 +532,9 @@ namespace KartRider
         public static void PrGetRiderInfo(string nickname, SessionGroup Parent)
         {
             uint UserID = ClientManager.GetUserNO(nickname);
+            // 驾照面板/玩家资料里的等级来自这里：先做一次 PRO 周期滚动，
+            // 保证跨周期没打完当期两关的玩家在这里就已经退回 L1。
+            RiderData.RiderSchool.SyncProLicense(nickname);
             var config = ProfileService.GetProfileConfig(nickname);
             if (config?.Rider == null)
             {
