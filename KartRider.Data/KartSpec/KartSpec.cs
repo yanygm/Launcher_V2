@@ -29,14 +29,39 @@ namespace KartRider
 
     public class KartSpec
     {
-        /// <summary>布尔类型的XML属性名集合（统一管理）</summary>
+        /// <summary>
+        /// 布尔类型的XML属性名集合（统一管理）。
+        /// 这里的属性在 param 里只写 true/false，解析时统一归一化成 0/1。
+        ///
+        /// 【修复】BikeRearWheel 曾误列于此集合。它实际是三态数值字段（0/1/2），
+        /// 官服对 天浪9(bike51) / 夜鹰9(justiceBike9) / 风刃9(bike50) 下发 2。
+        /// 列在布尔集合里会走 bool.TryParse("2") → 失败 → 回落 DefaultValue=1，导致下发值错误。
+        /// 现已移出，改走 GetScaledValue 的数值解析路径（其 KartSpecConfig 本就是数值配置 0M/1M/1M）。
+        /// 对照组：猎鹰9(bike55) / 风刃X SE(bike62) 的 param 未写该属性，走默认 1，与官服抓包一致。
+        /// </summary>
         private readonly HashSet<string> BooleanAttributes = new(StringComparer.OrdinalIgnoreCase)
         {
-            "UseTransformBooster", "motorcycleType", "BikeRearWheel", "UseExtendedAfterBooster",
+            "UseTransformBooster", "motorcycleType", "UseExtendedAfterBooster",
             "dualBoosterSetAuto", "PartsEngineLock", "PartsWheelLock", "PartsSteeringLock",
             "PartsBoosterLock", "PartsCoatingLock", "PartsTailLampLock", "PartsBoosterEffectLock",
             "useExtendedAfterBoosterMore"
         };
+
+        /// <summary>
+        /// 允许写成数字的布尔属性（"0"/"1" 也接受）。
+        /// 严格 bool.TryParse 只认 true/false，param 里若写数字会被判无效并回落默认值。
+        /// 这里做一层兼容，避免同类问题再次发生；不影响写 true/false 的绝大多数车辆。
+        /// </summary>
+        private static bool TryParseBooleanLike(string raw, out bool value)
+        {
+            value = false;
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+            string s = raw.Trim();
+            if (bool.TryParse(s, out value)) return true;
+            if (s == "1") { value = true; return true; }
+            if (s == "0") { value = false; return true; }
+            return false;
+        }
 
         /// <summary>部件默认类型（EngineType/HandleType等的默认值1）</summary>
         private const byte DefaultPartType = 1;
@@ -315,7 +340,7 @@ namespace KartRider
             if (BooleanAttributes.Contains(attributeName))
             {
                 var attrValue = element.GetAttribute(attributeName);
-                if (bool.TryParse(attrValue, out var boolVal))
+                if (TryParseBooleanLike(attrValue, out var boolVal))
                 {
                     return (boolVal ? 1M : 0M).ToString(CultureInfo.InvariantCulture);
                 }
@@ -410,9 +435,11 @@ namespace KartRider
         public byte motorcycleType { get; set; } = (byte)(false ? 1 : 0);
 
         /// <summary>
-        /// 是否有後輪
+        /// 机车后轮形态（三态数值，非布尔）：0 / 1 / 2。
+        /// 默认 1；天浪9(bike51) / 夜鹰9(justiceBike9) / 风刃9(bike50) 的 param 写 2，官服抓包实证下发 2。
+        /// 该字段按原值透传给客户端（StartGameData.WriteEncByte），服务端不做语义解释。
         /// </summary>
-        public byte BikeRearWheel { get; set; } = (byte)(true ? 1 : 0);
+        public byte BikeRearWheel { get; set; } = 1;
 
         /// <summary>
         /// 车辆重量
